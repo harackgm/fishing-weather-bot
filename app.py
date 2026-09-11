@@ -47,6 +47,19 @@ GEMINI_CANDIDATE_MODELS = [
 # データベースファイルパス
 DB_PATH = 'user_data.db'
 
+# 都道府県別 主要管理釣り場データ（マスター選択肢）
+PREFECTURE_SPOTS = {
+    "埼玉県": ["朝霞ガーデン", "ウォーターパーク長瀞", "川越水上公園", "加須はなさき水上公園"],
+    "東京都": ["ベリーパーク in FISH ON！王禅寺（※川崎隣接）", "奥多摩フィッシングセンター", "秋川国際マス釣場"],
+    "神奈川県": ["ベリーパーク in FISH ON！王禅寺", "開成水辺フォレストスプリングス", "早戸川国際マス釣場"],
+    "千葉県": ["ジョイバレー", "座間養魚場", "アクアヘヴン"],
+    "茨城県": ["ミッドナイト", "高萩ジパングトラウトエリア", "水戸南フィッシングエリア"],
+    "栃木県": ["キングフィッシャー", "加賀フィッシングエリア", "発光路の森フィッシングエリア", "ロデオクラフト（大芦川）"],
+    "群馬県": ["宮城アングラーズヴィレッジ", "イワナセンター", "川場フィッシングプラザ", "Hook"],
+    "山梨県": ["ベリーパーク in FISH ON！鹿留", "忍野フィッシングエリア", "小菅トラウトガーデン"],
+    "静岡県": ["すそ野フィッシングパーク", "東山湖フィッシングエリア", "柿田川フィッシングパーク"]
+}
+
 
 # ==========================================
 # 3. データベース（SQLite）管理関数
@@ -58,7 +71,6 @@ def init_db():
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS user_settings (
             user_id TEXT PRIMARY KEY,
-            weather_level INTEGER DEFAULT 1,
             weather_source TEXT DEFAULT 'ウェザーニュース',
             favorite_spots TEXT DEFAULT ''
         )
@@ -71,33 +83,24 @@ init_db()
 
 
 def get_user_setting(user_id):
-    """ユーザー設定の取得（未登録時は新規作成）"""
+    """ユーザー設定の取得（未登録時は初期値で新規作成）"""
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
-    cursor.execute('SELECT weather_level, weather_source, favorite_spots FROM user_settings WHERE user_id = ?', (user_id,))
+    cursor.execute('SELECT weather_source, favorite_spots FROM user_settings WHERE user_id = ?', (user_id,))
     row = cursor.fetchone()
     
     if not row:
         cursor.execute(
-            'INSERT INTO user_settings (user_id, weather_level, weather_source, favorite_spots) VALUES (?, 1, ?, ?)',
+            'INSERT INTO user_settings (user_id, weather_source, favorite_spots) VALUES (?, ?, ?)',
             (user_id, 'ウェザーニュース', '')
         )
         conn.commit()
-        result = (1, 'ウェザーニュース', '')
+        result = ('ウェザーニュース', '')
     else:
         result = row
         
     conn.close()
     return result
-
-
-def update_user_level(user_id, level):
-    """天気レベルの更新"""
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    cursor.execute('UPDATE user_settings SET weather_level = ? WHERE user_id = ?', (level, user_id))
-    conn.commit()
-    conn.close()
 
 
 def update_user_source(user_id, source):
@@ -110,8 +113,8 @@ def update_user_source(user_id, source):
 
 
 def add_favorite_spot(user_id, spot_name):
-    """お気に入り釣り場の追加（最大5箇所まで）"""
-    _, _, favorites = get_user_setting(user_id)
+    """お気に入り釣り場の追加（最大5箇所）"""
+    _, favorites = get_user_setting(user_id)
     fav_list = [s for s in favorites.split(',') if s]
     
     if spot_name in fav_list:
@@ -132,7 +135,7 @@ def add_favorite_spot(user_id, spot_name):
 
 def remove_favorite_spot(user_id, spot_name):
     """お気に入り釣り場の削除"""
-    _, _, favorites = get_user_setting(user_id)
+    _, favorites = get_user_setting(user_id)
     fav_list = [s for s in favorites.split(',') if s]
     
     if spot_name not in fav_list:
@@ -150,22 +153,23 @@ def remove_favorite_spot(user_id, spot_name):
 
 
 # ==========================================
-# 4. Gemini AI応答生成関数
+# 4. Gemini AI応答生成関数（常に詳細な天気回答）
 # ==========================================
 def generate_gemini_response(user_message, user_setting):
-    """ユーザー設定を文脈に含めて応答を生成"""
+    """ユーザー設定および【常に詳細な天気案内】を前提に応答生成"""
     if not GEMINI_API_KEY:
         return None, "【システムエラー】GEMINI_API_KEYが未設定です。"
 
     genai.configure(api_key=GEMINI_API_KEY)
     
-    level, source, favorites = user_setting
+    source, favorites = user_setting
     fav_text = favorites if favorites else "未登録"
 
     system_instruction = (
-        "あなたは管理釣り場と天気予報の案内AIアシスタントです。"
-        f"【ユーザー設定情報】天気詳細レベル: レベル{level}, 優先ソース: {source}, お気に入り釣り場: {fav_text}。"
-        "丁寧かつ分かりやすく、釣り人の役に立つ回答を簡潔に答えてください。"
+        "あなたは管理釣り場と天気予報のプロ案内AIアシスタントです。"
+        "【絶対ルール】天気予報や釣行アドバイスを行う際は、時間帯別の天気・気温・風速・風向・降水確率・注意点を網羅した【常に最も詳しい高精度な天気予報】を回答してください。"
+        f"【ユーザー設定情報】優先情報源: {source}, お気に入り釣り場: {fav_text}。"
+        "釣り人に寄り添う丁寧かつ見やすいフォーマットで答えてください。"
     )
     prompt = f"{system_instruction}\n\nユーザーの質問: {user_message}"
 
@@ -188,7 +192,7 @@ def generate_gemini_response(user_message, user_setting):
 # ==========================================
 @app.route("/", methods=['GET'])
 def top_page():
-    return "LINE Reply Bot Server (with DB & Commands) is running!", 200
+    return "LINE Reply Bot Server (Detailed Weather Mode) is running!", 200
 
 
 @app.route("/callback", methods=['POST'])
@@ -206,7 +210,7 @@ def callback():
 
 
 # ==========================================
-# 6. LINEメッセージ受信処理（コマンド判定）
+# 6. LINEメッセージ受信処理
 # ==========================================
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
@@ -215,31 +219,44 @@ def handle_message(event):
 
     print(f"[受信] ユーザー({user_id}): {user_message}")
 
-    # 現在のユーザー設定を取得
+    # ユーザー設定の取得
     user_setting = get_user_setting(user_id)
-    level, source, favorites = user_setting
+    source, favorites = user_setting
 
     # --- コマンド分岐処理 ---
+    
+    # 1. 県名検索の判定
+    matched_pref = None
+    for pref in PREFECTURE_SPOTS.keys():
+        if pref in user_message or pref.replace("県", "").replace("府", "").replace("都", "") in user_message:
+            matched_pref = pref
+            break
+
     if user_message == "設定":
         fav_list = [s for s in favorites.split(',') if s]
         fav_display = "\n".join([f"・{spot}" for spot in fav_list]) if fav_list else "・未登録"
         
         reply_text = (
             "⚙️ 【現在の設定状況】\n\n"
-            f"■ 天気詳細レベル: レベル{level}\n"
+            "■ 天気詳細度: 常に最詳細モード（高精度）\n"
             f"■ 参照ソース: {source}\n"
             f"■ お気に入り釣り場 (最大5箇所):\n{fav_display}\n\n"
             "【設定変更コマンド】\n"
-            "・「レベル1」「レベル2」「レベル3」\n"
+            "・「埼玉県」「栃木県」など（県内の釣り場一覧を表示）\n"
             "・「ウェザーニュース」「tenki.jp」\n"
             "・「追加:釣り場名」\n"
             "・「削除:釣り場名」"
         )
 
-    elif user_message in ["レベル1", "レベル2", "レベル3"]:
-        new_level = int(user_message.replace("レベル", ""))
-        update_user_level(user_id, new_level)
-        reply_text = f"✅ 天気詳細レベルを「レベル{new_level}」に変更しました。"
+    elif matched_pref:
+        spots = PREFECTURE_SPOTS[matched_pref]
+        spot_list_text = "\n".join([f"・{s}" for s in spots])
+        reply_text = (
+            f"📍 【{matched_pref}の主な管理釣り場】\n\n"
+            f"{spot_list_text}\n\n"
+            "お気に入りに登録する場合は、以下のように送信してください。\n"
+            f"例: 追加:{spots[0]}"
+        )
 
     elif user_message in ["ウェザーニュース", "tenki.jp"]:
         update_user_source(user_id, user_message)
@@ -264,20 +281,20 @@ def handle_message(event):
     elif user_message in ["ヘルプ", "使い方"]:
         reply_text = (
             "💡 【使い方ガイド】\n\n"
+            "■ 釣り場の検索: 「埼玉県」「栃木県」などの県名を送信\n"
             "■ 設定の確認: 「設定」と送信\n"
-            "■ レベル変更: 「レベル1」〜「レベル3」と送信\n"
             "■ 情報源変更: 「ウェザーニュース」または「tenki.jp」と送信\n"
             "■ お気に入り登録: 「追加:釣り場名」と送信\n"
             "■ お気に入り削除: 「削除:釣り場名」と送信\n\n"
-            "※上記以外のメッセージはAIが管理釣り場案内を行います。"
+            "※上記以外のメッセージは、常に詳細な天気・管理釣り場案内をAIが行います。"
         )
 
     else:
-        # 通常メッセージは設定文脈を含めてGemini APIへ送る
+        # 通常会話は常に最詳細の天気案内プロンプトでGeminiに渡す
         ai_text, error_text = generate_gemini_response(user_message, user_setting)
         reply_text = ai_text if ai_text else error_text
 
-    # 無料リプライ送信（完全枠内）
+    # 無料リプライ送信
     line_bot_api.reply_message(
         event.reply_token,
         TextSendMessage(text=reply_text)
