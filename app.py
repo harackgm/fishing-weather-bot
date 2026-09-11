@@ -26,49 +26,58 @@ LINE_CHANNEL_SECRET = os.getenv('LINE_CHANNEL_SECRET', '').strip()
 line_bot_api = LineBotApi(LINE_CHANNEL_ACCESS_TOKEN)
 handler = WebhookHandler(LINE_CHANNEL_SECRET)
 
-# Gemini API設定
+# Gemini API設定（空白・引用符の自動処理）
 GEMINI_API_KEY = os.getenv('GEMINI_API_KEY', '').strip().strip('"').strip("'")
 
-# テスト用・本番用設定（誤通知防止）
-ADMIN_USER_ID = os.getenv('ADMIN_USER_ID', '').strip()  # 管理者のLINE ID
-IS_TEST_MODE = True  # True: 管理者のみ通知 / False: 全員通知
+# テスト・本番モード切り替え制御（安全装置）
+ADMIN_USER_ID = os.getenv('ADMIN_USER_ID', '').strip()
+IS_TEST_MODE = True  # True: 管理者のみにテスト送信（誤送信防止）
 
-# 大量通知ストッパー（安全装置）
+# 大量通知ストッパー（安全装置: 1回の処理で許可する最大件数）
 MAX_LIMIT = 5
 
+# 試行するモデル候補リスト（推奨順）
+GEMINI_CANDIDATE_MODELS = [
+    'gemini-3.6-flash',
+    'gemini-1.5-flash',
+    'gemini-2.0-flash',
+    'gemini-2.5-flash'
+]
 
-def get_working_gemini_model():
+
+def generate_gemini_response(user_message):
     """
-    利用可能なGeminiモデルを安全に自動検知して取得する関数
+    複数モデルを順次試行し、正常応答が得られるモデルで自動返信を作成する関数
     """
     if not GEMINI_API_KEY:
-        return None
-    try:
-        genai.configure(api_key=GEMINI_API_KEY)
-        
-        # 優先試行モデルリスト
-        candidate_models = [
-            'gemini-2.5-flash',
-            'gemini-1.5-flash',
-            'gemini-1.5-flash-latest',
-            'gemini-pro'
-        ]
-        
-        # 利用可能なモデル一覧を取得して合致するものを検索
-        available_models = [m.name.replace('models/', '') for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
-        
-        for candidate in candidate_models:
-            if candidate in available_models:
-                return genai.GenerativeModel(candidate)
-        
-        # 一致しない場合は一覧の最初の対応モデルを使用
-        if available_models:
-            return genai.GenerativeModel(available_models[0])
+        return None, "【システムエラー】GEMINI_API_KEY が設定されていません。RenderのEnvironmentをご確認ください。"
+
+    genai.configure(api_key=GEMINI_API_KEY)
+    
+    system_instruction = (
+        "あなたは管理釣り場と天気予報の案内AIアシスタントです。"
+        "丁寧かつ分かりやすく、釣り人の役に立つ回答を簡潔に答えてください。"
+    )
+    prompt = f"{system_instruction}\n\nユーザーの質問: {user_message}"
+
+    last_error_msg = ""
+
+    # モデルを順番に試行
+    for model_name in GEMINI_CANDIDATE_MODELS:
+        try:
+            model = genai.GenerativeModel(model_name)
+            response = model.generate_content(prompt)
             
-        return genai.GenerativeModel('gemini-1.5-flash')
-    except Exception as e:
-        print(f"[初期化エラー] Geminiモデル取得失敗: {e}")
-        return None
+            if response and hasattr(response, 'text') and response.text:
+                print(f"[成功] モデル '{model_name}' で応答生成完了")
+                return response.text, None
+        except Exception as e:
+            last_error_msg = str(e)
+            print(f"[試行失敗] モデル '{model_name}': {e}")
+            continue
+
+    # 全モデル失敗時
+    return None, f"AI応答の生成に失敗しました。\n詳細: {last_error_msg[:150]}"
 
 
 # ==========================================
@@ -95,7 +104,7 @@ def callback():
 
 
 # ==========================================
-# 4. LINEメッセージ受信処理（Gemini API連携）
+# 4. LINEメッセージ受信処理（自動フォールバック対応）
 # ==========================================
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
@@ -104,34 +113,15 @@ def handle_message(event):
 
     print(f"[受信] ユーザー({user_id})からのメッセージ: {user_message}")
 
-    # 安全装置: テストモード時は管理者以外の応答をスキップ可能（現在はリプライのため返信）
+    # テストモード時の誤送信防止ログ
     if IS_TEST_MODE and ADMIN_USER_ID and user_id != ADMIN_USER_ID:
         print(f"[テストモード制限] 管理者以外のアクセスを検出: {user_id}")
 
-    model = get_working_gemini_model()
+    # AI応答生成の実行
+    ai_text, error_text = generate_gemini_response(user_message)
+    reply_text = ai_text if ai_text else error_text
 
-    if not model:
-        reply_text = "【システムエラー】Gemini APIキーが無効か、利用可能なモデルが見つかりません。"
-    else:
-        try:
-            system_instruction = (
-                "あなたは管理釣り場と天気予報の案内AIアシスタントです。"
-                "丁寧かつ分かりやすく、釣り人の役に立つ回答を簡潔に答えてください。"
-            )
-            prompt = f"{system_instruction}\n\nユーザーの質問: {user_message}"
-            
-            response = model.generate_content(prompt)
-            
-            if response and hasattr(response, 'text') and response.text:
-                reply_text = response.text
-            else:
-                reply_text = "申し訳ありません。AIからの回答を取得できませんでした。"
-
-        except Exception as e:
-            print(f"[エラー詳細] Gemini API呼び出し失敗: {e}")
-            reply_text = f"応答生成中にエラーが発生しました。\n詳細: {str(e)[:150]}"
-
-    # リプライ送信（完全無料枠）
+    # 無料リプライ枠で返信
     line_bot_api.reply_message(
         event.reply_token,
         TextSendMessage(text=reply_text)
@@ -151,7 +141,7 @@ def cron_trigger():
 
     # ガードレール1: 大量通知ストッパー（MAX_LIMIT制御）
     if item_count > MAX_LIMIT:
-        print(f"【安全装置発動】未通知件数が上限({MAX_LIMIT}件)を超えました。処理をスキップします。")
+        print(f"【安全装置発動】未通知件数が上限({MAX_LIMIT}件)を超えました。スキップします。")
         return jsonify({"status": "skipped", "reason": "MAX_LIMIT_EXCEEDED"}), 200
 
     # ガードレール2: サーバー負荷軽減のゆらぎ（1.0〜3.0秒待機）
