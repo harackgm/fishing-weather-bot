@@ -754,36 +754,25 @@ SPOT_WEATHER_DATA = {
     }
 }
 
-# 地域大枠（2段階選択用）
-BIG_AREA_GROUPS = [
-    {"label": "📍 静岡・神奈川・東京", "target": "エリア:静岡・神奈川・東京"},
-    {"label": "📍 栃木県全域", "target": "エリア:栃木"},
-    {"label": "📍 千葉・埼玉県", "target": "エリア:千葉・埼玉"},
-    {"label": "📍 群馬・茨城県", "target": "エリア:群馬・茨城"},
-    {"label": "📍 山梨・長野・その他", "target": "エリア:その他"}
+# 4枚に超圧縮した地域別カルーセルデータ
+COMPRESSED_SPOT_CAROUSELS = [
+    {
+        "title": "📍 静岡・神奈川・東京・千葉",
+        "spots": ["東山湖", "すその", "須川", "アルクス焼津", "浜名湖", "足柄", "中津川", "早戸川", "王禅寺", "開成", "浅川", "座間", "ジョイバレー", "ウォルトン", "NOIKE", "パラダイス", "いなプー"]
+    },
+    {
+        "title": "📍 埼玉・群馬",
+        "spots": ["長瀞", "彩の国", "朝霞", "しらこばと", "川越", "加須はなさき", "多摩湖", "中里", "伊古", "川場", "川場キングダム", "おくとね", "イワナセンター", "黒保根", "迦葉山", "片品", "中之沢", "宮城", "大崎", "けん太", "フック", "赤久縄", "太田", "東山道", "榛名"]
+    },
+    {
+        "title": "📍 栃木・茨城",
+        "spots": ["キングフィッシャー", "みどり", "那須高原", "尚仁沢", "つり天国", "関根", "408", "308", "蛇尾川", "レイクウッド", "なら山沼", "大芦川", "加賀", "発光路", "上永野", "柏倉", "遊水園", "アルクス宇都宮", "エリア21", "ベアーズパーク", "鬼怒川", "名草", "水戸南", "高萩", "つくば園", "FAJ", "ユザキ", "笠間", "DoDoo", "若栗", "ミッドクリーク"]
+    },
+    {
+        "title": "📍 甲信・東北・東海・関西",
+        "spots": ["鹿留", "小菅", "シルフ", "JF in Tsugane", "竜華池", "平谷湖", "ハーブ", "ニレ池", "鹿島槍", "槻の池", "あずみ野", "不忘", "白河", "ほのぼの", "WaDoNa", "鶴沼川", "オーパ", "あいづ", "上浜", "五頭", "瑞浪", "サンクチュアリ", "醒井", "高島", "千早川"]
+    }
 ]
-
-# カルーセル分類データ
-SPOT_CAROUSEL_GROUPS = {
-    "静岡・神奈川・東京": [
-        {"title": "📍 静岡・神奈川・東京", "spots": ["東山湖", "すその", "須川", "アルクス焼津", "浜名湖", "足柄", "中津川", "早戸川", "王禅寺", "開成", "浅川"]}
-    ],
-    "栃木": [
-        {"title": "📍 栃木（大田原・那須）", "spots": ["キングフィッシャー", "みどり", "那須高原", "尚仁沢", "つり天国", "関根", "408", "308", "蛇尾川"]},
-        {"title": "📍 栃木（小山・佐野・宇都宮）", "spots": ["レイクウッド", "なら山沼", "大芦川", "加賀", "発光路", "上永野", "柏倉", "遊水園", "アルクス宇都宮", "エリア21", "ベアーズパーク", "鬼怒川", "名草"]}
-    ],
-    "千葉・埼玉": [
-        {"title": "📍 千葉・埼玉", "spots": ["座間", "ジョイバレー", "ウォルトン", "NOIKE", "パラダイス", "いなプー", "長瀞", "彩の国", "朝霞", "しらこばと", "川越", "加須はなさき", "多摩湖", "中里", "伊古"]}
-    ],
-    "群馬・茨城": [
-        {"title": "📍 群馬", "spots": ["川場", "川場キングダム", "おくとね", "イワナセンター", "黒保根", "迦葉山", "片品", "中之沢", "宮城", "大崎", "けん太", "フック", "赤久縄", "太田", "東山道", "榛名"]},
-        {"title": "📍 茨城", "spots": ["水戸南", "高萩", "つくば園", "FAJ", "ユザキ", "笠間", "DoDoo", "若栗", "ミッドクリーク"]}
-    ],
-    "その他": [
-        {"title": "📍 山梨・長野", "spots": ["鹿留", "小菅", "シルフ", "JF in Tsugane", "竜華池", "平谷湖", "ハーブ", "ニレ池", "鹿島槍", "槻の池", "あずみ野"]},
-        {"title": "📍 東北・他エリア", "spots": ["不忘", "白河", "ほのぼの", "WaDoNa", "鶴沼川", "オーパ", "あいづ", "上浜", "五頭", "瑞浪", "サンクチュアリ", "醒井", "高島", "千早川"]}
-    ]
-}
 
 def clean_url(url_str):
     """URLの不要な空白を除去し安全な形式にする"""
@@ -808,11 +797,11 @@ def find_candidate_spots(user_text):
                 if spot_key not in exact_matches:
                     exact_matches.append(spot_key)
 
-    if exact_matches:
+    if len(exact_matches) == 1:
         return exact_matches
 
     # 2. 部分一致検索
-    matched_spots = []
+    matched_spots = exact_matches
     for spot_key, data in SPOT_WEATHER_DATA.items():
         for alias in data["aliases"]:
             alias_lower = alias.lower()
@@ -850,50 +839,11 @@ def get_spot_details(spot_key):
     hp_url = clean_url(data.get("hp_url", ""))
     return spot_key, data["url"], hp_url, map_url, data.get("tel", "")
 
-def build_big_area_select_flex():
-    """大枠エリア選択カード（縦ボタン）の構築"""
-    buttons = []
-    for group in BIG_AREA_GROUPS:
-        buttons.append({
-            "type": "button",
-            "action": {"type": "message", "label": group["label"], "text": group["target"]},
-            "style": "secondary",
-            "height": "sm",
-            "margin": "xs"
-        })
-
-    bubble = {
-        "type": "bubble",
-        "size": "mega",
-        "header": {
-            "type": "box", "layout": "vertical", "backgroundColor": "#0066cc", "paddingAll": "10px",
-            "contents": [
-                {"type": "text", "text": "🗺️ エリアを選択してください", "color": "#ffffff", "weight": "bold", "size": "md"}
-            ]
-        },
-        "body": {
-            "type": "box", "layout": "vertical", "spacing": "sm", "paddingAll": "12px",
-            "contents": [
-                {
-                    "type": "text",
-                    "text": "地域を選択すると、その地域の釣り場一覧が表示されます。",
-                    "wrap": True,
-                    "size": "xs",
-                    "color": "#555555"
-                }
-            ] + buttons
-        }
-    }
-    return FlexSendMessage(alt_text="エリア選択", contents=bubble)
-
-def build_spot_list_carousel_by_area(area_key):
-    """選択された特定エリアの釣り場カードカルーセル構築"""
-    group_list = SPOT_CAROUSEL_GROUPS.get(area_key, [])
-    if not group_list:
-        return None
-
+def build_spot_list_carousel_compressed():
+    """超圧縮版（4枚構成）カルーセルメッセージの構築"""
     bubbles = []
-    for group in group_list:
+    
+    for group in COMPRESSED_SPOT_CAROUSELS:
         title = group["title"]
         spots = group["spots"]
         
@@ -940,7 +890,7 @@ def build_spot_list_carousel_by_area(area_key):
         "type": "carousel",
         "contents": bubbles
     }
-    return FlexSendMessage(alt_text=f"{area_key}の釣り場一覧", contents=carousel)
+    return FlexSendMessage(alt_text="全国管理釣り場一覧", contents=carousel)
 
 def build_candidates_flex_message(candidates, query_text):
     """複数候補が見つかった場合の選択ボタンカードの構築"""
@@ -1287,18 +1237,10 @@ def handle_message(event):
 
         print(f"[受信] ユーザー({user_id}): {user_message}")
 
-        # 1. 一覧コマンド（大枠エリア選択カードを返信）
+        # 1. 一覧コマンド（直接4枚の超圧縮カルーセルを一括送信）
         if user_message in ["一覧", "リスト", "釣り場一覧", "エリア"]:
-            flex_msg = build_big_area_select_flex()
+            flex_msg = build_spot_list_carousel_compressed()
             line_bot_api.reply_message(event.reply_token, flex_msg)
-            return
-
-        # 2. エリア指定コマンド（ピンポイントで釣り場カルーセルを返信）
-        elif user_message.startswith("エリア:"):
-            area_key = user_message.replace("エリア:", "").strip()
-            flex_msg = build_spot_list_carousel_by_area(area_key)
-            if flex_msg:
-                line_bot_api.reply_message(event.reply_token, flex_msg)
             return
 
         elif user_message == "設定":
@@ -1333,7 +1275,7 @@ def handle_message(event):
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
             return
 
-        # 3. 検索キーワードから候補を取得
+        # 2. 検索キーワードから候補を取得
         candidates = find_candidate_spots(user_message)
 
         if len(candidates) == 1:
@@ -1358,7 +1300,7 @@ def handle_message(event):
             print(f"[送信] 候補選択 FlexMessage（{len(candidates)}件）を送信しました。")
             return
 
-        # 4. 該当なしの場合
+        # 3. 該当なしの場合
         reply_text = (
             "🔍 その釣り場は現在対応していません、もしくは名前が間違っています。\n\n"
             "「一覧」と送信すると全国60箇所の釣り場リストを表示できます！\n\n"
