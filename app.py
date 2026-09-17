@@ -194,7 +194,7 @@ SPOT_WEATHER_DATA = {
         "tel": "0289-84-0335",
         "aliases": ["上永野", "上永野FR", "かみながの"]
     },
-    "柏倉": {
+    "柏仓": {
         "url": "https://weathernews.jp/onebox/36.398276/139.660428/",
         "hp_url": "http://kashiwagurafishingpk.g3.xrea.com/",
         "search_name": "柏倉フィッシングパーク",
@@ -995,7 +995,13 @@ def build_spot_list_carousel_horizontal(user_id=None):
                 if len(pair) == 1:
                     row_buttons.append({"type": "box", "layout": "vertical", "flex": 1, "contents": [{"type": "text", "text": " "}]})
                     
-                fav_rows.append({"type": "box", "layout": "horizontal", "contents": row_buttons})
+                row_box = {"type": "box", "layout": "horizontal", "contents": row_buttons}
+                
+                # ★ 10個（5行）ごとに隙間（margin）を追加
+                if i > 0 and i % 10 == 0:
+                    row_box["margin"] = "lg"
+                    
+                fav_rows.append(row_box)
 
             fav_bubble = {
                 "type": "bubble",
@@ -1471,7 +1477,6 @@ def handle_postback(event):
 
         elif action == "fav_del_all_execute":
             success, msg = clear_favorite_spots(user_id)
-            # 【修正】全て削除後は「設定パネル」ではなく「一覧カルーセル」を返す
             flex_msg = build_spot_list_carousel_horizontal(user_id=user_id)
             line_bot_api.reply_message(event.reply_token, [TextSendMessage(text=f"✅ {msg}"), flex_msg])
 
