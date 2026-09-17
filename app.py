@@ -127,7 +127,7 @@ def remove_favorite_spot(user_id, spot_name):
     return True, f"「{spot_name}」をお気に入りから削除しました。"
 
 # ==========================================
-# 4. ウェザーニュース 実データスクレイピング関数 (日付別グループ化)
+# 4. ウェザーニュース 実データスクレイピング関数
 # ==========================================
 def fetch_hirayako_1hour_data():
     """現在時刻以降の予報を「日付」をキーとした辞書で取得"""
@@ -184,17 +184,14 @@ def fetch_hirayako_1hour_data():
             if daily_list:
                 weather_by_date[date_str] = daily_list
             
-            if len(weather_by_date) >= 10:
-                break
-            
         return weather_by_date
     except Exception as e:
         print(f"[スクレイピングエラー] {e}")
         return None
 
-def build_daily_carousel_flex_message(spot_name, weather_by_date):
-    """日付ごとに極限まで圧縮したカルーセルを構築"""
-    bubbles = []
+def build_daily_flex_messages(spot_name, weather_by_date):
+    """日付ごとに独立したFlex Messageのリストを構築（LINE制限により最大5件）"""
+    messages = []
     
     for date_str, daily_data in weather_by_date.items():
         rows = [
@@ -241,9 +238,14 @@ def build_daily_carousel_flex_message(spot_name, weather_by_date):
                 "contents": rows
             }
         }
-        bubbles.append(bubble)
+        
+        messages.append(FlexSendMessage(alt_text=f"{date_str}の天気", contents=bubble))
+        
+        # LINEの仕様上、1度に送信できるメッセージ（吹き出し）の数は最大5つまで
+        if len(messages) >= 5:
+            break
             
-    return {"type": "carousel", "contents": bubbles}
+    return messages
 
 # ==========================================
 # 5. Gemini AI応答生成関数
@@ -280,7 +282,7 @@ def generate_gemini_response(user_message, user_setting):
 # ==========================================
 @app.route("/", methods=['GET'])
 def top_page():
-    return "LINE Reply Bot Server (Compact Carousel) is running!", 200
+    return "LINE Reply Bot Server (Multi Bubble Flex) is running!", 200
 
 @app.route("/callback", methods=['POST'])
 def callback():
@@ -311,18 +313,14 @@ def handle_message(event):
             matched_pref = pref
             break
 
-    # 平谷湖のピンポイント予報（コンパクトカルーセル表示）
+    # 平谷湖のピンポイント予報（独立したメッセージとして縦並びで返信）
     if "平谷湖" in user_message:
         weather_by_date = fetch_hirayako_1hour_data()
         if weather_by_date:
-            flex_obj = build_daily_carousel_flex_message("平谷湖フィッシングスポット", weather_by_date)
+            messages = build_daily_flex_messages("平谷湖フィッシングスポット", weather_by_date)
             
-            messages = [
-                TextSendMessage(text="📍 平谷湖フィッシングスポット\n横にスワイプすると明日の天気も確認できます。"),
-                FlexSendMessage(alt_text="平谷湖の天気予報", contents=flex_obj)
-            ]
             line_bot_api.reply_message(event.reply_token, messages)
-            print("[送信] Compact Carousel FlexMessage応答を完了しました。")
+            print("[送信] Multi Bubble FlexMessage応答を完了しました。")
             return
         else:
             ai_text, error_text = generate_gemini_response(user_message, user_setting)
