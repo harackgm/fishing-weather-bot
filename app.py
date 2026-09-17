@@ -1,6 +1,7 @@
 import os
 import time
 import random
+import sqlite3
 import requests
 from bs4 import BeautifulSoup
 from flask import Flask, request, abort, jsonify
@@ -26,7 +27,11 @@ LINE_CHANNEL_SECRET = os.getenv('LINE_CHANNEL_SECRET', '').strip()
 line_bot_api = LineBotApi(LINE_CHANNEL_ACCESS_TOKEN)
 handler = WebhookHandler(LINE_CHANNEL_SECRET)
 
+ADMIN_USER_ID = os.getenv('ADMIN_USER_ID', '').strip()
+IS_TEST_MODE = True
 MAX_LIMIT = 5
+
+DB_PATH = 'user_data.db'
 
 # ==========================================
 # 3. ウェザーニュース 釣り場URL辞書 (全国網羅版)
@@ -192,7 +197,7 @@ def fetch_spot_1hour_data(url):
             if daily_list:
                 weather_by_date[date_str] = daily_list
             
-            # LINEで送れる最大数(5日分)でストップ
+            # LINEで1回に送れる最大メッセージ数(5つ)に合わせて5日分取得
             if len(weather_by_date) >= 5:
                 break
             
@@ -202,7 +207,7 @@ def fetch_spot_1hour_data(url):
         return None
 
 def build_vertical_flex_messages(spot_name, weather_by_date):
-    """日付ごとに独立したFlexMessageを最大サイズ(giga)で構築"""
+    """【修正済】カルーセルを廃止し、日付ごとに独立した吹き出しのリスト(最大5件)を返す"""
     messages = []
     
     for date_str, daily_data in weather_by_date.items():
@@ -237,7 +242,7 @@ def build_vertical_flex_messages(spot_name, weather_by_date):
             
         bubble = {
             "type": "bubble",
-            "size": "giga",
+            "size": "giga",  # 横幅は最大サイズ
             "header": {
                 "type": "box", "layout": "vertical", "backgroundColor": "#0066cc", "paddingAll": "16px",
                 "contents": [
@@ -251,8 +256,10 @@ def build_vertical_flex_messages(spot_name, weather_by_date):
             }
         }
         
+        # FlexSendMessageの「リスト」として追加
         messages.append(FlexSendMessage(alt_text=f"{spot_name} {date_str}の天気", contents=bubble))
         
+        # LINEの仕様上、1度のリプライで送信できるメッセージ（吹き出し）は最大5件まで
         if len(messages) >= 5:
             break
             
@@ -263,7 +270,7 @@ def build_vertical_flex_messages(spot_name, weather_by_date):
 # ==========================================
 @app.route("/", methods=['GET'])
 def top_page():
-    return "LINE Reply Bot Server (AI Removed & 60 Spots Added) is running!", 200
+    return "LINE Reply Bot Server (Vertical List Only) is running!", 200
 
 @app.route("/callback", methods=['POST'])
 def callback():
@@ -285,11 +292,11 @@ def handle_message(event):
 
     print(f"[受信] ユーザー({user_id}): {user_message}")
 
-    # 辞書(SPOT_WEATHER_URLS)から部分一致で釣り場を検索（例: "GP不忘" -> "不忘" でヒット）
+    # 辞書(SPOT_WEATHER_URLS)から部分一致で釣り場を検索
     target_spot_name = None
     target_url = None
     for spot_key, url in SPOT_WEATHER_URLS.items():
-        if spot_key in user_message:
+        if spot_key in user_message or user_message in spot_key:
             target_spot_name = spot_key
             target_url = url
             break
@@ -298,7 +305,10 @@ def handle_message(event):
     if target_url:
         weather_by_date = fetch_spot_1hour_data(target_url)
         if weather_by_date:
+            # build_vertical_flex_messages は FlexSendMessage の「リスト」を返します
             messages = build_vertical_flex_messages(target_spot_name, weather_by_date)
+            
+            # リストをそのまま渡すことで、横スクロールではなく「縦に複数の吹き出し」として送信されます
             line_bot_api.reply_message(event.reply_token, messages)
             print(f"[送信] {target_spot_name}のVertical FlexMessage応答を完了しました。")
             return
@@ -308,12 +318,12 @@ def handle_message(event):
             return
 
     else:
-        # どの釣り場にもマッチしなかった場合の定型文（AIは呼ばない）
+        # どの釣り場にもマッチしなかった場合の定型文
         reply_text = (
             "🔍 その釣り場は現在対応していません、もしくは名前が間違っています。\n\n"
             "【対応済みの主な釣り場】\n"
             "不忘 / 白河 / 朝霞 / 加賀 / 鬼怒川 / 鹿島槍 / 平谷湖 / 東山湖 / すその / サンクチュアリ...など、全国60箇所以上に対応！\n\n"
-            "※部分一致で検索できます（例: 「GP不忘」と送信すると「不忘」の天気が表示されます）"
+            "※部分一致で検索できます（例: 「キング」と送信すると「キングフィッシャー」の天気が表示されます）"
         )
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
         print("[送信] 未登録釣り場の定型文を完了しました。")
