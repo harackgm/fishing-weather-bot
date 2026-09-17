@@ -8,7 +8,7 @@ from bs4 import BeautifulSoup
 from flask import Flask, request, abort, jsonify
 from linebot import LineBotApi, WebhookHandler
 from linebot.exceptions import InvalidSignatureError
-from linebot.models import MessageEvent, TextMessage, TextSendMessage
+from linebot.models import MessageEvent, TextMessage, TextSendMessage, FlexSendMessage
 import google.generativeai as genai
 
 # ==========================================
@@ -35,7 +35,7 @@ GEMINI_API_KEY = os.getenv('GEMINI_API_KEY', '').strip().strip('"').strip("'")
 
 # テスト・本番モード切り替え制御（安全装置）
 ADMIN_USER_ID = os.getenv('ADMIN_USER_ID', '').strip()
-IS_TEST_MODE = True  # True: 管理者のみにテスト送信（誤送信防止）
+IS_TEST_MODE = True
 
 # 大量通知ストッパー（安全装置: 1回の処理で許可する最大件数）
 MAX_LIMIT = 5
@@ -49,14 +49,6 @@ GEMINI_CANDIDATE_MODELS = [
 
 # データベースファイルパス
 DB_PATH = 'user_data.db'
-
-# 天気アイコンIDから文字列への変換マップ
-WEATHER_ICON_MAP = {
-    "100": "晴れ", "101": "晴時々くもり", "103": "晴時々雨",
-    "200": "くもり", "201": "くもり時々晴", "202": "くもり一時雨",
-    "203": "くもり時々雨", "300": "雨", "301": "雨時々晴",
-    "302": "雨時々止む", "313": "雨時々くもり", "600": "晴れ間あり"
-}
 
 # 都道府県別 主要管理釣り場データ
 PREFECTURE_SPOTS = {
@@ -91,7 +83,6 @@ def init_db():
 
 init_db()
 
-
 def get_user_setting(user_id):
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
@@ -107,10 +98,8 @@ def get_user_setting(user_id):
         result = ('ウェザーニュース', '')
     else:
         result = row
-        
     conn.close()
     return result
-
 
 def update_user_source(user_id, source):
     conn = sqlite3.connect(DB_PATH)
@@ -119,40 +108,30 @@ def update_user_source(user_id, source):
     conn.commit()
     conn.close()
 
-
 def add_favorite_spot(user_id, spot_name):
     _, favorites = get_user_setting(user_id)
     fav_list = [s for s in favorites.split(',') if s]
-    
     if spot_name in fav_list:
         return False, "すでに登録されている釣り場です。"
     if len(fav_list) >= 5:
         return False, "お気に入り釣り場は最大5箇所まで登録可能です。"
-    
     fav_list.append(spot_name)
-    new_fav_str = ','.join(fav_list)
-    
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
-    cursor.execute('UPDATE user_settings SET favorite_spots = ? WHERE user_id = ?', (new_fav_str, user_id))
+    cursor.execute('UPDATE user_settings SET favorite_spots = ? WHERE user_id = ?', (','.join(fav_list), user_id))
     conn.commit()
     conn.close()
     return True, f"「{spot_name}」をお気に入りに追加しました。"
 
-
 def remove_favorite_spot(user_id, spot_name):
     _, favorites = get_user_setting(user_id)
     fav_list = [s for s in favorites.split(',') if s]
-    
     if spot_name not in fav_list:
         return False, "登録されていない釣り場です。"
-    
     fav_list.remove(spot_name)
-    new_fav_str = ','.join(fav_list)
-    
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
-    cursor.execute('UPDATE user_settings SET favorite_spots = ? WHERE user_id = ?', (new_fav_str, user_id))
+    cursor.execute('UPDATE user_settings SET favorite_spots = ? WHERE user_id = ?', (','.join(fav_list), user_id))
     conn.commit()
     conn.close()
     return True, f"「{spot_name}」をお気に入りから削除しました。"
@@ -161,69 +140,112 @@ def remove_favorite_spot(user_id, spot_name):
 # ==========================================
 # 4. ウェザーニュース 実データスクレイピング関数
 # ==========================================
-def fetch_hirayako_1hour_weather():
+def fetch_hirayako_1hour_data():
     """
-    ウェザーニュースから平谷湖の1時間予報（日時・天気・降水・気温・風速）を取得
+    ウェザーニュースから平谷湖の1時間予報を辞書形式で抽出
     """
-    # サーバー負荷軽減のゆらぎ（1.0〜2.0秒待機）
     time.sleep(random.uniform(1.0, 2.0))
-    
     url = "https://weathernews.jp/onebox/35.332243/137.632213/q=%E9%95%B7%E9%87%8E%E7%9C%8C%E4%B8%8B%E4%BC%8A%E9%82%A3%E9%83%A1%E5%B9%B3%E8%B0%B7%E6%9D%91%E5%B9%B3%E8%B0%B7%E6%9D%91%E4%B8%80%E5%86%86&v=faf7b174776bf3f82a649d0b9e178580b4814dd1bac1307f4459eeaba6254e66&temp=c&lang=ja"
-    headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-    }
+    headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}
     
     try:
         response = requests.get(url, headers=headers, timeout=8)
         response.raise_for_status()
         soup = BeautifulSoup(response.text, 'html.parser')
-
         flick_list = soup.find('div', id='flick_list_1hour')
-        if not flick_list:
-            return None
+        if not flick_list: return None
 
-        result_lines = ["🎣 【平谷湖 1時間毎の最新ピンポイント予報】\n(参照: ウェザーニュース実データ)\n"]
+        weather_list = []
         groups = flick_list.find_all('div', class_='group')
 
-        count = 0
         for group in groups:
-            date_tag = group.find('div', class_='date')
-            date_str = date_tag.text.strip() if date_tag else ""
-            result_lines.append(f"📅 【{date_str}】")
-
             lists = group.find_all('ul', class_='list')
             for item in lists:
-                if count >= 12:  # LINEで見やすいよう直近12時間分を出力
-                    break
+                if len(weather_list) >= 12: break  # 12時間分取得
+                
+                # 時間
                 time_tag = item.find('li', class_='time')
                 hour = time_tag.text.strip().zfill(2) + "時" if time_tag else "--時"
-
+                
+                # 天気画像URL抽出
+                img_url = "https://gvs.weathernews.jp/onebox/img/wxicon/200.png" # default
                 weather_tag = item.find('li', class_='weather')
                 img_tag = weather_tag.find('img') if weather_tag else None
-                weather_str = "不明"
                 if img_tag and 'src' in img_tag.attrs:
-                    match = re.search(r'/wxicon/(\d+)\.png', img_tag['src'])
-                    if match:
-                        weather_str = WEATHER_ICON_MAP.get(match.group(1), "不明")
+                    src = img_tag['src']
+                    if src.startswith('//'):
+                        img_url = "https:" + src
+                    elif src.startswith('/'):
+                        img_url = "https://weathernews.jp" + src
+                    else:
+                        img_url = src
 
-                rain = item.find('li', class_='rain').text.strip() if item.find('li', class_='rain') else "0ミリ"
-                temp = item.find('li', class_='temp').text.strip() if item.find('li', class_='temp') else "--℃"
+                # 降水・気温・風速
+                rain = item.find('li', class_='rain').text.strip().replace("ミリ", "mm") if item.find('li', class_='rain') else "-"
+                temp = item.find('li', class_='temp').text.strip() if item.find('li', class_='temp') else "-"
+                wind_p = item.find('li', class_='wind').find('p') if item.find('li', class_='wind') else None
+                wind = wind_p.text.strip() + "m" if wind_p else "-"
 
-                wind_tag = item.find('li', class_='wind')
-                wind_p = wind_tag.find('p') if wind_tag else None
-                wind = wind_p.text.strip() + "m/s" if wind_p else "0m/s"
-
-                result_lines.append(f"・{hour}: {weather_str} | 気温:{temp} | 降水:{rain} | 風:{wind}")
-                count += 1
-
-            if count >= 12:
-                break
-
-        return "\n".join(result_lines)
-
+                weather_list.append({
+                    "time": hour,
+                    "img_url": img_url,
+                    "temp": temp,
+                    "rain": rain,
+                    "wind": wind
+                })
+            if len(weather_list) >= 12: break
+            
+        return weather_list
     except Exception as e:
         print(f"[スクレイピングエラー] {e}")
         return None
+
+def build_flex_message(spot_name, weather_data):
+    """抽出した天気データを元にFlex MessageのJSON（辞書）を構築"""
+    contents = []
+    
+    # ヘッダー行（項目名）
+    contents.append({
+        "type": "box", "layout": "horizontal",
+        "contents": [
+            {"type": "text", "text": "時間", "weight": "bold", "size": "sm", "flex": 1, "align": "center"},
+            {"type": "text", "text": "天気", "weight": "bold", "size": "sm", "flex": 1, "align": "center"},
+            {"type": "text", "text": "気温", "weight": "bold", "size": "sm", "flex": 1, "align": "center"},
+            {"type": "text", "text": "降水", "weight": "bold", "size": "sm", "flex": 1, "align": "center"},
+            {"type": "text", "text": "風速", "weight": "bold", "size": "sm", "flex": 1, "align": "center"}
+        ]
+    })
+    contents.append({"type": "separator", "margin": "md"})
+
+    # データ行（12時間分ループ）
+    for data in weather_data:
+        contents.append({
+            "type": "box", "layout": "horizontal", "margin": "md",
+            "contents": [
+                {"type": "text", "text": data['time'], "size": "sm", "flex": 1, "align": "center", "gravity": "center", "weight": "bold"},
+                {"type": "image", "url": data['img_url'], "size": "xs", "flex": 1, "align": "center"},
+                {"type": "text", "text": data['temp'], "size": "sm", "flex": 1, "align": "center", "gravity": "center", "color": "#ff0000" if "℃" in data['temp'] and int(data['temp'].replace("℃","")) >= 25 else "#333333"},
+                {"type": "text", "text": data['rain'], "size": "sm", "flex": 1, "align": "center", "gravity": "center", "color": "#0000ff" if "mm" in data['rain'] and data['rain'] != "0mm" else "#333333"},
+                {"type": "text", "text": data['wind'], "size": "sm", "flex": 1, "align": "center", "gravity": "center"}
+            ]
+        })
+
+    # Flex Message全体構造
+    flex_dict = {
+        "type": "bubble",
+        "header": {
+            "type": "box", "layout": "vertical", "backgroundColor": "#0066cc",
+            "contents": [
+                {"type": "text", "text": f"📍 {spot_name}", "weight": "bold", "size": "md", "color": "#ffffff"},
+                {"type": "text", "text": "1時間毎のピンポイント天気", "size": "xs", "color": "#ffffff", "margin": "sm"}
+            ]
+        },
+        "body": {
+            "type": "box", "layout": "vertical", "spacing": "sm",
+            "contents": contents
+        }
+    }
+    return flex_dict
 
 
 # ==========================================
@@ -254,7 +276,6 @@ def generate_gemini_response(user_message, user_setting):
         except Exception as e:
             last_error_msg = str(e)
             continue
-
     return None, f"AI応答の生成に失敗しました。\n詳細: {last_error_msg[:150]}"
 
 
@@ -263,20 +284,16 @@ def generate_gemini_response(user_message, user_setting):
 # ==========================================
 @app.route("/", methods=['GET'])
 def top_page():
-    return "LINE Reply Bot Server (Scraper & AI) is running!", 200
-
+    return "LINE Reply Bot Server (Flex Message) is running!", 200
 
 @app.route("/callback", methods=['POST'])
 def callback():
     signature = request.headers.get('X-Line-Signature', '')
     body = request.get_data(as_text=True)
-
     try:
         handler.handle(body, signature)
     except InvalidSignatureError:
-        print("[エラー] LINEからの署名検証に失敗しました。")
         abort(400)
-
     return 'OK', 200
 
 
@@ -293,32 +310,32 @@ def handle_message(event):
     user_setting = get_user_setting(user_id)
     source, favorites = user_setting
 
-    # --- コマンド判定 ---
     matched_pref = None
     for pref in PREFECTURE_SPOTS.keys():
         if pref in user_message or pref.replace("県", "").replace("府", "").replace("都", "") in user_message:
             matched_pref = pref
             break
 
-    # 平谷湖のピンポイント予報（スクレイピング実データ優先）
+    # 平谷湖のピンポイント予報（Flex Messageで返信）
     if "平谷湖" in user_message:
-        weather_data = fetch_hirayako_1hour_weather()
+        weather_data = fetch_hirayako_1hour_data()
         if weather_data:
-            reply_text = weather_data
+            flex_obj = build_flex_message("平谷湖フィッシングスポット", weather_data)
+            line_bot_api.reply_message(event.reply_token, FlexSendMessage(alt_text="平谷湖の天気予報", contents=flex_obj))
+            print("[送信] FlexMessage応答を完了しました。")
+            return
         else:
-            # スクレイピング失敗時はGeminiで補完
             ai_text, error_text = generate_gemini_response(user_message, user_setting)
             reply_text = ai_text if ai_text else error_text
 
     elif user_message == "設定":
         fav_list = [s for s in favorites.split(',') if s]
         fav_display = "\n".join([f"・{spot}" for spot in fav_list]) if fav_list else "・未登録"
-        
         reply_text = (
             "⚙️ 【現在の設定状況】\n\n"
-            "■ 天気詳細度: 常に最詳細モード（高精度）\n"
+            "■ 天気詳細度: 常に最詳細モード\n"
             f"■ 参照ソース: {source}\n"
-            f"■ お気に入り釣り場 (最大5箇所):\n{fav_display}\n\n"
+            f"■ お気に入り釣り場:\n{fav_display}\n\n"
             "【設定変更コマンド】\n"
             "・「埼玉県」「長野県」など（釣り場一覧を表示）\n"
             "・「ウェザーニュース」「tenki.jp」\n"
@@ -329,12 +346,7 @@ def handle_message(event):
     elif matched_pref:
         spots = PREFECTURE_SPOTS[matched_pref]
         spot_list_text = "\n".join([f"・{s}" for s in spots])
-        reply_text = (
-            f"📍 【{matched_pref}の主な管理釣り場】\n\n"
-            f"{spot_list_text}\n\n"
-            "お気に入りに登録する場合は以下のように送信してください。\n"
-            f"例: 追加:{spots[0]}"
-        )
+        reply_text = f"📍 【{matched_pref}の主な管理釣り場】\n\n{spot_list_text}\n\nお気に入りに登録する場合は以下のように送信してください。\n例: 追加:{spots[0]}"
 
     elif user_message in ["ウェザーニュース", "tenki.jp"]:
         update_user_source(user_id, user_message)
@@ -342,63 +354,35 @@ def handle_message(event):
 
     elif user_message.startswith("追加:"):
         spot_name = user_message.replace("追加:", "").strip()
-        if not spot_name:
-            reply_text = "⚠️ 釣り場名を入力してください。\n例: 追加:朝霞ガーデン"
-        else:
-            success, msg = add_favorite_spot(user_id, spot_name)
-            reply_text = f"✅ {msg}" if success else f"⚠️ {msg}"
+        success, msg = add_favorite_spot(user_id, spot_name) if spot_name else (False, "⚠️ 釣り場名を入力してください。")
+        reply_text = f"✅ {msg}" if success else f"⚠️ {msg}"
 
     elif user_message.startswith("削除:"):
         spot_name = user_message.replace("削除:", "").strip()
-        if not spot_name:
-            reply_text = "⚠️ 削除する釣り場名を入力してください。\n例: 削除:朝霞ガーデン"
-        else:
-            success, msg = remove_favorite_spot(user_id, spot_name)
-            reply_text = f"✅ {msg}" if success else f"⚠️ {msg}"
+        success, msg = remove_favorite_spot(user_id, spot_name) if spot_name else (False, "⚠️ 削除する釣り場名を入力してください。")
+        reply_text = f"✅ {msg}" if success else f"⚠️ {msg}"
 
     elif user_message in ["ヘルプ", "使い方"]:
-        reply_text = (
-            "💡 【使い方ガイド】\n\n"
-            "■ 釣り場の検索: 「埼玉県」「長野県」などの県名を送信\n"
-            "■ 設定の確認: 「設定」と送信\n"
-            "■ 実データ予報: 「平谷湖」と送信（1時間毎のリアルタイム予報）\n"
-            "■ お気に入り登録: 「追加:釣り場名」と送信\n"
-            "■ お気に入り削除: 「削除:釣り場名」と送信"
-        )
+        reply_text = "💡 【使い方ガイド】\n\n■ 釣り場検索: 「埼玉県」「長野県」\n■ 設定確認: 「設定」\n■ 実データ予報: 「平谷湖」\n■ お気に入り登録: 「追加:釣り場名」\n■ お気に入り削除: 「削除:釣り場名」"
 
     else:
         ai_text, error_text = generate_gemini_response(user_message, user_setting)
         reply_text = ai_text if ai_text else error_text
 
-    # 無料リプライ送信
-    line_bot_api.reply_message(
-        event.reply_token,
-        TextSendMessage(text=reply_text)
-    )
+    line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
     print("[送信] リプライ応答を完了しました。")
-
 
 # ==========================================
 # 8. 定期データ更新用エンドポイント（安全装置付き）
 # ==========================================
 @app.route("/cron_trigger", methods=['GET', 'POST'])
 def cron_trigger():
-    print("\n--- cron-job.org からの定期トリガーを受信しました ---")
-
-    unnotified_items = []
-    item_count = len(unnotified_items)
-
-    # ガードレール1: 大量通知ストッパー（MAX_LIMIT制御）
+    print("\n--- cron-job.org からの定期トリガーを受信 ---")
+    item_count = 0
     if item_count > MAX_LIMIT:
-        print(f"【安全装置発動】未通知件数が上限({MAX_LIMIT}件)を超えました。スキップします。")
         return jsonify({"status": "skipped", "reason": "MAX_LIMIT_EXCEEDED"}), 200
-
-    # ガードレール2: サーバー負荷軽減のゆらぎ（1.0〜3.0秒待機）
     time.sleep(random.uniform(1.0, 3.0))
-
-    print("[完了] 天気データの最新化処理が完了しました。")
     return jsonify({"status": "success", "message": "DB updated safely."}), 200
-
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
