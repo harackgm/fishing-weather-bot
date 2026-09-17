@@ -4,13 +4,13 @@ import random
 import requests
 import traceback
 import difflib
-import re  # スマホ特有の入力ブレを吸収する正規表現モジュールを追加
-from urllib.parse import quote, urlparse
+import re
+from urllib.parse import quote, urlparse, parse_qsl
 from bs4 import BeautifulSoup
 from flask import Flask, request, abort, jsonify
 from linebot import LineBotApi, WebhookHandler
 from linebot.exceptions import InvalidSignatureError, LineBotApiError
-from linebot.models import MessageEvent, TextMessage, TextSendMessage, FlexSendMessage
+from linebot.models import MessageEvent, TextMessage, TextSendMessage, FlexSendMessage, PostbackEvent
 from supabase import create_client, Client
 
 # ==========================================
@@ -34,6 +34,7 @@ handler = WebhookHandler(LINE_CHANNEL_SECRET)
 ADMIN_USER_ID = os.getenv('ADMIN_USER_ID', '').strip()
 IS_TEST_MODE = True  # テストモード（Trueの場合、ADMIN_USER_IDのみに通知送信）
 MAX_LIMIT = 5        # 大量通知ストッパー（1回の処理上限数）
+MAX_FAVORITES = 20   # ★お気に入り登録の最大数（20箇所に拡張）
 
 # Supabase接続初期化
 SUPABASE_URL = os.getenv('SUPABASE_URL', '').strip()
@@ -848,6 +849,45 @@ def get_spot_details(spot_key):
     hp_url = clean_url(data.get("hp_url", ""))
     return spot_key, data["url"], hp_url, map_url, data.get("tel", "")
 
+def build_settings_flex_message(fav_list):
+    """【GUIウィザード】お気に入り管理・一括削除パネルの構築"""
+    rows = []
+    if not fav_list:
+        rows.append({
+            "type": "text",
+            "text": "現在お気に入りは登録されていません。\n\n釣り場を検索し、天気カード内の「⭐️ 登録」ボタンを押すだけで追加できます！",
+            "wrap": True, "size": "sm", "color": "#555555"
+        })
+    else:
+        for spot in fav_list:
+            rows.append({
+                "type": "box", "layout": "horizontal", "margin": "md", "alignItems": "center",
+                "contents": [
+                    {"type": "text", "text": f"・ {spot}", "size": "sm", "weight": "bold", "flex": 2, "color": "#333333"},
+                    {
+                        "type": "button",
+                        "action": {"type": "postback", "label": "🗑️ 削除", "data": f"action=fav_del&spot={spot}"},
+                        "style": "secondary", "color": "#ffe6e6", "height": "sm", "flex": 1
+                    }
+                ]
+            })
+
+    bubble = {
+        "type": "bubble",
+        "size": "mega",
+        "header": {
+            "type": "box", "layout": "vertical", "backgroundColor": "#d4af37", "paddingAll": "10px",
+            "contents": [
+                {"type": "text", "text": f"⚙️ お気に入り管理 ({len(fav_list)}/{MAX_FAVORITES}件)", "color": "#ffffff", "weight": "bold", "size": "md"}
+            ]
+        },
+        "body": {
+            "type": "box", "layout": "vertical", "spacing": "sm", "paddingAll": "15px",
+            "contents": rows
+        }
+    }
+    return FlexSendMessage(alt_text="お気に入り管理パネル", contents=bubble)
+
 def build_spot_list_messages_colored_split(user_id=None):
     """10KB容量制限を完全回避するため、1通ごとに独立したFlexMessageの配列（最大5通）を構築して一括送信"""
     flex_messages = []
@@ -1005,8 +1045,8 @@ def add_favorite_spot(user_id, spot_name):
     fav_list = [s for s in favorites.split(',') if s]
     if target_name in fav_list:
         return False, f"「{target_name}」はすでに登録されています。"
-    if len(fav_list) >= 5:
-        return False, "お気に入り釣り場は最大5箇所まで登録可能です。"
+    if len(fav_list) >= MAX_FAVORITES:
+        return False, f"お気に入り釣り場は最大{MAX_FAVORITES}箇所まで登録可能です。"
     
     fav_list.append(target_name)
     try:
@@ -1119,8 +1159,8 @@ def fetch_spot_1hour_data(url):
         print(f"[スクレイピングエラー] {e}")
         return None
 
-def build_grid_flex_message(spot_name, weather_by_date, hp_url="", map_url="", tel=""):
-    """田の字型（2行×2列）グリッドレイアウト"""
+def build_grid_flex_message(spot_name, weather_by_date, hp_url="", map_url="", tel="", is_favorite=False):
+    """田の字型（2行×2列）グリッドレイアウト + ウィザード（ワンタップ登録）ボタン"""
     dates = list(weather_by_date.keys())
     
     def create_day_column(date_str):
@@ -1224,7 +1264,7 @@ def build_grid_flex_message(spot_name, weather_by_date, hp_url="", map_url="", t
             ]
         })
 
-    # ヘッダー内のリンクボタン組み立て
+    # ヘッダー内のリンク＆【お気に入りウィザードボタン】の組み立て
     header_buttons = []
     clean_hp = clean_url(hp_url)
     clean_map = clean_url(map_url)
@@ -1240,6 +1280,20 @@ def build_grid_flex_message(spot_name, weather_by_date, hp_url="", map_url="", t
             "type": "button",
             "action": {"type": "uri", "label": "🗺️ 地図", "uri": clean_map},
             "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"
+        })
+
+    # ワンタップお気に入り登録/解除ボタン（GUIウィザード中核機能）
+    if is_favorite:
+        header_buttons.append({
+            "type": "button",
+            "action": {"type": "postback", "label": "🗑️ 解除", "data": f"action=fav_del&spot={spot_name}"},
+            "style": "secondary", "height": "sm", "flex": 1, "margin": "xs", "color": "#ffcccc"
+        })
+    else:
+        header_buttons.append({
+            "type": "button",
+            "action": {"type": "postback", "label": "⭐️ 登録", "data": f"action=fav_add&spot={spot_name}"},
+            "style": "secondary", "height": "sm", "flex": 1, "margin": "xs", "color": "#fffde7"
         })
 
     header_contents = [
@@ -1285,6 +1339,7 @@ def callback():
 # ==========================================
 # 7. LINEメッセージ受信処理
 # ==========================================
+# テキストメッセージ処理
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
     try:
@@ -1293,7 +1348,7 @@ def handle_message(event):
 
         print(f"[受信] ユーザー({user_id}): {raw_msg}")
 
-        # 1. お気に入り追加コマンド（正規表現で全角・半角スペースのブレを完全吸収）
+        # 旧式のテキスト追加・削除コマンド（互換性維持のため残存）
         add_match = re.match(r'^追加[\s:： ]*(.+)$', raw_msg)
         if add_match:
             spot_name = add_match.group(1).strip()
@@ -1302,7 +1357,6 @@ def handle_message(event):
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
             return
 
-        # 2. お気に入り削除コマンド
         del_match = re.match(r'^削除[\s:： ]*(.+)$', raw_msg)
         if del_match:
             spot_name = del_match.group(1).strip()
@@ -1311,43 +1365,35 @@ def handle_message(event):
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
             return
 
-        # 3. 一覧コマンド
         if raw_msg in ["一覧", "リスト", "釣り場一覧", "エリア"]:
             flex_msgs = build_spot_list_messages_colored_split(user_id=user_id)
             line_bot_api.reply_message(event.reply_token, flex_msgs)
             return
 
-        # 4. 設定確認コマンド
+        # 「設定」コマンド -> GUIウィザード（設定パネル）を返信
         if raw_msg == "設定":
-            user_setting = get_user_setting(user_id)
-            source, favorites = user_setting
+            _, favorites = get_user_setting(user_id)
             fav_list = [s for s in favorites.split(',') if s]
-            fav_display = "\n".join([f"・{spot}" for spot in fav_list]) if fav_list else "・未登録"
-            reply_text = (
-                "⚙️ 【現在の設定状況】\n\n"
-                "■ 天気詳細度: 常に最詳細モード\n"
-                f"■ 参照ソース: {source}\n"
-                f"■ お気に入り釣り場:\n{fav_display}\n\n"
-                "【設定変更コマンド】\n"
-                "・「追加 釣り場名」\n"
-                "・「削除 釣り場名」\n"
-                "・「一覧」（釣り場リストを表示）"
-            )
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
+            flex_msg = build_settings_flex_message(fav_list)
+            line_bot_api.reply_message(event.reply_token, flex_msg)
             return
 
-        # 5. 通常の天気検索（候補抽出）
+        # 釣り場検索（候補抽出）
         candidates = find_candidate_spots(raw_msg)
 
         if len(candidates) == 1:
             target_spot_name = candidates[0]
             target_spot_name, target_url, hp_url, map_url, tel = get_spot_details(target_spot_name)
             
+            # DBから現在のユーザーのお気に入り状況を取得し、⭐️ボタンの状態を切り替える
+            _, favorites = get_user_setting(user_id)
+            fav_list = [s for s in favorites.split(',') if s]
+            is_fav = target_spot_name in fav_list
+
             weather_by_date = fetch_spot_1hour_data(target_url)
             if weather_by_date:
-                flex_msg = build_grid_flex_message(target_spot_name, weather_by_date, hp_url, map_url, tel)
+                flex_msg = build_grid_flex_message(target_spot_name, weather_by_date, hp_url, map_url, tel, is_favorite=is_fav)
                 line_bot_api.reply_message(event.reply_token, flex_msg)
-                print(f"[送信] {target_spot_name}の Grid FlexMessage応答を完了しました。")
             else:
                 error_msg = f"⚠️ 【{target_spot_name}】の天気データの取得に失敗しました。"
                 line_bot_api.reply_message(event.reply_token, TextSendMessage(text=error_msg))
@@ -1356,10 +1402,9 @@ def handle_message(event):
         elif len(candidates) > 1:
             flex_msg = build_candidates_flex_message(candidates, raw_msg)
             line_bot_api.reply_message(event.reply_token, flex_msg)
-            print(f"[送信] 候補選択 FlexMessage（{len(candidates)}件）を送信しました。")
             return
 
-        # 6. 該当なしの場合
+        # 該当なし
         reply_text = (
             "🔍 その釣り場は現在対応していません、もしくは名前が間違っています。\n\n"
             "「一覧」と送信すると全国60箇所の釣り場リストを表示できます！\n\n"
@@ -1375,6 +1420,37 @@ def handle_message(event):
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ 処理中にエラーが発生しました。時間を置いて再度お試しください。"))
         except Exception:
             pass
+
+# ボタン（Postback）アクションの受信処理
+@handler.add(PostbackEvent)
+def handle_postback(event):
+    try:
+        user_id = event.source.user_id
+        # "action=fav_add&spot=王禅寺" のようなデータを辞書型に変換
+        data_dict = dict(parse_qsl(event.postback.data))
+        action = data_dict.get("action")
+        spot_name = data_dict.get("spot")
+
+        # ウィザード：「⭐️登録」ボタンが押された場合
+        if action == "fav_add":
+            success, msg = add_favorite_spot(user_id, spot_name)
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"✅ {msg}"))
+
+        # ウィザード：「🗑️解除（削除）」ボタンが押された場合
+        elif action == "fav_del":
+            success, msg = remove_favorite_spot(user_id, spot_name)
+            # 削除後、最新状態の「設定パネル」を再生成して返す（UIのシームレスな更新）
+            _, favorites = get_user_setting(user_id)
+            fav_list = [s for s in favorites.split(',') if s]
+            flex_msg = build_settings_flex_message(fav_list)
+            
+            line_bot_api.reply_message(event.reply_token, [
+                TextSendMessage(text=f"✅ {msg}"),
+                flex_msg
+            ])
+
+    except Exception as e:
+        print(f"Postback Error: {e}")
 
 # ==========================================
 # 8. 定期トリガーエンドポイント（Cron自動通知用）
@@ -1424,7 +1500,8 @@ def cron_trigger():
                 print(f"ユーザー({uid}) へ 「{matched_spot}」 の定期通知を処理中...")
                 weather_data = fetch_spot_1hour_data(url)
                 if weather_data:
-                    flex_msg = build_grid_flex_message(matched_spot, weather_data, hp_url, map_url, tel)
+                    # 定期通知時はお気に入り登録ボタン等の一時的UIは不要なため is_favorite=False とする
+                    flex_msg = build_grid_flex_message(matched_spot, weather_data, hp_url, map_url, tel, is_favorite=False)
                     line_bot_api.push_message(uid, flex_msg)
                     print(f"-> 「{matched_spot}」 のPush送信成功")
                 
