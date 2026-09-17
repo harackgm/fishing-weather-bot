@@ -278,7 +278,8 @@ def build_grid_flex_message(spot_name, weather_by_date):
     
     def create_day_column(date_str):
         if not date_str:
-            return {"type": "box", "layout": "vertical", "flex": 1, "contents": []}
+            # 安全処理: データが空の場合はLINEエラーを防ぐため透明なテキスト枠を返す
+            return {"type": "box", "layout": "vertical", "flex": 1, "contents": [{"type": "text", "text": " ", "size": "xs"}]}
             
         daily_data = weather_by_date[date_str]
         rows = [
@@ -380,7 +381,7 @@ def callback():
     return 'OK', 200
 
 # ==========================================
-# 7. LINEメッセージ受信処理（安全保護付き）
+# 7. LINEメッセージ受信処理（安全保護・優先順位修正版）
 # ==========================================
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
@@ -390,6 +391,39 @@ def handle_message(event):
 
         print(f"[受信] ユーザー({user_id}): {user_message}")
 
+        # 1. ユーザーコマンドを「最優先」で判定（追加・削除・設定など）
+        if user_message == "設定":
+            user_setting = get_user_setting(user_id)
+            source, favorites = user_setting
+            fav_list = [s for s in favorites.split(',') if s]
+            fav_display = "\n".join([f"・{spot}" for spot in fav_list]) if fav_list else "・未登録"
+            reply_text = (
+                "⚙️ 【現在の設定状況】\n\n"
+                "■ 天気詳細度: 常に最詳細モード\n"
+                f"■ 参照ソース: {source}\n"
+                f"■ お気に入り釣り場:\n{fav_display}\n\n"
+                "【設定変更コマンド】\n"
+                "・「追加:釣り場名」\n"
+                "・「削除:釣り場名」"
+            )
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
+            return
+
+        elif user_message.startswith("追加:"):
+            spot_name = user_message.replace("追加:", "").strip()
+            success, msg = add_favorite_spot(user_id, spot_name) if spot_name else (False, "⚠️ 釣り場名を入力してください。")
+            reply_text = f"✅ {msg}" if success else f"⚠️ {msg}"
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
+            return
+
+        elif user_message.startswith("削除:"):
+            spot_name = user_message.replace("削除:", "").strip()
+            success, msg = remove_favorite_spot(user_id, spot_name) if spot_name else (False, "⚠️ 削除する釣り場名を入力してください。")
+            reply_text = f"✅ {msg}" if success else f"⚠️ {msg}"
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
+            return
+
+        # 2. コマンド以外の場合は「天気検索」として判定
         target_spot_name = None
         target_url = None
         for spot_key, url in SPOT_WEATHER_URLS.items():
@@ -408,43 +442,15 @@ def handle_message(event):
                 error_msg = f"⚠️ 【{target_spot_name}】の天気データの取得に失敗しました。"
                 line_bot_api.reply_message(event.reply_token, TextSendMessage(text=error_msg))
             return
-
-        elif user_message == "設定":
-            user_setting = get_user_setting(user_id)
-            source, favorites = user_setting
-            fav_list = [s for s in favorites.split(',') if s]
-            fav_display = "\n".join([f"・{spot}" for spot in fav_list]) if fav_list else "・未登録"
-            reply_text = (
-                "⚙️ 【現在の設定状況】\n\n"
-                "■ 天気詳細度: 常に最詳細モード\n"
-                f"■ 参照ソース: {source}\n"
-                f"■ お気に入り釣り場:\n{fav_display}\n\n"
-                "【設定変更コマンド】\n"
-                "・「追加:釣り場名」\n"
-                "・「削除:釣り場名」"
-            )
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
-
-        elif user_message.startswith("追加:"):
-            spot_name = user_message.replace("追加:", "").strip()
-            success, msg = add_favorite_spot(user_id, spot_name) if spot_name else (False, "⚠️ 釣り場名を入力してください。")
-            reply_text = f"✅ {msg}" if success else f"⚠️ {msg}"
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
-
-        elif user_message.startswith("削除:"):
-            spot_name = user_message.replace("削除:", "").strip()
-            success, msg = remove_favorite_spot(user_id, spot_name) if spot_name else (False, "⚠️ 削除する釣り場名を入力してください。")
-            reply_text = f"✅ {msg}" if success else f"⚠️ {msg}"
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
-
-        else:
-            reply_text = (
-                "🔍 その釣り場は現在対応していません、もしくは名前が間違っています。\n\n"
-                "【対応済みの主な釣り場】\n"
-                "不忘 / 白河 / 朝霞 / 加賀 / 鬼怒川 / 鹿島槍 / 平谷湖 / 東山湖 / すその / サンクチュアリ...など、全国60箇所以上に対応！\n\n"
-                "※部分一致で検索できます（例: 「キング」と送信すると「キングフィッシャー」の天気が表示されます）"
-            )
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
+            
+        # 3. どちらにも該当しない場合
+        reply_text = (
+            "🔍 その釣り場は現在対応していません、もしくは名前が間違っています。\n\n"
+            "【対応済みの主な釣り場】\n"
+            "不忘 / 白河 / 朝霞 / 加賀 / 鬼怒川 / 鹿島槍 / 平谷湖 / 東山湖 / すその / サンクチュアリ...など、全国60箇所以上に対応！\n\n"
+            "※部分一致で検索できます（例: 「キング」と送信すると「キングフィッシャー」の天気が表示されます）"
+        )
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
 
     except Exception as e:
         print(f"[システムエラー] {e}")
