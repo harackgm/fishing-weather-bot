@@ -754,22 +754,34 @@ SPOT_WEATHER_DATA = {
     }
 }
 
-# 4枚に超圧縮した地域別カルーセルデータ
-COMPRESSED_SPOT_CAROUSELS = [
+# 地域ごとの色分けカラーテーマ定義
+COLOR_GROUPS = [
     {
         "title": "📍 静岡・神奈川・東京・千葉",
+        "header_bg": "#0066cc",   # ブルーヘッダー
+        "cell_bg": "#e6f0fa",     # 薄いブルー背景セル
+        "text_color": "#004085",  # 濃いブルー文字
         "spots": ["東山湖", "すその", "須川", "アルクス焼津", "浜名湖", "足柄", "中津川", "早戸川", "王禅寺", "開成", "浅川", "座間", "ジョイバレー", "ウォルトン", "NOIKE", "パラダイス", "いなプー"]
     },
     {
         "title": "📍 埼玉・群馬",
+        "header_bg": "#2e7d32",   # グリーンヘッダー
+        "cell_bg": "#e8f5e9",     # 薄いグリーン背景セル
+        "text_color": "#1b5e20",  # 濃いグリーン文字
         "spots": ["長瀞", "彩の国", "朝霞", "しらこばと", "川越", "加須はなさき", "多摩湖", "中里", "伊古", "川場", "川場キングダム", "おくとね", "イワナセンター", "黒保根", "迦葉山", "片品", "中之沢", "宮城", "大崎", "けん太", "フック", "赤久縄", "太田", "東山道", "榛名"]
     },
     {
         "title": "📍 栃木・茨城",
+        "header_bg": "#e65100",   # オレンジヘッダー
+        "cell_bg": "#fff3e0",     # 薄いオレンジ背景セル
+        "text_color": "#bf360c",  # 濃いオレンジ文字
         "spots": ["キングフィッシャー", "みどり", "那須高原", "尚仁沢", "つり天国", "関根", "408", "308", "蛇尾川", "レイクウッド", "なら山沼", "大芦川", "加賀", "発光路", "上永野", "柏倉", "遊水園", "アルクス宇都宮", "エリア21", "ベアーズパーク", "鬼怒川", "名草", "水戸南", "高萩", "つくば園", "FAJ", "ユザキ", "笠間", "DoDoo", "若栗", "ミッドクリーク"]
     },
     {
         "title": "📍 甲信・東北・東海・関西",
+        "header_bg": "#6a1b9a",   # パープルヘッダー
+        "cell_bg": "#f3e5f5",     # 薄いパープル背景セル
+        "text_color": "#4a148c",  # 濃いパープル文字
         "spots": ["鹿留", "小菅", "シルフ", "JF in Tsugane", "竜華池", "平谷湖", "ハーブ", "ニレ池", "鹿島槍", "槻の池", "あずみ野", "不忘", "白河", "ほのぼの", "WaDoNa", "鶴沼川", "オーパ", "あいづ", "上浜", "五頭", "瑞浪", "サンクチュアリ", "醒井", "高島", "千早川"]
     }
 ]
@@ -839,58 +851,87 @@ def get_spot_details(spot_key):
     hp_url = clean_url(data.get("hp_url", ""))
     return spot_key, data["url"], hp_url, map_url, data.get("tel", "")
 
-def build_spot_list_carousel_compressed():
-    """超圧縮版（4枚構成）カルーセルメッセージの構築"""
-    bubbles = []
-    
-    for group in COMPRESSED_SPOT_CAROUSELS:
-        title = group["title"]
+def build_single_bubble_colored_spot_list():
+    """縦型統合＆カラーセル色分け一覧メッセージの構築"""
+    body_contents = []
+
+    for idx, group in enumerate(COLOR_GROUPS):
+        if idx > 0:
+            body_contents.append({"type": "separator", "margin": "lg"})
+
+        # エリアヘッダー
+        body_contents.append({
+            "type": "box",
+            "layout": "vertical",
+            "backgroundColor": group["header_bg"],
+            "paddingAll": "6px",
+            "cornerRadius": "sm",
+            "margin": "md" if idx > 0 else "none",
+            "contents": [
+                {"type": "text", "text": group["title"], "color": "#ffffff", "weight": "bold", "size": "sm", "align": "center"}
+            ]
+        })
+
+        # 2列カラーセルボタンレイアウト
         spots = group["spots"]
-        
         rows = []
         for i in range(0, len(spots), 2):
             pair = spots[i:i+2]
-            row_buttons = []
+            row_cells = []
             for spot in pair:
-                row_buttons.append({
-                    "type": "button",
-                    "action": {"type": "message", "label": spot, "text": spot},
-                    "style": "secondary",
-                    "height": "sm",
+                row_cells.append({
+                    "type": "box",
+                    "layout": "vertical",
+                    "backgroundColor": group["cell_bg"],
+                    "cornerRadius": "sm",
+                    "paddingAll": "6px",
+                    "alignItems": "center",
+                    "justifyContent": "center",
                     "flex": 1,
-                    "margin": "xs"
+                    "margin": "xs",
+                    "action": {"type": "message", "label": spot, "text": spot},
+                    "contents": [
+                        {"type": "text", "text": spot, "size": "xs", "weight": "bold", "color": group["text_color"], "align": "center", "wrap": True}
+                    ]
                 })
             if len(pair) == 1:
-                row_buttons.append({"type": "box", "layout": "vertical", "flex": 1, "contents": [{"type": "text", "text": " ", "size": "xs"}]})
-                
+                row_cells.append({"type": "box", "layout": "vertical", "flex": 1, "contents": [{"type": "text", "text": " ", "size": "xs"}]})
+
             rows.append({
                 "type": "box",
                 "layout": "horizontal",
                 "margin": "xs",
-                "contents": row_buttons
+                "contents": row_cells
             })
-            
-        bubble = {
-            "type": "bubble",
-            "size": "mega",
-            "header": {
-                "type": "box", "layout": "vertical", "backgroundColor": "#0066cc", "paddingAll": "10px",
-                "contents": [
-                    {"type": "text", "text": title, "color": "#ffffff", "weight": "bold", "size": "md"}
-                ]
-            },
-            "body": {
-                "type": "box", "layout": "vertical", "spacing": "xs", "paddingAll": "8px",
-                "contents": rows
-            }
-        }
-        bubbles.append(bubble)
 
-    carousel = {
-        "type": "carousel",
-        "contents": bubbles
+        body_contents.append({
+            "type": "box",
+            "layout": "vertical",
+            "margin": "xs",
+            "contents": rows
+        })
+
+    bubble = {
+        "type": "bubble",
+        "size": "giga",
+        "header": {
+            "type": "box",
+            "layout": "vertical",
+            "backgroundColor": "#333333",
+            "paddingAll": "10px",
+            "contents": [
+                {"type": "text", "text": "🎣 全国管理釣り場一覧", "color": "#ffffff", "weight": "bold", "size": "md", "align": "center"}
+            ]
+        },
+        "body": {
+            "type": "box",
+            "layout": "vertical",
+            "spacing": "xs",
+            "paddingAll": "8px",
+            "contents": body_contents
+        }
     }
-    return FlexSendMessage(alt_text="全国管理釣り場一覧", contents=carousel)
+    return FlexSendMessage(alt_text="全国管理釣り場一覧", contents=bubble)
 
 def build_candidates_flex_message(candidates, query_text):
     """複数候補が見つかった場合の選択ボタンカードの構築"""
@@ -1237,9 +1278,9 @@ def handle_message(event):
 
         print(f"[受信] ユーザー({user_id}): {user_message}")
 
-        # 1. 一覧コマンド（直接4枚の超圧縮カルーセルを一括送信）
+        # 1. 一覧コマンド（1通の縦型カード＆色分けセルメッセージを返信）
         if user_message in ["一覧", "リスト", "釣り場一覧", "エリア"]:
-            flex_msg = build_spot_list_carousel_compressed()
+            flex_msg = build_single_bubble_colored_spot_list()
             line_bot_api.reply_message(event.reply_token, flex_msg)
             return
 
