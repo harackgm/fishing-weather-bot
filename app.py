@@ -23,34 +23,25 @@ app = Flask(__name__)
 # ==========================================
 # 2. 設定値および安全装置（ガードレール）
 # ==========================================
-# LINE API設定
 LINE_CHANNEL_ACCESS_TOKEN = os.getenv('LINE_CHANNEL_ACCESS_TOKEN', '').strip()
 LINE_CHANNEL_SECRET = os.getenv('LINE_CHANNEL_SECRET', '').strip()
 
 line_bot_api = LineBotApi(LINE_CHANNEL_ACCESS_TOKEN)
 handler = WebhookHandler(LINE_CHANNEL_SECRET)
 
-# Gemini API設定
 GEMINI_API_KEY = os.getenv('GEMINI_API_KEY', '').strip().strip('"').strip("'")
-
-# テスト・本番モード切り替え制御（安全装置）
 ADMIN_USER_ID = os.getenv('ADMIN_USER_ID', '').strip()
 IS_TEST_MODE = True
-
-# 大量通知ストッパー（安全装置: 1回の処理で許可する最大件数）
 MAX_LIMIT = 5
 
-# 試行するGeminiモデル候補リスト
 GEMINI_CANDIDATE_MODELS = [
     'gemini-3.6-flash',
     'gemini-1.5-flash',
     'gemini-2.0-flash'
 ]
 
-# データベースファイルパス
 DB_PATH = 'user_data.db'
 
-# 都道府県別 主要管理釣り場データ
 PREFECTURE_SPOTS = {
     "埼玉県": ["朝霞ガーデン", "ウォーターパーク長瀞", "川越水上公園", "加須はなさき水上公園"],
     "東京都": ["ベリーパーク in FISH ON！王禅寺（※川崎隣接）", "奥多摩フィッシングセンター", "秋川国際マス釣場"],
@@ -63,7 +54,6 @@ PREFECTURE_SPOTS = {
     "静岡県": ["すそ野フィッシングパーク", "東山湖フィッシングエリア", "柿田川フィッシングパーク"],
     "長野県": ["平谷湖フィッシングスポット", "鹿島槍ガーデン", "ハーブの里フィッシングエリア"]
 }
-
 
 # ==========================================
 # 3. データベース（SQLite）管理関数
@@ -136,14 +126,11 @@ def remove_favorite_spot(user_id, spot_name):
     conn.close()
     return True, f"「{spot_name}」をお気に入りから削除しました。"
 
-
 # ==========================================
-# 4. ウェザーニュース 実データスクレイピング関数
+# 4. ウェザーニュース 実データスクレイピング関数 (過去除外・1セル縦長版)
 # ==========================================
 def fetch_hirayako_1hour_data():
-    """
-    ウェザーニュースから平谷湖の1時間予報を辞書形式で抽出
-    """
+    """現在時刻以降の平谷湖1時間予報を辞書形式で抽出"""
     time.sleep(random.uniform(1.0, 2.0))
     url = "https://weathernews.jp/onebox/35.332243/137.632213/q=%E9%95%B7%E9%87%8E%E7%9C%8C%E4%B8%8B%E4%BC%8A%E9%82%A3%E9%83%A1%E5%B9%B3%E8%B0%B7%E6%9D%91%E5%B9%B3%E8%B0%B7%E6%9D%91%E4%B8%80%E5%86%86&v=faf7b174776bf3f82a649d0b9e178580b4814dd1bac1307f4459eeaba6254e66&temp=c&lang=ja"
     headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}
@@ -161,14 +148,16 @@ def fetch_hirayako_1hour_data():
         for group in groups:
             lists = group.find_all('ul', class_='list')
             for item in lists:
-                if len(weather_list) >= 12: break  # 最大12時間分（LINEのカルーセル上限に対応）
+                # 過去のデータ(class="past")はスキップ
+                if 'past' in item.get('class', []):
+                    continue
                 
                 # 時間
                 time_tag = item.find('li', class_='time')
                 hour = time_tag.text.strip().zfill(2) + "時" if time_tag else "--時"
                 
                 # 天気画像URL抽出
-                img_url = "https://gvs.weathernews.jp/onebox/img/wxicon/200.png" # default
+                img_url = "https://gvs.weathernews.jp/onebox/img/wxicon/200.png"
                 weather_tag = item.find('li', class_='weather')
                 img_tag = weather_tag.find('img') if weather_tag else None
                 if img_tag and 'src' in img_tag.attrs:
@@ -193,66 +182,57 @@ def fetch_hirayako_1hour_data():
                     "rain": rain,
                     "wind": wind
                 })
-            if len(weather_list) >= 12: break
+            # 件数制限は設けない（抽出できる未来データを全て取得）
             
         return weather_list
     except Exception as e:
         print(f"[スクレイピングエラー] {e}")
         return None
 
-
-def build_carousel_flex_message(weather_data):
-    """抽出した天気データを元にFlex MessageのCarousel形式を構築"""
-    bubbles = []
+def build_flex_message(spot_name, weather_data):
+    """1つのセル内に抽出データを縦長に並べるFlex Messageを構築"""
+    contents = []
     
+    # ヘッダー行（項目名）
+    contents.append({
+        "type": "box", "layout": "horizontal", "margin": "md",
+        "contents": [
+            {"type": "text", "text": "時間", "weight": "bold", "size": "sm", "flex": 1, "align": "center"},
+            {"type": "text", "text": "天気", "weight": "bold", "size": "sm", "flex": 1, "align": "center"},
+            {"type": "text", "text": "気温", "weight": "bold", "size": "sm", "flex": 1, "align": "center"},
+            {"type": "text", "text": "降水", "weight": "bold", "size": "sm", "flex": 1, "align": "center"},
+            {"type": "text", "text": "風速", "weight": "bold", "size": "sm", "flex": 1, "align": "center"}
+        ]
+    })
+    contents.append({"type": "separator", "margin": "md"})
+
+    # データ行（抽出した未来データ全てをループ）
     for data in weather_data:
-        # 気温の色設定（25℃以上なら赤文字）
-        temp_color = "#333333"
-        if "℃" in data['temp']:
-            try:
-                temp_val = float(data['temp'].replace("℃", ""))
-                if temp_val >= 25:
-                    temp_color = "#ff0000"
-            except:
-                pass
-        
-        # 降水の色設定（0mm以外なら青文字）
-        rain_color = "#333333"
-        if "mm" in data['rain'] and data['rain'] != "0mm":
-            rain_color = "#0000ff"
+        contents.append({
+            "type": "box", "layout": "horizontal", "margin": "md",
+            "contents": [
+                {"type": "text", "text": data['time'], "size": "sm", "flex": 1, "align": "center", "gravity": "center", "weight": "bold"},
+                {"type": "image", "url": data['img_url'], "size": "xs", "flex": 1, "align": "center"},
+                {"type": "text", "text": data['temp'], "size": "sm", "flex": 1, "align": "center", "gravity": "center", "color": "#ff0000" if "℃" in data['temp'] and int(data['temp'].replace("℃","")) >= 25 else "#333333"},
+                {"type": "text", "text": data['rain'], "size": "sm", "flex": 1, "align": "center", "gravity": "center", "color": "#0000ff" if "mm" in data['rain'] and data['rain'] != "0mm" else "#333333"},
+                {"type": "text", "text": data['wind'], "size": "sm", "flex": 1, "align": "center", "gravity": "center"}
+            ]
+        })
 
-        bubble = {
-            "type": "bubble",
-            "size": "micro",
-            "header": {
-                "type": "box",
-                "layout": "vertical",
-                "backgroundColor": "#0066cc",
-                "contents": [
-                    {"type": "text", "text": data['time'], "color": "#ffffff", "weight": "bold", "size": "sm", "align": "center"}
-                ]
-            },
-            "body": {
-                "type": "box",
-                "layout": "vertical",
-                "spacing": "sm",
-                "paddingAll": "10px",
-                "contents": [
-                    {"type": "image", "url": data['img_url'], "size": "md", "aspectMode": "fit"},
-                    {"type": "text", "text": data['temp'], "size": "sm", "weight": "bold", "align": "center", "color": temp_color},
-                    {"type": "text", "text": data['rain'], "size": "xs", "align": "center", "color": rain_color},
-                    {"type": "text", "text": data['wind'], "size": "xs", "align": "center"}
-                ]
-            }
-        }
-        bubbles.append(bubble)
-        
-        if len(bubbles) >= 12:
-            break
-
+    # Flex Message全体構造
     flex_dict = {
-        "type": "carousel",
-        "contents": bubbles
+        "type": "bubble",
+        "header": {
+            "type": "box", "layout": "vertical", "backgroundColor": "#0066cc",
+            "contents": [
+                {"type": "text", "text": f"📍 {spot_name}", "weight": "bold", "size": "md", "color": "#ffffff"},
+                {"type": "text", "text": "1時間毎のピンポイント天気", "size": "xs", "color": "#ffffff", "margin": "sm"}
+            ]
+        },
+        "body": {
+            "type": "box", "layout": "vertical", "spacing": "sm",
+            "contents": contents
+        }
     }
     return flex_dict
 
@@ -293,7 +273,7 @@ def generate_gemini_response(user_message, user_setting):
 # ==========================================
 @app.route("/", methods=['GET'])
 def top_page():
-    return "LINE Reply Bot Server (Carousel Flex Message) is running!", 200
+    return "LINE Reply Bot Server (Single Flex Message) is running!", 200
 
 @app.route("/callback", methods=['POST'])
 def callback():
@@ -325,19 +305,13 @@ def handle_message(event):
             matched_pref = pref
             break
 
-    # 平谷湖のピンポイント予報（カルーセル表示で返信）
+    # 平谷湖のピンポイント予報（1セル縦長表示で返信）
     if "平谷湖" in user_message:
         weather_data = fetch_hirayako_1hour_data()
         if weather_data:
-            flex_obj = build_carousel_flex_message(weather_data)
-            
-            # 案内テキストとカルーセルを同時に送信
-            messages = [
-                TextSendMessage(text="📍 平谷湖フィッシングスポット\n1時間毎のピンポイント天気です。横にスクロールしてご確認ください。"),
-                FlexSendMessage(alt_text="平谷湖の天気予報（カルーセル）", contents=flex_obj)
-            ]
-            line_bot_api.reply_message(event.reply_token, messages)
-            print("[送信] Carousel FlexMessage応答を完了しました。")
+            flex_obj = build_flex_message("平谷湖フィッシングスポット", weather_data)
+            line_bot_api.reply_message(event.reply_token, FlexSendMessage(alt_text="平谷湖の天気予報", contents=flex_obj))
+            print("[送信] Single FlexMessage応答を完了しました。")
             return
         else:
             ai_text, error_text = generate_gemini_response(user_message, user_setting)
