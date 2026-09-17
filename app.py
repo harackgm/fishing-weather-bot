@@ -898,7 +898,6 @@ def build_delete_all_confirm_message():
     return FlexSendMessage(alt_text="全て削除の確認", contents=bubble)
 
 def build_settings_flex_message(fav_list):
-    """【ボタン高さ調整】 height: sm を除去して通常(md)の高さに広げ、タップしやすく改善"""
     rows = []
     if not fav_list:
         rows.append({
@@ -956,7 +955,6 @@ def build_settings_flex_message(fav_list):
     return FlexSendMessage(alt_text="お気に入り管理パネル", contents=bubble)
 
 def build_spot_list_carousel_horizontal(user_id=None):
-    """【お気に入りセル】 paddingAllを md に拡張し、ボタンの上下の高さを広げる"""
     bubbles = []
     fav_list = []
 
@@ -976,7 +974,7 @@ def build_spot_list_carousel_horizontal(user_id=None):
                         "cornerRadius": "md",          
                         "borderWidth": "normal",
                         "borderColor": "#d4af37",      
-                        "paddingAll": "md",  # ★ここでボタンの上下の厚みを広げています         
+                        "paddingAll": "md",  
                         "margin": "xs",
                         "flex": 1,
                         "justifyContent": "center",
@@ -1473,7 +1471,8 @@ def handle_postback(event):
 
         elif action == "fav_del_all_execute":
             success, msg = clear_favorite_spots(user_id)
-            flex_msg = build_settings_flex_message([])
+            # 【修正】全て削除後は「設定パネル」ではなく「一覧カルーセル」を返す
+            flex_msg = build_spot_list_carousel_horizontal(user_id=user_id)
             line_bot_api.reply_message(event.reply_token, [TextSendMessage(text=f"✅ {msg}"), flex_msg])
 
         elif action in ["fav_up", "fav_down"]:
