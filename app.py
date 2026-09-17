@@ -4,6 +4,7 @@ import random
 import requests
 import traceback
 import difflib
+import re  # スマホ特有の入力ブレを吸収する正規表現モジュールを追加
 from urllib.parse import quote, urlparse
 from bs4 import BeautifulSoup
 from flask import Flask, request, abort, jsonify
@@ -1292,28 +1293,32 @@ def handle_message(event):
 
         print(f"[受信] ユーザー({user_id}): {raw_msg}")
 
-        # コマンド判定（全角・半角スペース、コロン対応の完全版）
-        if raw_msg.startswith("追加:") or raw_msg.startswith("追加：") or raw_msg.startswith("追加 ") or raw_msg.startswith("追加 "):
-            spot_name = raw_msg.replace("追加:", "").replace("追加：", "").replace("追加 ", "").replace("追加 ", "").strip()
-            success, msg = add_favorite_spot(user_id, spot_name) if spot_name else (False, "⚠️ 釣り場名を入力してください。")
+        # 1. お気に入り追加コマンド（正規表現で全角・半角スペースのブレを完全吸収）
+        add_match = re.match(r'^追加[\s:： ]*(.+)$', raw_msg)
+        if add_match:
+            spot_name = add_match.group(1).strip()
+            success, msg = add_favorite_spot(user_id, spot_name)
             reply_text = f"✅ {msg}" if success else f"⚠️ {msg}"
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
             return
 
-        elif raw_msg.startswith("削除:") or raw_msg.startswith("削除：") or raw_msg.startswith("削除 ") or raw_msg.startswith("削除 "):
-            spot_name = raw_msg.replace("削除:", "").replace("削除：", "").replace("削除 ", "").replace("削除 ", "").strip()
-            success, msg = remove_favorite_spot(user_id, spot_name) if spot_name else (False, "⚠️ 削除する釣り場名を入力してください。")
+        # 2. お気に入り削除コマンド
+        del_match = re.match(r'^削除[\s:： ]*(.+)$', raw_msg)
+        if del_match:
+            spot_name = del_match.group(1).strip()
+            success, msg = remove_favorite_spot(user_id, spot_name)
             reply_text = f"✅ {msg}" if success else f"⚠️ {msg}"
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
             return
 
-        elif raw_msg in ["一覧", "リスト", "釣り場一覧", "エリア"]:
-            # お気に入り（登録時のみ1通目）＋色分け地域メッセージ（4通）を1通ずつ分割送信（容量オーバー完全回避）
+        # 3. 一覧コマンド
+        if raw_msg in ["一覧", "リスト", "釣り場一覧", "エリア"]:
             flex_msgs = build_spot_list_messages_colored_split(user_id=user_id)
             line_bot_api.reply_message(event.reply_token, flex_msgs)
             return
 
-        elif raw_msg == "設定":
+        # 4. 設定確認コマンド
+        if raw_msg == "設定":
             user_setting = get_user_setting(user_id)
             source, favorites = user_setting
             fav_list = [s for s in favorites.split(',') if s]
@@ -1331,11 +1336,10 @@ def handle_message(event):
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
             return
 
-        # 2. 検索キーワードから候補を取得
+        # 5. 通常の天気検索（候補抽出）
         candidates = find_candidate_spots(raw_msg)
 
         if len(candidates) == 1:
-            # 1件のみ特定できた場合は即時天気表示
             target_spot_name = candidates[0]
             target_spot_name, target_url, hp_url, map_url, tel = get_spot_details(target_spot_name)
             
@@ -1350,13 +1354,12 @@ def handle_message(event):
             return
 
         elif len(candidates) > 1:
-            # 複数候補が存在する場合は選択ボタンカードを表示
             flex_msg = build_candidates_flex_message(candidates, raw_msg)
             line_bot_api.reply_message(event.reply_token, flex_msg)
             print(f"[送信] 候補選択 FlexMessage（{len(candidates)}件）を送信しました。")
             return
 
-        # 3. 該当なしの場合
+        # 6. 該当なしの場合
         reply_text = (
             "🔍 その釣り場は現在対応していません、もしくは名前が間違っています。\n\n"
             "「一覧」と送信すると全国60箇所の釣り場リストを表示できます！\n\n"
