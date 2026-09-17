@@ -5,7 +5,7 @@ import requests
 import traceback
 import difflib
 import re
-import threading  # ★ バックグラウンド処理を行うために追加
+import threading
 from urllib.parse import quote, urlparse, parse_qsl
 from bs4 import BeautifulSoup
 from flask import Flask, request, abort, jsonify
@@ -984,13 +984,27 @@ def build_spot_list_carousel_horizontal(user_id=None):
                             }
                         ]
                     })
+                # ★修正：奇数個の時の枠ズレ対策（実物ボタンと全く同じパディング・外余白構造を持つ透明ダミーボックスを配置）
                 if len(pair) == 1:
                     row_buttons.append({
-                        "type": "box", 
-                        "layout": "vertical", 
-                        "flex": 1, 
+                        "type": "box",
+                        "layout": "vertical",
+                        "backgroundColor": "#00000000",
+                        "cornerRadius": "md",
+                        "borderWidth": "normal",
+                        "borderColor": "#00000000",
+                        "paddingAll": "md",
                         "margin": "xs",
-                        "contents": [{"type": "filler"}]
+                        "flex": 1,
+                        "justifyContent": "center",
+                        "alignItems": "center",
+                        "contents": [
+                            {
+                                "type": "text",
+                                "text": " ",
+                                "size": "sm"
+                            }
+                        ]
                     })
                     
                 row_box = {"type": "box", "layout": "horizontal", "contents": row_buttons}
@@ -1581,8 +1595,6 @@ def handle_postback(event):
         except Exception:
             pass
 
-
-# ★ バックグラウンドで全釣り場の天気を更新する裏方関数
 def run_background_update():
     if not supabase: return
     try:
@@ -1591,28 +1603,20 @@ def run_background_update():
             weather_data = fetch_spot_1hour_data(url)
             if weather_data:
                 save_cached_weather(spot_name, weather_data)
-            # 相手サーバーへの負荷とアクセス遮断を避けるための必須スリープ
             time.sleep(random.uniform(1.0, 2.0))
     except Exception as e:
         print(f"[Cron Background Error] {e}")
 
-
-# ★ GitHub(YML)からアクセスされたときの窓口
 @app.route("/cron_trigger", methods=['GET', 'POST'])
 def cron_trigger():
     if not supabase: return jsonify({"status": "error", "reason": "DB_NOT_CONNECTED"}), 500
     try:
-        # スレッドを使って、裏側で「run_background_update」をスタートさせる
         thread = threading.Thread(target=run_background_update)
         thread.start()
-        
-        # スタートさせたら、GitHubには即座に「成功」と返事をしてYMLを完了させる（タイムアウト回避）
         return jsonify({"status": "success", "message": "Background update started"}), 200
-        
     except Exception as e:
         traceback.print_exc()
         return jsonify({"status": "error", "message": str(e)}), 500
-
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
