@@ -888,6 +888,7 @@ def build_settings_flex_message(fav_list):
             })
 
         rows.append({"type": "separator", "margin": "md"})
+        
         rows.append({
             "type": "box",
             "layout": "horizontal",
@@ -984,14 +985,13 @@ def build_spot_list_carousel_horizontal(user_id=None):
                 "margin": "md"
             })
 
-            # ★ 【修正箇所】alignItems: "end" はエラーになるため、"center" に修正し安全に分割
             fav_bubble = {
                 "type": "bubble",
                 "size": "giga",
                 "header": {
                     "type": "box", "layout": "horizontal", "backgroundColor": "#d4af37", "paddingAll": "10px", "alignItems": "center",
                     "contents": [
-                        {"type": "text", "text": "⭐ あなたのお気に入り釣り場", "color": "#ffffff", "weight": "bold", "size": "md", "flex": 1},
+                        {"type": "text", "text": "⭐ お気に入り釣り場", "color": "#ffffff", "weight": "bold", "size": "md", "flex": 1},
                         {"type": "text", "text": "(最大30箇所)", "color": "#eeeeee", "size": "xs", "align": "end", "flex": 0}
                     ]
                 },
@@ -1034,7 +1034,7 @@ def build_spot_list_carousel_horizontal(user_id=None):
         }
         bubbles.append(bubble)
 
-    # 使い方ガイドを一番右に追加
+    # ★ 使い方ガイド（詳細化）
     guide_bubble = {
         "type": "bubble",
         "size": "giga",
@@ -1043,10 +1043,10 @@ def build_spot_list_carousel_horizontal(user_id=None):
             "contents": [{"type": "text", "text": "📖 使い方ガイド", "color": "#ffffff", "weight": "bold", "size": "md"}]
         },
         "body": {
-            "type": "box", "layout": "vertical", "spacing": "md", "paddingAll": "15px",
+            "type": "box", "layout": "vertical", "spacing": "sm", "paddingAll": "15px",
             "contents": [
                 {
-                    "type": "box", "layout": "vertical", "spacing": "sm",
+                    "type": "box", "layout": "vertical", "margin": "none", "spacing": "sm",
                     "contents": [
                         {"type": "text", "text": "👇 基本の操作", "weight": "bold", "size": "sm", "color": "#333333"},
                         {"type": "text", "text": "・一覧のボタンをタップで天気予報を表示", "wrap": True, "size": "xs", "color": "#666666"}
@@ -1054,13 +1054,13 @@ def build_spot_list_carousel_horizontal(user_id=None):
                 },
                 {"type": "separator", "margin": "md"},
                 {
-                    "type": "box", "layout": "vertical", "spacing": "sm", "margin": "md",
+                    "type": "box", "layout": "vertical", "margin": "md", "spacing": "sm",
                     "contents": [
                         {"type": "text", "text": "💬 テキストコマンド", "weight": "bold", "size": "sm", "color": "#333333"},
-                        {"type": "text", "text": "【追加】\n「追加 東山湖 すその」で一括登録", "wrap": True, "size": "xs", "color": "#666666"},
-                        {"type": "text", "text": "【削除】\n「削除 東山湖」で一括解除", "wrap": True, "size": "xs", "color": "#666666"},
-                        {"type": "text", "text": "【設定】\n「設定」で並び替え・削除パネルを表示", "wrap": True, "size": "xs", "color": "#666666"},
-                        {"type": "text", "text": "【一覧】\nその他の文字を入力すると一覧を表示", "wrap": True, "size": "xs", "color": "#666666"}
+                        {"type": "text", "text": "【まとめて追加・登録】\n「追加 東山湖 すその」\n※名前をスペースやカンマ(,)で区切ると、最大30件まで一気に登録できます。", "wrap": True, "size": "xs", "color": "#666666"},
+                        {"type": "text", "text": "【まとめて削除】\n「削除 東山湖 すその」\n※追加と同じく、区切って入力すると複数同時に解除できます。", "wrap": True, "size": "xs", "color": "#666666", "margin": "sm"},
+                        {"type": "text", "text": "【設定】\n「設定」と送信すると、並び替え・全削除パネルが出ます。", "wrap": True, "size": "xs", "color": "#666666", "margin": "sm"},
+                        {"type": "text", "text": "【一覧】\nその他の文字を送信すると、この一覧を表示します。", "wrap": True, "size": "xs", "color": "#666666", "margin": "sm"}
                     ]
                 }
             ]
@@ -1315,7 +1315,6 @@ def build_grid_flex_message(spot_name, weather_by_date, hp_url="", map_url="", t
         clean_tel = tel.replace('-', '').strip()
         bottom_buttons.append({"type": "button", "action": {"type": "uri", "label": "📞 電話", "uri": f"tel:{clean_tel}"}, "style": "secondary", "height": "sm", "flex": 1})
     
-    # ★ 一覧ボタンにも displayText を追加
     bottom_buttons.append({"type": "button", "action": {"type": "postback", "label": "📋 一覧", "data": "action=show_list", "displayText": "📋 一覧"}, "style": "secondary", "color": "#fff59d", "height": "sm", "flex": 1})
 
     body_contents.append({"type": "separator", "margin": "md"})
@@ -1411,7 +1410,6 @@ def handle_message(event):
             line_bot_api.reply_message(event.reply_token, flex_msg)
             return
 
-        # 定義されていないコマンド入力時は、一覧カルーセルを自動表示
         flex_msg = build_spot_list_carousel_horizontal(user_id=user_id)
         line_bot_api.reply_message(event.reply_token, flex_msg)
 
@@ -1509,7 +1507,6 @@ def handle_postback(event):
             flex_msg = build_settings_flex_message(fav_list)
             line_bot_api.reply_message(event.reply_token, flex_msg)
             
-    # ★ エラー時にユーザーへテキスト通知を返す（沈黙防止）
     except Exception as e:
         print(f"Postback Error: {e}")
         traceback.print_exc()
