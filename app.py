@@ -1042,7 +1042,7 @@ def fetch_spot_1hour_data(url):
         return None
 
 def build_grid_flex_message(spot_name, weather_by_date, hp_url="", map_url="", tel=""):
-    """田の字型（2行×2列）グリッドレイアウト（LINE APIの20文字制限クリア版ボタン）"""
+    """田の字型（2行×2列）グリッドレイアウト（LINE API仕様20文字制限クリア版ボタン）"""
     dates = list(weather_by_date.keys())
     
     def create_day_column(date_str):
@@ -1127,7 +1127,7 @@ def build_grid_flex_message(spot_name, weather_by_date, hp_url="", map_url="", t
         }
         body_contents.append(row2)
 
-    # 最下段電話問い合わせボタン（表示テキストを「📞 電話をかける」に固定し20文字制限をクリア）
+    # 最下段電話問い合わせボタン（ラベル「📞 電話」に変更し文字数オーバーを解消）
     if tel:
         clean_tel = tel.replace('-', '').strip()
         body_contents.append({"type": "separator", "margin": "md"})
@@ -1137,7 +1137,7 @@ def build_grid_flex_message(spot_name, weather_by_date, hp_url="", map_url="", t
                 {"type": "box", "layout": "vertical", "flex": 1, "contents": [{"type": "text", "text": " ", "size": "xs"}]},
                 {
                     "type": "button",
-                    "action": {"type": "uri", "label": "📞 電話をかける", "uri": f"tel:{clean_tel}"},
+                    "action": {"type": "uri", "label": "📞 電話", "uri": f"tel:{clean_tel}"},
                     "style": "secondary",
                     "height": "sm",
                     "flex": 3
