@@ -46,7 +46,7 @@ if SUPABASE_URL and SUPABASE_KEY:
         print(f"[Supabase初期化エラー] {e}")
 
 # ==========================================
-# 3. 釣り場URL・HP・Googleマップ・電話番号・表記揺れ辞書（全国版）
+# 3. 釣り場URL・HP・Googleマップ・電話番号・表記揺れ辞書（ブログ全57箇所網羅）
 # ==========================================
 SPOT_WEATHER_DATA = {
     # --- 静岡県 ---
@@ -149,6 +149,13 @@ SPOT_WEATHER_DATA = {
         "search_name": "蛇尾川フィッシングパーク",
         "tel": "0287-32-2212",
         "aliases": ["蛇尾川", "蛇尾川フィッシングパーク", "さびがわ"]
+    },
+    "レイクウッド": {
+        "url": "https://weathernews.jp/onebox/36.611334/139.666579/",
+        "hp_url": "http://lakewoodresort.info/",
+        "search_name": "レイクウッドリゾート 鹿沼",
+        "tel": "0289-75-1008",
+        "aliases": ["レイクウッド", "レイクウッドリゾート", "れいくうっど"]
     },
     "なら山沼": {
         "url": "https://weathernews.jp/onebox/36.373741/139.802713/",
@@ -315,6 +322,13 @@ SPOT_WEATHER_DATA = {
         "tel": "049-241-2241",
         "aliases": ["川越", "川越水上公園", "かわごえ"]
     },
+    "加須はなさき": {
+        "url": "https://weathernews.jp/onebox/36.096192/139.636601/",
+        "hp_url": "https://www.parks.or.jp/kazohanasaki/guide/000/000031.html",
+        "search_name": "加須はなさき水上公園",
+        "tel": "0480-65-7155",
+        "aliases": ["加須はなさき", "はなさき", "はなさき公園"]
+    },
     "多摩湖": {
         "url": "https://weathernews.jp/onebox/35.780248/139.440732/",
         "hp_url": "https://www.s-fishingarea.com/",
@@ -403,6 +417,13 @@ SPOT_WEATHER_DATA = {
         "tel": "0551-35-4308",
         "aliases": ["シルフ", "Shylph", "しるふ"]
     },
+    "JF in Tsugane": {
+        "url": "https://weathernews.jp/onebox/35.866755/138.451406/",
+        "hp_url": "http://www6.nns.ne.jp/~joy-field/index.html",
+        "search_name": "ジョイフィールド in Tsugane",
+        "tel": "0551-20-7888",
+        "aliases": ["JF in Tsugane", "Tsugane", "ジョイフィールド", "つがね"]
+    },
     "竜華池": {
         "url": "https://weathernews.jp/onebox/35.681978/138.576164/",
         "hp_url": "https://fishingmarketbear.wixsite.com/ryugaike",
@@ -460,6 +481,13 @@ SPOT_WEATHER_DATA = {
         "search_name": "川場フィッシングプラザ",
         "tel": "0278-52-3200",
         "aliases": ["川場", "川場FP", "かわば"]
+    },
+    "川場キングダム": {
+        "url": "https://weathernews.jp/onebox/36.754213/139.142256/",
+        "hp_url": "http://kawaba-kingdomfishing.com/",
+        "search_name": "川場キングダムフィッシング",
+        "tel": "0278-52-2002",
+        "aliases": ["川場キングダム", "キングダム", "かわばきんぐだむ"]
     },
     "おくとね": {
         "url": "https://weathernews.jp/onebox/36.663005/139.163750/",
@@ -1094,7 +1122,7 @@ def handle_message(event):
         reply_text = (
             "🔍 その釣り場は現在対応していません、もしくは名前が間違っています。\n\n"
             "【対応済みの主な釣り場】\n"
-            "川場 / 王禅寺 / 朝霞 / 東山湖 / 加賀 / すその / 鹿島槍 / サンクチュアリ...など全国60箇所以上に対応！\n\n"
+            "レイクウッド / 川場キングダム / 川場 / 王禅寺 / 朝霞 / 東山湖 / 加賀 / すその / 鹿島槍...など全国60箇所以上に対応！\n\n"
             "※「ざま」「すそぱ」「寺」「てら」「ならやま」「がし山」などの略称でも検索可能です。"
         )
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
