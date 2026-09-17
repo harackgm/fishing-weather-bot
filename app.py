@@ -55,6 +55,7 @@ PREFECTURE_SPOTS = {
     "長野県": ["平谷湖フィッシングスポット", "鹿島槍ガーデン", "ハーブの里フィッシングエリア"]
 }
 
+
 # ==========================================
 # 3. データベース（SQLite）管理関数
 # ==========================================
@@ -126,11 +127,12 @@ def remove_favorite_spot(user_id, spot_name):
     conn.close()
     return True, f"「{spot_name}」をお気に入りから削除しました。"
 
+
 # ==========================================
-# 4. ウェザーニュース 実データスクレイピング関数 (過去除外・1セル縦長版)
+# 4. ウェザーニュース 実データスクレイピング関数 (日付別グループ化)
 # ==========================================
 def fetch_hirayako_1hour_data():
-    """現在時刻以降の平谷湖1時間予報を辞書形式で抽出"""
+    """現在時刻以降の予報を「日付」をキーとした辞書で取得"""
     time.sleep(random.uniform(1.0, 2.0))
     url = "https://weathernews.jp/onebox/35.332243/137.632213/q=%E9%95%B7%E9%87%8E%E7%9C%8C%E4%B8%8B%E4%BC%8A%E9%82%A3%E9%83%A1%E5%B9%B3%E8%B0%B7%E6%9D%91%E5%B9%B3%E8%B0%B7%E6%9D%91%E4%B8%80%E5%86%86&v=faf7b174776bf3f82a649d0b9e178580b4814dd1bac1307f4459eeaba6254e66&temp=c&lang=ja"
     headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}
@@ -142,13 +144,18 @@ def fetch_hirayako_1hour_data():
         flick_list = soup.find('div', id='flick_list_1hour')
         if not flick_list: return None
 
-        weather_list = []
+        weather_by_date = {}
         groups = flick_list.find_all('div', class_='group')
 
         for group in groups:
+            date_tag = group.find('div', class_='date')
+            if not date_tag: continue
+            date_str = date_tag.text.strip()
+            
+            daily_list = []
             lists = group.find_all('ul', class_='list')
             for item in lists:
-                # 過去のデータ(class="past")はスキップ
+                # 過去のデータは除外
                 if 'past' in item.get('class', []):
                     continue
                 
@@ -162,79 +169,91 @@ def fetch_hirayako_1hour_data():
                 img_tag = weather_tag.find('img') if weather_tag else None
                 if img_tag and 'src' in img_tag.attrs:
                     src = img_tag['src']
-                    if src.startswith('//'):
-                        img_url = "https:" + src
-                    elif src.startswith('/'):
-                        img_url = "https://weathernews.jp" + src
-                    else:
-                        img_url = src
+                    if src.startswith('//'): img_url = "https:" + src
+                    elif src.startswith('/'): img_url = "https://weathernews.jp" + src
+                    else: img_url = src
 
                 # 降水・気温・風速
                 rain = item.find('li', class_='rain').text.strip().replace("ミリ", "mm") if item.find('li', class_='rain') else "-"
                 temp = item.find('li', class_='temp').text.strip() if item.find('li', class_='temp') else "-"
                 wind_p = item.find('li', class_='wind').find('p') if item.find('li', class_='wind') else None
-                wind = wind_p.text.strip() + "m/s" if wind_p else "-"
+                wind = wind_p.text.strip() if wind_p else "-" # 元データに"m/s"が含まれているため追記しない
 
-                weather_list.append({
+                daily_list.append({
                     "time": hour,
                     "img_url": img_url,
                     "temp": temp,
                     "rain": rain,
                     "wind": wind
                 })
-            # 件数制限は設けない（抽出できる未来データを全て取得）
             
-        return weather_list
+            # 未来のデータがある日付のみ追加
+            if daily_list:
+                weather_by_date[date_str] = daily_list
+            
+            # LINEのカルーセル上限に対応（最大10日分）
+            if len(weather_by_date) >= 10:
+                break
+            
+        return weather_by_date
     except Exception as e:
         print(f"[スクレイピングエラー] {e}")
         return None
 
-def build_flex_message(spot_name, weather_data):
-    """1つのセル内に抽出データを縦長に並べるFlex Messageを構築"""
-    contents = []
+def build_daily_carousel_flex_message(spot_name, weather_by_date):
+    """日付ごとにカード（バブル）を分けたカルーセルを構築"""
+    bubbles = []
     
-    # ヘッダー行（項目名）
-    contents.append({
-        "type": "box", "layout": "horizontal", "margin": "md",
-        "contents": [
-            {"type": "text", "text": "時間", "weight": "bold", "size": "sm", "flex": 1, "align": "center"},
-            {"type": "text", "text": "天気", "weight": "bold", "size": "sm", "flex": 1, "align": "center"},
-            {"type": "text", "text": "気温", "weight": "bold", "size": "sm", "flex": 1, "align": "center"},
-            {"type": "text", "text": "降水", "weight": "bold", "size": "sm", "flex": 1, "align": "center"},
-            {"type": "text", "text": "風速", "weight": "bold", "size": "sm", "flex": 1, "align": "center"}
+    for date_str, daily_data in weather_by_date.items():
+        # ヘッダー行（項目名）
+        rows = [
+            {
+                "type": "box", "layout": "horizontal", "margin": "sm",
+                "contents": [
+                    {"type": "text", "text": "時間", "weight": "bold", "size": "xs", "flex": 1, "align": "center"},
+                    {"type": "text", "text": "天気", "weight": "bold", "size": "xs", "flex": 1, "align": "center"},
+                    {"type": "text", "text": "気温", "weight": "bold", "size": "xs", "flex": 1, "align": "center"},
+                    {"type": "text", "text": "降水", "weight": "bold", "size": "xs", "flex": 1, "align": "center"},
+                    {"type": "text", "text": "風速", "weight": "bold", "size": "xs", "flex": 1, "align": "center"}
+                ]
+            },
+            {"type": "separator", "margin": "sm"}
         ]
-    })
-    contents.append({"type": "separator", "margin": "md"})
-
-    # データ行（抽出した未来データ全てをループ）
-    for data in weather_data:
-        contents.append({
-            "type": "box", "layout": "horizontal", "margin": "md",
-            "contents": [
-                {"type": "text", "text": data['time'], "size": "sm", "flex": 1, "align": "center", "gravity": "center", "weight": "bold"},
-                {"type": "image", "url": data['img_url'], "size": "xs", "flex": 1, "align": "center"},
-                {"type": "text", "text": data['temp'], "size": "sm", "flex": 1, "align": "center", "gravity": "center", "color": "#ff0000" if "℃" in data['temp'] and int(data['temp'].replace("℃","")) >= 25 else "#333333"},
-                {"type": "text", "text": data['rain'], "size": "sm", "flex": 1, "align": "center", "gravity": "center", "color": "#0000ff" if "mm" in data['rain'] and data['rain'] != "0mm" else "#333333"},
-                {"type": "text", "text": data['wind'], "size": "sm", "flex": 1, "align": "center", "gravity": "center"}
-            ]
-        })
-
-    # Flex Message全体構造
-    flex_dict = {
-        "type": "bubble",
-        "header": {
-            "type": "box", "layout": "vertical", "backgroundColor": "#0066cc",
-            "contents": [
-                {"type": "text", "text": f"📍 {spot_name}", "weight": "bold", "size": "md", "color": "#ffffff"},
-                {"type": "text", "text": "1時間毎のピンポイント天気", "size": "xs", "color": "#ffffff", "margin": "sm"}
-            ]
-        },
-        "body": {
-            "type": "box", "layout": "vertical", "spacing": "sm",
-            "contents": contents
+        
+        # データ行
+        for data in daily_data:
+            temp_color = "#ff0000" if "℃" in data['temp'] and int(data['temp'].replace("℃","")) >= 25 else "#333333"
+            rain_color = "#0000ff" if "mm" in data['rain'] and data['rain'] not in ["0mm", "-"] else "#333333"
+            
+            rows.append({
+                "type": "box", "layout": "horizontal", "margin": "sm", "alignItems": "center",
+                "contents": [
+                    {"type": "text", "text": data['time'], "size": "xs", "flex": 1, "align": "center", "weight": "bold"},
+                    {"type": "image", "url": data['img_url'], "size": "xxs", "flex": 1, "align": "center"},
+                    {"type": "text", "text": data['temp'], "size": "xs", "flex": 1, "align": "center", "color": temp_color},
+                    {"type": "text", "text": data['rain'], "size": "xs", "flex": 1, "align": "center", "color": rain_color},
+                    {"type": "text", "text": data['wind'].replace("m/s", "m"), "size": "xs", "flex": 1, "align": "center"} # 見やすさのため短縮
+                ]
+            })
+            
+        bubble = {
+            "type": "bubble",
+            "size": "kilo",
+            "header": {
+                "type": "box", "layout": "vertical", "backgroundColor": "#0066cc", "paddingAll": "12px",
+                "contents": [
+                    {"type": "text", "text": f"📍 {spot_name}", "color": "#ffffff", "weight": "bold", "size": "xs"},
+                    {"type": "text", "text": date_str, "color": "#ffffff", "weight": "bold", "size": "md", "margin": "sm"}
+                ]
+            },
+            "body": {
+                "type": "box", "layout": "vertical", "spacing": "sm", "paddingAll": "12px",
+                "contents": rows
+            }
         }
-    }
-    return flex_dict
+        bubbles.append(bubble)
+            
+    return {"type": "carousel", "contents": bubbles}
 
 
 # ==========================================
@@ -273,7 +292,7 @@ def generate_gemini_response(user_message, user_setting):
 # ==========================================
 @app.route("/", methods=['GET'])
 def top_page():
-    return "LINE Reply Bot Server (Single Flex Message) is running!", 200
+    return "LINE Reply Bot Server (Daily Carousel) is running!", 200
 
 @app.route("/callback", methods=['POST'])
 def callback():
@@ -305,13 +324,18 @@ def handle_message(event):
             matched_pref = pref
             break
 
-    # 平谷湖のピンポイント予報（1セル縦長表示で返信）
+    # 平谷湖のピンポイント予報（日付別カルーセル表示）
     if "平谷湖" in user_message:
-        weather_data = fetch_hirayako_1hour_data()
-        if weather_data:
-            flex_obj = build_flex_message("平谷湖フィッシングスポット", weather_data)
-            line_bot_api.reply_message(event.reply_token, FlexSendMessage(alt_text="平谷湖の天気予報", contents=flex_obj))
-            print("[送信] Single FlexMessage応答を完了しました。")
+        weather_by_date = fetch_hirayako_1hour_data()
+        if weather_by_date:
+            flex_obj = build_daily_carousel_flex_message("平谷湖フィッシングスポット", weather_by_date)
+            
+            messages = [
+                TextSendMessage(text="📍 平谷湖フィッシングスポット\n横にスワイプすると明日の天気も確認できます。"),
+                FlexSendMessage(alt_text="平谷湖の天気予報", contents=flex_obj)
+            ]
+            line_bot_api.reply_message(event.reply_token, messages)
+            print("[送信] Daily Carousel FlexMessage応答を完了しました。")
             return
         else:
             ai_text, error_text = generate_gemini_response(user_message, user_setting)
