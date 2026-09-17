@@ -76,7 +76,7 @@ SPOT_WEATHER_DATA = {
         "hp_url": "http://www.arcus-pond.com/",
         "search_name": "アルクスポンド焼津",
         "tel": "054-622-7102",
-        "aliases": ["アルクス焼津", "アルクスポンド焼津", "あるくすやいづ"]
+        "aliases": ["アルクス焼津", "アルクスポンド焼津", "あるくすやいづ", "あるくす", "焼津", "アルクスポンド", "やいづ"]
     },
     "浜名湖": {
         "url": "https://weathernews.jp/onebox/34.712749/137.629457/",
@@ -211,7 +211,7 @@ SPOT_WEATHER_DATA = {
         "hp_url": "http://www.arcus-pond.com/",
         "search_name": "アルクスポンド宇都宮",
         "tel": "028-652-3210",
-        "aliases": ["アルクス宇都宮", "アルクスポンド宇都宮", "あるくすうつのみや"]
+        "aliases": ["アルクス宇都宮", "アルクスポンド宇都宮", "あるくすうつのみや", "あるくす", "アルクスポンド", "うつのみや"]
     },
     "エリア21": {
         "url": "https://weathernews.jp/onebox/36.496150/139.899522/",
@@ -385,7 +385,7 @@ SPOT_WEATHER_DATA = {
         "hp_url": "https://kaisei.forest-springs.com/",
         "search_name": "開成水辺フォレストスプリングス",
         "tel": "0465-85-2020",
-        "aliases": ["開成", "開成水辺フォレストスプリングス", "開成FS", "かいせい"]
+        "aliases": ["開成", "開成水辺フォレストスプリングス", "開成FS", "かいせい", "フォレストスプリングス"]
     },
     "浅川": {
         "url": "https://weathernews.jp/onebox/35.641903/139.231262/",
@@ -401,7 +401,7 @@ SPOT_WEATHER_DATA = {
         "hp_url": "http://www.sisidome.jp/",
         "search_name": "ベリーパーク in 鹿留",
         "tel": "0554-43-0082",
-        "aliases": ["鹿留", "シシドメ", "ししどめ"]
+        "aliases": ["鹿留", "シシドメ", "ししどめ", "ベリーパーク"]
     },
     "小菅": {
         "url": "https://weathernews.jp/onebox/35.760330/138.940529/",
@@ -515,7 +515,7 @@ SPOT_WEATHER_DATA = {
         "hp_url": "http://www.fp-berrys.net/",
         "search_name": "ベリーズ迦葉山",
         "tel": "0278-23-9333",
-        "aliases": ["迦葉山", "ベリーズ迦葉山", "かしょうざん"]
+        "aliases": ["迦葉山", "ベリーズ迦葉山", "かしょうざん", "ベリーズ"]
     },
     "片品": {
         "url": "https://weathernews.jp/onebox/36.624564/139.046703/",
@@ -766,19 +766,30 @@ SPOT_CAROUSEL_GROUPS = [
     {"title": "📍 東北・他エリア", "spots": ["不忘", "白河", "ほのぼの", "WaDoNa", "鶴沼川", "オーパ", "あいづ", "上浜", "五頭", "瑞浪", "サンクチュアリ", "醒井", "高島", "千早川"]}
 ]
 
-def find_best_match_spot(user_text):
-    """ユーザー入力から最適な釣り場情報（正式名、天気URL、HP URL、GoogleマップURL、電話番号）を特定"""
+def find_candidate_spots(user_text):
+    """ユーザー入力から該当するすべての釣り場候補を全検索して取得"""
     text = user_text.strip().lower()
 
-    # 1. エイリアス完全一致および部分一致検索（最優先）
+    # 1. 完全一致判定（完全一致があれば単一特定）
+    for spot_key, data in SPOT_WEATHER_DATA.items():
+        for alias in data["aliases"]:
+            if text == alias.lower():
+                return [spot_key]
+
+    # 2. 部分一致検索（ヒットする釣り場を全抽出）
+    matched_spots = []
     for spot_key, data in SPOT_WEATHER_DATA.items():
         for alias in data["aliases"]:
             alias_lower = alias.lower()
-            if text == alias_lower or alias_lower in text or text in alias_lower:
-                map_url = f"https://www.google.com/maps/search/?api=1&query={quote(data.get('search_name', spot_key))}"
-                return spot_key, data["url"], data.get("hp_url", ""), map_url, data.get("tel", "")
+            if alias_lower in text or text in alias_lower:
+                if spot_key not in matched_spots:
+                    matched_spots.append(spot_key)
+                break
 
-    # 2. あいまい類似度検索 (difflib)
+    if matched_spots:
+        return matched_spots
+
+    # 3. あいまい類似度検索 (difflib)
     all_aliases = []
     alias_to_spot = {}
     for spot_key, data in SPOT_WEATHER_DATA.items():
@@ -786,14 +797,58 @@ def find_best_match_spot(user_text):
             all_aliases.append(alias.lower())
             alias_to_spot[alias.lower()] = spot_key
 
-    matches = difflib.get_close_matches(text, all_aliases, n=1, cutoff=0.6)
+    matches = difflib.get_close_matches(text, all_aliases, n=5, cutoff=0.55)
     if matches:
-        matched_spot_key = alias_to_spot[matches[0]]
-        data = SPOT_WEATHER_DATA[matched_spot_key]
-        map_url = f"https://www.google.com/maps/search/?api=1&query={quote(data.get('search_name', matched_spot_key))}"
-        return matched_spot_key, data["url"], data.get("hp_url", ""), map_url, data.get("tel", "")
+        for m in matches:
+            sp = alias_to_spot[m]
+            if sp not in matched_spots:
+                matched_spots.append(sp)
 
-    return None, None, None, None, None
+    return matched_spots
+
+def get_spot_details(spot_key):
+    """釣り場の各種メタデータ（URL, HP, MAP, TEL）を取得"""
+    data = SPOT_WEATHER_DATA.get(spot_key)
+    if not data:
+        return spot_key, None, "", "", ""
+    map_url = f"https://www.google.com/maps/search/?api=1&query={quote(data.get('search_name', spot_key))}"
+    return spot_key, data["url"], data.get("hp_url", ""), map_url, data.get("tel", "")
+
+def build_candidates_flex_message(candidates, query_text):
+    """複数候補が見つかった場合の選択ボタンカードの構築"""
+    buttons = []
+    for spot in candidates[:8]:  # 最大8個まで配置
+        buttons.append({
+            "type": "button",
+            "action": {"type": "message", "label": spot, "text": spot},
+            "style": "secondary",
+            "height": "sm",
+            "margin": "xs"
+        })
+
+    bubble = {
+        "type": "bubble",
+        "size": "mega",
+        "header": {
+            "type": "box", "layout": "vertical", "backgroundColor": "#0066cc", "paddingAll": "10px",
+            "contents": [
+                {"type": "text", "text": "🔍 釣り場の選択", "color": "#ffffff", "weight": "bold", "size": "md"}
+            ]
+        },
+        "body": {
+            "type": "box", "layout": "vertical", "spacing": "sm", "paddingAll": "12px",
+            "contents": [
+                {
+                    "type": "text",
+                    "text": f"「{query_text}」に該当する候補が複数見つかりました。タップして選択してください。",
+                    "wrap": True,
+                    "size": "xs",
+                    "color": "#555555"
+                }
+            ] + buttons
+        }
+    }
+    return FlexSendMessage(alt_text="釣り場候補の選択", contents=bubble)
 
 def build_spot_list_carousel():
     """地域別・2列格子（セル分割）カルーセルメッセージの構築"""
@@ -803,7 +858,6 @@ def build_spot_list_carousel():
         title = group["title"]
         spots = group["spots"]
         
-        # ボタンを2列ずつの行に分割
         rows = []
         for i in range(0, len(spots), 2):
             pair = spots[i:i+2]
@@ -818,7 +872,7 @@ def build_spot_list_carousel():
                     "margin": "xs"
                 })
             if len(pair) == 1:
-                row_buttons.append({"type": "spacer", "size": "xs", "flex": 1})
+                row_buttons.append({"type": "box", "layout": "vertical", "flex": 1, "contents": []})
                 
             rows.append({
                 "type": "box",
@@ -873,8 +927,8 @@ def get_user_setting(user_id):
 def add_favorite_spot(user_id, spot_name):
     if not supabase: return False, "DB接続未完了です。"
     
-    matched_spot, _, _, _, _ = find_best_match_spot(spot_name)
-    target_name = matched_spot if matched_spot else spot_name
+    candidates = find_candidate_spots(spot_name)
+    target_name = candidates[0] if candidates else spot_name
 
     _, favorites = get_user_setting(user_id)
     fav_list = [s for s in favorites.split(',') if s]
@@ -893,8 +947,8 @@ def add_favorite_spot(user_id, spot_name):
 def remove_favorite_spot(user_id, spot_name):
     if not supabase: return False, "DB接続未完了です。"
     
-    matched_spot, _, _, _, _ = find_best_match_spot(spot_name)
-    target_name = matched_spot if matched_spot else spot_name
+    candidates = find_candidate_spots(spot_name)
+    target_name = candidates[0] if candidates else spot_name
 
     _, favorites = get_user_setting(user_id)
     fav_list = [s for s in favorites.split(',') if s]
@@ -982,7 +1036,7 @@ def fetch_spot_1hour_data(url):
         return None
 
 def build_grid_flex_message(spot_name, weather_by_date, hp_url="", map_url="", tel=""):
-    """田の字型（2行×2列）グリッドレイアウト（最下段中央・誤タップ防止電話ボタン配置）"""
+    """田の字型（2行×2列）グリッドレイアウト"""
     dates = list(weather_by_date.keys())
     
     def create_day_column(date_str):
@@ -1000,7 +1054,7 @@ def build_grid_flex_message(spot_name, weather_by_date, hp_url="", map_url="", t
                     {"type": "text", "text": "時", "weight": "bold", "size": "xxs", "flex": 1, "align": "center", "color": "#888888"},
                     {"type": "text", "text": "天", "weight": "bold", "size": "xxs", "flex": 1, "align": "center", "color": "#888888"},
                     {"type": "text", "text": "℃", "weight": "bold", "size": "xxs", "flex": 1, "align": "center", "color": "#888888"},
-                    {"type": "text", "text": "mm", "weight": "bold", "size": "xxs", "flex": 1, "align": "center", "color": "#888888"},
+                    {"type": "text", "text": "☔", "weight": "bold", "size": "xxs", "flex": 1, "align": "center", "color": "#888888"},
                     {"type": "text", "text": "m", "weight": "bold", "size": "xxs", "flex": 1, "align": "center", "color": "#888888"}
                 ]
             },
@@ -1067,14 +1121,14 @@ def build_grid_flex_message(spot_name, weather_by_date, hp_url="", map_url="", t
         }
         body_contents.append(row2)
 
-    # 【改修】最下段に幅を絞った角丸ボタン型電話問い合わせ（誤タップ防止＆明確なボタン感）
+    # 最下段電話問い合わせボタン
     if tel:
         clean_tel = tel.replace('-', '').strip()
         body_contents.append({"type": "separator", "margin": "md"})
         body_contents.append({
             "type": "box", "layout": "horizontal", "margin": "sm",
             "contents": [
-                {"type": "spacer", "flex": 1},
+                {"type": "box", "layout": "vertical", "flex": 1, "contents": []},
                 {
                     "type": "button",
                     "action": {"type": "uri", "label": f"📞 電話問い合わせ ({tel})", "uri": f"tel:{clean_tel}"},
@@ -1082,7 +1136,7 @@ def build_grid_flex_message(spot_name, weather_by_date, hp_url="", map_url="", t
                     "height": "sm",
                     "flex": 3
                 },
-                {"type": "spacer", "flex": 1}
+                {"type": "box", "layout": "vertical", "flex": 1, "contents": []}
             ]
         })
 
@@ -1190,10 +1244,14 @@ def handle_message(event):
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
             return
 
-        # ゆらぎ検索で釣り場情報（HP/MAP/TEL）を特定
-        target_spot_name, target_url, hp_url, map_url, tel = find_best_match_spot(user_message)
+        # 2. 検索キーワードから候補を取得
+        candidates = find_candidate_spots(user_message)
 
-        if target_url:
+        if len(candidates) == 1:
+            # 1件のみ特定できた場合は即時天気表示
+            target_spot_name = candidates[0]
+            target_spot_name, target_url, hp_url, map_url, tel = get_spot_details(target_spot_name)
+            
             weather_by_date = fetch_spot_1hour_data(target_url)
             if weather_by_date:
                 flex_msg = build_grid_flex_message(target_spot_name, weather_by_date, hp_url, map_url, tel)
@@ -1203,11 +1261,19 @@ def handle_message(event):
                 error_msg = f"⚠️ 【{target_spot_name}】の天気データの取得に失敗しました。"
                 line_bot_api.reply_message(event.reply_token, TextSendMessage(text=error_msg))
             return
-            
+
+        elif len(candidates) > 1:
+            # 複数候補が存在する場合は選択ボタンカードを表示
+            flex_msg = build_candidates_flex_message(candidates, user_message)
+            line_bot_api.reply_message(event.reply_token, flex_msg)
+            print(f"[送信] 候補選択 FlexMessage（{len(candidates)}件）を送信しました。")
+            return
+
+        # 3. 該当なしの場合
         reply_text = (
             "🔍 その釣り場は現在対応していません、もしくは名前が間違っています。\n\n"
             "「一覧」と送信すると全国60箇所以上の釣り場リストを表示できます！\n\n"
-            "※「ざま」「すそぱ」「寺」「てら」「ならやま」「がし山」などの略称でも検索可能です。"
+            "※「あるくす」「ざま」「すそぱ」「寺」「てら」「ならやま」「がし山」などの略称でも検索可能です。"
         )
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
 
@@ -1215,10 +1281,6 @@ def handle_message(event):
         print("\n=== システムエラー詳細 ===")
         traceback.print_exc()
         print("==========================\n")
-        try:
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ 処理中にエラーが発生しました。時間を置いて再度お試しください。"))
-        except Exception:
-            pass
 
 # ==========================================
 # 8. 定期トリガーエンドポイント（Cron自動通知用）
@@ -1257,7 +1319,11 @@ def cron_trigger():
                 continue
 
             for spot_name in fav_list:
-                matched_spot, url, hp_url, map_url, tel = find_best_match_spot(spot_name)
+                candidates = find_candidate_spots(spot_name)
+                if not candidates:
+                    continue
+                matched_spot = candidates[0]
+                matched_spot, url, hp_url, map_url, tel = get_spot_details(matched_spot)
                 if not url:
                     continue
 
