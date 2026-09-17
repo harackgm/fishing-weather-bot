@@ -194,7 +194,7 @@ def fetch_hirayako_1hour_data():
         return None
 
 def build_vertical_flex_messages(spot_name, weather_by_date):
-    """日付ごとに独立したFlexMessage（吹き出し）のリストを作成し、サイズを適度に拡大"""
+    """日付ごとに独立したFlexMessage（吹き出し）のリストを作成し、文字サイズをmdに拡大"""
     messages = []
     
     for date_str, daily_data in weather_by_date.items():
@@ -202,14 +202,14 @@ def build_vertical_flex_messages(spot_name, weather_by_date):
             {
                 "type": "box", "layout": "horizontal", "margin": "none",
                 "contents": [
-                    {"type": "text", "text": "時間", "weight": "bold", "size": "sm", "flex": 1, "align": "center", "color": "#888888"},
-                    {"type": "text", "text": "天気", "weight": "bold", "size": "sm", "flex": 1, "align": "center", "color": "#888888"},
-                    {"type": "text", "text": "気温", "weight": "bold", "size": "sm", "flex": 1, "align": "center", "color": "#888888"},
-                    {"type": "text", "text": "降水", "weight": "bold", "size": "sm", "flex": 1, "align": "center", "color": "#888888"},
-                    {"type": "text", "text": "風速", "weight": "bold", "size": "sm", "flex": 1, "align": "center", "color": "#888888"}
+                    {"type": "text", "text": "時間", "weight": "bold", "size": "md", "flex": 1, "align": "center", "color": "#888888"},
+                    {"type": "text", "text": "天気", "weight": "bold", "size": "md", "flex": 1, "align": "center", "color": "#888888"},
+                    {"type": "text", "text": "気温", "weight": "bold", "size": "md", "flex": 1, "align": "center", "color": "#888888"},
+                    {"type": "text", "text": "降水", "weight": "bold", "size": "md", "flex": 1, "align": "center", "color": "#888888"},
+                    {"type": "text", "text": "風速", "weight": "bold", "size": "md", "flex": 1, "align": "center", "color": "#888888"}
                 ]
             },
-            {"type": "separator", "margin": "sm"}
+            {"type": "separator", "margin": "md"}
         ]
         
         for data in daily_data:
@@ -217,28 +217,28 @@ def build_vertical_flex_messages(spot_name, weather_by_date):
             rain_color = "#0000ff" if "mm" in data['rain'] and data['rain'] not in ["0mm", "-"] else "#333333"
             
             rows.append({
-                "type": "box", "layout": "horizontal", "margin": "sm", "alignItems": "center",
+                "type": "box", "layout": "horizontal", "margin": "md", "alignItems": "center",
                 "contents": [
-                    {"type": "text", "text": data['time'], "size": "sm", "flex": 1, "align": "center", "weight": "bold"},
-                    {"type": "image", "url": data['img_url'], "size": "xs", "flex": 1, "align": "center"},
-                    {"type": "text", "text": data['temp'], "size": "sm", "flex": 1, "align": "center", "color": temp_color},
-                    {"type": "text", "text": data['rain'], "size": "sm", "flex": 1, "align": "center", "color": rain_color},
-                    {"type": "text", "text": data['wind'].replace("m/s", "m"), "size": "sm", "flex": 1, "align": "center"}
+                    {"type": "text", "text": data['time'], "size": "md", "flex": 1, "align": "center", "weight": "bold"},
+                    {"type": "image", "url": data['img_url'], "size": "sm", "flex": 1, "align": "center"},
+                    {"type": "text", "text": data['temp'], "size": "md", "flex": 1, "align": "center", "color": temp_color},
+                    {"type": "text", "text": data['rain'], "size": "md", "flex": 1, "align": "center", "color": rain_color},
+                    {"type": "text", "text": data['wind'].replace("m/s", "m"), "size": "md", "flex": 1, "align": "center"}
                 ]
             })
             
         bubble = {
             "type": "bubble",
-            "size": "kilo",
+            "size": "mega", # 横幅を広げて文字の折り返しを防止
             "header": {
-                "type": "box", "layout": "vertical", "backgroundColor": "#0066cc", "paddingAll": "10px",
+                "type": "box", "layout": "vertical", "backgroundColor": "#0066cc", "paddingAll": "12px",
                 "contents": [
-                    {"type": "text", "text": f"📍 {spot_name}", "color": "#ffffff", "weight": "bold", "size": "sm"},
-                    {"type": "text", "text": date_str, "color": "#ffffff", "weight": "bold", "size": "md", "margin": "xs"}
+                    {"type": "text", "text": f"📍 {spot_name}", "color": "#ffffff", "weight": "bold", "size": "md"},
+                    {"type": "text", "text": date_str, "color": "#ffffff", "weight": "bold", "size": "lg", "margin": "sm"}
                 ]
             },
             "body": {
-                "type": "box", "layout": "vertical", "spacing": "none", "paddingAll": "10px",
+                "type": "box", "layout": "vertical", "spacing": "none", "paddingAll": "12px",
                 "contents": rows
             }
         }
@@ -286,7 +286,7 @@ def generate_gemini_response(user_message, user_setting):
 # ==========================================
 @app.route("/", methods=['GET'])
 def top_page():
-    return "LINE Reply Bot Server (Vertical Flex - Resize) is running!", 200
+    return "LINE Reply Bot Server (Vertical Flex - Resize Up) is running!", 200
 
 @app.route("/callback", methods=['POST'])
 def callback():
