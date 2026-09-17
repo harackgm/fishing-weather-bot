@@ -1,5 +1,6 @@
 import os
 import time
+import random
 import requests
 import traceback
 import difflib
@@ -11,6 +12,7 @@ from linebot import LineBotApi, WebhookHandler
 from linebot.exceptions import InvalidSignatureError, LineBotApiError
 from linebot.models import MessageEvent, TextMessage, TextSendMessage, FlexSendMessage, PostbackEvent
 from supabase import create_client, Client
+from datetime import datetime, timedelta, timezone
 
 # ==========================================
 # 1. 日本時間（JST）設定と初期化
@@ -934,7 +936,6 @@ def build_spot_list_carousel_horizontal(user_id=None):
         
         fav_rows = []
         if not fav_list:
-            # お気に入りが空の場合の案内セル
             fav_rows.append({
                 "type": "box",
                 "layout": "vertical",
@@ -991,7 +992,6 @@ def build_spot_list_carousel_horizontal(user_id=None):
                     
                 fav_rows.append(row_box)
 
-        # 設定ボタンは空の場合でも常に表示
         fav_rows.append({"type": "separator", "margin": "lg" if fav_list else "md", "color": "#cccccc"})
         fav_rows.append({
             "type": "button",
@@ -1051,7 +1051,6 @@ def build_spot_list_carousel_horizontal(user_id=None):
         }
         bubbles.append(bubble)
 
-    # 使い方ガイド
     guide_bubble = {
         "type": "bubble",
         "size": "giga",
@@ -1086,6 +1085,41 @@ def build_spot_list_carousel_horizontal(user_id=None):
     bubbles.append(guide_bubble)
 
     return FlexSendMessage(alt_text="釣り場一覧", contents={"type": "carousel", "contents": bubbles})
+
+# ★追加：Supabaseからキャッシュを取得する関数
+def get_cached_weather(spot_name):
+    if not supabase: return None
+    try:
+        res = supabase.table('weather_cache').select('*').eq('spot_name', spot_name).execute()
+        if res.data and len(res.data) > 0:
+            row = res.data[0]
+            updated_at_str = row.get('updated_at')
+            if updated_at_str:
+                try:
+                    updated_time = datetime.fromisoformat(updated_at_str.replace('Z', '+00:00'))
+                    now = datetime.now(timezone.utc)
+                    # ★ 1時間以上経過している場合はキャッシュを破棄して再取得
+                    if now - updated_time > timedelta(hours=1):
+                        return None 
+                except:
+                    pass
+            return row.get('weather_data')
+        return None
+    except Exception as e:
+        print(f"[Cache GET Error] {e}")
+        return None
+
+# ★追加：Supabaseへキャッシュを保存する関数
+def save_cached_weather(spot_name, weather_data):
+    if not supabase: return
+    try:
+        supabase.table('weather_cache').upsert({
+            'spot_name': spot_name,
+            'weather_data': weather_data,
+            'updated_at': datetime.now(timezone.utc).isoformat()
+        }).execute()
+    except Exception as e:
+        print(f"[Cache SAVE Error] {e}")
 
 def get_user_setting(user_id):
     if not supabase: return ('ウェザーニュース', '')
@@ -1460,7 +1494,15 @@ def handle_postback(event):
             fav_list = [s for s in favorites.split(',') if s]
             is_fav = target_spot_name in fav_list
 
-            weather_by_date = fetch_spot_1hour_data(target_url)
+            # ★ キャッシュから取得を試みる
+            weather_by_date = get_cached_weather(target_spot_name)
+            
+            # ★ キャッシュが空、または古ければスクレイピングを実行して保存
+            if not weather_by_date:
+                weather_by_date = fetch_spot_1hour_data(target_url)
+                if weather_by_date:
+                    save_cached_weather(target_spot_name, weather_by_date)
+
             if weather_by_date:
                 flex_msg = build_grid_flex_message(target_spot_name, weather_by_date, hp_url, map_url, tel, is_favorite=is_fav)
                 line_bot_api.reply_message(event.reply_token, flex_msg)
