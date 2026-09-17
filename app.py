@@ -935,8 +935,28 @@ def build_spot_list_carousel_horizontal(user_id=None):
     if user_id:
         _, favorites = get_user_setting(user_id)
         fav_list = [s for s in favorites.split(',') if s]
-        if fav_list:
-            fav_rows = []
+        
+        fav_rows = []
+        if not fav_list:
+            # ★ お気に入りが空の場合の案内セルを常設
+            fav_rows.append({
+                "type": "box",
+                "layout": "vertical",
+                "backgroundColor": "#fffde7",
+                "cornerRadius": "md",
+                "paddingAll": "md",
+                "margin": "md",
+                "contents": [
+                    {
+                        "type": "text",
+                        "text": "現在お気に入りは登録されていません。\n\n右へスワイプして釣り場を探し、「⭐️ 登録」ボタンを押すか、テキストで「追加 東山湖 すその」と送信して登録してください。",
+                        "wrap": True,
+                        "size": "sm",
+                        "color": "#555555"
+                    }
+                ]
+            })
+        else:
             for i in range(0, len(fav_list), 2):
                 pair = fav_list[i:i+2]
                 row_buttons = []
@@ -975,29 +995,30 @@ def build_spot_list_carousel_horizontal(user_id=None):
                     
                 fav_rows.append(row_box)
 
-            fav_rows.append({"type": "separator", "margin": "lg", "color": "#cccccc"})
-            fav_rows.append({
-                "type": "button",
-                "action": {"type": "postback", "label": "⚙️ 設定（並び替え・削除）", "data": "action=show_settings", "displayText": "⚙️ 設定"},
-                "style": "secondary",
-                "color": "#f8f9fa",
-                "height": "sm",
-                "margin": "md"
-            })
+        # 設定ボタンは空の場合でも常に表示
+        fav_rows.append({"type": "separator", "margin": "lg" if fav_list else "md", "color": "#cccccc"})
+        fav_rows.append({
+            "type": "button",
+            "action": {"type": "postback", "label": "⚙️ 設定（並び替え・削除）", "data": "action=show_settings", "displayText": "⚙️ 設定"},
+            "style": "secondary",
+            "color": "#f8f9fa",
+            "height": "sm",
+            "margin": "md"
+        })
 
-            fav_bubble = {
-                "type": "bubble",
-                "size": "giga",
-                "header": {
-                    "type": "box", "layout": "horizontal", "backgroundColor": "#d4af37", "paddingAll": "10px", "alignItems": "center",
-                    "contents": [
-                        {"type": "text", "text": "⭐ お気に入り釣り場", "color": "#ffffff", "weight": "bold", "size": "md", "flex": 1},
-                        {"type": "text", "text": "(最大30箇所)", "color": "#eeeeee", "size": "xs", "align": "end", "flex": 0}
-                    ]
-                },
-                "body": {"type": "box", "layout": "vertical", "paddingAll": "6px", "contents": fav_rows}
-            }
-            bubbles.append(fav_bubble)
+        fav_bubble = {
+            "type": "bubble",
+            "size": "giga",
+            "header": {
+                "type": "box", "layout": "horizontal", "backgroundColor": "#d4af37", "paddingAll": "10px", "alignItems": "center",
+                "contents": [
+                    {"type": "text", "text": "⭐ お気に入り釣り場", "color": "#ffffff", "weight": "bold", "size": "md", "flex": 1},
+                    {"type": "text", "text": "(最大30箇所)", "color": "#eeeeee", "size": "xs", "align": "end", "flex": 0}
+                ]
+            },
+            "body": {"type": "box", "layout": "vertical", "paddingAll": "6px", "contents": fav_rows}
+        }
+        bubbles.append(fav_bubble)
 
     for group in COLOR_GROUPS:
         rows = []
@@ -1034,7 +1055,7 @@ def build_spot_list_carousel_horizontal(user_id=None):
         }
         bubbles.append(bubble)
 
-    # ★ 使い方ガイドの文面を修正
+    # ★ 使い方ガイド（例文を5箇所に増やし詳細化）
     guide_bubble = {
         "type": "bubble",
         "size": "giga",
@@ -1057,8 +1078,8 @@ def build_spot_list_carousel_horizontal(user_id=None):
                     "type": "box", "layout": "vertical", "spacing": "sm", "margin": "md",
                     "contents": [
                         {"type": "text", "text": "💬 テキストコマンド", "weight": "bold", "size": "sm", "color": "#333333"},
-                        {"type": "text", "text": "【まとめて追加】\n例：「追加 東山湖 すその」\n※釣り場と釣り場の名前の間にスペースを入れてください（最大30件まで一気に登録可能）。", "wrap": True, "size": "xs", "color": "#666666"},
-                        {"type": "text", "text": "【まとめて削除】\n例：「削除 東山湖 すその」\n※追加と同じく、名前の間にスペースを入れて複数同時に解除できます。", "wrap": True, "size": "xs", "color": "#666666", "margin": "sm"},
+                        {"type": "text", "text": "【まとめて追加】\n例：「追加 東山湖 すその 足柄 座間 醒井」\n※釣り場と釣り場の名前の間にスペースを入れてください（最大30件まで一気に登録可能）。", "wrap": True, "size": "xs", "color": "#666666"},
+                        {"type": "text", "text": "【まとめて削除】\n例：「削除 東山湖 すその 足柄」\n※追加と同じく、名前の間にスペースを入れて複数同時に解除できます。", "wrap": True, "size": "xs", "color": "#666666", "margin": "sm"},
                         {"type": "text", "text": "【設定】\n「設定」と送信すると、並び替え・全削除パネルが出ます。", "wrap": True, "size": "xs", "color": "#666666", "margin": "sm"},
                         {"type": "text", "text": "【一覧（メニュー）の出し方】\n「一覧」という言葉や、それ以外の適当な文字（「あ」「1」「a」など）を送信すると、この一覧表が表示されます。", "wrap": True, "size": "xs", "color": "#666666", "margin": "sm"}
                     ]
