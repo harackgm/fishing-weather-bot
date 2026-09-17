@@ -983,8 +983,15 @@ def build_spot_list_carousel_horizontal(user_id=None):
                             }
                         ]
                     })
+                # ★修正：奇数個の時のレイアウト崩れ対策（ダミーボックスに同じflexとmarginを付与）
                 if len(pair) == 1:
-                    row_buttons.append({"type": "box", "layout": "vertical", "flex": 1, "contents": [{"type": "text", "text": " "}]})
+                    row_buttons.append({
+                        "type": "box", 
+                        "layout": "vertical", 
+                        "flex": 1, 
+                        "margin": "xs",
+                        "contents": [{"type": "filler"}]
+                    })
                     
                 row_box = {"type": "box", "layout": "horizontal", "contents": row_buttons}
                 if i > 0 and i % 10 == 0:
@@ -1035,8 +1042,15 @@ def build_spot_list_carousel_horizontal(user_id=None):
                         "margin": "xs",
                         "flex": 1
                     })
+                # ★修正：奇数個の時のレイアウト崩れ対策
                 if len(pair) == 1:
-                    row_buttons.append({"type": "box", "layout": "vertical", "flex": 1, "contents": [{"type": "text", "text": " "}]})
+                    row_buttons.append({
+                        "type": "box", 
+                        "layout": "vertical", 
+                        "flex": 1, 
+                        "margin": "xs",
+                        "contents": [{"type": "filler"}]
+                    })
                     
                 rows.append({"type": "box", "layout": "horizontal", "contents": row_buttons})
             
@@ -1086,7 +1100,6 @@ def build_spot_list_carousel_horizontal(user_id=None):
 
     return FlexSendMessage(alt_text="釣り場一覧", contents={"type": "carousel", "contents": bubbles})
 
-# ★追加：Supabaseからキャッシュを取得する関数
 def get_cached_weather(spot_name):
     if not supabase: return None
     try:
@@ -1098,7 +1111,6 @@ def get_cached_weather(spot_name):
                 try:
                     updated_time = datetime.fromisoformat(updated_at_str.replace('Z', '+00:00'))
                     now = datetime.now(timezone.utc)
-                    # ★ 1時間以上経過している場合はキャッシュを破棄して再取得
                     if now - updated_time > timedelta(hours=1):
                         return None 
                 except:
@@ -1109,7 +1121,6 @@ def get_cached_weather(spot_name):
         print(f"[Cache GET Error] {e}")
         return None
 
-# ★追加：Supabaseへキャッシュを保存する関数
 def save_cached_weather(spot_name, weather_data):
     if not supabase: return
     try:
@@ -1460,6 +1471,7 @@ def handle_message(event):
             line_bot_api.reply_message(event.reply_token, flex_msg)
             return
 
+        # 定義されていないコマンド入力時は、一覧カルーセルを自動表示
         flex_msg = build_spot_list_carousel_horizontal(user_id=user_id)
         line_bot_api.reply_message(event.reply_token, flex_msg)
 
@@ -1494,10 +1506,8 @@ def handle_postback(event):
             fav_list = [s for s in favorites.split(',') if s]
             is_fav = target_spot_name in fav_list
 
-            # ★ キャッシュから取得を試みる
             weather_by_date = get_cached_weather(target_spot_name)
             
-            # ★ キャッシュが空、または古ければスクレイピングを実行して保存
             if not weather_by_date:
                 weather_by_date = fetch_spot_1hour_data(target_url)
                 if weather_by_date:
@@ -1572,6 +1582,26 @@ def handle_postback(event):
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ 処理中にエラーが発生しました。"))
         except Exception:
             pass
+
+# ★ 完全裏方として稼働するキャッシュ更新処理（LINE一斉通知は行わない）
+@app.route("/cron_trigger", methods=['GET', 'POST'])
+def cron_trigger():
+    if not supabase: return jsonify({"status": "error", "reason": "DB_NOT_CONNECTED"}), 500
+    try:
+        updated_spots = []
+        for spot_name, data in SPOT_WEATHER_DATA.items():
+            url = data["url"]
+            weather_data = fetch_spot_1hour_data(url)
+            if weather_data:
+                save_cached_weather(spot_name, weather_data)
+                updated_spots.append(spot_name)
+            # 相手サーバーへの負荷とアクセス遮断を避けるための必須スリープ
+            time.sleep(random.uniform(1.0, 2.0))
+            
+        return jsonify({"status": "success", "updated_count": len(updated_spots)}), 200
+    except Exception as e:
+        traceback.print_exc()
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
