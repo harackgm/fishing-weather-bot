@@ -34,7 +34,7 @@ handler = WebhookHandler(LINE_CHANNEL_SECRET)
 ADMIN_USER_ID = os.getenv('ADMIN_USER_ID', '').strip()
 IS_TEST_MODE = True  # テストモード（Trueの場合、ADMIN_USER_IDのみに通知送信）
 MAX_LIMIT = 5        # 大量通知ストッパー（1回の処理上限数）
-MAX_FAVORITES = 20   # ★お気に入り登録の最大数（20箇所に拡張）
+MAX_FAVORITES = 30   # ★お気に入り登録の最大数（30箇所に拡張）
 
 # Supabase接続初期化
 SUPABASE_URL = os.getenv('SUPABASE_URL', '').strip()
@@ -756,7 +756,7 @@ SPOT_WEATHER_DATA = {
     }
 }
 
-# 地域ごとの色分けテーマデータ（4通の分割送信構成）
+# 地域ごとの色分けテーマデータ
 COLOR_GROUPS = [
     {
         "title": "📍 静岡・神奈川・東京・千葉",
@@ -785,7 +785,6 @@ COLOR_GROUPS = [
 ]
 
 def clean_url(url_str):
-    """URLの不要な空白を除去し安全な形式にする"""
     if not url_str:
         return ""
     cleaned = url_str.strip().replace(" ", "").replace("\t", "")
@@ -794,10 +793,7 @@ def clean_url(url_str):
     return cleaned
 
 def find_candidate_spots(user_text):
-    """ユーザー入力から該当するすべての釣り場候補を特定して取得"""
     text = user_text.strip().lower()
-
-    # 1. 完全一致判定
     exact_matches = []
     for spot_key, data in SPOT_WEATHER_DATA.items():
         if text == spot_key.lower():
@@ -810,7 +806,6 @@ def find_candidate_spots(user_text):
     if len(exact_matches) == 1:
         return exact_matches
 
-    # 2. 部分一致検索
     matched_spots = exact_matches
     for spot_key, data in SPOT_WEATHER_DATA.items():
         for alias in data["aliases"]:
@@ -823,7 +818,6 @@ def find_candidate_spots(user_text):
     if matched_spots:
         return matched_spots
 
-    # 3. あいまい類似度検索 (difflib)
     all_aliases = []
     alias_to_spot = {}
     for spot_key, data in SPOT_WEATHER_DATA.items():
@@ -841,7 +835,6 @@ def find_candidate_spots(user_text):
     return matched_spots
 
 def get_spot_details(spot_key):
-    """釣り場の各種メタデータ（URL, HP, MAP, TEL）を取得"""
     data = SPOT_WEATHER_DATA.get(spot_key)
     if not data:
         return spot_key, None, "", "", ""
@@ -850,7 +843,6 @@ def get_spot_details(spot_key):
     return spot_key, data["url"], hp_url, map_url, data.get("tel", "")
 
 def build_settings_flex_message(fav_list):
-    """【GUIウィザード】お気に入り管理・一括削除パネルの構築"""
     rows = []
     if not fav_list:
         rows.append({
@@ -888,11 +880,11 @@ def build_settings_flex_message(fav_list):
     }
     return FlexSendMessage(alt_text="お気に入り管理パネル", contents=bubble)
 
-def build_spot_list_messages_colored_split(user_id=None):
-    """10KB容量制限を完全回避するため、1通ごとに独立したFlexMessageの配列（最大5通）を構築して一括送信"""
-    flex_messages = []
+def build_spot_list_carousel_horizontal(user_id=None):
+    """【横並びカルーセル形式】お気に入りを1枚目に配置し、地域カードを右へスワイプで並べる形式"""
+    bubbles = []
 
-    # 1. ユーザーのお気に入り登録があれば1通目にゴールドカードとして単体配置
+    # 1. お気に入り（1枚目）
     if user_id:
         _, favorites = get_user_setting(user_id)
         fav_list = [s for s in favorites.split(',') if s]
@@ -905,42 +897,29 @@ def build_spot_list_messages_colored_split(user_id=None):
                     row_buttons.append({
                         "type": "button",
                         "action": {"type": "message", "label": spot, "text": spot},
-                        "style": "secondary",
-                        "color": "#fffde7",  # 薄いゴールド
+                        "color": "#fffde7",
                         "height": "sm",
-                        "flex": 1,
-                        "margin": "xs"
+                        "flex": 1
                     })
                 if len(pair) == 1:
-                    row_buttons.append({"type": "box", "layout": "vertical", "flex": 1, "contents": [{"type": "text", "text": " ", "size": "xs"}]})
+                    row_buttons.append({"type": "box", "layout": "vertical", "flex": 1, "contents": [{"type": "text", "text": " "}]})
                     
-                fav_rows.append({
-                    "type": "box",
-                    "layout": "horizontal",
-                    "margin": "xs",
-                    "contents": row_buttons
-                })
+                fav_rows.append({"type": "box", "layout": "horizontal", "contents": row_buttons})
 
             fav_bubble = {
                 "type": "bubble",
                 "size": "giga",
                 "header": {
                     "type": "box", "layout": "vertical", "backgroundColor": "#d4af37", "paddingAll": "10px",
-                    "contents": [
-                        {"type": "text", "text": "⭐ あなたのお気に入り釣り場", "color": "#ffffff", "weight": "bold", "size": "md"}
-                    ]
+                    "contents": [{"type": "text", "text": "⭐ あなたのお気に入り釣り場", "color": "#ffffff", "weight": "bold", "size": "md"}]
                 },
-                "body": {
-                    "type": "box", "layout": "vertical", "spacing": "xs", "paddingAll": "8px",
-                    "contents": fav_rows
-                }
+                "body": {"type": "box", "layout": "vertical", "paddingAll": "6px", "contents": fav_rows}
             }
-            flex_messages.append(FlexSendMessage(alt_text="⭐ あなたのお気に入り釣り場", contents=fav_bubble))
+            bubbles.append(fav_bubble)
 
-    # 2. 標準の4地域カード（1地域ごとに1通のFlexSendMessageとして生成し、容量オーバーを防止）
+    # 2. その他の地域（2枚目以降）
     for group in COLOR_GROUPS:
         spots = group["spots"]
-        
         rows = []
         for i in range(0, len(spots), 2):
             pair = spots[i:i+2]
@@ -949,42 +928,29 @@ def build_spot_list_messages_colored_split(user_id=None):
                 row_buttons.append({
                     "type": "button",
                     "action": {"type": "message", "label": spot, "text": spot},
-                    "style": "secondary",
                     "color": group["btn_bg"],
                     "height": "sm",
-                    "flex": 1,
-                    "margin": "xs"
+                    "flex": 1
                 })
             if len(pair) == 1:
-                row_buttons.append({"type": "box", "layout": "vertical", "flex": 1, "contents": [{"type": "text", "text": " ", "size": "xs"}]})
+                row_buttons.append({"type": "box", "layout": "vertical", "flex": 1, "contents": [{"type": "text", "text": " "}]})
                 
-            rows.append({
-                "type": "box",
-                "layout": "horizontal",
-                "margin": "xs",
-                "contents": row_buttons
-            })
+            rows.append({"type": "box", "layout": "horizontal", "contents": row_buttons})
             
         bubble = {
             "type": "bubble",
             "size": "giga",
             "header": {
                 "type": "box", "layout": "vertical", "backgroundColor": group["header_bg"], "paddingAll": "10px",
-                "contents": [
-                    {"type": "text", "text": group["title"], "color": "#ffffff", "weight": "bold", "size": "md"}
-                ]
+                "contents": [{"type": "text", "text": group["title"], "color": "#ffffff", "weight": "bold", "size": "md"}]
             },
-            "body": {
-                "type": "box", "layout": "vertical", "spacing": "xs", "paddingAll": "8px",
-                "contents": rows
-            }
+            "body": {"type": "box", "layout": "vertical", "paddingAll": "6px", "contents": rows}
         }
-        flex_messages.append(FlexSendMessage(alt_text=group["title"], contents=bubble))
+        bubbles.append(bubble)
 
-    return flex_messages
+    return FlexSendMessage(alt_text="釣り場一覧", contents={"type": "carousel", "contents": bubbles})
 
 def build_candidates_flex_message(candidates, query_text):
-    """複数候補が見つかった場合の選択ボタンカードの構築"""
     buttons = []
     for spot in candidates[:8]:
         buttons.append({
@@ -1000,31 +966,22 @@ def build_candidates_flex_message(candidates, query_text):
         "size": "mega",
         "header": {
             "type": "box", "layout": "vertical", "backgroundColor": "#0066cc", "paddingAll": "10px",
-            "contents": [
-                {"type": "text", "text": "🔍 釣り場の選択", "color": "#ffffff", "weight": "bold", "size": "md"}
-            ]
+            "contents": [{"type": "text", "text": "🔍 釣り場の選択", "color": "#ffffff", "weight": "bold", "size": "md"}]
         },
         "body": {
             "type": "box", "layout": "vertical", "spacing": "sm", "paddingAll": "12px",
             "contents": [
                 {
-                    "type": "text",
-                    "text": f"「{query_text}」に該当する候補が見つかりました。タップして選択してください。",
-                    "wrap": True,
-                    "size": "xs",
-                    "color": "#555555"
+                    "type": "text", "text": f"「{query_text}」に該当する候補が見つかりました。タップして選択してください。",
+                    "wrap": True, "size": "xs", "color": "#555555"
                 }
             ] + buttons
         }
     }
     return FlexSendMessage(alt_text="釣り場候補の選択", contents=bubble)
 
-# ==========================================
-# 4. Supabase データベース管理関数
-# ==========================================
 def get_user_setting(user_id):
-    if not supabase:
-        return ('ウェザーニュース', '')
+    if not supabase: return ('ウェザーニュース', '')
     try:
         res = supabase.table('user_settings').select('*').eq('user_id', user_id).execute()
         if res.data and len(res.data) > 0:
@@ -1037,60 +994,43 @@ def get_user_setting(user_id):
 
 def add_favorite_spot(user_id, spot_name):
     if not supabase: return False, "DB接続未完了です。"
-    
     candidates = find_candidate_spots(spot_name)
     target_name = candidates[0] if candidates else spot_name
-
     source, favorites = get_user_setting(user_id)
     fav_list = [s for s in favorites.split(',') if s]
     if target_name in fav_list:
         return False, f"「{target_name}」はすでに登録されています。"
     if len(fav_list) >= MAX_FAVORITES:
         return False, f"お気に入り釣り場は最大{MAX_FAVORITES}箇所まで登録可能です。"
-    
     fav_list.append(target_name)
     try:
         supabase.table('user_settings').upsert({
-            'user_id': user_id,
-            'weather_source': source,
-            'favorite_spots': ','.join(fav_list)
+            'user_id': user_id, 'weather_source': source, 'favorite_spots': ','.join(fav_list)
         }).execute()
         return True, f"「{target_name}」をお気に入りに追加しました。"
     except Exception as e:
-        print(f"[Supabase保存エラー] {e}")
         return False, f"保存に失敗しました: {e}"
 
 def remove_favorite_spot(user_id, spot_name):
     if not supabase: return False, "DB接続未完了です。"
-    
     candidates = find_candidate_spots(spot_name)
     target_name = candidates[0] if candidates else spot_name
-
     source, favorites = get_user_setting(user_id)
     fav_list = [s for s in favorites.split(',') if s]
     if target_name not in fav_list:
         return False, f"「{target_name}」は登録されていません。"
-    
     fav_list.remove(target_name)
     try:
         supabase.table('user_settings').upsert({
-            'user_id': user_id,
-            'weather_source': source,
-            'favorite_spots': ','.join(fav_list)
+            'user_id': user_id, 'weather_source': source, 'favorite_spots': ','.join(fav_list)
         }).execute()
         return True, f"「{target_name}」をお気に入りから削除しました。"
     except Exception as e:
-        print(f"[Supabase削除エラー] {e}")
         return False, f"削除に失敗しました: {e}"
 
-# ==========================================
-# 5. ウェザーニュース 実データスクレイピング関数
-# ==========================================
 def fetch_spot_1hour_data(url):
-    """指定されたURLから現在時刻以降の予報を取得（6〜21時抽出版）"""
-    time.sleep(random.uniform(1.0, 2.5))  # サーバー負荷軽減のゆらぎ待機
+    time.sleep(random.uniform(1.0, 2.5))
     headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}
-    
     try:
         response = requests.get(url, headers=headers, timeout=8)
         response.raise_for_status()
@@ -1109,17 +1049,12 @@ def fetch_spot_1hour_data(url):
             daily_list = []
             lists = group.find_all('ul', class_='list')
             for item in lists:
-                if 'past' in item.get('class', []):
-                    continue
-                
+                if 'past' in item.get('class', []): continue
                 time_tag = item.find('li', class_='time')
                 hour_str = time_tag.text.strip() if time_tag else ""
                 if not hour_str.isdigit(): continue
-                
                 hour_int = int(hour_str)
-                if not (6 <= hour_int <= 21): 
-                    continue
-                    
+                if not (6 <= hour_int <= 21): continue
                 hour = f"{hour_int:02d}時"
                 
                 img_url = "https://gvs.weathernews.jp/onebox/img/wxicon/200.png"
@@ -1131,45 +1066,27 @@ def fetch_spot_1hour_data(url):
                     elif src.startswith('/'): img_url = "https://weathernews.jp" + src
                     else: img_url = src
                 img_url = img_url.replace("http://", "https://")
-
-                if not img_url.startswith("https://"):
-                    img_url = "https://gvs.weathernews.jp/onebox/img/wxicon/200.png"
+                if not img_url.startswith("https://"): img_url = "https://gvs.weathernews.jp/onebox/img/wxicon/200.png"
 
                 rain = item.find('li', class_='rain').text.strip().replace("ミリ", "mm") if item.find('li', class_='rain') else "-"
                 temp = item.find('li', class_='temp').text.strip() if item.find('li', class_='temp') else "-"
                 wind_p = item.find('li', class_='wind').find('p') if item.find('li', class_='wind') else None
                 wind = wind_p.text.strip() if wind_p else "-"
 
-                daily_list.append({
-                    "time": hour,
-                    "img_url": img_url,
-                    "temp": temp,
-                    "rain": rain,
-                    "wind": wind
-                })
+                daily_list.append({"time": hour, "img_url": img_url, "temp": temp, "rain": rain, "wind": wind})
             
-            if daily_list:
-                weather_by_date[date_str] = daily_list
-            
-            if len(weather_by_date) >= 4:
-                break
-            
+            if daily_list: weather_by_date[date_str] = daily_list
+            if len(weather_by_date) >= 4: break
         return weather_by_date
     except Exception as e:
         print(f"[スクレイピングエラー] {e}")
         return None
 
 def build_grid_flex_message(spot_name, weather_by_date, hp_url="", map_url="", tel="", is_favorite=False):
-    """田の字型（2行×2列）グリッドレイアウト + ウィザード（ワンタップ登録）ボタン"""
     dates = list(weather_by_date.keys())
-    
     def create_day_column(date_str):
         if not date_str:
-            return {
-                "type": "box", "layout": "vertical", "flex": 1, 
-                "contents": [{"type": "text", "text": "-", "color": "#cccccc", "align": "center", "size": "xs"}]
-            }
-            
+            return {"type": "box", "layout": "vertical", "flex": 1, "contents": [{"type": "text", "text": "-", "color": "#cccccc", "align": "center", "size": "xs"}]}
         daily_data = weather_by_date[date_str]
         rows = [
             {
@@ -1184,7 +1101,6 @@ def build_grid_flex_message(spot_name, weather_by_date, hp_url="", map_url="", t
             },
             {"type": "separator", "margin": "xs"}
         ]
-        
         for data in daily_data:
             t_val = data.get('temp', '').replace("℃", "").strip() or "-"
             r_val = data.get('rain', '').replace("mm", "").strip() or "-"
@@ -1206,46 +1122,22 @@ def build_grid_flex_message(spot_name, weather_by_date, hp_url="", map_url="", t
                     {"type": "text", "text": w_val, "size": "xs", "flex": 1, "align": "center"}
                 ]
             })
-            
         return {
             "type": "box", "layout": "vertical", "flex": 1,
             "contents": [
-                {
-                    "type": "box", "layout": "vertical", "backgroundColor": "#e6f2ff", "paddingAll": "4px", "margin": "sm",
-                    "contents": [
-                        {"type": "text", "text": date_str, "weight": "bold", "size": "sm", "align": "center", "color": "#0066cc"}
-                    ]
-                }
+                {"type": "box", "layout": "vertical", "backgroundColor": "#e6f2ff", "paddingAll": "4px", "margin": "sm",
+                 "contents": [{"type": "text", "text": date_str, "weight": "bold", "size": "sm", "align": "center", "color": "#0066cc"}]}
             ] + [{"type": "box", "layout": "vertical", "spacing": "none", "margin": "sm", "contents": rows}]
         }
 
     body_contents = []
-
-    # 1行目（上段）
-    row1 = {
-        "type": "box", "layout": "horizontal", "spacing": "sm",
-        "contents": [
-            create_day_column(dates[0] if len(dates) > 0 else None),
-            {"type": "separator"},
-            create_day_column(dates[1] if len(dates) > 1 else None)
-        ]
-    }
+    row1 = {"type": "box", "layout": "horizontal", "spacing": "sm", "contents": [create_day_column(dates[0] if len(dates) > 0 else None), {"type": "separator"}, create_day_column(dates[1] if len(dates) > 1 else None)]}
     body_contents.append(row1)
-
-    # 2行目（下段）
     if len(dates) > 2:
         body_contents.append({"type": "separator", "margin": "md"})
-        row2 = {
-            "type": "box", "layout": "horizontal", "spacing": "sm",
-            "contents": [
-                create_day_column(dates[2] if len(dates) > 2 else None),
-                {"type": "separator"},
-                create_day_column(dates[3] if len(dates) > 3 else None)
-            ]
-        }
+        row2 = {"type": "box", "layout": "horizontal", "spacing": "sm", "contents": [create_day_column(dates[2] if len(dates) > 2 else None), {"type": "separator"}, create_day_column(dates[3] if len(dates) > 3 else None)]}
         body_contents.append(row2)
 
-    # 最下段電話問い合わせボタン
     if tel:
         clean_tel = tel.replace('-', '').strip()
         body_contents.append({"type": "separator", "margin": "md"})
@@ -1253,75 +1145,32 @@ def build_grid_flex_message(spot_name, weather_by_date, hp_url="", map_url="", t
             "type": "box", "layout": "horizontal", "margin": "sm",
             "contents": [
                 {"type": "box", "layout": "vertical", "flex": 1, "contents": [{"type": "text", "text": " ", "size": "xs"}]},
-                {
-                    "type": "button",
-                    "action": {"type": "uri", "label": "📞 電話", "uri": f"tel:{clean_tel}"},
-                    "style": "secondary",
-                    "height": "sm",
-                    "flex": 3
-                },
+                {"type": "button", "action": {"type": "uri", "label": "📞 電話", "uri": f"tel:{clean_tel}"}, "style": "secondary", "height": "sm", "flex": 3},
                 {"type": "box", "layout": "vertical", "flex": 1, "contents": [{"type": "text", "text": " ", "size": "xs"}]}
             ]
         })
 
-    # ヘッダー内のリンク＆【お気に入りウィザードボタン】の組み立て
     header_buttons = []
+    if is_favorite:
+        header_buttons.append({"type": "button", "action": {"type": "postback", "label": "🗑️ 解除", "data": f"action=fav_del&spot={spot_name}"}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs", "color": "#ffcccc"})
+    else:
+        header_buttons.append({"type": "button", "action": {"type": "postback", "label": "⭐️ 登録", "data": f"action=fav_add&spot={spot_name}"}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs", "color": "#fffde7"})
+
     clean_hp = clean_url(hp_url)
     clean_map = clean_url(map_url)
+    if clean_hp: header_buttons.append({"type": "button", "action": {"type": "uri", "label": "🌐 HP", "uri": clean_hp}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
+    if clean_map: header_buttons.append({"type": "button", "action": {"type": "uri", "label": "🗺️ 地図", "uri": clean_map}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
 
-    if clean_hp:
-        header_buttons.append({
-            "type": "button",
-            "action": {"type": "uri", "label": "🌐 HP", "uri": clean_hp},
-            "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"
-        })
-    if clean_map:
-        header_buttons.append({
-            "type": "button",
-            "action": {"type": "uri", "label": "🗺️ 地図", "uri": clean_map},
-            "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"
-        })
-
-    # ワンタップお気に入り登録/解除ボタン（GUIウィザード中核機能）
-    if is_favorite:
-        header_buttons.append({
-            "type": "button",
-            "action": {"type": "postback", "label": "🗑️ 解除", "data": f"action=fav_del&spot={spot_name}"},
-            "style": "secondary", "height": "sm", "flex": 1, "margin": "xs", "color": "#ffcccc"
-        })
-    else:
-        header_buttons.append({
-            "type": "button",
-            "action": {"type": "postback", "label": "⭐️ 登録", "data": f"action=fav_add&spot={spot_name}"},
-            "style": "secondary", "height": "sm", "flex": 1, "margin": "xs", "color": "#fffde7"
-        })
-
-    header_contents = [
-        {"type": "text", "text": f"📍 {spot_name}", "color": "#ffffff", "weight": "bold", "size": "md"}
-    ]
-    if header_buttons:
-        header_contents.append({
-            "type": "box", "layout": "horizontal", "margin": "sm", "spacing": "xs",
-            "contents": header_buttons
-        })
+    header_contents = [{"type": "text", "text": f"📍 {spot_name}", "color": "#ffffff", "weight": "bold", "size": "lg"}]
+    if header_buttons: header_contents.append({"type": "box", "layout": "horizontal", "margin": "sm", "spacing": "xs", "contents": header_buttons})
 
     bubble = {
-        "type": "bubble",
-        "size": "giga",
-        "header": {
-            "type": "box", "layout": "vertical", "backgroundColor": "#0066cc", "paddingAll": "10px",
-            "contents": header_contents
-        },
-        "body": {
-            "type": "box", "layout": "vertical", "spacing": "md", "paddingAll": "8px",
-            "contents": body_contents
-        }
+        "type": "bubble", "size": "giga",
+        "header": {"type": "box", "layout": "vertical", "backgroundColor": "#0066cc", "paddingAll": "10px", "contents": header_contents},
+        "body": {"type": "box", "layout": "vertical", "spacing": "md", "paddingAll": "8px", "contents": body_contents}
     }
     return FlexSendMessage(alt_text=f"{spot_name}の天気予報(4日間)", contents=bubble)
 
-# ==========================================
-# 6. Webサーバーのエンドポイント
-# ==========================================
 @app.route("/", methods=['GET'])
 def top_page():
     return "LINE Reply Bot Server (Supabase DB) is running!", 200
@@ -1330,47 +1179,35 @@ def top_page():
 def callback():
     signature = request.headers.get('X-Line-Signature', '')
     body = request.get_data(as_text=True)
-    try:
-        handler.handle(body, signature)
-    except InvalidSignatureError:
-        abort(400)
+    try: handler.handle(body, signature)
+    except InvalidSignatureError: abort(400)
     return 'OK', 200
 
-# ==========================================
-# 7. LINEメッセージ受信処理
-# ==========================================
-# テキストメッセージ処理
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
     try:
         raw_msg = event.message.text.strip()
         user_id = event.source.user_id
 
-        print(f"[受信] ユーザー({user_id}): {raw_msg}")
-
-        # 旧式のテキスト追加・削除コマンド（互換性維持のため残存）
         add_match = re.match(r'^追加[\s:： ]*(.+)$', raw_msg)
         if add_match:
             spot_name = add_match.group(1).strip()
             success, msg = add_favorite_spot(user_id, spot_name)
-            reply_text = f"✅ {msg}" if success else f"⚠️ {msg}"
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"✅ {msg}" if success else f"⚠️ {msg}"))
             return
 
         del_match = re.match(r'^削除[\s:： ]*(.+)$', raw_msg)
         if del_match:
             spot_name = del_match.group(1).strip()
             success, msg = remove_favorite_spot(user_id, spot_name)
-            reply_text = f"✅ {msg}" if success else f"⚠️ {msg}"
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"✅ {msg}" if success else f"⚠️ {msg}"))
             return
 
         if raw_msg in ["一覧", "リスト", "釣り場一覧", "エリア"]:
-            flex_msgs = build_spot_list_messages_colored_split(user_id=user_id)
-            line_bot_api.reply_message(event.reply_token, flex_msgs)
+            flex_msg = build_spot_list_carousel_horizontal(user_id=user_id)
+            line_bot_api.reply_message(event.reply_token, flex_msg)
             return
 
-        # 「設定」コマンド -> GUIウィザード（設定パネル）を返信
         if raw_msg == "設定":
             _, favorites = get_user_setting(user_id)
             fav_list = [s for s in favorites.split(',') if s]
@@ -1378,14 +1215,10 @@ def handle_message(event):
             line_bot_api.reply_message(event.reply_token, flex_msg)
             return
 
-        # 釣り場検索（候補抽出）
         candidates = find_candidate_spots(raw_msg)
-
         if len(candidates) == 1:
             target_spot_name = candidates[0]
             target_spot_name, target_url, hp_url, map_url, tel = get_spot_details(target_spot_name)
-            
-            # DBから現在のユーザーのお気に入り状況を取得し、⭐️ボタンの状態を切り替える
             _, favorites = get_user_setting(user_id)
             fav_list = [s for s in favorites.split(',') if s]
             is_fav = target_spot_name in fav_list
@@ -1395,125 +1228,77 @@ def handle_message(event):
                 flex_msg = build_grid_flex_message(target_spot_name, weather_by_date, hp_url, map_url, tel, is_favorite=is_fav)
                 line_bot_api.reply_message(event.reply_token, flex_msg)
             else:
-                error_msg = f"⚠️ 【{target_spot_name}】の天気データの取得に失敗しました。"
-                line_bot_api.reply_message(event.reply_token, TextSendMessage(text=error_msg))
+                line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"⚠️ 【{target_spot_name}】の天気データの取得に失敗しました。"))
             return
-
         elif len(candidates) > 1:
             flex_msg = build_candidates_flex_message(candidates, raw_msg)
             line_bot_api.reply_message(event.reply_token, flex_msg)
             return
 
-        # 該当なし
-        reply_text = (
-            "🔍 その釣り場は現在対応していません、もしくは名前が間違っています。\n\n"
-            "「一覧」と送信すると全国60箇所の釣り場リストを表示できます！\n\n"
-            "※「あるくす」「ざま」「すそぱ」「寺」「てら」「ならやま」「がし山」などの略称でも検索可能です。"
-        )
+        reply_text = "🔍 その釣り場は現在対応していません、もしくは名前が間違っています。\n\n「一覧」と送信すると全国60箇所の釣り場リストを表示できます！"
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
 
     except Exception as e:
         print("\n=== システムエラー詳細 ===")
         traceback.print_exc()
-        print("==========================\n")
-        try:
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ 処理中にエラーが発生しました。時間を置いて再度お試しください。"))
-        except Exception:
-            pass
+        try: line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ 処理中にエラーが発生しました。"))
+        except Exception: pass
 
-# ボタン（Postback）アクションの受信処理
 @handler.add(PostbackEvent)
 def handle_postback(event):
     try:
         user_id = event.source.user_id
-        # "action=fav_add&spot=王禅寺" のようなデータを辞書型に変換
         data_dict = dict(parse_qsl(event.postback.data))
-        action = data_dict.get("action")
-        spot_name = data_dict.get("spot")
+        action, spot_name = data_dict.get("action"), data_dict.get("spot")
 
-        # ウィザード：「⭐️登録」ボタンが押された場合
         if action == "fav_add":
             success, msg = add_favorite_spot(user_id, spot_name)
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"✅ {msg}"))
-
-        # ウィザード：「🗑️解除（削除）」ボタンが押された場合
         elif action == "fav_del":
             success, msg = remove_favorite_spot(user_id, spot_name)
-            # 削除後、最新状態の「設定パネル」を再生成して返す（UIのシームレスな更新）
             _, favorites = get_user_setting(user_id)
             fav_list = [s for s in favorites.split(',') if s]
             flex_msg = build_settings_flex_message(fav_list)
-            
-            line_bot_api.reply_message(event.reply_token, [
-                TextSendMessage(text=f"✅ {msg}"),
-                flex_msg
-            ])
-
+            line_bot_api.reply_message(event.reply_token, [TextSendMessage(text=f"✅ {msg}"), flex_msg])
     except Exception as e:
         print(f"Postback Error: {e}")
 
-# ==========================================
-# 8. 定期トリガーエンドポイント（Cron自動通知用）
-# ==========================================
 @app.route("/cron_trigger", methods=['GET', 'POST'])
 def cron_trigger():
-    print("\n--- 定期トリガーを受信しました ---")
-    if not supabase:
-        return jsonify({"status": "error", "reason": "DB_NOT_CONNECTED"}), 500
-
+    if not supabase: return jsonify({"status": "error", "reason": "DB_NOT_CONNECTED"}), 500
     try:
         res = supabase.table('user_settings').select('*').execute()
         users = res.data or []
 
-        # テストモード安全ガード: IS_TEST_MODE が True の場合は ADMIN_USER_ID のみに絞り込み
         if IS_TEST_MODE:
-            print(f"[テストモード有効] 送信対象を管理者({ADMIN_USER_ID})のみに絞り込みます。")
             users = [u for u in users if u.get('user_id') == ADMIN_USER_ID]
-            if not users and ADMIN_USER_ID:
-                users = [{'user_id': ADMIN_USER_ID, 'favorite_spots': ''}]
+            if not users and ADMIN_USER_ID: users = [{'user_id': ADMIN_USER_ID, 'favorite_spots': ''}]
 
-        # 大量通知ストッパー（安全装置）
-        if len(users) > MAX_LIMIT:
-            print(f"[安全装置作動] 対象件数({len(users)}件)が上限({MAX_LIMIT}件)を超えたためスキップします。")
-            return jsonify({"status": "skipped", "reason": "MAX_LIMIT_EXCEEDED"}), 200
-
-        print(f"配信対象件数: {len(users)}件")
+        if len(users) > MAX_LIMIT: return jsonify({"status": "skipped", "reason": "MAX_LIMIT_EXCEEDED"}), 200
 
         for user in users:
             uid = user.get('user_id')
             _, favorites = get_user_setting(uid)
             fav_list = [s for s in favorites.split(',') if s]
-
-            if not fav_list:
-                print(f"ユーザー({uid}): お気に入り未登録のためスキップ")
-                continue
+            if not fav_list: continue
 
             for spot_name in fav_list:
                 candidates = find_candidate_spots(spot_name)
-                if not candidates:
-                    continue
+                if not candidates: continue
                 matched_spot = candidates[0]
                 matched_spot, url, hp_url, map_url, tel = get_spot_details(matched_spot)
-                if not url:
-                    continue
+                if not url: continue
 
-                print(f"ユーザー({uid}) へ 「{matched_spot}」 の定期通知を処理中...")
                 weather_data = fetch_spot_1hour_data(url)
                 if weather_data:
-                    # 定期通知時はお気に入り登録ボタン等の一時的UIは不要なため is_favorite=False とする
                     flex_msg = build_grid_flex_message(matched_spot, weather_data, hp_url, map_url, tel, is_favorite=False)
                     line_bot_api.push_message(uid, flex_msg)
-                    print(f"-> 「{matched_spot}」 のPush送信成功")
-                
-                time.sleep(random.uniform(1.5, 3.0))  # サーバー負荷軽減のゆらぎ待機
+                time.sleep(random.uniform(1.5, 3.0))
 
         return jsonify({"status": "success", "processed_users": len(users)}), 200
-
     except Exception as e:
-        print("\n=== Cron処理エラー ===")
         traceback.print_exc()
         return jsonify({"status": "error", "message": str(e)}), 500
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
