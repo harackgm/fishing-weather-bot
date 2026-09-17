@@ -1034,7 +1034,7 @@ def build_spot_list_carousel_horizontal(user_id=None):
         }
         bubbles.append(bubble)
 
-    # ★ 使い方ガイド（詳細化）
+    # ★ 使い方ガイドの文面を修正
     guide_bubble = {
         "type": "bubble",
         "size": "giga",
@@ -1043,10 +1043,10 @@ def build_spot_list_carousel_horizontal(user_id=None):
             "contents": [{"type": "text", "text": "📖 使い方ガイド", "color": "#ffffff", "weight": "bold", "size": "md"}]
         },
         "body": {
-            "type": "box", "layout": "vertical", "spacing": "sm", "paddingAll": "15px",
+            "type": "box", "layout": "vertical", "spacing": "md", "paddingAll": "15px",
             "contents": [
                 {
-                    "type": "box", "layout": "vertical", "margin": "none", "spacing": "sm",
+                    "type": "box", "layout": "vertical", "spacing": "sm",
                     "contents": [
                         {"type": "text", "text": "👇 基本の操作", "weight": "bold", "size": "sm", "color": "#333333"},
                         {"type": "text", "text": "・一覧のボタンをタップで天気予報を表示", "wrap": True, "size": "xs", "color": "#666666"}
@@ -1054,13 +1054,13 @@ def build_spot_list_carousel_horizontal(user_id=None):
                 },
                 {"type": "separator", "margin": "md"},
                 {
-                    "type": "box", "layout": "vertical", "margin": "md", "spacing": "sm",
+                    "type": "box", "layout": "vertical", "spacing": "sm", "margin": "md",
                     "contents": [
                         {"type": "text", "text": "💬 テキストコマンド", "weight": "bold", "size": "sm", "color": "#333333"},
-                        {"type": "text", "text": "【まとめて追加・登録】\n「追加 東山湖 すその」\n※名前をスペースやカンマ(,)で区切ると、最大30件まで一気に登録できます。", "wrap": True, "size": "xs", "color": "#666666"},
-                        {"type": "text", "text": "【まとめて削除】\n「削除 東山湖 すその」\n※追加と同じく、区切って入力すると複数同時に解除できます。", "wrap": True, "size": "xs", "color": "#666666", "margin": "sm"},
+                        {"type": "text", "text": "【まとめて追加】\n例：「追加 東山湖 すその」\n※釣り場と釣り場の名前の間にスペースを入れてください（最大30件まで一気に登録可能）。", "wrap": True, "size": "xs", "color": "#666666"},
+                        {"type": "text", "text": "【まとめて削除】\n例：「削除 東山湖 すその」\n※追加と同じく、名前の間にスペースを入れて複数同時に解除できます。", "wrap": True, "size": "xs", "color": "#666666", "margin": "sm"},
                         {"type": "text", "text": "【設定】\n「設定」と送信すると、並び替え・全削除パネルが出ます。", "wrap": True, "size": "xs", "color": "#666666", "margin": "sm"},
-                        {"type": "text", "text": "【一覧】\nその他の文字を送信すると、この一覧を表示します。", "wrap": True, "size": "xs", "color": "#666666", "margin": "sm"}
+                        {"type": "text", "text": "【一覧（メニュー）の出し方】\n「一覧」という言葉や、それ以外の適当な文字（「あ」「1」「a」など）を送信すると、この一覧表が表示されます。", "wrap": True, "size": "xs", "color": "#666666", "margin": "sm"}
                     ]
                 }
             ]
