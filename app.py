@@ -34,7 +34,7 @@ handler = WebhookHandler(LINE_CHANNEL_SECRET)
 ADMIN_USER_ID = os.getenv('ADMIN_USER_ID', '').strip()
 IS_TEST_MODE = True  # テストモード（Trueの場合、ADMIN_USER_IDのみに通知送信）
 MAX_LIMIT = 5        # 大量通知ストッパー（1回の処理上限数）
-MAX_FAVORITES = 30   # ★お気に入り登録の最大数（30箇所に拡張）
+MAX_FAVORITES = 30   # ★お気に入り登録の最大数（30箇所）
 
 # Supabase接続初期化
 SUPABASE_URL = os.getenv('SUPABASE_URL', '').strip()
@@ -897,8 +897,10 @@ def build_spot_list_carousel_horizontal(user_id=None):
                     row_buttons.append({
                         "type": "button",
                         "action": {"type": "message", "label": spot, "text": spot},
-                        "color": "#fffde7",
+                        "style": "secondary",    # 【復元】ボタンの背景色と文字色を自動調整
+                        "color": "#fffde7",      # ゴールドの背景
                         "height": "sm",
+                        "margin": "xs",          # 【復元】ボタンの余白
                         "flex": 1
                     })
                 if len(pair) == 1:
@@ -928,8 +930,10 @@ def build_spot_list_carousel_horizontal(user_id=None):
                 row_buttons.append({
                     "type": "button",
                     "action": {"type": "message", "label": spot, "text": spot},
+                    "style": "secondary",    # 【復元】
                     "color": group["btn_bg"],
                     "height": "sm",
+                    "margin": "xs",          # 【復元】
                     "flex": 1
                 })
             if len(pair) == 1:
