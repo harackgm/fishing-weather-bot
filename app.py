@@ -770,18 +770,12 @@ def find_candidate_spots(user_text):
     """ユーザー入力から該当するすべての釣り場候補を特定して取得"""
     text = user_text.strip().lower()
 
-    # 1. 完全一致判定（完全一致があれば単一特定）
-    for spot_key, data in SPOT_WEATHER_DATA.items():
-        for alias in data["aliases"]:
-            if text == alias.lower():
-                return [spot_key]
-
-    # 2. 部分一致検索（ヒットする釣り場を全抽出）
+    # 1. 完全一致・部分一致判定（完全・部分一致する釣り場を全抽出）
     matched_spots = []
     for spot_key, data in SPOT_WEATHER_DATA.items():
         for alias in data["aliases"]:
             alias_lower = alias.lower()
-            if alias_lower in text or text in alias_lower:
+            if text == alias_lower or alias_lower in text or text in alias_lower:
                 if spot_key not in matched_spots:
                     matched_spots.append(spot_key)
                 break
@@ -789,7 +783,7 @@ def find_candidate_spots(user_text):
     if matched_spots:
         return matched_spots
 
-    # 3. あいまい類似度検索 (difflib)
+    # 2. あいまい類似度検索 (difflib)
     all_aliases = []
     alias_to_spot = {}
     for spot_key, data in SPOT_WEATHER_DATA.items():
@@ -872,7 +866,7 @@ def build_spot_list_carousel():
                     "margin": "xs"
                 })
             if len(pair) == 1:
-                # LINE APIエラー防止のためダミー要素入りのboxコンポーネントを置く
+                # LINE APIエラー防止用ダミーコンポーネント
                 row_buttons.append({"type": "box", "layout": "vertical", "flex": 1, "contents": [{"type": "text", "text": " ", "size": "xs"}]})
                 
             rows.append({
@@ -1037,7 +1031,7 @@ def fetch_spot_1hour_data(url):
         return None
 
 def build_grid_flex_message(spot_name, weather_by_date, hp_url="", map_url="", tel=""):
-    """田の字型（2行×2列）グリッドレイアウト（LINE API仕様安全版）"""
+    """田の字型（2行×2列）グリッドレイアウト（20文字制限修正済ボタン）"""
     dates = list(weather_by_date.keys())
     
     def create_day_column(date_str):
@@ -1122,7 +1116,7 @@ def build_grid_flex_message(spot_name, weather_by_date, hp_url="", map_url="", t
         }
         body_contents.append(row2)
 
-    # 最下段電話問い合わせボタン（LINE API仕様安全版）
+    # 最下段電話問い合わせボタン（ラベル20文字以内制限修正済）
     if tel:
         clean_tel = tel.replace('-', '').strip()
         body_contents.append({"type": "separator", "margin": "md"})
@@ -1132,7 +1126,7 @@ def build_grid_flex_message(spot_name, weather_by_date, hp_url="", map_url="", t
                 {"type": "box", "layout": "vertical", "flex": 1, "contents": [{"type": "text", "text": " ", "size": "xs"}]},
                 {
                     "type": "button",
-                    "action": {"type": "uri", "label": f"📞 電話問い合わせ ({tel})", "uri": f"tel:{clean_tel}"},
+                    "action": {"type": "uri", "label": f"📞 電話問合せ ({tel})", "uri": f"tel:{clean_tel}"},
                     "style": "secondary",
                     "height": "sm",
                     "flex": 3
