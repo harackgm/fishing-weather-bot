@@ -754,8 +754,8 @@ SPOT_WEATHER_DATA = {
     }
 }
 
-# 地域ごとの色分けテーマデータ（4通の各カードが横幅gigaで綺麗に収まる設計）
-COLOR_GROUPS = [
+# 地域ごとの色分けテーマデータ（4枚カルーセル構造）
+COLOR_CAROUSEL_GROUPS = [
     {
         "title": "📍 静岡・神奈川・東京・千葉",
         "header_bg": "#0066cc",   # ブルー
@@ -847,19 +847,64 @@ def get_spot_details(spot_key):
     hp_url = clean_url(data.get("hp_url", ""))
     return spot_key, data["url"], hp_url, map_url, data.get("tel", "")
 
-def build_spot_list_messages_colored_vertical():
-    """10KB制限を回避しつつ、セルの横幅を最大（giga）に広げた4つの地域色分けカードの構築"""
-    flex_messages = []
-    
-    for group in COLOR_GROUPS:
+def build_spot_list_carousel_colored(user_id=None):
+    """ユーザーのお気に入りカード（1枚目）＋4つの地域カードを横スワイプ形式で並べるカルーセル構築"""
+    bubbles = []
+
+    # ユーザーのお気に入り登録があれば1枚目にゴールドカードとして特別配置（ユーザー別動的順序）
+    if user_id:
+        _, favorites = get_user_setting(user_id)
+        fav_list = [s for s in favorites.split(',') if s]
+        if fav_list:
+            fav_rows = []
+            for i in range(0, len(fav_list), 2):
+                pair = fav_list[i:i+2]
+                row_buttons = []
+                for spot in pair:
+                    row_buttons.append({
+                        "type": "button",
+                        "action": {"type": "message", "label": spot, "text": spot},
+                        "style": "secondary",
+                        "color": "#fffde7",
+                        "height": "sm",
+                        "flex": 1,
+                        "margin": "xs"
+                    })
+                if len(pair) == 1:
+                    row_buttons.append({"type": "box", "layout": "vertical", "flex": 1, "contents": [{"type": "text", "text": " ", "size": "xs"}]})
+                    
+                fav_rows.append({
+                    "type": "box",
+                    "layout": "horizontal",
+                    "margin": "xs",
+                    "contents": row_buttons
+                })
+
+            bubbles.append({
+                "type": "bubble",
+                "size": "giga",
+                "header": {
+                    "type": "box", "layout": "vertical", "backgroundColor": "#d4af37", "paddingAll": "10px",
+                    "contents": [
+                        {"type": "text", "text": "⭐ あなたのお気に入り釣り場", "color": "#ffffff", "weight": "bold", "size": "md"}
+                    ]
+                },
+                "body": {
+                    "type": "box", "layout": "vertical", "spacing": "xs", "paddingAll": "8px",
+                    "contents": fav_rows
+                }
+            })
+
+    # 標準の4地域カード
+    for group in COLOR_CAROUSEL_GROUPS:
         spots = group["spots"]
         
         rows = []
         for i in range(0, len(spots), 2):
             pair = spots[i:i+2]
-            row_cells = []
+            row_buttons = []
             for spot in pair:
-                row_cells.append({
+                row_buttons.append({
                     "type": "button",
                     "action": {"type": "message", "label": spot, "text": spot},
                     "style": "secondary",
@@ -869,18 +914,18 @@ def build_spot_list_messages_colored_vertical():
                     "margin": "xs"
                 })
             if len(pair) == 1:
-                row_cells.append({"type": "box", "layout": "vertical", "flex": 1, "contents": [{"type": "text", "text": " ", "size": "xs"}]})
+                row_buttons.append({"type": "box", "layout": "vertical", "flex": 1, "contents": [{"type": "text", "text": " ", "size": "xs"}]})
                 
             rows.append({
                 "type": "box",
                 "layout": "horizontal",
                 "margin": "xs",
-                "contents": row_cells
+                "contents": row_buttons
             })
             
         bubble = {
             "type": "bubble",
-            "size": "giga",  # 横幅・セル幅を最大限拡大
+            "size": "giga",
             "header": {
                 "type": "box", "layout": "vertical", "backgroundColor": group["header_bg"], "paddingAll": "10px",
                 "contents": [
@@ -892,10 +937,13 @@ def build_spot_list_messages_colored_vertical():
                 "contents": rows
             }
         }
-        
-        flex_messages.append(FlexSendMessage(alt_text=group["title"], contents=bubble))
+        bubbles.append(bubble)
 
-    return flex_messages
+    carousel = {
+        "type": "carousel",
+        "contents": bubbles
+    }
+    return FlexSendMessage(alt_text="全国管理釣り場一覧", contents=carousel)
 
 def build_candidates_flex_message(candidates, query_text):
     """複数候補が見つかった場合の選択ボタンカードの構築"""
@@ -1242,10 +1290,10 @@ def handle_message(event):
 
         print(f"[受信] ユーザー({user_id}): {user_message}")
 
-        # 1. 一覧コマンド（4通の色分け縦並びカードを一括送信）
+        # 1. 一覧コマンド（ユーザー別のお気に入り＋地域別色分けカードカルーセルを送信）
         if user_message in ["一覧", "リスト", "釣り場一覧", "エリア"]:
-            flex_msgs = build_spot_list_messages_colored_vertical()
-            line_bot_api.reply_message(event.reply_token, flex_msgs)
+            flex_msg = build_spot_list_carousel_colored(user_id=user_id)
+            line_bot_api.reply_message(event.reply_token, flex_msg)
             return
 
         elif user_message == "設定":
