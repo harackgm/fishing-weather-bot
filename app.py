@@ -218,7 +218,7 @@ SPOT_WEATHER_DATA = {
     "エリア21": {
         "url": "https://weathernews.jp/onebox/36.496150/139.899522/",
         "hp_url": "http://www.area21.jp/",
-        "search_name": "エリア21 宇都宮",
+        "search_name": "エリア21 宇巨宮",
         "tel": "028-656-1188",
         "aliases": ["エリア21", "えりあ21"]
     },
@@ -897,8 +897,10 @@ def build_settings_flex_message(fav_list):
             "contents": [
                 {
                     "type": "button",
+                    # ★ 一覧ボタンをお気に入りに近い黄色系に変更
                     "action": {"type": "postback", "label": "📋 一覧", "data": "action=show_list"},
                     "style": "secondary",
+                    "color": "#fff59d",
                     "flex": 1
                 },
                 {
@@ -974,7 +976,6 @@ def build_spot_list_carousel_horizontal(user_id=None):
                     
                 fav_rows.append(row_box)
 
-            # --- ここから新規追加（設定ボタンと境界線） ---
             fav_rows.append({"type": "separator", "margin": "lg", "color": "#cccccc"})
             fav_rows.append({
                 "type": "button",
@@ -984,7 +985,6 @@ def build_spot_list_carousel_horizontal(user_id=None):
                 "height": "sm",
                 "margin": "md"
             })
-            # ----------------------------------------------
 
             fav_bubble = {
                 "type": "bubble",
@@ -1208,6 +1208,19 @@ def fetch_spot_1hour_data(url):
 
 def build_grid_flex_message(spot_name, weather_by_date, hp_url="", map_url="", tel="", is_favorite=False):
     dates = list(weather_by_date.keys())
+    
+    # ★ 釣り場に対応するヘッダー色を検索（見つからなければデフォルト青）
+    header_color = "#0066cc"
+    for group in COLOR_GROUPS:
+        found = False
+        for sg in group["sub_groups"]:
+            if spot_name in sg["spots"]:
+                header_color = group["header_bg"]
+                found = True
+                break
+        if found:
+            break
+
     def create_day_column(date_str):
         if not date_str:
             return {"type": "box", "layout": "vertical", "flex": 1, "contents": [{"type": "text", "text": "-", "color": "#cccccc", "align": "center", "size": "xs"}]}
@@ -1267,7 +1280,8 @@ def build_grid_flex_message(spot_name, weather_by_date, hp_url="", map_url="", t
         clean_tel = tel.replace('-', '').strip()
         bottom_buttons.append({"type": "button", "action": {"type": "uri", "label": "📞 電話", "uri": f"tel:{clean_tel}"}, "style": "secondary", "height": "sm", "flex": 1})
     
-    bottom_buttons.append({"type": "button", "action": {"type": "postback", "label": "📋 一覧", "data": "action=show_list"}, "style": "secondary", "height": "sm", "flex": 1})
+    # ★ 一覧ボタンを黄色系に変更
+    bottom_buttons.append({"type": "button", "action": {"type": "postback", "label": "📋 一覧", "data": "action=show_list"}, "style": "secondary", "color": "#fff59d", "height": "sm", "flex": 1})
 
     body_contents.append({"type": "separator", "margin": "md"})
     body_contents.append({
@@ -1291,7 +1305,8 @@ def build_grid_flex_message(spot_name, weather_by_date, hp_url="", map_url="", t
 
     bubble = {
         "type": "bubble", "size": "giga",
-        "header": {"type": "box", "layout": "vertical", "backgroundColor": "#0066cc", "paddingAll": "10px", "contents": header_contents},
+        # ★ ヘッダー背景色を連動させた変数に置き換え
+        "header": {"type": "box", "layout": "vertical", "backgroundColor": header_color, "paddingAll": "10px", "contents": header_contents},
         "body": {"type": "box", "layout": "vertical", "spacing": "md", "paddingAll": "8px", "contents": body_contents}
     }
     return FlexSendMessage(alt_text=f"{spot_name}の天気予報(4日間)", contents=bubble)
