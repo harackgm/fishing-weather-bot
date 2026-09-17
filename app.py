@@ -754,8 +754,8 @@ SPOT_WEATHER_DATA = {
     }
 }
 
-# 地域ごとの色分けテーマデータ（4枚カルーセル構造）
-COLOR_CAROUSEL_GROUPS = [
+# 地域ごとの色分けテーマデータ（4通の分割送信構成）
+COLOR_GROUPS = [
     {
         "title": "📍 静岡・神奈川・東京・千葉",
         "header_bg": "#0066cc",   # ブルー
@@ -847,11 +847,11 @@ def get_spot_details(spot_key):
     hp_url = clean_url(data.get("hp_url", ""))
     return spot_key, data["url"], hp_url, map_url, data.get("tel", "")
 
-def build_spot_list_carousel_colored(user_id=None):
-    """ユーザーのお気に入りカード（1枚目）＋4つの地域カードをカルーセル構造で構築（10KB上限完全適合）"""
-    bubbles = []
+def build_spot_list_messages_colored_split(user_id=None):
+    """10KB容量制限を完全回避するため、1通ごとに独立したFlexMessageの配列（最大5通）を構築して一括送信"""
+    flex_messages = []
 
-    # ユーザーのお気に入り登録があれば1枚目にゴールドカードとして特別配置
+    # 1. ユーザーのお気に入り登録があれば1通目にゴールドカードとして単体配置
     if user_id:
         _, favorites = get_user_setting(user_id)
         fav_list = [s for s in favorites.split(',') if s]
@@ -880,7 +880,7 @@ def build_spot_list_carousel_colored(user_id=None):
                     "contents": row_buttons
                 })
 
-            bubbles.append({
+            fav_bubble = {
                 "type": "bubble",
                 "size": "giga",
                 "header": {
@@ -893,10 +893,11 @@ def build_spot_list_carousel_colored(user_id=None):
                     "type": "box", "layout": "vertical", "spacing": "xs", "paddingAll": "8px",
                     "contents": fav_rows
                 }
-            })
+            }
+            flex_messages.append(FlexSendMessage(alt_text="⭐ あなたのお気に入り釣り場", contents=fav_bubble))
 
-    # 標準の4地域カード
-    for group in COLOR_CAROUSEL_GROUPS:
+    # 2. 標準の4地域カード（1地域ごとに1通のFlexSendMessageとして生成し、容量オーバーを防止）
+    for group in COLOR_GROUPS:
         spots = group["spots"]
         
         rows = []
@@ -937,13 +938,9 @@ def build_spot_list_carousel_colored(user_id=None):
                 "contents": rows
             }
         }
-        bubbles.append(bubble)
+        flex_messages.append(FlexSendMessage(alt_text=group["title"], contents=bubble))
 
-    carousel = {
-        "type": "carousel",
-        "contents": bubbles
-    }
-    return FlexSendMessage(alt_text="全国管理釣り場一覧", contents=carousel)
+    return flex_messages
 
 def build_candidates_flex_message(candidates, query_text):
     """複数候補が見つかった場合の選択ボタンカードの構築"""
@@ -1285,18 +1282,33 @@ def callback():
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
     try:
-        user_message = event.message.text.strip()
+        raw_msg = event.message.text.strip()
         user_id = event.source.user_id
 
-        print(f"[受信] ユーザー({user_id}): {user_message}")
+        print(f"[受信] ユーザー({user_id}): {raw_msg}")
 
-        # 1. 一覧コマンド（お気に入りがある場合は1枚目にゴールドカード＋色分け4地域カルーセルを返信）
-        if user_message in ["一覧", "リスト", "釣り場一覧", "エリア"]:
-            flex_msg = build_spot_list_carousel_colored(user_id=user_id)
-            line_bot_api.reply_message(event.reply_token, flex_msg)
+        # コマンド判定（追加・削除の表記ブレを吸収）
+        if raw_msg.startswith("追加:") or raw_msg.startswith("追加：") or raw_msg.startswith("追加 "):
+            spot_name = raw_msg.replace("追加:", "").replace("追加：", "").replace("追加 ", "").strip()
+            success, msg = add_favorite_spot(user_id, spot_name) if spot_name else (False, "⚠️ 釣り場名を入力してください。")
+            reply_text = f"✅ {msg}" if success else f"⚠️ {msg}"
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
             return
 
-        elif user_message == "設定":
+        elif raw_msg.startswith("削除:") or raw_msg.startswith("削除：") or raw_msg.startswith("削除 "):
+            spot_name = raw_msg.replace("削除:", "").replace("削除：", "").replace("削除 ", "").strip()
+            success, msg = remove_favorite_spot(user_id, spot_name) if spot_name else (False, "⚠️ 削除する釣り場名を入力してください。")
+            reply_text = f"✅ {msg}" if success else f"⚠️ {msg}"
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
+            return
+
+        elif raw_msg in ["一覧", "リスト", "釣り場一覧", "エリア"]:
+            # お気に入り（登録時のみ）＋色分け地域メッセージを分割一括返信（容量制限安全回避）
+            flex_msgs = build_spot_list_messages_colored_split(user_id=user_id)
+            line_bot_api.reply_message(event.reply_token, flex_msgs)
+            return
+
+        elif raw_msg == "設定":
             user_setting = get_user_setting(user_id)
             source, favorites = user_setting
             fav_list = [s for s in favorites.split(',') if s]
@@ -1314,22 +1326,8 @@ def handle_message(event):
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
             return
 
-        elif user_message.startswith("追加:"):
-            spot_name = user_message.replace("追加:", "").strip()
-            success, msg = add_favorite_spot(user_id, spot_name) if spot_name else (False, "⚠️ 釣り場名を入力してください。")
-            reply_text = f"✅ {msg}" if success else f"⚠️ {msg}"
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
-            return
-
-        elif user_message.startswith("削除:"):
-            spot_name = user_message.replace("削除:", "").strip()
-            success, msg = remove_favorite_spot(user_id, spot_name) if spot_name else (False, "⚠️ 削除する釣り場名を入力してください。")
-            reply_text = f"✅ {msg}" if success else f"⚠️ {msg}"
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
-            return
-
         # 2. 検索キーワードから候補を取得
-        candidates = find_candidate_spots(user_message)
+        candidates = find_candidate_spots(raw_msg)
 
         if len(candidates) == 1:
             # 1件のみ特定できた場合は即時天気表示
@@ -1348,7 +1346,7 @@ def handle_message(event):
 
         elif len(candidates) > 1:
             # 複数候補が存在する場合は選択ボタンカードを表示
-            flex_msg = build_candidates_flex_message(candidates, user_message)
+            flex_msg = build_candidates_flex_message(candidates, raw_msg)
             line_bot_api.reply_message(event.reply_token, flex_msg)
             print(f"[送信] 候補選択 FlexMessage（{len(candidates)}件）を送信しました。")
             return
