@@ -1292,16 +1292,16 @@ def handle_message(event):
 
         print(f"[受信] ユーザー({user_id}): {raw_msg}")
 
-        # コマンド判定（追加・削除の表記ブレを吸収）
-        if raw_msg.startswith("追加:") or raw_msg.startswith("追加：") or raw_msg.startswith("追加 "):
-            spot_name = raw_msg.replace("追加:", "").replace("追加：", "").replace("追加 ", "").strip()
+        # コマンド判定（全角・半角スペース、コロン対応の完全版）
+        if raw_msg.startswith("追加:") or raw_msg.startswith("追加：") or raw_msg.startswith("追加 ") or raw_msg.startswith("追加 "):
+            spot_name = raw_msg.replace("追加:", "").replace("追加：", "").replace("追加 ", "").replace("追加 ", "").strip()
             success, msg = add_favorite_spot(user_id, spot_name) if spot_name else (False, "⚠️ 釣り場名を入力してください。")
             reply_text = f"✅ {msg}" if success else f"⚠️ {msg}"
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
             return
 
-        elif raw_msg.startswith("削除:") or raw_msg.startswith("削除：") or raw_msg.startswith("削除 "):
-            spot_name = raw_msg.replace("削除:", "").replace("削除：", "").replace("削除 ", "").strip()
+        elif raw_msg.startswith("削除:") or raw_msg.startswith("削除：") or raw_msg.startswith("削除 ") or raw_msg.startswith("削除 "):
+            spot_name = raw_msg.replace("削除:", "").replace("削除：", "").replace("削除 ", "").replace("削除 ", "").strip()
             success, msg = remove_favorite_spot(user_id, spot_name) if spot_name else (False, "⚠️ 削除する釣り場名を入力してください。")
             reply_text = f"✅ {msg}" if success else f"⚠️ {msg}"
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
