@@ -1,329 +1,104 @@
-import os
 import time
 import random
-import sqlite3
-from flask import Flask, request, abort, jsonify
-from linebot import LineBotApi, WebhookHandler
-from linebot.exceptions import InvalidSignatureError
-from linebot.models import MessageEvent, TextMessage, TextSendMessage
-import google.generativeai as genai
+import re
+from datetime import datetime
+import pytz
+import requests
+from bs4 import BeautifulSoup
 
 # ==========================================
-# 1. 日本時間（JST）設定と初期化
+# 1. 日本時間（JST）設定および安全設定
 # ==========================================
-os.environ['TZ'] = 'Asia/Tokyo'
-if hasattr(time, 'tzset'):
-    time.tzset()
+JST = pytz.timezone('Asia/Tokyo')
+now_jst = datetime.now(JST)
 
-app = Flask(__name__)
-
-# ==========================================
-# 2. 設定値および安全装置（ガードレール）
-# ==========================================
-# LINE API設定
-LINE_CHANNEL_ACCESS_TOKEN = os.getenv('LINE_CHANNEL_ACCESS_TOKEN', '').strip()
-LINE_CHANNEL_SECRET = os.getenv('LINE_CHANNEL_SECRET', '').strip()
-
-line_bot_api = LineBotApi(LINE_CHANNEL_ACCESS_TOKEN)
-handler = WebhookHandler(LINE_CHANNEL_SECRET)
-
-# Gemini API設定
-GEMINI_API_KEY = os.getenv('GEMINI_API_KEY', '').strip().strip('"').strip("'")
-
-# テスト・本番モード切り替え制御（安全装置）
-ADMIN_USER_ID = os.getenv('ADMIN_USER_ID', '').strip()
-IS_TEST_MODE = True  # True: 管理者のみにテスト送信（誤送信防止）
-
-# 大量通知ストッパー（安全装置: 1回の処理で許可する最大件数）
-MAX_LIMIT = 5
-
-# 試行するGeminiモデル候補リスト
-GEMINI_CANDIDATE_MODELS = [
-    'gemini-3.6-flash',
-    'gemini-1.5-flash',
-    'gemini-2.0-flash'
-]
-
-# データベースファイルパス
-DB_PATH = 'user_data.db'
-
-# 都道府県別 主要管理釣り場データ（マスター選択肢）
-PREFECTURE_SPOTS = {
-    "埼玉県": ["朝霞ガーデン", "ウォーターパーク長瀞", "川越水上公園", "加須はなさき水上公園"],
-    "東京都": ["ベリーパーク in FISH ON！王禅寺（※川崎隣接）", "奥多摩フィッシングセンター", "秋川国際マス釣場"],
-    "神奈川県": ["ベリーパーク in FISH ON！王禅寺", "開成水辺フォレストスプリングス", "早戸川国際マス釣場"],
-    "千葉県": ["ジョイバレー", "座間養魚場", "アクアヘヴン"],
-    "茨城県": ["ミッドナイト", "高萩ジパングトラウトエリア", "水戸南フィッシングエリア"],
-    "栃木県": ["キングフィッシャー", "加賀フィッシングエリア", "発光路の森フィッシングエリア", "ロデオクラフト（大芦川）"],
-    "群馬県": ["宮城アングラーズヴィレッジ", "イワナセンター", "川場フィッシングプラザ", "Hook"],
-    "山梨県": ["ベリーパーク in FISH ON！鹿留", "忍野フィッシングエリア", "小菅トラウトガーデン"],
-    "静岡県": ["すそ野フィッシングパーク", "東山湖フィッシングエリア", "柿田川フィッシングパーク"]
+# 天気アイコンIDから文字列への簡易変換マップ
+WEATHER_ICON_MAP = {
+    "100": "晴れ",
+    "101": "晴れ時々くもり",
+    "103": "晴れ時々雨",
+    "200": "くもり",
+    "201": "くもり時々晴れ",
+    "202": "くもり一時雨",
+    "203": "くもり時々雨",
+    "300": "雨",
+    "301": "雨時々晴れ",
+    "302": "雨時々止む",
+    "313": "雨時々くもり",
+    "600": "晴れ間あり"
 }
 
+# 巡回サーバー負荷軽減のためのゆらぎ（1.0〜2.5秒待機）
+time.sleep(random.uniform(1.0, 2.5))
 
 # ==========================================
-# 3. データベース（SQLite）管理関数
+# 2. スクレイピング実行
 # ==========================================
-def init_db():
-    """データベースおよびテーブルの初期化"""
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS user_settings (
-            user_id TEXT PRIMARY KEY,
-            weather_source TEXT DEFAULT 'ウェザーニュース',
-            favorite_spots TEXT DEFAULT ''
-        )
-    ''')
-    conn.commit()
-    conn.close()
-    print("[DB] データベースの初期化が完了しました。")
+URL = "https://weathernews.jp/onebox/35.332243/137.632213/q=%E9%95%B7%E9%87%8E%E7%9C%8C%E4%B8%8B%E4%BC%8A%E9%82%A3%E9%83%A1%E5%B9%B3%E8%B0%B7%E6%9D%91%E5%B9%B3%E8%B0%B7%E6%9D%91%E4%B8%80%E5%86%86&v=faf7b174776bf3f82a649d0b9e178580b4814dd1bac1307f4459eeaba6254e66&temp=c&lang=ja"
 
-init_db()
+headers = {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+}
 
+try:
+    response = requests.get(URL, headers=headers, timeout=10)
+    response.raise_for_status()
+    soup = BeautifulSoup(response.text, 'html.parser')
 
-def get_user_setting(user_id):
-    """ユーザー設定の取得（未登録時は初期値で新規作成）"""
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    cursor.execute('SELECT weather_source, favorite_spots FROM user_settings WHERE user_id = ?', (user_id,))
-    row = cursor.fetchone()
-    
-    if not row:
-        cursor.execute(
-            'INSERT INTO user_settings (user_id, weather_source, favorite_spots) VALUES (?, ?, ?)',
-            (user_id, 'ウェザーニュース', '')
-        )
-        conn.commit()
-        result = ('ウェザーニュース', '')
-    else:
-        result = row
+    # 1時間毎予報のコンテナを取得
+    flick_list = soup.find('div', id='flick_list_1hour')
+
+    if not flick_list:
+        print("エラー: 1時間毎の予報データエリアが見つかりませんでした。")
+        exit()
+
+    print(f"=== 平谷湖 1時間毎天気予報 ({now_jst.strftime('%Y-%m-%d %H:%M:%S')} JST取得) ===\n")
+
+    # 日付グループ（.group）ごとにループ
+    groups = flick_list.find_all('div', class_='group')
+
+    for group in groups:
+        date_tag = group.find('div', class_='date')
+        date_str = date_tag.text.strip() if date_tag else "日付不明"
         
-    conn.close()
-    return result
+        print(f"【{date_str}】")
+        print(" 時間 |   天気   | 降水量 | 気温 | 風速")
+        print("-" * 42)
 
+        # 時間ごとのリスト項目（ul.list）をループ
+        lists = group.find_all('ul', class_='list')
+        for item in lists:
+            # 時間
+            time_tag = item.find('li', class_='time')
+            hour = time_tag.text.strip().zfill(2) + "時" if time_tag else "--時"
 
-def update_user_source(user_id, source):
-    """参照天気ソースの更新"""
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    cursor.execute('UPDATE user_settings SET weather_source = ? WHERE user_id = ?', (source, user_id))
-    conn.commit()
-    conn.close()
+            # 天気（画像URLからID抽出）
+            weather_tag = item.find('li', class_='weather')
+            img_tag = weather_tag.find('img') if weather_tag else None
+            weather_str = "不明"
+            if img_tag and 'src' in img_tag.attrs:
+                src = img_tag['src']
+                match = re.search(r'/wxicon/(\d+)\.png', src)
+                if match:
+                    icon_id = match.group(1)
+                    weather_str = WEATHER_ICON_MAP.get(icon_id, f"コード:{icon_id}")
 
+            # 降水量
+            rain_tag = item.find('li', class_='rain')
+            rain = rain_tag.text.strip() if rain_tag else "--"
 
-def add_favorite_spot(user_id, spot_name):
-    """お気に入り釣り場の追加（最大5箇所）"""
-    _, favorites = get_user_setting(user_id)
-    fav_list = [s for s in favorites.split(',') if s]
-    
-    if spot_name in fav_list:
-        return False, "すでに登録されている釣り場です。"
-    if len(fav_list) >= 5:
-        return False, "お気に入り釣り場は最大5箇所まで登録可能です。削除してから追加してください。"
-    
-    fav_list.append(spot_name)
-    new_fav_str = ','.join(fav_list)
-    
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    cursor.execute('UPDATE user_settings SET favorite_spots = ? WHERE user_id = ?', (new_fav_str, user_id))
-    conn.commit()
-    conn.close()
-    return True, f"「{spot_name}」をお気に入りに追加しました。"
+            # 気温
+            temp_tag = item.find('li', class_='temp')
+            temp = temp_tag.text.strip() if temp_tag else "--"
 
+            # 風速
+            wind_tag = item.find('li', class_='wind')
+            wind_p = wind_tag.find('p') if wind_tag else None
+            wind = wind_p.text.strip() + "m/s" if wind_p else "--"
 
-def remove_favorite_spot(user_id, spot_name):
-    """お気に入り釣り場の削除"""
-    _, favorites = get_user_setting(user_id)
-    fav_list = [s for s in favorites.split(',') if s]
-    
-    if spot_name not in fav_list:
-        return False, "登録されていない釣り場です。"
-    
-    fav_list.remove(spot_name)
-    new_fav_str = ','.join(fav_list)
-    
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    cursor.execute('UPDATE user_settings SET favorite_spots = ? WHERE user_id = ?', (new_fav_str, user_id))
-    conn.commit()
-    conn.close()
-    return True, f"「{spot_name}」をお気に入りから削除しました。"
-
-
-# ==========================================
-# 4. Gemini AI応答生成関数（常に詳細な天気回答）
-# ==========================================
-def generate_gemini_response(user_message, user_setting):
-    """ユーザー設定および【常に詳細な天気案内】を前提に応答生成"""
-    if not GEMINI_API_KEY:
-        return None, "【システムエラー】GEMINI_API_KEYが未設定です。"
-
-    genai.configure(api_key=GEMINI_API_KEY)
-    
-    source, favorites = user_setting
-    fav_text = favorites if favorites else "未登録"
-
-    system_instruction = (
-        "あなたは管理釣り場と天気予報のプロ案内AIアシスタントです。"
-        "【絶対ルール】天気予報や釣行アドバイスを行う際は、時間帯別の天気・気温・風速・風向・降水確率・注意点を網羅した【常に最も詳しい高精度な天気予報】を回答してください。"
-        f"【ユーザー設定情報】優先情報源: {source}, お気に入り釣り場: {fav_text}。"
-        "釣り人に寄り添う丁寧かつ見やすいフォーマットで答えてください。"
-    )
-    prompt = f"{system_instruction}\n\nユーザーの質問: {user_message}"
-
-    last_error_msg = ""
-    for model_name in GEMINI_CANDIDATE_MODELS:
-        try:
-            model = genai.GenerativeModel(model_name)
-            response = model.generate_content(prompt)
-            if response and hasattr(response, 'text') and response.text:
-                return response.text, None
-        except Exception as e:
-            last_error_msg = str(e)
-            continue
-
-    return None, f"AI応答の生成に失敗しました。\n詳細: {last_error_msg[:150]}"
-
-
-# ==========================================
-# 5. Webサーバーのエンドポイント
-# ==========================================
-@app.route("/", methods=['GET'])
-def top_page():
-    return "LINE Reply Bot Server (Detailed Weather Mode) is running!", 200
-
-
-@app.route("/callback", methods=['POST'])
-def callback():
-    signature = request.headers.get('X-Line-Signature', '')
-    body = request.get_data(as_text=True)
-
-    try:
-        handler.handle(body, signature)
-    except InvalidSignatureError:
-        print("[エラー] LINEからの署名検証に失敗しました。")
-        abort(400)
-
-    return 'OK', 200
-
-
-# ==========================================
-# 6. LINEメッセージ受信処理
-# ==========================================
-@handler.add(MessageEvent, message=TextMessage)
-def handle_message(event):
-    user_message = event.message.text.strip()
-    user_id = event.source.user_id
-
-    print(f"[受信] ユーザー({user_id}): {user_message}")
-
-    # ユーザー設定の取得
-    user_setting = get_user_setting(user_id)
-    source, favorites = user_setting
-
-    # --- コマンド分岐処理 ---
-    
-    # 1. 県名検索の判定
-    matched_pref = None
-    for pref in PREFECTURE_SPOTS.keys():
-        if pref in user_message or pref.replace("県", "").replace("府", "").replace("都", "") in user_message:
-            matched_pref = pref
-            break
-
-    if user_message == "設定":
-        fav_list = [s for s in favorites.split(',') if s]
-        fav_display = "\n".join([f"・{spot}" for spot in fav_list]) if fav_list else "・未登録"
+            print(f" {hour} | {weather_str:^8} | {rain:>6} | {temp:>4} | {wind:>5}")
         
-        reply_text = (
-            "⚙️ 【現在の設定状況】\n\n"
-            "■ 天気詳細度: 常に最詳細モード（高精度）\n"
-            f"■ 参照ソース: {source}\n"
-            f"■ お気に入り釣り場 (最大5箇所):\n{fav_display}\n\n"
-            "【設定変更コマンド】\n"
-            "・「埼玉県」「栃木県」など（県内の釣り場一覧を表示）\n"
-            "・「ウェザーニュース」「tenki.jp」\n"
-            "・「追加:釣り場名」\n"
-            "・「削除:釣り場名」"
-        )
+        print("\n")
 
-    elif matched_pref:
-        spots = PREFECTURE_SPOTS[matched_pref]
-        spot_list_text = "\n".join([f"・{s}" for s in spots])
-        reply_text = (
-            f"📍 【{matched_pref}の主な管理釣り場】\n\n"
-            f"{spot_list_text}\n\n"
-            "お気に入りに登録する場合は、以下のように送信してください。\n"
-            f"例: 追加:{spots[0]}"
-        )
-
-    elif user_message in ["ウェザーニュース", "tenki.jp"]:
-        update_user_source(user_id, user_message)
-        reply_text = f"✅ 参照ソースを「{user_message}」に変更しました。"
-
-    elif user_message.startswith("追加:"):
-        spot_name = user_message.replace("追加:", "").strip()
-        if not spot_name:
-            reply_text = "⚠️ 釣り場名を入力してください。\n例: 追加:朝霞ガーデン"
-        else:
-            success, msg = add_favorite_spot(user_id, spot_name)
-            reply_text = f"✅ {msg}" if success else f"⚠️ {msg}"
-
-    elif user_message.startswith("削除:"):
-        spot_name = user_message.replace("削除:", "").strip()
-        if not spot_name:
-            reply_text = "⚠️ 削除する釣り場名を入力してください。\n例: 削除:朝霞ガーデン"
-        else:
-            success, msg = remove_favorite_spot(user_id, spot_name)
-            reply_text = f"✅ {msg}" if success else f"⚠️ {msg}"
-
-    elif user_message in ["ヘルプ", "使い方"]:
-        reply_text = (
-            "💡 【使い方ガイド】\n\n"
-            "■ 釣り場の検索: 「埼玉県」「栃木県」などの県名を送信\n"
-            "■ 設定の確認: 「設定」と送信\n"
-            "■ 情報源変更: 「ウェザーニュース」または「tenki.jp」と送信\n"
-            "■ お気に入り登録: 「追加:釣り場名」と送信\n"
-            "■ お気に入り削除: 「削除:釣り場名」と送信\n\n"
-            "※上記以外のメッセージは、常に詳細な天気・管理釣り場案内をAIが行います。"
-        )
-
-    else:
-        # 通常会話は常に最詳細の天気案内プロンプトでGeminiに渡す
-        ai_text, error_text = generate_gemini_response(user_message, user_setting)
-        reply_text = ai_text if ai_text else error_text
-
-    # 無料リプライ送信
-    line_bot_api.reply_message(
-        event.reply_token,
-        TextSendMessage(text=reply_text)
-    )
-    print("[送信] リプライ応答を完了しました。")
-
-
-# ==========================================
-# 7. 定期データ更新用エンドポイント（安全装置付き）
-# ==========================================
-@app.route("/cron_trigger", methods=['GET', 'POST'])
-def cron_trigger():
-    print("\n--- cron-job.org からの定期トリガーを受信しました ---")
-
-    unnotified_items = []
-    item_count = len(unnotified_items)
-
-    # ガードレール1: 大量通知ストッパー（MAX_LIMIT制御）
-    if item_count > MAX_LIMIT:
-        print(f"【安全装置発動】未通知件数が上限({MAX_LIMIT}件)を超えました。スキップします。")
-        return jsonify({"status": "skipped", "reason": "MAX_LIMIT_EXCEEDED"}), 200
-
-    # ガードレール2: サーバー負荷軽減のゆらぎ（1.0〜3.0秒待機）
-    time.sleep(random.uniform(1.0, 3.0))
-
-    print("[完了] 天気データの最新化処理が完了しました。")
-    return jsonify({"status": "success", "message": "DB updated safely."}), 200
-
-
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
+except Exception as e:
+    print(f"スクレイピング実行中にエラーが発生しました: {e}")
