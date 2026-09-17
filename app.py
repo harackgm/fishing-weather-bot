@@ -1009,7 +1009,6 @@ def add_favorite_spot(user_id, spot_name):
     
     fav_list.append(target_name)
     try:
-        # upsert（確実な作成・更新処理）を利用してデータ保存を担保
         supabase.table('user_settings').upsert({
             'user_id': user_id,
             'weather_source': source,
@@ -1033,7 +1032,6 @@ def remove_favorite_spot(user_id, spot_name):
     
     fav_list.remove(target_name)
     try:
-        # upsert（確実な作成・更新処理）を利用してデータ削除を担保
         supabase.table('user_settings').upsert({
             'user_id': user_id,
             'weather_source': source,
@@ -1326,8 +1324,8 @@ def handle_message(event):
                 f"■ 参照ソース: {source}\n"
                 f"■ お気に入り釣り場:\n{fav_display}\n\n"
                 "【設定変更コマンド】\n"
-                "・「追加:釣り場名」\n"
-                "・「削除:釣り場名」\n"
+                "・「追加 釣り場名」\n"
+                "・「削除 釣り場名」\n"
                 "・「一覧」（釣り場リストを表示）"
             )
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
