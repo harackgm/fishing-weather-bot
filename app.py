@@ -209,7 +209,7 @@ def remove_favorite_spot(user_id, spot_name):
 # 5. ウェザーニュース 実データスクレイピング関数
 # ==========================================
 def fetch_spot_1hour_data(url):
-    """指定されたURLから現在時刻以降の予報を取得（6〜21時抽出テスト版）"""
+    """指定されたURLから現在時刻以降の予報を取得（6〜21時抽出版）"""
     time.sleep(random.uniform(1.0, 2.5))  # ゆらぎ待機
     headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}
     
@@ -238,7 +238,7 @@ def fetch_spot_1hour_data(url):
                 hour_str = time_tag.text.strip() if time_tag else ""
                 if not hour_str.isdigit(): continue
                 
-                # 【テスト】6時〜21時の1時間毎に抽出
+                # 6時〜21時の1時間毎に抽出
                 hour_int = int(hour_str)
                 if not (6 <= hour_int <= 21): 
                     continue
@@ -280,12 +280,11 @@ def fetch_spot_1hour_data(url):
         return None
 
 def build_grid_flex_message(spot_name, weather_by_date):
-    """田の字型（2行×2列）グリッドレイアウト（横読み・Z字順修正版）"""
+    """田の字型（2行×2列）グリッドレイアウト（横行ブロック化・上下位置完全同期版）"""
     dates = list(weather_by_date.keys())
     
     def create_day_column(date_str):
         if not date_str:
-            # 空枠でLINEから拒否されないよう、目立たないダミーテキストを配置
             return {
                 "type": "box", "layout": "vertical", "flex": 1, 
                 "contents": [{"type": "text", "text": "-", "color": "#cccccc", "align": "center", "size": "xs"}]
@@ -307,7 +306,6 @@ def build_grid_flex_message(spot_name, weather_by_date):
         ]
         
         for data in daily_data:
-            # 万が一空文字になった場合は強制的に "-" にする安全処理
             t_val = data.get('temp', '').replace("℃", "").strip() or "-"
             r_val = data.get('rain', '').replace("mm", "").strip() or "-"
             w_val = data.get('wind', '').replace("m/s", "").replace("m", "").strip() or "-"
@@ -341,19 +339,32 @@ def build_grid_flex_message(spot_name, weather_by_date):
             ] + [{"type": "box", "layout": "vertical", "spacing": "none", "margin": "sm", "contents": rows}]
         }
 
-    # === 【並び順の変更】 横読み（Z字）になるよう配置 ===
-    # 左列： 1日目(dates[0]) と 3日目(dates[2])
-    col1_boxes = [create_day_column(dates[0] if len(dates) > 0 else None)]
-    if len(dates) > 2:
-        col1_boxes.append({"type": "separator", "margin": "md"})
-        col1_boxes.append(create_day_column(dates[2]))
+    # === 行（Row）単位でブロック化して上端位置を揃える ===
+    body_contents = []
 
-    # 右列： 2日目(dates[1]) と 4日目(dates[3])
-    col2_boxes = [create_day_column(dates[1] if len(dates) > 1 else None)]
-    if len(dates) > 3:
-        col2_boxes.append({"type": "separator", "margin": "md"})
-        col2_boxes.append(create_day_column(dates[3]))
-    # =======================================================
+    # 1行目（上段）：1日目(dates[0]) と 2日目(dates[1])
+    row1 = {
+        "type": "box", "layout": "horizontal", "spacing": "sm",
+        "contents": [
+            create_day_column(dates[0] if len(dates) > 0 else None),
+            {"type": "separator"},
+            create_day_column(dates[1] if len(dates) > 1 else None)
+        ]
+    }
+    body_contents.append(row1)
+
+    # 2行目（下段）：3日目(dates[2]) と 4日目(dates[3])
+    if len(dates) > 2:
+        body_contents.append({"type": "separator", "margin": "md"})
+        row2 = {
+            "type": "box", "layout": "horizontal", "spacing": "sm",
+            "contents": [
+                create_day_column(dates[2] if len(dates) > 2 else None),
+                {"type": "separator"},
+                create_day_column(dates[3] if len(dates) > 3 else None)
+            ]
+        }
+        body_contents.append(row2)
 
     bubble = {
         "type": "bubble",
@@ -365,12 +376,8 @@ def build_grid_flex_message(spot_name, weather_by_date):
             ]
         },
         "body": {
-            "type": "box", "layout": "horizontal", "spacing": "sm", "paddingAll": "8px",
-            "contents": [
-                {"type": "box", "layout": "vertical", "flex": 1, "contents": col1_boxes},
-                {"type": "separator"},
-                {"type": "box", "layout": "vertical", "flex": 1, "contents": col2_boxes}
-            ]
+            "type": "box", "layout": "vertical", "spacing": "md", "paddingAll": "8px",
+            "contents": body_contents
         }
     }
     return FlexSendMessage(alt_text=f"{spot_name}の天気予報(4日間)", contents=bubble)
@@ -403,7 +410,7 @@ def handle_message(event):
 
         print(f"[受信] ユーザー({user_id}): {user_message}")
 
-        # 1. ユーザーコマンドを「最優先」で判定（追加・削除・設定など）
+        # 1. ユーザーコマンドを「最優先」で判定
         if user_message == "設定":
             user_setting = get_user_setting(user_id)
             source, favorites = user_setting
