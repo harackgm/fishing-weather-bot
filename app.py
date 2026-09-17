@@ -4,6 +4,7 @@ import random
 import requests
 import traceback
 import difflib
+from urllib.parse import quote
 from bs4 import BeautifulSoup
 from flask import Flask, request, abort, jsonify
 from linebot import LineBotApi, WebhookHandler
@@ -45,85 +46,121 @@ if SUPABASE_URL and SUPABASE_KEY:
         print(f"[Supabase初期化エラー] {e}")
 
 # ==========================================
-# 3. 釣り場URLおよび表記揺れ（エイリアス）辞書
+# 3. 釣り場URL・HP・Googleマップ・表記揺れ辞書
 # ==========================================
 SPOT_WEATHER_DATA = {
     "東山湖": {
         "url": "https://weathernews.jp/onebox/35.296739/138.955925/",
+        "hp_url": "http://www.higashiyamako.com/",
+        "search_name": "東山湖フィッシングエリア",
         "aliases": ["東山湖", "東山湖フィッシングエリア", "東山湖FA", "ひがしやまこ", "ひがしやま", "東山", "がし山", "がしやま"]
     },
     "なら山沼": {
         "url": "https://weathernews.jp/onebox/36.373741/139.802713/",
+        "hp_url": "http://www me.tict.ne.jp/~narayama/",
+        "search_name": "なら山沼漁場",
         "aliases": ["なら山沼", "なら山沼漁場", "ならやま", "なら山", "ならやまぬま", "ならやま沼"]
     },
     "キングフィッシャー": {
         "url": "https://weathernews.jp/onebox/36.907054/140.078650/",
+        "hp_url": "https://kingfisher-jp.com/",
+        "search_name": "キングフィッシャー 大田原",
         "aliases": ["キングフィッシャー", "キング", "キングフィッシャ", "きんぐふぃっしゃー"]
     },
     "加賀": {
         "url": "https://weathernews.jp/onebox/36.388609/139.537247/",
+        "hp_url": "http://www.kaga-fa.co.jp/",
+        "search_name": "加賀フィッシングエリア",
         "aliases": ["加賀", "加賀フィッシングエリア", "加賀FA", "かが"]
     },
     "すその": {
         "url": "https://weathernews.jp/onebox/35.166667/138.899162/",
+        "hp_url": "http://www.susono-f-p.jp/",
+        "search_name": "すそのフィッシングパーク",
         "aliases": ["すその", "すそのフィッシングパーク", "すそのFP", "裾野", "すそぱ", "すそパ"]
     },
     "朝霞": {
         "url": "https://weathernews.jp/onebox/35.813481/139.604736/",
+        "hp_url": "http://www.asaka-garden.com/",
+        "search_name": "朝霞ガーデン",
         "aliases": ["朝霞", "朝霞ガーデン", "あさか", "あさかガーデン"]
     },
     "開成": {
         "url": "https://weathernews.jp/onebox/35.334342/139.130344/",
+        "hp_url": "https://kaisei.forest-springs.com/",
+        "search_name": "開成水辺フォレストスプリングス",
         "aliases": ["開成", "開成水辺フォレストスプリングス", "開成FS", "かいせい"]
     },
     "王禅寺": {
         "url": "https://weathernews.jp/onebox/35.587020/139.524309/",
+        "hp_url": "https://www.berrypark.jp/ozenji/",
+        "search_name": "BerryPark in 王禅寺",
         "aliases": ["王禅寺", "ベリーパーク in 王禅寺", "おうぜんじ", "王禅寺ベリーパーク", "寺", "てら"]
     },
     "白河": {
         "url": "https://weathernews.jp/onebox/37.127955/140.081827/",
+        "hp_url": "https://shirakawa.forest-springs.com/",
+        "search_name": "白河フォレストスプリングス",
         "aliases": ["白河", "白河フォレストスプリングス", "白河FS", "しらかわ"]
     },
     "発光路": {
         "url": "https://weathernews.jp/onebox/36.580281/139.532829/",
+        "hp_url": "https://www.hokkoji.com/",
+        "search_name": "発光路の森ファアルクス",
         "aliases": ["発光路", "発光路の森", "発光路の森ファアルクス", "ほっこうじ"]
     },
     "鹿島槍": {
         "url": "https://weathernews.jp/onebox/36.548940/137.809757/",
+        "hp_url": "https://www.kashimayari-garden.com/",
+        "search_name": "鹿島槍ガーデン",
         "aliases": ["鹿島槍", "鹿島槍ガーデン", "かしまやり"]
     },
     "平谷湖": {
         "url": "https://weathernews.jp/onebox/35.332243/137.632213/",
+        "hp_url": "https://hirayako.com/",
+        "search_name": "平谷湖フィッシングスポット",
         "aliases": ["平谷湖", "平谷湖フィッシングスポット", "ひらやこ"]
     },
     "サンクチュアリ": {
         "url": "https://weathernews.jp/onebox/35.187504/136.457803/",
+        "hp_url": "https://go-sanctuary.com/",
+        "search_name": "フィッシングサンクチュアリ",
         "aliases": ["サンクチュアリ", "サンク", "さんくちゅあり"]
     },
     "不忘": {
         "url": "https://weathernews.jp/onebox/38.042491/140.554478/",
+        "hp_url": "http://www.fubou.jp/",
+        "search_name": "グリーンコンプラザ不忘",
         "aliases": ["不忘", "グリーンコンプラザ不忘", "ふぼう"]
     },
     "上浜": {
         "url": "https://weathernews.jp/onebox/39.142616/139.945938/",
+        "hp_url": "http://kamihama.web.fc2.com/",
+        "search_name": "上浜釣り場",
         "aliases": ["上浜", "上浜釣り場", "かみはま"]
     },
     "ほのぼの": {
         "url": "https://weathernews.jp/onebox/36.837687/140.472433/",
+        "hp_url": "http://honobono.travel.coocan.jp/",
+        "search_name": "ほのぼのフィッシングエリア",
         "aliases": ["ほのぼの", "ほのぼのプール"]
     },
     "WaDoNa": {
         "url": "https://weathernews.jp/onebox/36.877372/140.540954/",
+        "hp_url": "https://wadona.work/",
+        "search_name": "WaDoNa 釣り場",
         "aliases": ["WaDoNa", "ワドナ", "わどな"]
     },
     "鬼怒川": {
         "url": "https://weathernews.jp/onebox/36.617621/139.937106/",
+        "hp_url": "http://kinugawa-fa.com/",
+        "search_name": "鬼怒川フィッシングエリア",
         "aliases": ["鬼怒川", "鬼怒川フィッシングエリア", "鬼怒川FA", "きぬがわ"]
     }
 }
 
 def find_best_match_spot(user_text):
-    """ユーザー入力から最適な釣り場名を推完・検索する高度なゆらぎ検索判定"""
+    """ユーザー入力から最適な釣り場情報（正式名、天気URL、HP URL、GoogleマップURL）を特定"""
     text = user_text.strip().lower()
 
     # 1. エイリアス完全一致および部分一致検索（最優先）
@@ -131,22 +168,25 @@ def find_best_match_spot(user_text):
         for alias in data["aliases"]:
             alias_lower = alias.lower()
             if text == alias_lower or alias_lower in text or text in alias_lower:
-                return spot_key, data["url"]
+                map_url = f"https://www.google.com/maps/search/?api=1&query={quote(data.get('search_name', spot_key))}"
+                return spot_key, data["url"], data.get("hp_url", ""), map_url
 
-    # 2. あいまい類似度検索 (difflib) - 閾値0.6
+    # 2. あいまい類似度検索 (difflib)
     all_aliases = []
     alias_to_spot = {}
     for spot_key, data in SPOT_WEATHER_DATA.items():
         for alias in data["aliases"]:
             all_aliases.append(alias.lower())
-            alias_to_spot[alias.lower()] = (spot_key, data["url"])
+            alias_to_spot[alias.lower()] = spot_key
 
     matches = difflib.get_close_matches(text, all_aliases, n=1, cutoff=0.6)
     if matches:
-        matched_alias = matches[0]
-        return alias_to_spot[matched_alias]
+        matched_spot_key = alias_to_spot[matches[0]]
+        data = SPOT_WEATHER_DATA[matched_spot_key]
+        map_url = f"https://www.google.com/maps/search/?api=1&query={quote(data.get('search_name', matched_spot_key))}"
+        return matched_spot_key, data["url"], data.get("hp_url", ""), map_url
 
-    return None, None
+    return None, None, None, None
 
 # ==========================================
 # 4. Supabase データベース管理関数
@@ -172,7 +212,7 @@ def get_user_setting(user_id):
 def add_favorite_spot(user_id, spot_name):
     if not supabase: return False, "DB接続未完了です。"
     
-    matched_spot, _ = find_best_match_spot(spot_name)
+    matched_spot, _, _, _ = find_best_match_spot(spot_name)
     target_name = matched_spot if matched_spot else spot_name
 
     _, favorites = get_user_setting(user_id)
@@ -192,7 +232,7 @@ def add_favorite_spot(user_id, spot_name):
 def remove_favorite_spot(user_id, spot_name):
     if not supabase: return False, "DB接続未完了です。"
     
-    matched_spot, _ = find_best_match_spot(spot_name)
+    matched_spot, _, _, _ = find_best_match_spot(spot_name)
     target_name = matched_spot if matched_spot else spot_name
 
     _, favorites = get_user_setting(user_id)
@@ -280,8 +320,8 @@ def fetch_spot_1hour_data(url):
         print(f"[スクレイピングエラー] {e}")
         return None
 
-def build_grid_flex_message(spot_name, weather_by_date):
-    """田の字型（2行×2列）グリッドレイアウト"""
+def build_grid_flex_message(spot_name, weather_by_date, hp_url="", map_url=""):
+    """田の字型（2行×2列）グリッドレイアウト（ヘッダー部HP・MAPリンクボタン追加版）"""
     dates = list(weather_by_date.keys())
     
     def create_day_column(date_str):
@@ -366,14 +406,36 @@ def build_grid_flex_message(spot_name, weather_by_date):
         }
         body_contents.append(row2)
 
+    # ヘッダー内のリンクボタン組み立て（HP / Google Map）
+    header_buttons = []
+    if hp_url:
+        header_buttons.append({
+            "type": "button",
+            "action": {"type": "uri", "label": "🌐 公式HP", "uri": hp_url},
+            "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"
+        })
+    if map_url:
+        header_buttons.append({
+            "type": "button",
+            "action": {"type": "uri", "label": "🗺️ Googleマップ", "uri": map_url},
+            "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"
+        })
+
+    header_contents = [
+        {"type": "text", "text": f"📍 {spot_name}", "color": "#ffffff", "weight": "bold", "size": "md"}
+    ]
+    if header_buttons:
+        header_contents.append({
+            "type": "box", "layout": "horizontal", "margin": "sm", "spacing": "xs",
+            "contents": header_buttons
+        })
+
     bubble = {
         "type": "bubble",
         "size": "giga",
         "header": {
-            "type": "box", "layout": "vertical", "backgroundColor": "#0066cc", "paddingAll": "12px",
-            "contents": [
-                {"type": "text", "text": f"📍 {spot_name}", "color": "#ffffff", "weight": "bold", "size": "md"}
-            ]
+            "type": "box", "layout": "vertical", "backgroundColor": "#0066cc", "paddingAll": "10px",
+            "contents": header_contents
         },
         "body": {
             "type": "box", "layout": "vertical", "spacing": "md", "paddingAll": "8px",
@@ -441,13 +503,13 @@ def handle_message(event):
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
             return
 
-        # ゆらぎ検索で釣り場を特定
-        target_spot_name, target_url = find_best_match_spot(user_message)
+        # ゆらぎ検索で釣り場情報（HP/MAP）を特定
+        target_spot_name, target_url, hp_url, map_url = find_best_match_spot(user_message)
 
         if target_url:
             weather_by_date = fetch_spot_1hour_data(target_url)
             if weather_by_date:
-                flex_msg = build_grid_flex_message(target_spot_name, weather_by_date)
+                flex_msg = build_grid_flex_message(target_spot_name, weather_by_date, hp_url, map_url)
                 line_bot_api.reply_message(event.reply_token, flex_msg)
                 print(f"[送信] {target_spot_name}の Grid FlexMessage応答を完了しました。")
             else:
@@ -485,14 +547,12 @@ def cron_trigger():
         res = supabase.table('user_settings').select('*').execute()
         users = res.data or []
 
-        # テストモード安全ガード: IS_TEST_MODE が True の場合は ADMIN_USER_ID のみに絞り込み
         if IS_TEST_MODE:
             print(f"[テストモード有効] 送信対象を管理者({ADMIN_USER_ID})のみに絞り込みます。")
             users = [u for u in users if u.get('user_id') == ADMIN_USER_ID]
             if not users and ADMIN_USER_ID:
                 users = [{'user_id': ADMIN_USER_ID, 'favorite_spots': ''}]
 
-        # 大量通知ストッパー（安全装置）
         if len(users) > MAX_LIMIT:
             print(f"[安全装置作動] 対象件数({len(users)}件)が上限({MAX_LIMIT}件)を超えたためスキップします。")
             return jsonify({"status": "skipped", "reason": "MAX_LIMIT_EXCEEDED"}), 200
@@ -509,14 +569,14 @@ def cron_trigger():
                 continue
 
             for spot_name in fav_list:
-                matched_spot, url = find_best_match_spot(spot_name)
+                matched_spot, url, hp_url, map_url = find_best_match_spot(spot_name)
                 if not url:
                     continue
 
                 print(f"ユーザー({uid}) へ 「{matched_spot}」 の定期通知を処理中...")
                 weather_data = fetch_spot_1hour_data(url)
                 if weather_data:
-                    flex_msg = build_grid_flex_message(matched_spot, weather_data)
+                    flex_msg = build_grid_flex_message(matched_spot, weather_data, hp_url, map_url)
                     line_bot_api.push_message(uid, flex_msg)
                     print(f"-> 「{matched_spot}」 のPush送信成功")
                 
