@@ -218,7 +218,7 @@ SPOT_WEATHER_DATA = {
     "エリア21": {
         "url": "https://weathernews.jp/onebox/36.496150/139.899522/",
         "hp_url": "http://www.area21.jp/",
-        "search_name": "エリア21 宇巨宮",
+        "search_name": "エリア21 宇都宮",
         "tel": "028-656-1188",
         "aliases": ["エリア21", "えりあ21"]
     },
@@ -897,7 +897,6 @@ def build_settings_flex_message(fav_list):
             "contents": [
                 {
                     "type": "button",
-                    # ★ 一覧ボタンをお気に入りに近い黄色系に変更
                     "action": {"type": "postback", "label": "📋 一覧", "data": "action=show_list"},
                     "style": "secondary",
                     "color": "#fff59d",
@@ -986,12 +985,16 @@ def build_spot_list_carousel_horizontal(user_id=None):
                 "margin": "md"
             })
 
+            # ★ ヘッダーを分割し、右側に件数上限を追加
             fav_bubble = {
                 "type": "bubble",
                 "size": "giga",
                 "header": {
-                    "type": "box", "layout": "vertical", "backgroundColor": "#d4af37", "paddingAll": "10px",
-                    "contents": [{"type": "text", "text": "⭐ あなたのお気に入り釣り場", "color": "#ffffff", "weight": "bold", "size": "md"}]
+                    "type": "box", "layout": "horizontal", "backgroundColor": "#d4af37", "paddingAll": "10px", "alignItems": "end",
+                    "contents": [
+                        {"type": "text", "text": "⭐ あなたのお気に入り釣り場", "color": "#ffffff", "weight": "bold", "size": "md"},
+                        {"type": "text", "text": "(最大30箇所)", "color": "#eeeeee", "size": "xs", "align": "end"}
+                    ]
                 },
                 "body": {"type": "box", "layout": "vertical", "paddingAll": "6px", "contents": fav_rows}
             }
@@ -1031,6 +1034,39 @@ def build_spot_list_carousel_horizontal(user_id=None):
             "body": {"type": "box", "layout": "vertical", "paddingAll": "6px", "contents": rows}
         }
         bubbles.append(bubble)
+
+    guide_bubble = {
+        "type": "bubble",
+        "size": "giga",
+        "header": {
+            "type": "box", "layout": "vertical", "backgroundColor": "#888888", "paddingAll": "10px",
+            "contents": [{"type": "text", "text": "📖 使い方ガイド", "color": "#ffffff", "weight": "bold", "size": "md"}]
+        },
+        "body": {
+            "type": "box", "layout": "vertical", "spacing": "sm", "paddingAll": "15px",
+            "contents": [
+                {
+                    "type": "box", "layout": "vertical", "margin": "none", "spacing": "sm",
+                    "contents": [
+                        {"type": "text", "text": "👇 基本の操作", "weight": "bold", "size": "sm", "color": "#333333"},
+                        {"type": "text", "text": "・一覧のボタンをタップで天気予報を表示", "wrap": True, "size": "xs", "color": "#666666"}
+                    ]
+                },
+                {"type": "separator", "margin": "md"},
+                {
+                    "type": "box", "layout": "vertical", "margin": "md", "spacing": "sm",
+                    "contents": [
+                        {"type": "text", "text": "💬 テキストコマンド", "weight": "bold", "size": "sm", "color": "#333333"},
+                        {"type": "text", "text": "【追加】\n「追加 東山湖 すその」と入力して一括登録", "wrap": True, "size": "xs", "color": "#666666"},
+                        {"type": "text", "text": "【削除】\n「削除 東山湖」と入力して一括解除", "wrap": True, "size": "xs", "color": "#666666", "margin": "sm"},
+                        {"type": "text", "text": "【設定】\n「設定」と入力して並び替え・削除パネルを表示", "wrap": True, "size": "xs", "color": "#666666", "margin": "sm"},
+                        {"type": "text", "text": "【一覧】\nその他の文字を入力すると、この一覧を表示します", "wrap": True, "size": "xs", "color": "#666666", "margin": "sm"}
+                    ]
+                }
+            ]
+        }
+    }
+    bubbles.append(guide_bubble)
 
     return FlexSendMessage(alt_text="釣り場一覧", contents={"type": "carousel", "contents": bubbles})
 
@@ -1209,7 +1245,6 @@ def fetch_spot_1hour_data(url):
 def build_grid_flex_message(spot_name, weather_by_date, hp_url="", map_url="", tel="", is_favorite=False):
     dates = list(weather_by_date.keys())
     
-    # ★ 釣り場に対応するヘッダー色を検索（見つからなければデフォルト青）
     header_color = "#0066cc"
     for group in COLOR_GROUPS:
         found = False
@@ -1280,7 +1315,6 @@ def build_grid_flex_message(spot_name, weather_by_date, hp_url="", map_url="", t
         clean_tel = tel.replace('-', '').strip()
         bottom_buttons.append({"type": "button", "action": {"type": "uri", "label": "📞 電話", "uri": f"tel:{clean_tel}"}, "style": "secondary", "height": "sm", "flex": 1})
     
-    # ★ 一覧ボタンを黄色系に変更
     bottom_buttons.append({"type": "button", "action": {"type": "postback", "label": "📋 一覧", "data": "action=show_list"}, "style": "secondary", "color": "#fff59d", "height": "sm", "flex": 1})
 
     body_contents.append({"type": "separator", "margin": "md"})
@@ -1305,7 +1339,6 @@ def build_grid_flex_message(spot_name, weather_by_date, hp_url="", map_url="", t
 
     bubble = {
         "type": "bubble", "size": "giga",
-        # ★ ヘッダー背景色を連動させた変数に置き換え
         "header": {"type": "box", "layout": "vertical", "backgroundColor": header_color, "paddingAll": "10px", "contents": header_contents},
         "body": {"type": "box", "layout": "vertical", "spacing": "md", "paddingAll": "8px", "contents": body_contents}
     }
@@ -1377,8 +1410,9 @@ def handle_message(event):
             line_bot_api.reply_message(event.reply_token, flex_msg)
             return
 
-        reply_text = "🔍 コマンドが認識できませんでした。\n\n【利用可能なコマンド】\n・一覧\n・設定\n・追加 釣り場名\n・削除 釣り場名\n\n※天気予報の確認は「一覧」からボタンをタップしてください。"
-        line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
+        # 定義されていないコマンド入力時は、一覧カルーセルを自動表示
+        flex_msg = build_spot_list_carousel_horizontal(user_id=user_id)
+        line_bot_api.reply_message(event.reply_token, flex_msg)
 
     except Exception as e:
         print("\n=== システムエラー詳細 ===")
