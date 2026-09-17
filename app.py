@@ -889,7 +889,6 @@ def build_settings_flex_message(fav_list):
 
         rows.append({"type": "separator", "margin": "md"})
         
-        # 「一覧」ボタンと「全て削除」ボタンを横並びで追加
         rows.append({
             "type": "box",
             "layout": "horizontal",
@@ -974,6 +973,18 @@ def build_spot_list_carousel_horizontal(user_id=None):
                     row_box["margin"] = "lg"
                     
                 fav_rows.append(row_box)
+
+            # --- ここから新規追加（設定ボタンと境界線） ---
+            fav_rows.append({"type": "separator", "margin": "lg", "color": "#cccccc"})
+            fav_rows.append({
+                "type": "button",
+                "action": {"type": "postback", "label": "⚙️ 設定（並び替え・削除）", "data": "action=show_settings"},
+                "style": "secondary",
+                "color": "#f8f9fa",
+                "height": "sm",
+                "margin": "md"
+            })
+            # ----------------------------------------------
 
             fav_bubble = {
                 "type": "bubble",
@@ -1369,6 +1380,13 @@ def handle_postback(event):
 
         if action == "show_list":
             flex_msg = build_spot_list_carousel_horizontal(user_id=user_id)
+            line_bot_api.reply_message(event.reply_token, flex_msg)
+            return
+            
+        elif action == "show_settings":
+            _, favorites = get_user_setting(user_id)
+            fav_list = [s for s in favorites.split(',') if s]
+            flex_msg = build_settings_flex_message(fav_list)
             line_bot_api.reply_message(event.reply_token, flex_msg)
             return
 
