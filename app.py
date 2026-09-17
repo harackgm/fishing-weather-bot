@@ -28,13 +28,19 @@ line_bot_api = LineBotApi(LINE_CHANNEL_ACCESS_TOKEN)
 handler = WebhookHandler(LINE_CHANNEL_SECRET)
 
 ADMIN_USER_ID = os.getenv('ADMIN_USER_ID', '').strip()
-IS_TEST_MODE = True  # テストモード: Trueのときは指定の管理者以外への誤送信を制限
-MAX_LIMIT = 5        # 大量通知ストッパー（安全装置）
+IS_TEST_MODE = True  # 自動一斉通知（Cron）時のみ使用するテスト制限フラグ
+MAX_LIMIT = 5        # 大量通知ストッパー（1回の処理上限数）
 
 # Supabase接続初期化
 SUPABASE_URL = os.getenv('SUPABASE_URL', '').strip()
 SUPABASE_KEY = os.getenv('SUPABASE_KEY', '').strip()
-supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY) if SUPABASE_URL and SUPABASE_KEY else None
+
+supabase: Client = None
+if SUPABASE_URL and SUPABASE_KEY:
+    try:
+        supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+    except Exception as e:
+        print(f"[Supabase初期化エラー] {e}")
 
 # ==========================================
 # 3. ウェザーニュース 釣り場URL辞書 (全国網羅版)
@@ -171,7 +177,7 @@ def update_user_source(user_id, source):
         print(f"[Supabase更新エラー] {e}")
 
 def add_favorite_spot(user_id, spot_name):
-    if not supabase: return False, "DB接続エラー"
+    if not supabase: return False, "DB接続未完了です。"
     _, favorites = get_user_setting(user_id)
     fav_list = [s for s in favorites.split(',') if s]
     if spot_name in fav_list:
@@ -183,10 +189,10 @@ def add_favorite_spot(user_id, spot_name):
         supabase.table('user_settings').update({'favorite_spots': ','.join(fav_list)}).eq('user_id', user_id).execute()
         return True, f"「{spot_name}」をお気に入りに追加しました。"
     except Exception as e:
-        return False, f"保存失敗: {e}"
+        return False, f"保存に失敗しました: {e}"
 
 def remove_favorite_spot(user_id, spot_name):
-    if not supabase: return False, "DB接続エラー"
+    if not supabase: return False, "DB接続未完了です。"
     _, favorites = get_user_setting(user_id)
     fav_list = [s for s in favorites.split(',') if s]
     if spot_name not in fav_list:
@@ -196,14 +202,14 @@ def remove_favorite_spot(user_id, spot_name):
         supabase.table('user_settings').update({'favorite_spots': ','.join(fav_list)}).eq('user_id', user_id).execute()
         return True, f"「{spot_name}」をお気に入りから削除しました。"
     except Exception as e:
-        return False, f"削除失敗: {e}"
+        return False, f"削除に失敗しました: {e}"
 
 # ==========================================
 # 5. ウェザーニュース 実データスクレイピング関数
 # ==========================================
 def fetch_spot_1hour_data(url):
     """指定されたURLから現在時刻以降の予報を取得（サーバー負荷軽減のゆらぎ待機付）"""
-    time.sleep(random.uniform(1.0, 2.5))  # ゆらぎ待機（サーバー負荷防止）
+    time.sleep(random.uniform(1.0, 2.5))  # ゆらぎ待機
     headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}
     
     try:
@@ -374,94 +380,97 @@ def callback():
     return 'OK', 200
 
 # ==========================================
-# 7. LINEメッセージ受信処理
+# 7. LINEメッセージ受信処理（安全保護付き）
 # ==========================================
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
-    user_message = event.message.text.strip()
-    user_id = event.source.user_id
+    try:
+        user_message = event.message.text.strip()
+        user_id = event.source.user_id
 
-    # テストモードガードレール: IS_TEST_MODEかつ管理者以外からの応答を制御
-    if IS_TEST_MODE and ADMIN_USER_ID and user_id != ADMIN_USER_ID:
-        print(f"[テストモード制限] 管理者以外のアクセスをスキップ: {user_id}")
-        return
+        print(f"[受信] ユーザー({user_id}): {user_message}")
 
-    print(f"[受信] ユーザー({user_id}): {user_message}")
+        target_spot_name = None
+        target_url = None
+        for spot_key, url in SPOT_WEATHER_URLS.items():
+            if spot_key in user_message or user_message in spot_key:
+                target_spot_name = spot_key
+                target_url = url
+                break
 
-    target_spot_name = None
-    target_url = None
-    for spot_key, url in SPOT_WEATHER_URLS.items():
-        if spot_key in user_message or user_message in spot_key:
-            target_spot_name = spot_key
-            target_url = url
-            break
-
-    if target_url:
-        weather_by_date = fetch_spot_1hour_data(target_url)
-        if weather_by_date:
-            flex_msg = build_grid_flex_message(target_spot_name, weather_by_date)
-            try:
+        if target_url:
+            weather_by_date = fetch_spot_1hour_data(target_url)
+            if weather_by_date:
+                flex_msg = build_grid_flex_message(target_spot_name, weather_by_date)
                 line_bot_api.reply_message(event.reply_token, flex_msg)
                 print(f"[送信] {target_spot_name}の Grid FlexMessage応答を完了しました。")
-            except Exception as e:
-                print(f"[LINE送信エラー] {e}")
-                line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ LINEの表示制限エラーが発生しました。"))
+            else:
+                error_msg = f"⚠️ 【{target_spot_name}】の天気データの取得に失敗しました。"
+                line_bot_api.reply_message(event.reply_token, TextSendMessage(text=error_msg))
             return
+
+        elif user_message == "設定":
+            user_setting = get_user_setting(user_id)
+            source, favorites = user_setting
+            fav_list = [s for s in favorites.split(',') if s]
+            fav_display = "\n".join([f"・{spot}" for spot in fav_list]) if fav_list else "・未登録"
+            reply_text = (
+                "⚙️ 【現在の設定状況】\n\n"
+                "■ 天気詳細度: 常に最詳細モード\n"
+                f"■ 参照ソース: {source}\n"
+                f"■ お気に入り釣り場:\n{fav_display}\n\n"
+                "【設定変更コマンド】\n"
+                "・「追加:釣り場名」\n"
+                "・「削除:釣り場名」"
+            )
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
+
+        elif user_message.startswith("追加:"):
+            spot_name = user_message.replace("追加:", "").strip()
+            success, msg = add_favorite_spot(user_id, spot_name) if spot_name else (False, "⚠️ 釣り場名を入力してください。")
+            reply_text = f"✅ {msg}" if success else f"⚠️ {msg}"
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
+
+        elif user_message.startswith("削除:"):
+            spot_name = user_message.replace("削除:", "").strip()
+            success, msg = remove_favorite_spot(user_id, spot_name) if spot_name else (False, "⚠️ 削除する釣り場名を入力してください。")
+            reply_text = f"✅ {msg}" if success else f"⚠️ {msg}"
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
+
         else:
-            error_msg = f"⚠️ 【{target_spot_name}】の天気データの取得に失敗しました。"
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(text=error_msg))
-            return
+            reply_text = (
+                "🔍 その釣り場は現在対応していません、もしくは名前が間違っています。\n\n"
+                "【対応済みの主な釣り場】\n"
+                "不忘 / 白河 / 朝霞 / 加賀 / 鬼怒川 / 鹿島槍 / 平谷湖 / 東山湖 / すその / サンクチュアリ...など、全国60箇所以上に対応！\n\n"
+                "※部分一致で検索できます（例: 「キング」と送信すると「キングフィッシャー」の天気が表示されます）"
+            )
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
 
-    elif user_message == "設定":
-        user_setting = get_user_setting(user_id)
-        source, favorites = user_setting
-        fav_list = [s for s in favorites.split(',') if s]
-        fav_display = "\n".join([f"・{spot}" for spot in fav_list]) if fav_list else "・未登録"
-        reply_text = (
-            "⚙️ 【現在の設定状況】\n\n"
-            "■ 天気詳細度: 常に最詳細モード\n"
-            f"■ 参照ソース: {source}\n"
-            f"■ お気に入り釣り場:\n{fav_display}\n\n"
-            "【設定変更コマンド】\n"
-            "・「追加:釣り場名」\n"
-            "・「削除:釣り場名」"
-        )
-        line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
-
-    elif user_message.startswith("追加:"):
-        spot_name = user_message.replace("追加:", "").strip()
-        success, msg = add_favorite_spot(user_id, spot_name) if spot_name else (False, "⚠️ 釣り場名を入力してください。")
-        reply_text = f"✅ {msg}" if success else f"⚠️ {msg}"
-        line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
-
-    elif user_message.startswith("削除:"):
-        spot_name = user_message.replace("削除:", "").strip()
-        success, msg = remove_favorite_spot(user_id, spot_name) if spot_name else (False, "⚠️ 削除する釣り場名を入力してください。")
-        reply_text = f"✅ {msg}" if success else f"⚠️ {msg}"
-        line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
-
-    else:
-        reply_text = (
-            "🔍 その釣り場は現在対応していません、もしくは名前が間違っています。\n\n"
-            "【対応済みの主な釣り場】\n"
-            "不忘 / 白河 / 朝霞 / 加賀 / 鬼怒川 / 鹿島槍 / 平谷湖 / 東山湖 / すその / サンクチュアリ...など、全国60箇所以上に対応！\n\n"
-            "※部分一致で検索できます（例: 「キング」と送信すると「キングフィッシャー」の天気が表示されます）"
-        )
-        line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
+    except Exception as e:
+        print(f"[システムエラー] {e}")
+        try:
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ 処理中にエラーが発生しました。時間を置いて再度お試しください。"))
+        except Exception:
+            pass
 
 # ==========================================
-# 8. 定期トリガーエンドポイント（大量通知ストッパー組み込み）
+# 8. 定期トリガーエンドポイント（一斉通知ガードレール）
 # ==========================================
 @app.route("/cron_trigger", methods=['GET', 'POST'])
 def cron_trigger():
     print("\n--- 定期トリガーを受信 ---")
-    detect_count = 0
-    # 大量通知ストッパー制御
-    if detect_count > MAX_LIMIT:
-        print("[安全装置作動] 検知数が上限を超えたため自動通知をスキップしました。")
-        return jsonify({"status": "skipped", "reason": "MAX_LIMIT_EXCEEDED"}), 200
     
-    time.sleep(random.uniform(1.0, 3.0))  # ゆらぎ待機
+    # 1. 大量通知ストッパー（安全装置）
+    detect_count = 0
+    if detect_count > MAX_LIMIT:
+        print("[安全装置作動] 上限を超えたため送信スキップ")
+        return jsonify({"status": "skipped", "reason": "MAX_LIMIT_EXCEEDED"}), 200
+
+    # 2. テストモード制御（本番環境以外の誤送信防止）
+    if IS_TEST_MODE and ADMIN_USER_ID:
+        print(f"[テストモード] 管理者({ADMIN_USER_ID})のみに制限して処理実行")
+
+    time.sleep(random.uniform(1.0, 3.0))  # サーバ負荷軽減のゆらぎ
     return jsonify({"status": "success", "message": "Trigger processed safely."}), 200
 
 if __name__ == "__main__":
