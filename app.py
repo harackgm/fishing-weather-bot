@@ -760,27 +760,37 @@ SPOT_WEATHER_DATA = {
 COLOR_GROUPS = [
     {
         "title": "📍 静岡・神奈川・東京・千葉",
-        "header_bg": "#0066cc",   # ブルー
-        "btn_bg": "#e6f0fa",
-        "spots": ["東山湖", "すその", "須川", "アルクス焼津", "浜名湖", "足柄", "中津川", "早戸川", "王禅寺", "開成", "浅川", "座間", "ジョイバレー", "ウォルトン", "NOIKE", "パラダイス", "いなプー"]
+        "header_bg": "#0066cc",
+        "sub_groups": [
+            {"bg": "#e6f0fa", "spots": ["東山湖", "すその", "須川", "アルクス焼津", "浜名湖"]},
+            {"bg": "#d4e6f1", "spots": ["足柄", "中津川", "早戸川", "王禅寺", "開成", "浅川"]},
+            {"bg": "#cce5ff", "spots": ["座間", "ジョイバレー", "ウォルトン", "NOIKE", "パラダイス", "いなプー"]}
+        ]
     },
     {
         "title": "📍 埼玉・群馬",
-        "header_bg": "#2e7d32",   # グリーン
-        "btn_bg": "#e8f5e9",
-        "spots": ["長瀞", "彩の国", "朝霞", "しらこばと", "川越", "加須はなさき", "多摩湖", "中里", "伊古", "川場", "川場キングダム", "おくとね", "イワナセンター", "黒保根", "迦葉山", "片品", "中之沢", "宮城", "大崎", "けん太", "フック", "赤久縄", "太田", "東山道", "榛名"]
+        "header_bg": "#2e7d32",
+        "sub_groups": [
+            {"bg": "#e8f5e9", "spots": ["長瀞", "彩の国", "朝霞", "しらこばと", "川越", "加須はなさき", "多摩湖", "中里", "伊古"]},
+            {"bg": "#c8e6c9", "spots": ["川場", "川場キングダム", "おくとね", "イワナセンター", "黒保根", "迦葉山", "片品", "中之沢", "宮城", "大崎", "けん太", "フック", "赤久縄", "太田", "東山道", "榛名"]}
+        ]
     },
     {
         "title": "📍 栃木・茨城",
-        "header_bg": "#e65100",   # オレンジ
-        "btn_bg": "#fff3e0",
-        "spots": ["キングフィッシャー", "みどり", "那須高原", "尚仁沢", "つり天国", "関根", "408", "308", "蛇尾川", "レイクウッド", "なら山沼", "大芦川", "加賀", "発光路", "上永野", "柏倉", "遊水園", "アルクス宇都宮", "エリア21", "ベアーズパーク", "鬼怒川", "名草", "水戸南", "高萩", "つくば園", "FAJ", "ユザキ", "笠間", "DoDoo", "若栗", "ミッドクリーク"]
+        "header_bg": "#e65100",
+        "sub_groups": [
+            {"bg": "#fff3e0", "spots": ["キングフィッシャー", "みどり", "那須高原", "尚仁沢", "つり天国", "関根", "408", "308", "蛇尾川", "レイクウッド", "なら山沼", "大芦川", "加賀", "発光路", "上永野", "柏倉", "遊水園", "アルクス宇都宮", "エリア21", "ベアーズパーク", "鬼怒川", "名草"]},
+            {"bg": "#ffe0b2", "spots": ["水戸南", "高萩", "つくば園", "FAJ", "ユザキ", "笠間", "DoDoo", "若栗", "ミッドクリーク"]}
+        ]
     },
     {
         "title": "📍 甲信・東北・東海・関西",
-        "header_bg": "#6a1b9a",   # パープル
-        "btn_bg": "#f3e5f5",
-        "spots": ["鹿留", "小菅", "シルフ", "JF in Tsugane", "竜華池", "平谷湖", "ハーブ", "ニレ池", "鹿島槍", "槻の池", "あずみ野", "不忘", "白河", "ほのぼの", "WaDoNa", "鶴沼川", "オーパ", "あいづ", "上浜", "五頭", "瑞浪", "サンクチュアリ", "醒井", "高島", "千早川"]
+        "header_bg": "#6a1b9a",
+        "sub_groups": [
+            {"bg": "#f3e5f5", "spots": ["鹿留", "小菅", "シルフ", "JF in Tsugane", "竜華池", "平谷湖", "ハーブ", "ニレ池", "鹿島槍", "槻の池", "あずみ野"]},
+            {"bg": "#e1bee7", "spots": ["不忘", "白河", "ほのぼの", "WaDoNa", "鶴沼川", "オーパ", "あいづ", "上浜", "五頭"]},
+            {"bg": "#d1c4e9", "spots": ["瑞浪", "サンクチュアリ", "醒井", "高島", "千早川"]}
+        ]
     }
 ]
 
@@ -881,10 +891,10 @@ def build_settings_flex_message(fav_list):
     return FlexSendMessage(alt_text="お気に入り管理パネル", contents=bubble)
 
 def build_spot_list_carousel_horizontal(user_id=None):
-    """【横並びカルーセル形式】お気に入りを1枚目に配置し、地域カードを右へスワイプで並べる形式"""
+    """【横並びカルーセル形式】お気に入り登録済みマーク対応"""
     bubbles = []
+    fav_list = []
 
-    # 1. お気に入り（1枚目）
     if user_id:
         _, favorites = get_user_setting(user_id)
         fav_list = [s for s in favorites.split(',') if s]
@@ -897,10 +907,10 @@ def build_spot_list_carousel_horizontal(user_id=None):
                     row_buttons.append({
                         "type": "button",
                         "action": {"type": "message", "label": spot, "text": spot},
-                        "style": "secondary",    # 【復元】ボタンの背景色と文字色を自動調整
-                        "color": "#fffde7",      # ゴールドの背景
+                        "style": "secondary",
+                        "color": "#fffde7",
                         "height": "sm",
-                        "margin": "xs",          # 【復元】ボタンの余白
+                        "margin": "xs",
                         "flex": 1
                     })
                 if len(pair) == 1:
@@ -919,27 +929,31 @@ def build_spot_list_carousel_horizontal(user_id=None):
             }
             bubbles.append(fav_bubble)
 
-    # 2. その他の地域（2枚目以降）
     for group in COLOR_GROUPS:
-        spots = group["spots"]
         rows = []
-        for i in range(0, len(spots), 2):
-            pair = spots[i:i+2]
-            row_buttons = []
-            for spot in pair:
-                row_buttons.append({
-                    "type": "button",
-                    "action": {"type": "message", "label": spot, "text": spot},
-                    "style": "secondary",    # 【復元】
-                    "color": group["btn_bg"],
-                    "height": "sm",
-                    "margin": "xs",          # 【復元】
-                    "flex": 1
-                })
-            if len(pair) == 1:
-                row_buttons.append({"type": "box", "layout": "vertical", "flex": 1, "contents": [{"type": "text", "text": " "}]})
-                
-            rows.append({"type": "box", "layout": "horizontal", "contents": row_buttons})
+        for sg in group["sub_groups"]:
+            spots = sg["spots"]
+            btn_bg = sg["bg"]
+            for i in range(0, len(spots), 2):
+                pair = spots[i:i+2]
+                row_buttons = []
+                for spot in pair:
+                    # お気に入り登録済みなら「★」を付ける（送信されるテキストはそのまま）
+                    label_text = f"★ {spot}" if spot in fav_list else spot
+                    
+                    row_buttons.append({
+                        "type": "button",
+                        "action": {"type": "message", "label": label_text, "text": spot},
+                        "style": "secondary",
+                        "color": btn_bg,
+                        "height": "sm",
+                        "margin": "xs",
+                        "flex": 1
+                    })
+                if len(pair) == 1:
+                    row_buttons.append({"type": "box", "layout": "vertical", "flex": 1, "contents": [{"type": "text", "text": " "}]})
+                    
+                rows.append({"type": "box", "layout": "horizontal", "contents": row_buttons})
             
         bubble = {
             "type": "bubble",
