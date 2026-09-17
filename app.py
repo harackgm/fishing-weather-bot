@@ -4,7 +4,7 @@ import random
 import requests
 import traceback
 import difflib
-from urllib.parse import quote
+from urllib.parse import quote, urlparse
 from bs4 import BeautifulSoup
 from flask import Flask, request, abort, jsonify
 from linebot import LineBotApi, WebhookHandler
@@ -766,23 +766,34 @@ SPOT_CAROUSEL_GROUPS = [
     {"title": "📍 東北・他エリア", "spots": ["不忘", "白河", "ほのぼの", "WaDoNa", "鶴沼川", "オーパ", "あいづ", "上浜", "五頭", "瑞浪", "サンクチュアリ", "醒井", "高島", "千早川"]}
 ]
 
+def clean_url(url_str):
+    """URLの不要な空白を除去し安全な形式にする"""
+    if not url_str:
+        return ""
+    cleaned = url_str.strip().replace(" ", "").replace("\t", "")
+    if not (cleaned.startswith("http://") or cleaned.startswith("https://")):
+        return ""
+    return cleaned
+
 def find_candidate_spots(user_text):
     """ユーザー入力から該当するすべての釣り場候補を特定して取得"""
     text = user_text.strip().lower()
 
-    # 1. 完全一致判定（完全一致があれば優先して取得）
+    # 1. 完全一致判定（正式キー名またはエイリアス完全一致）
     exact_matches = []
     for spot_key, data in SPOT_WEATHER_DATA.items():
+        if text == spot_key.lower():
+            return [spot_key]
         for alias in data["aliases"]:
             if text == alias.lower():
                 if spot_key not in exact_matches:
                     exact_matches.append(spot_key)
 
-    if exact_matches:
+    if len(exact_matches) == 1:
         return exact_matches
 
-    # 2. 部分一致検索（部分一致する釣り場を全抽出）
-    matched_spots = []
+    # 2. 部分一致検索（ヒットする釣り場を全抽出）
+    matched_spots = exact_matches
     for spot_key, data in SPOT_WEATHER_DATA.items():
         for alias in data["aliases"]:
             alias_lower = alias.lower()
@@ -817,7 +828,8 @@ def get_spot_details(spot_key):
     if not data:
         return spot_key, None, "", "", ""
     map_url = f"https://www.google.com/maps/search/?api=1&query={quote(data.get('search_name', spot_key))}"
-    return spot_key, data["url"], data.get("hp_url", ""), map_url, data.get("tel", "")
+    hp_url = clean_url(data.get("hp_url", ""))
+    return spot_key, data["url"], hp_url, map_url, data.get("tel", "")
 
 def build_candidates_flex_message(candidates, query_text):
     """複数候補が見つかった場合の選択ボタンカードの構築"""
@@ -877,7 +889,6 @@ def build_spot_list_carousel():
                     "margin": "xs"
                 })
             if len(pair) == 1:
-                # LINE APIエラー防止用ダミーコンポーネント
                 row_buttons.append({"type": "box", "layout": "vertical", "flex": 1, "contents": [{"type": "text", "text": " ", "size": "xs"}]})
                 
             rows.append({
@@ -1017,6 +1028,10 @@ def fetch_spot_1hour_data(url):
                     else: img_url = src
                 img_url = img_url.replace("http://", "https://")
 
+                # LINE API安全対策：HTTPS検証
+                if not img_url.startswith("https://"):
+                    img_url = "https://gvs.weathernews.jp/onebox/img/wxicon/200.png"
+
                 rain = item.find('li', class_='rain').text.strip().replace("ミリ", "mm") if item.find('li', class_='rain') else "-"
                 temp = item.find('li', class_='temp').text.strip() if item.find('li', class_='temp') else "-"
                 wind_p = item.find('li', class_='wind').find('p') if item.find('li', class_='wind') else None
@@ -1042,7 +1057,7 @@ def fetch_spot_1hour_data(url):
         return None
 
 def build_grid_flex_message(spot_name, weather_by_date, hp_url="", map_url="", tel=""):
-    """田の字型（2行×2列）グリッドレイアウト（LINE API仕様20文字制限クリア版ボタン）"""
+    """田の字型（2行×2列）グリッドレイアウト（LINE API完全適合版）"""
     dates = list(weather_by_date.keys())
     
     def create_day_column(date_str):
@@ -1078,11 +1093,12 @@ def build_grid_flex_message(spot_name, weather_by_date, hp_url="", map_url="", t
             rain_color = "#0000ff" if r_val.isdigit() and int(r_val) > 0 else "#333333"
             if r_val == "-": rain_color = "#333333"
 
+            # LINE API仕様準拠：imageパーツから不当な align プロパティを除去
             rows.append({
                 "type": "box", "layout": "horizontal", "margin": "xs", "alignItems": "center",
                 "contents": [
                     {"type": "text", "text": time_str, "size": "xs", "flex": 1, "align": "center", "weight": "bold"},
-                    {"type": "image", "url": img_url, "size": "xs", "flex": 1, "align": "center"},
+                    {"type": "image", "url": img_url, "size": "xs", "flex": 1},
                     {"type": "text", "text": t_val, "size": "xs", "flex": 1, "align": "center", "color": temp_color},
                     {"type": "text", "text": r_val, "size": "xs", "flex": 1, "align": "center", "color": rain_color},
                     {"type": "text", "text": w_val, "size": "xs", "flex": 1, "align": "center"}
@@ -1127,7 +1143,7 @@ def build_grid_flex_message(spot_name, weather_by_date, hp_url="", map_url="", t
         }
         body_contents.append(row2)
 
-    # 最下段電話問い合わせボタン（ラベル「📞 電話」に変更し文字数オーバーを解消）
+    # 最下段電話ボタン（文字数制限安全版）
     if tel:
         clean_tel = tel.replace('-', '').strip()
         body_contents.append({"type": "separator", "margin": "md"})
@@ -1146,18 +1162,21 @@ def build_grid_flex_message(spot_name, weather_by_date, hp_url="", map_url="", t
             ]
         })
 
-    # ヘッダー内のリンクボタン組み立て（HP / Google Map のみ）
+    # ヘッダー内のリンクボタン組み立て（安全なURLのみ反映）
     header_buttons = []
-    if hp_url:
+    clean_hp = clean_url(hp_url)
+    clean_map = clean_url(map_url)
+
+    if clean_hp:
         header_buttons.append({
             "type": "button",
-            "action": {"type": "uri", "label": "🌐 HP", "uri": hp_url},
+            "action": {"type": "uri", "label": "🌐 HP", "uri": clean_hp},
             "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"
         })
-    if map_url:
+    if clean_map:
         header_buttons.append({
             "type": "button",
-            "action": {"type": "uri", "label": "🗺️ 地図", "uri": map_url},
+            "action": {"type": "uri", "label": "🗺️ 地図", "uri": clean_map},
             "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"
         })
 
@@ -1261,8 +1280,12 @@ def handle_message(event):
             weather_by_date = fetch_spot_1hour_data(target_url)
             if weather_by_date:
                 flex_msg = build_grid_flex_message(target_spot_name, weather_by_date, hp_url, map_url, tel)
-                line_bot_api.reply_message(event.reply_token, flex_msg)
-                print(f"[送信] {target_spot_name}の Grid FlexMessage応答を完了しました。")
+                try:
+                    line_bot_api.reply_message(event.reply_token, flex_msg)
+                    print(f"[送信] {target_spot_name}の Grid FlexMessage応答を完了しました。")
+                except LineBotApiError as le:
+                    print(f"[LINE API Error] {le.status_code} {le.error.message}")
+                    print(f"Error Details: {le.error.details}")
             else:
                 error_msg = f"⚠️ 【{target_spot_name}】の天気データの取得に失敗しました。"
                 line_bot_api.reply_message(event.reply_token, TextSendMessage(text=error_msg))
@@ -1287,10 +1310,6 @@ def handle_message(event):
         print("\n=== システムエラー詳細 ===")
         traceback.print_exc()
         print("==========================\n")
-        try:
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ 処理中にエラーが発生しました。時間を置いて再度お試しください。"))
-        except Exception:
-            pass
 
 # ==========================================
 # 8. 定期トリガーエンドポイント（Cron自動通知用）
