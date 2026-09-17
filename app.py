@@ -888,7 +888,6 @@ def build_settings_flex_message(fav_list):
             })
 
         rows.append({"type": "separator", "margin": "md"})
-        
         rows.append({
             "type": "box",
             "layout": "horizontal",
@@ -897,7 +896,7 @@ def build_settings_flex_message(fav_list):
             "contents": [
                 {
                     "type": "button",
-                    "action": {"type": "postback", "label": "📋 一覧", "data": "action=show_list"},
+                    "action": {"type": "postback", "label": "📋 一覧", "data": "action=show_list", "displayText": "📋 一覧"},
                     "style": "secondary",
                     "color": "#fff59d",
                     "flex": 1
@@ -978,22 +977,22 @@ def build_spot_list_carousel_horizontal(user_id=None):
             fav_rows.append({"type": "separator", "margin": "lg", "color": "#cccccc"})
             fav_rows.append({
                 "type": "button",
-                "action": {"type": "postback", "label": "⚙️ 設定（並び替え・削除）", "data": "action=show_settings"},
+                "action": {"type": "postback", "label": "⚙️ 設定（並び替え・削除）", "data": "action=show_settings", "displayText": "⚙️ 設定"},
                 "style": "secondary",
                 "color": "#f8f9fa",
                 "height": "sm",
                 "margin": "md"
             })
 
-            # ★ ヘッダーを分割し、右側に件数上限を追加
+            # ★ 【修正箇所】alignItems: "end" はエラーになるため、"center" に修正し安全に分割
             fav_bubble = {
                 "type": "bubble",
                 "size": "giga",
                 "header": {
-                    "type": "box", "layout": "horizontal", "backgroundColor": "#d4af37", "paddingAll": "10px", "alignItems": "end",
+                    "type": "box", "layout": "horizontal", "backgroundColor": "#d4af37", "paddingAll": "10px", "alignItems": "center",
                     "contents": [
-                        {"type": "text", "text": "⭐ あなたのお気に入り釣り場", "color": "#ffffff", "weight": "bold", "size": "md"},
-                        {"type": "text", "text": "(最大30箇所)", "color": "#eeeeee", "size": "xs", "align": "end"}
+                        {"type": "text", "text": "⭐ あなたのお気に入り釣り場", "color": "#ffffff", "weight": "bold", "size": "md", "flex": 1},
+                        {"type": "text", "text": "(最大30箇所)", "color": "#eeeeee", "size": "xs", "align": "end", "flex": 0}
                     ]
                 },
                 "body": {"type": "box", "layout": "vertical", "paddingAll": "6px", "contents": fav_rows}
@@ -1035,6 +1034,7 @@ def build_spot_list_carousel_horizontal(user_id=None):
         }
         bubbles.append(bubble)
 
+    # 使い方ガイドを一番右に追加
     guide_bubble = {
         "type": "bubble",
         "size": "giga",
@@ -1043,10 +1043,10 @@ def build_spot_list_carousel_horizontal(user_id=None):
             "contents": [{"type": "text", "text": "📖 使い方ガイド", "color": "#ffffff", "weight": "bold", "size": "md"}]
         },
         "body": {
-            "type": "box", "layout": "vertical", "spacing": "sm", "paddingAll": "15px",
+            "type": "box", "layout": "vertical", "spacing": "md", "paddingAll": "15px",
             "contents": [
                 {
-                    "type": "box", "layout": "vertical", "margin": "none", "spacing": "sm",
+                    "type": "box", "layout": "vertical", "spacing": "sm",
                     "contents": [
                         {"type": "text", "text": "👇 基本の操作", "weight": "bold", "size": "sm", "color": "#333333"},
                         {"type": "text", "text": "・一覧のボタンをタップで天気予報を表示", "wrap": True, "size": "xs", "color": "#666666"}
@@ -1054,13 +1054,13 @@ def build_spot_list_carousel_horizontal(user_id=None):
                 },
                 {"type": "separator", "margin": "md"},
                 {
-                    "type": "box", "layout": "vertical", "margin": "md", "spacing": "sm",
+                    "type": "box", "layout": "vertical", "spacing": "sm", "margin": "md",
                     "contents": [
                         {"type": "text", "text": "💬 テキストコマンド", "weight": "bold", "size": "sm", "color": "#333333"},
-                        {"type": "text", "text": "【追加】\n「追加 東山湖 すその」と入力して一括登録", "wrap": True, "size": "xs", "color": "#666666"},
-                        {"type": "text", "text": "【削除】\n「削除 東山湖」と入力して一括解除", "wrap": True, "size": "xs", "color": "#666666", "margin": "sm"},
-                        {"type": "text", "text": "【設定】\n「設定」と入力して並び替え・削除パネルを表示", "wrap": True, "size": "xs", "color": "#666666", "margin": "sm"},
-                        {"type": "text", "text": "【一覧】\nその他の文字を入力すると、この一覧を表示します", "wrap": True, "size": "xs", "color": "#666666", "margin": "sm"}
+                        {"type": "text", "text": "【追加】\n「追加 東山湖 すその」で一括登録", "wrap": True, "size": "xs", "color": "#666666"},
+                        {"type": "text", "text": "【削除】\n「削除 東山湖」で一括解除", "wrap": True, "size": "xs", "color": "#666666"},
+                        {"type": "text", "text": "【設定】\n「設定」で並び替え・削除パネルを表示", "wrap": True, "size": "xs", "color": "#666666"},
+                        {"type": "text", "text": "【一覧】\nその他の文字を入力すると一覧を表示", "wrap": True, "size": "xs", "color": "#666666"}
                     ]
                 }
             ]
@@ -1315,7 +1315,8 @@ def build_grid_flex_message(spot_name, weather_by_date, hp_url="", map_url="", t
         clean_tel = tel.replace('-', '').strip()
         bottom_buttons.append({"type": "button", "action": {"type": "uri", "label": "📞 電話", "uri": f"tel:{clean_tel}"}, "style": "secondary", "height": "sm", "flex": 1})
     
-    bottom_buttons.append({"type": "button", "action": {"type": "postback", "label": "📋 一覧", "data": "action=show_list"}, "style": "secondary", "color": "#fff59d", "height": "sm", "flex": 1})
+    # ★ 一覧ボタンにも displayText を追加
+    bottom_buttons.append({"type": "button", "action": {"type": "postback", "label": "📋 一覧", "data": "action=show_list", "displayText": "📋 一覧"}, "style": "secondary", "color": "#fff59d", "height": "sm", "flex": 1})
 
     body_contents.append({"type": "separator", "margin": "md"})
     body_contents.append({
@@ -1508,8 +1509,14 @@ def handle_postback(event):
             flex_msg = build_settings_flex_message(fav_list)
             line_bot_api.reply_message(event.reply_token, flex_msg)
             
+    # ★ エラー時にユーザーへテキスト通知を返す（沈黙防止）
     except Exception as e:
         print(f"Postback Error: {e}")
+        traceback.print_exc()
+        try:
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ 処理中にエラーが発生しました。"))
+        except Exception:
+            pass
 
 @app.route("/cron_trigger", methods=['GET', 'POST'])
 def cron_trigger():
