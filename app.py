@@ -183,7 +183,7 @@ SPOT_WEATHER_DATA = {
         "hp_url": "https://www.hokkoji.com/",
         "search_name": "発光路の森ファアルクス",
         "tel": "0289-85-3503",
-        "aliases": ["発光路", "発光路の森", "発光路の森ファアルクス", "ほっこうじ"]
+        "aliases": ["発光路", "発光路の森", "ほっこうじ"]
     },
     "上永野": {
         "url": "https://weathernews.jp/onebox/36.511884/139.573442/",
@@ -767,7 +767,7 @@ SPOT_CAROUSEL_GROUPS = [
 ]
 
 def find_candidate_spots(user_text):
-    """ユーザー入力から該当するすべての釣り場候補を全検索して取得"""
+    """ユーザー入力から該当するすべての釣り場候補を特定して取得"""
     text = user_text.strip().lower()
 
     # 1. 完全一致判定（完全一致があれば単一特定）
@@ -840,7 +840,7 @@ def build_candidates_flex_message(candidates, query_text):
             "contents": [
                 {
                     "type": "text",
-                    "text": f"「{query_text}」に該当する候補が複数見つかりました。タップして選択してください。",
+                    "text": f"「{query_text}」に該当する候補が見つかりました。タップして選択してください。",
                     "wrap": True,
                     "size": "xs",
                     "color": "#555555"
@@ -851,7 +851,7 @@ def build_candidates_flex_message(candidates, query_text):
     return FlexSendMessage(alt_text="釣り場候補の選択", contents=bubble)
 
 def build_spot_list_carousel():
-    """地域別・2列格子（セル分割）カルーセルメッセージの構築"""
+    """地域別・2列格子（セル分割）カルーセルメッセージの構築（LINE API仕様安全版）"""
     bubbles = []
     
     for group in SPOT_CAROUSEL_GROUPS:
@@ -872,7 +872,8 @@ def build_spot_list_carousel():
                     "margin": "xs"
                 })
             if len(pair) == 1:
-                row_buttons.append({"type": "box", "layout": "vertical", "flex": 1, "contents": []})
+                # LINE APIエラー防止のためダミー要素入りのboxコンポーネントを置く
+                row_buttons.append({"type": "box", "layout": "vertical", "flex": 1, "contents": [{"type": "text", "text": " ", "size": "xs"}]})
                 
             rows.append({
                 "type": "box",
@@ -1036,7 +1037,7 @@ def fetch_spot_1hour_data(url):
         return None
 
 def build_grid_flex_message(spot_name, weather_by_date, hp_url="", map_url="", tel=""):
-    """田の字型（2行×2列）グリッドレイアウト"""
+    """田の字型（2行×2列）グリッドレイアウト（LINE API仕様安全版）"""
     dates = list(weather_by_date.keys())
     
     def create_day_column(date_str):
@@ -1121,14 +1122,14 @@ def build_grid_flex_message(spot_name, weather_by_date, hp_url="", map_url="", t
         }
         body_contents.append(row2)
 
-    # 最下段電話問い合わせボタン
+    # 最下段電話問い合わせボタン（LINE API仕様安全版）
     if tel:
         clean_tel = tel.replace('-', '').strip()
         body_contents.append({"type": "separator", "margin": "md"})
         body_contents.append({
             "type": "box", "layout": "horizontal", "margin": "sm",
             "contents": [
-                {"type": "box", "layout": "vertical", "flex": 1, "contents": []},
+                {"type": "box", "layout": "vertical", "flex": 1, "contents": [{"type": "text", "text": " ", "size": "xs"}]},
                 {
                     "type": "button",
                     "action": {"type": "uri", "label": f"📞 電話問い合わせ ({tel})", "uri": f"tel:{clean_tel}"},
@@ -1136,7 +1137,7 @@ def build_grid_flex_message(spot_name, weather_by_date, hp_url="", map_url="", t
                     "height": "sm",
                     "flex": 3
                 },
-                {"type": "box", "layout": "vertical", "flex": 1, "contents": []}
+                {"type": "box", "layout": "vertical", "flex": 1, "contents": [{"type": "text", "text": " ", "size": "xs"}]}
             ]
         })
 
@@ -1272,7 +1273,7 @@ def handle_message(event):
         # 3. 該当なしの場合
         reply_text = (
             "🔍 その釣り場は現在対応していません、もしくは名前が間違っています。\n\n"
-            "「一覧」と送信すると全国60箇所以上の釣り場リストを表示できます！\n\n"
+            "「一覧」と送信すると全国60箇所の釣り場リストを表示できます！\n\n"
             "※「あるくす」「ざま」「すそぱ」「寺」「てら」「ならやま」「がし山」などの略称でも検索可能です。"
         )
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
@@ -1281,6 +1282,10 @@ def handle_message(event):
         print("\n=== システムエラー詳細 ===")
         traceback.print_exc()
         print("==========================\n")
+        try:
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ 処理中にエラーが発生しました。時間を置いて再度お試しください。"))
+        except Exception:
+            pass
 
 # ==========================================
 # 8. 定期トリガーエンドポイント（Cron自動通知用）
