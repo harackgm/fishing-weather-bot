@@ -853,7 +853,6 @@ def get_spot_details(spot_key):
     return spot_key, data["url"], hp_url, map_url, data.get("tel", "")
 
 def build_settings_flex_message(fav_list):
-    """【ワンタップ並び替えUI】 ⬆️・⬇️・🗑️ ボタンを備えた管理パネル"""
     rows = []
     if not fav_list:
         rows.append({
@@ -866,21 +865,21 @@ def build_settings_flex_message(fav_list):
             rows.append({
                 "type": "box", "layout": "horizontal", "margin": "md", "alignItems": "center",
                 "contents": [
-                    {"type": "text", "text": f"{spot}", "size": "sm", "weight": "bold", "flex": 3, "color": "#333333"},
+                    {"type": "text", "text": f"{spot}", "size": "sm", "weight": "bold", "flex": 4, "color": "#333333", "wrap": True},
                     {
                         "type": "button",
                         "action": {"type": "postback", "label": "⬆️", "data": f"action=fav_up&spot={spot}"},
-                        "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"
+                        "style": "secondary", "height": "sm", "flex": 2, "margin": "xs"
                     },
                     {
                         "type": "button",
                         "action": {"type": "postback", "label": "⬇️", "data": f"action=fav_down&spot={spot}"},
-                        "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"
+                        "style": "secondary", "height": "sm", "flex": 2, "margin": "xs"
                     },
                     {
                         "type": "button",
                         "action": {"type": "postback", "label": "🗑️", "data": f"action=fav_del&spot={spot}"},
-                        "style": "secondary", "color": "#ffe6e6", "height": "sm", "flex": 1, "margin": "xs"
+                        "style": "secondary", "color": "#ffe6e6", "height": "sm", "flex": 2, "margin": "xs"
                     }
                 ]
             })
@@ -1055,7 +1054,6 @@ def remove_favorite_spot(user_id, spot_name):
         return False, f"削除に失敗しました: {e}"
 
 def move_favorite_spot(user_id, spot_name, direction):
-    """【並び替え専用関数】指定した釣り場の順番を1つ上（左）または下（右）へ移動させる"""
     if not supabase: return False, "DB接続未完了です。"
     source, favorites = get_user_setting(user_id)
     fav_list = [s for s in favorites.split(',') if s]
@@ -1066,13 +1064,10 @@ def move_favorite_spot(user_id, spot_name, direction):
     idx = fav_list.index(spot_name)
     
     if direction == "up" and idx > 0:
-        # 上（左）へ移動：前の要素と入れ替え
         fav_list[idx - 1], fav_list[idx] = fav_list[idx], fav_list[idx - 1]
     elif direction == "down" and idx < len(fav_list) - 1:
-        # 下（右）へ移動：後の要素と入れ替え
         fav_list[idx + 1], fav_list[idx] = fav_list[idx], fav_list[idx + 1]
     else:
-        # 既に一番上、または一番下の場合は何もしない
         return True, "移動不要"
         
     try:
@@ -1306,31 +1301,22 @@ def handle_postback(event):
         data_dict = dict(parse_qsl(event.postback.data))
         action, spot_name = data_dict.get("action"), data_dict.get("spot")
 
-        # ⭐️ 登録
         if action == "fav_add":
             success, msg = add_favorite_spot(user_id, spot_name)
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"✅ {msg}"))
-
-        # 🗑️ 削除
         elif action == "fav_del":
             success, msg = remove_favorite_spot(user_id, spot_name)
             _, favorites = get_user_setting(user_id)
             fav_list = [s for s in favorites.split(',') if s]
             flex_msg = build_settings_flex_message(fav_list)
-            # テキスト通知と更新された設定パネルを両方返す
             line_bot_api.reply_message(event.reply_token, [TextSendMessage(text=f"✅ {msg}"), flex_msg])
-
-        # ⬆️ ⬇️ 並び替え（画面だけを瞬時に更新する）
         elif action in ["fav_up", "fav_down"]:
             direction = "up" if action == "fav_up" else "down"
             move_favorite_spot(user_id, spot_name, direction)
-            
-            # 再描画用のデータを取得してパネルだけを送信（テキストを出さないことで画面を埋めない）
             _, favorites = get_user_setting(user_id)
             fav_list = [s for s in favorites.split(',') if s]
             flex_msg = build_settings_flex_message(fav_list)
             line_bot_api.reply_message(event.reply_token, flex_msg)
-
     except Exception as e:
         print(f"Postback Error: {e}")
 
