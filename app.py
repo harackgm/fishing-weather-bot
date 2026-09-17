@@ -266,8 +266,8 @@ def fetch_spot_1hour_data(url):
             if daily_list:
                 weather_by_date[date_str] = daily_list
             
-            # 最大5日分取得
-            if len(weather_by_date) >= 5:
+            # 【変更】グリッド表示(田の字)のため、最大4日分を取得
+            if len(weather_by_date) >= 4:
                 break
             
         return weather_by_date
@@ -275,69 +275,119 @@ def fetch_spot_1hour_data(url):
         print(f"[スクレイピングエラー] {e}")
         return None
 
-def build_vertical_flex_messages(spot_name, weather_by_date):
-    """日付ごとに独立したFlexMessageを作成"""
-    messages = []
+def build_grid_flex_message(spot_name, weather_by_date):
+    """【新機能】1つのバブルを十字に区切り、4日分（2行×2列）をまとめて表示するグリッド・レイアウト"""
+    dates = list(weather_by_date.keys())
     
-    for date_str, daily_data in weather_by_date.items():
+    # 1日分のカラム（縦枠）を生成する関数
+    def create_day_column(date_str):
+        if not date_str:
+            return {"type": "box", "layout": "vertical", "flex": 1, "contents": []}
+            
+        daily_data = weather_by_date[date_str]
+        
+        # ヘッダー（単位のみの超省スペース設計）
         rows = [
             {
                 "type": "box", "layout": "horizontal", "margin": "none",
                 "contents": [
-                    {"type": "text", "text": "時間", "weight": "bold", "size": "lg", "flex": 1, "align": "center", "color": "#888888"},
-                    {"type": "text", "text": "天気", "weight": "bold", "size": "lg", "flex": 1, "align": "center", "color": "#888888"},
-                    {"type": "text", "text": "気温", "weight": "bold", "size": "lg", "flex": 1, "align": "center", "color": "#888888"},
-                    {"type": "text", "text": "降水", "weight": "bold", "size": "lg", "flex": 1, "align": "center", "color": "#888888"},
-                    {"type": "text", "text": "風速", "weight": "bold", "size": "lg", "flex": 1, "align": "center", "color": "#888888"}
+                    {"type": "text", "text": "時", "weight": "bold", "size": "xxs", "flex": 1, "align": "center", "color": "#888888"},
+                    {"type": "text", "text": "天", "weight": "bold", "size": "xxs", "flex": 1, "align": "center", "color": "#888888"},
+                    {"type": "text", "text": "℃", "weight": "bold", "size": "xxs", "flex": 1, "align": "center", "color": "#888888"},
+                    {"type": "text", "text": "mm", "weight": "bold", "size": "xxs", "flex": 1, "align": "center", "color": "#888888"},
+                    {"type": "text", "text": "m", "weight": "bold", "size": "xxs", "flex": 1, "align": "center", "color": "#888888"}
                 ]
             },
-            {"type": "separator", "margin": "md"}
+            {"type": "separator", "margin": "xs"}
         ]
         
         for data in daily_data:
-            temp_color = "#ff0000" if "℃" in data['temp'] and int(data['temp'].replace("℃","")) >= 25 else "#333333"
-            rain_color = "#0000ff" if "mm" in data['rain'] and data['rain'] not in ["0mm", "-"] else "#333333"
+            # 単位を取り除き、純粋な数字だけに圧縮
+            t_val = data['temp'].replace("℃", "")
+            r_val = data['rain'].replace("mm", "")
+            w_val = data['wind'].replace("m/s", "").replace("m", "")
+            time_str = data['time'].replace("時", "")
             
+            temp_color = "#ff0000" if t_val.isdigit() and int(t_val) >= 25 else "#333333"
+            rain_color = "#0000ff" if r_val.isdigit() and int(r_val) > 0 else "#333333"
+            if r_val == "-": rain_color = "#333333"
+
             rows.append({
-                "type": "box", "layout": "horizontal", "margin": "md", "alignItems": "center",
+                "type": "box", "layout": "horizontal", "margin": "xs", "alignItems": "center",
                 "contents": [
-                    {"type": "text", "text": data['time'], "size": "lg", "flex": 1, "align": "center", "weight": "bold"},
-                    {"type": "image", "url": data['img_url'], "size": "md", "flex": 1, "align": "center"},
-                    {"type": "text", "text": data['temp'], "size": "lg", "flex": 1, "align": "center", "color": temp_color},
-                    {"type": "text", "text": data['rain'], "size": "lg", "flex": 1, "align": "center", "color": rain_color},
-                    {"type": "text", "text": data['wind'].replace("m/s", "m"), "size": "lg", "flex": 1, "align": "center"}
+                    {"type": "text", "text": time_str, "size": "xxs", "flex": 1, "align": "center", "weight": "bold"},
+                    {"type": "image", "url": data['img_url'], "size": "xxs", "flex": 1, "align": "center"},
+                    {"type": "text", "text": t_val, "size": "xxs", "flex": 1, "align": "center", "color": temp_color},
+                    {"type": "text", "text": r_val, "size": "xxs", "flex": 1, "align": "center", "color": rain_color},
+                    {"type": "text", "text": w_val, "size": "xxs", "flex": 1, "align": "center"}
                 ]
             })
             
-        bubble = {
-            "type": "bubble",
-            "size": "giga",  
-            "header": {
-                "type": "box", "layout": "vertical", "backgroundColor": "#0066cc", "paddingAll": "16px",
-                "contents": [
-                    {"type": "text", "text": f"📍 {spot_name}", "color": "#ffffff", "weight": "bold", "size": "lg"},
-                    {"type": "text", "text": date_str, "color": "#ffffff", "weight": "bold", "size": "xl", "margin": "sm"}
-                ]
-            },
-            "body": {
-                "type": "box", "layout": "vertical", "spacing": "none", "paddingAll": "16px",
-                "contents": rows
-            }
+        return {
+            "type": "box", "layout": "vertical", "flex": 1,
+            "contents": [
+                {
+                    "type": "box", "layout": "vertical", "backgroundColor": "#e6f2ff", "paddingAll": "4px", "margin": "sm",
+                    "contents": [
+                        {"type": "text", "text": date_str, "weight": "bold", "size": "xs", "align": "center", "color": "#0066cc"}
+                    ]
+                },
+                {
+                    "type": "box", "layout": "vertical", "spacing": "none", "margin": "sm",
+                    "contents": rows
+                }
+            ]
         }
-        
-        messages.append(FlexSendMessage(alt_text=f"{spot_name} {date_str}の天気", contents=bubble))
-        
-        if len(messages) >= 5:
-            break
-            
-    return messages
+
+    # 上段（今日・明日）
+    top_row = {
+        "type": "box", "layout": "horizontal", "spacing": "sm",
+        "contents": [
+            create_day_column(dates[0] if len(dates) > 0 else None),
+            {"type": "separator"},
+            create_day_column(dates[1] if len(dates) > 1 else None)
+        ]
+    }
+    
+    # 下段（明後日・明明後日）
+    bottom_row = {
+        "type": "box", "layout": "horizontal", "spacing": "sm", "margin": "md",
+        "contents": [
+            create_day_column(dates[2] if len(dates) > 2 else None),
+            {"type": "separator"},
+            create_day_column(dates[3] if len(dates) > 3 else None)
+        ]
+    }
+    
+    body_contents = [top_row]
+    if len(dates) > 2:
+        body_contents.append({"type": "separator", "margin": "md"})
+        body_contents.append(bottom_row)
+
+    bubble = {
+        "type": "bubble",
+        "size": "giga", # 最大幅を利用
+        "header": {
+            "type": "box", "layout": "vertical", "backgroundColor": "#0066cc", "paddingAll": "12px",
+            "contents": [
+                {"type": "text", "text": f"📍 {spot_name}", "color": "#ffffff", "weight": "bold", "size": "md"}
+            ]
+        },
+        "body": {
+            "type": "box", "layout": "vertical", "paddingAll": "8px",
+            "contents": body_contents
+        }
+    }
+    
+    # 単一のメッセージ（リスト形式）として返す
+    return [FlexSendMessage(alt_text=f"{spot_name}の天気予報", contents=bubble)]
 
 # ==========================================
 # 6. Webサーバーのエンドポイント
 # ==========================================
 @app.route("/", methods=['GET'])
 def top_page():
-    return "LINE Reply Bot Server (Reversed Vertical) is running!", 200
+    return "LINE Reply Bot Server (Grid Layout) is running!", 200
 
 @app.route("/callback", methods=['POST'])
 def callback():
@@ -370,13 +420,11 @@ def handle_message(event):
     if target_url:
         weather_by_date = fetch_spot_1hour_data(target_url)
         if weather_by_date:
-            messages = build_vertical_flex_messages(target_spot_name, weather_by_date)
-            
-            # 【重要追加】メッセージの送信順序を反転させる (今日が一番下に来るように)
-            messages.reverse()
+            # 1つの巨大なバブル（グリッドレイアウト）を構築して送信
+            messages = build_grid_flex_message(target_spot_name, weather_by_date)
             
             line_bot_api.reply_message(event.reply_token, messages)
-            print(f"[送信] {target_spot_name}のReversed Vertical FlexMessage応答を完了しました。")
+            print(f"[送信] {target_spot_name}の Grid FlexMessage応答を完了しました。")
             return
         else:
             error_msg = f"⚠️ 【{target_spot_name}】の天気データの取得に失敗しました。"
@@ -418,7 +466,7 @@ def handle_message(event):
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
 
     else:
-        # 定型文
+        # 定型文（AIは完全排除）
         reply_text = (
             "🔍 その釣り場は現在対応していません、もしくは名前が間違っています。\n\n"
             "【対応済みの主な釣り場】\n"
