@@ -2,10 +2,11 @@ import os
 import time
 import random
 import requests
+import traceback
 from bs4 import BeautifulSoup
 from flask import Flask, request, abort, jsonify
 from linebot import LineBotApi, WebhookHandler
-from linebot.exceptions import InvalidSignatureError
+from linebot.exceptions import InvalidSignatureError, LineBotApiError
 from linebot.models import MessageEvent, TextMessage, TextSendMessage, FlexSendMessage
 from supabase import create_client, Client
 
@@ -273,13 +274,16 @@ def fetch_spot_1hour_data(url):
         return None
 
 def build_grid_flex_message(spot_name, weather_by_date):
-    """田の字型（2行×2列）グリッドレイアウト"""
+    """田の字型（2行×2列）グリッドレイアウト（空文字ガード強化版）"""
     dates = list(weather_by_date.keys())
     
     def create_day_column(date_str):
         if not date_str:
-            # 安全処理: データが空の場合はLINEエラーを防ぐため透明なテキスト枠を返す
-            return {"type": "box", "layout": "vertical", "flex": 1, "contents": [{"type": "text", "text": " ", "size": "xs"}]}
+            # 空枠でLINEから拒否されないよう、目立たないダミーテキストを配置
+            return {
+                "type": "box", "layout": "vertical", "flex": 1, 
+                "contents": [{"type": "text", "text": "-", "color": "#cccccc", "align": "center", "size": "xs"}]
+            }
             
         daily_data = weather_by_date[date_str]
         rows = [
@@ -297,10 +301,12 @@ def build_grid_flex_message(spot_name, weather_by_date):
         ]
         
         for data in daily_data:
-            t_val = data['temp'].replace("℃", "")
-            r_val = data['rain'].replace("mm", "")
-            w_val = data['wind'].replace("m/s", "").replace("m", "")
-            time_str = data['time'].replace("時", "")
+            # 万が一空文字になった場合は強制的に "-" にする安全処理
+            t_val = data.get('temp', '').replace("℃", "").strip() or "-"
+            r_val = data.get('rain', '').replace("mm", "").strip() or "-"
+            w_val = data.get('wind', '').replace("m/s", "").replace("m", "").strip() or "-"
+            time_str = data.get('time', '').replace("時", "").strip() or "-"
+            img_url = data.get('img_url', '') or "https://gvs.weathernews.jp/onebox/img/wxicon/200.png"
             
             temp_color = "#ff0000" if t_val.isdigit() and int(t_val) >= 25 else "#333333"
             rain_color = "#0000ff" if r_val.isdigit() and int(r_val) > 0 else "#333333"
@@ -310,7 +316,7 @@ def build_grid_flex_message(spot_name, weather_by_date):
                 "type": "box", "layout": "horizontal", "margin": "xs", "alignItems": "center",
                 "contents": [
                     {"type": "text", "text": time_str, "size": "xs", "flex": 1, "align": "center", "weight": "bold"},
-                    {"type": "image", "url": data['img_url'], "size": "xs", "flex": 1, "align": "center"},
+                    {"type": "image", "url": img_url, "size": "xs", "flex": 1, "align": "center"},
                     {"type": "text", "text": t_val, "size": "xs", "flex": 1, "align": "center", "color": temp_color},
                     {"type": "text", "text": r_val, "size": "xs", "flex": 1, "align": "center", "color": rain_color},
                     {"type": "text", "text": w_val, "size": "xs", "flex": 1, "align": "center"}
@@ -381,7 +387,7 @@ def callback():
     return 'OK', 200
 
 # ==========================================
-# 7. LINEメッセージ受信処理（安全保護・優先順位修正版）
+# 7. LINEメッセージ受信処理（優先順位・エラー詳細出力追加版）
 # ==========================================
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
@@ -453,7 +459,11 @@ def handle_message(event):
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
 
     except Exception as e:
-        print(f"[システムエラー] {e}")
+        # 万が一LINEに弾かれた際に、詳細なJSONエラーをログに残す
+        print("\n=== システムエラー詳細 ===")
+        traceback.print_exc()
+        print("==========================\n")
+        
         try:
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ 処理中にエラーが発生しました。時間を置いて再度お試しください。"))
         except Exception:
