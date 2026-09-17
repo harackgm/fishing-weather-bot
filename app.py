@@ -848,7 +848,7 @@ def get_spot_details(spot_key):
     return spot_key, data["url"], hp_url, map_url, data.get("tel", "")
 
 def build_spot_list_messages_colored_vertical():
-    """10KB制限を回避し、4つの地域カードを縦に並べて送信するためのFlexMessage配列の構築"""
+    """10KB制限を回避しつつ、セルの横幅を最大（giga）に広げた4つの地域色分けカードの構築"""
     flex_messages = []
     
     for group in COLOR_GROUPS:
@@ -880,7 +880,7 @@ def build_spot_list_messages_colored_vertical():
             
         bubble = {
             "type": "bubble",
-            "size": "mega",
+            "size": "giga",  # megaからgigaに変更して横幅・セル幅を最大限拡大
             "header": {
                 "type": "box", "layout": "vertical", "backgroundColor": group["header_bg"], "paddingAll": "10px",
                 "contents": [
@@ -1242,7 +1242,7 @@ def handle_message(event):
 
         print(f"[受信] ユーザー({user_id}): {user_message}")
 
-        # 1. 一覧コマンド（4通の地域別色分けカードを縦に並べて一括返信）
+        # 1. 一覧コマンド（縦並びの色分けカード4通を一括返信）
         if user_message in ["一覧", "リスト", "釣り場一覧", "エリア"]:
             flex_msgs = build_spot_list_messages_colored_vertical()
             line_bot_api.reply_message(event.reply_token, flex_msgs)
