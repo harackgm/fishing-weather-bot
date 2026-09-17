@@ -2,10 +2,9 @@ name: Update Weather Cache
 
 on:
   schedule:
-    # 毎時17分に実行（日本時間 JST 毎時17分 / UTC 毎時17分）
-    # ※混雑するジャストタイム（0分・30分等）を回避
+    # 毎時17分に実行（ジャストタイム回避）
     - cron: '17 * * * *'
-  workflow_dispatch: # GitHub画面から手動でテスト実行できるようにするスイッチ
+  workflow_dispatch: # GitHub画面から手動実行テストを可能にする設定
 
 jobs:
   update-cache:
