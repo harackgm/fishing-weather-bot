@@ -345,12 +345,12 @@ SPOT_WEATHER_DATA = {
         "tel": "0495-76-1120",
         "aliases": ["中里", "中里FC", "なかざと"]
     },
-    "伊古": {
+    "伊古の里": {
         "url": "https://weathernews.jp/onebox/36.071547/139.339037/",
         "hp_url": "http://www.ikonosato.jp/",
         "search_name": "伊古の里フィッシングパーク",
         "tel": "0493-57-0505",
-        "aliases": ["伊古", "伊古の里", "いこのさと"]
+        "aliases": ["伊古", "伊古の里", "いこのさと", "伊古の里フィッシングパーク"]
     },
 
     # --- 神奈川県・東京都 ---
@@ -756,7 +756,7 @@ SPOT_WEATHER_DATA = {
     }
 }
 
-# 地域ごとの色分けテーマデータ
+# 各地域カード内での県別ブロック＆色分けデータ
 COLOR_GROUPS = [
     {
         "title": "📍 静岡・神奈川・東京・千葉",
@@ -771,7 +771,7 @@ COLOR_GROUPS = [
         "title": "📍 埼玉・群馬",
         "header_bg": "#2e7d32",
         "sub_groups": [
-            {"bg": "#e8f5e9", "spots": ["長瀞", "彩の国", "朝霞", "しらこばと", "川越", "加須はなさき", "多摩湖", "中里", "伊古"]},
+            {"bg": "#e8f5e9", "spots": ["長瀞", "彩の国", "朝霞", "しらこばと", "川越", "加須はなさき", "多摩湖", "中里", "伊古の里"]},
             {"bg": "#c8e6c9", "spots": ["川場", "川場キングダム", "おくとね", "イワナセンター", "黒保根", "迦葉山", "片品", "中之沢", "宮城", "大崎", "けん太", "フック", "赤久縄", "太田", "東山道", "榛名"]}
         ]
     },
@@ -908,7 +908,7 @@ def build_spot_list_carousel_horizontal(user_id=None):
                         "type": "button",
                         "action": {"type": "message", "label": spot, "text": spot},
                         "style": "secondary",
-                        "color": "#fffde7",
+                        "color": "#fff59d",  # お気に入りボタンの色を少し濃い黄色に変更
                         "height": "sm",
                         "margin": "xs",
                         "flex": 1
@@ -1172,7 +1172,8 @@ def build_grid_flex_message(spot_name, weather_by_date, hp_url="", map_url="", t
     if is_favorite:
         header_buttons.append({"type": "button", "action": {"type": "postback", "label": "🗑️ 解除", "data": f"action=fav_del&spot={spot_name}"}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs", "color": "#ffcccc"})
     else:
-        header_buttons.append({"type": "button", "action": {"type": "postback", "label": "⭐️ 登録", "data": f"action=fav_add&spot={spot_name}"}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs", "color": "#fffde7"})
+        # 天気カードの「⭐️登録」ボタンも同じ濃い黄色に変更
+        header_buttons.append({"type": "button", "action": {"type": "postback", "label": "⭐️ 登録", "data": f"action=fav_add&spot={spot_name}"}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs", "color": "#fff59d"})
 
     clean_hp = clean_url(hp_url)
     clean_map = clean_url(map_url)
