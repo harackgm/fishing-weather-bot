@@ -51,7 +51,6 @@ SPOT_WEATHER_URLS = {
     "408": "https://weathernews.jp/onebox/36.763055/139.858269/",
     "308": "https://weathernews.jp/onebox/36.824828/139.896229/",
     "蛇尾川": "https://weathernews.jp/onebox/36.981351/139.901534/",
-    "レイクウッド": "https://weathernews.jp/onebox/36.611334/139.666579/",
     "なら山沼": "https://weathernews.jp/onebox/36.373741/139.802713/",
     "大芦川": "https://weathernews.jp/onebox/36.590732/139.693652/",
     "加賀": "https://weathernews.jp/onebox/36.388609/139.537247/",
@@ -65,7 +64,6 @@ SPOT_WEATHER_URLS = {
     "鬼怒川": "https://weathernews.jp/onebox/36.617621/139.937106/",
     "名草": "https://weathernews.jp/onebox/36.418930/139.466355/",
     "川場": "https://weathernews.jp/onebox/36.690767/139.121662/",
-    "川場キングダム": "https://weathernews.jp/onebox/36.754213/139.142256/",
     "おくとね": "https://weathernews.jp/onebox/36.663005/139.163750/",
     "イワナセンター": "https://weathernews.jp/onebox/36.610095/139.243740/",
     "黒保根": "https://weathernews.jp/onebox/36.515041/139.252324/",
@@ -194,8 +192,8 @@ def fetch_spot_1hour_data(url):
             if daily_list:
                 weather_by_date[date_str] = daily_list
             
-            # 最大10日分まで抽出
-            if len(weather_by_date) >= 10:
+            # LINEで送れる最大数(5日分)でストップ
+            if len(weather_by_date) >= 5:
                 break
             
         return weather_by_date
@@ -203,20 +201,20 @@ def fetch_spot_1hour_data(url):
         print(f"[スクレイピングエラー] {e}")
         return None
 
-def build_carousel_flex_message(spot_name, weather_by_date):
-    """日付ごとに横にスワイプできる「カルーセル（Carousel）」を構築（サイズはmega）"""
-    bubbles = []
+def build_vertical_flex_messages(spot_name, weather_by_date):
+    """日付ごとに独立したFlexMessageを最大サイズ(giga)で構築"""
+    messages = []
     
     for date_str, daily_data in weather_by_date.items():
         rows = [
             {
                 "type": "box", "layout": "horizontal", "margin": "none",
                 "contents": [
-                    {"type": "text", "text": "時間", "weight": "bold", "size": "md", "flex": 1, "align": "center", "color": "#888888"},
-                    {"type": "text", "text": "天気", "weight": "bold", "size": "md", "flex": 1, "align": "center", "color": "#888888"},
-                    {"type": "text", "text": "気温", "weight": "bold", "size": "md", "flex": 1, "align": "center", "color": "#888888"},
-                    {"type": "text", "text": "降水", "weight": "bold", "size": "md", "flex": 1, "align": "center", "color": "#888888"},
-                    {"type": "text", "text": "風速", "weight": "bold", "size": "md", "flex": 1, "align": "center", "color": "#888888"}
+                    {"type": "text", "text": "時間", "weight": "bold", "size": "lg", "flex": 1, "align": "center", "color": "#888888"},
+                    {"type": "text", "text": "天気", "weight": "bold", "size": "lg", "flex": 1, "align": "center", "color": "#888888"},
+                    {"type": "text", "text": "気温", "weight": "bold", "size": "lg", "flex": 1, "align": "center", "color": "#888888"},
+                    {"type": "text", "text": "降水", "weight": "bold", "size": "lg", "flex": 1, "align": "center", "color": "#888888"},
+                    {"type": "text", "text": "風速", "weight": "bold", "size": "lg", "flex": 1, "align": "center", "color": "#888888"}
                 ]
             },
             {"type": "separator", "margin": "md"}
@@ -229,44 +227,43 @@ def build_carousel_flex_message(spot_name, weather_by_date):
             rows.append({
                 "type": "box", "layout": "horizontal", "margin": "md", "alignItems": "center",
                 "contents": [
-                    {"type": "text", "text": data['time'], "size": "md", "flex": 1, "align": "center", "weight": "bold"},
-                    {"type": "image", "url": data['img_url'], "size": "sm", "flex": 1, "align": "center"},
-                    {"type": "text", "text": data['temp'], "size": "md", "flex": 1, "align": "center", "color": temp_color},
-                    {"type": "text", "text": data['rain'], "size": "md", "flex": 1, "align": "center", "color": rain_color},
-                    {"type": "text", "text": data['wind'].replace("m/s", "m"), "size": "md", "flex": 1, "align": "center"}
+                    {"type": "text", "text": data['time'], "size": "lg", "flex": 1, "align": "center", "weight": "bold"},
+                    {"type": "image", "url": data['img_url'], "size": "md", "flex": 1, "align": "center"},
+                    {"type": "text", "text": data['temp'], "size": "lg", "flex": 1, "align": "center", "color": temp_color},
+                    {"type": "text", "text": data['rain'], "size": "lg", "flex": 1, "align": "center", "color": rain_color},
+                    {"type": "text", "text": data['wind'].replace("m/s", "m"), "size": "lg", "flex": 1, "align": "center"}
                 ]
             })
             
         bubble = {
             "type": "bubble",
-            "size": "mega",
+            "size": "giga",
             "header": {
-                "type": "box", "layout": "vertical", "backgroundColor": "#0066cc", "paddingAll": "12px",
+                "type": "box", "layout": "vertical", "backgroundColor": "#0066cc", "paddingAll": "16px",
                 "contents": [
-                    {"type": "text", "text": f"📍 {spot_name}", "color": "#ffffff", "weight": "bold", "size": "md"},
-                    {"type": "text", "text": date_str, "color": "#ffffff", "weight": "bold", "size": "lg", "margin": "sm"}
+                    {"type": "text", "text": f"📍 {spot_name}", "color": "#ffffff", "weight": "bold", "size": "lg"},
+                    {"type": "text", "text": date_str, "color": "#ffffff", "weight": "bold", "size": "xl", "margin": "sm"}
                 ]
             },
             "body": {
-                "type": "box", "layout": "vertical", "spacing": "none", "paddingAll": "12px",
+                "type": "box", "layout": "vertical", "spacing": "none", "paddingAll": "16px",
                 "contents": rows
             }
         }
         
-        bubbles.append(bubble)
+        messages.append(FlexSendMessage(alt_text=f"{spot_name} {date_str}の天気", contents=bubble))
         
-        # カルーセルは最大10枚まで
-        if len(bubbles) >= 10:
+        if len(messages) >= 5:
             break
             
-    return {"type": "carousel", "contents": bubbles}
+    return messages
 
 # ==========================================
 # 5. Webサーバーのエンドポイント
 # ==========================================
 @app.route("/", methods=['GET'])
 def top_page():
-    return "LINE Reply Bot Server (Carousel Only) is running!", 200
+    return "LINE Reply Bot Server (AI Removed & 60 Spots Added) is running!", 200
 
 @app.route("/callback", methods=['POST'])
 def callback():
@@ -279,7 +276,7 @@ def callback():
     return 'OK', 200
 
 # ==========================================
-# 6. LINEメッセージ受信処理 (完全カルーセル・AI廃止版)
+# 6. LINEメッセージ受信処理
 # ==========================================
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
@@ -288,11 +285,11 @@ def handle_message(event):
 
     print(f"[受信] ユーザー({user_id}): {user_message}")
 
-    # 辞書(SPOT_WEATHER_URLS)から部分一致で釣り場を検索
+    # 辞書(SPOT_WEATHER_URLS)から部分一致で釣り場を検索（例: "GP不忘" -> "不忘" でヒット）
     target_spot_name = None
     target_url = None
     for spot_key, url in SPOT_WEATHER_URLS.items():
-        if spot_key in user_message or user_message in spot_key:
+        if spot_key in user_message:
             target_spot_name = spot_key
             target_url = url
             break
@@ -301,22 +298,22 @@ def handle_message(event):
     if target_url:
         weather_by_date = fetch_spot_1hour_data(target_url)
         if weather_by_date:
-            flex_obj = build_carousel_flex_message(target_spot_name, weather_by_date)
-            
-            line_bot_api.reply_message(event.reply_token, FlexSendMessage(alt_text=f"{target_spot_name}の天気予報", contents=flex_obj))
-            print(f"[送信] {target_spot_name}のCarousel FlexMessage応答を完了しました。")
+            messages = build_vertical_flex_messages(target_spot_name, weather_by_date)
+            line_bot_api.reply_message(event.reply_token, messages)
+            print(f"[送信] {target_spot_name}のVertical FlexMessage応答を完了しました。")
             return
         else:
-            error_msg = f"⚠️ 【{target_spot_name}】の天気データの取得に失敗しました。\n(ウェザーニュースのページ構造が変更された可能性があります)"
+            error_msg = f"⚠️ 【{target_spot_name}】の天気データの取得に失敗しました。"
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text=error_msg))
             return
 
     else:
-        # AI(Gemini)のフォールバックを廃止し、定型文を返す
+        # どの釣り場にもマッチしなかった場合の定型文（AIは呼ばない）
         reply_text = (
             "🔍 その釣り場は現在対応していません、もしくは名前が間違っています。\n\n"
             "【対応済みの主な釣り場】\n"
-            "不忘 / 白河 / 朝霞 / 加賀 / 鬼怒川 / 鹿島槍 / 平谷湖 / 東山湖 / すその / サンクチュアリ...など、全国60箇所以上に対応！"
+            "不忘 / 白河 / 朝霞 / 加賀 / 鬼怒川 / 鹿島槍 / 平谷湖 / 東山湖 / すその / サンクチュアリ...など、全国60箇所以上に対応！\n\n"
+            "※部分一致で検索できます（例: 「GP不忘」と送信すると「不忘」の天気が表示されます）"
         )
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
         print("[送信] 未登録釣り場の定型文を完了しました。")
