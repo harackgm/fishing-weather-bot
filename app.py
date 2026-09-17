@@ -874,7 +874,6 @@ def build_delete_confirm_message(spot_name):
     return FlexSendMessage(alt_text=f"{spot_name}の削除確認", contents=bubble)
 
 def build_settings_flex_message(fav_list):
-    """【ウィザード表示崩れ修正】 flex比率を微調整し、長い名前の折り返しを最適化"""
     rows = []
     if not fav_list:
         rows.append({
@@ -923,7 +922,6 @@ def build_settings_flex_message(fav_list):
     return FlexSendMessage(alt_text="お気に入り管理パネル", contents=bubble)
 
 def build_spot_list_carousel_horizontal(user_id=None):
-    """【お気に入りセル】標準ボタンではなく、枠線付きのBOXを使用して立体感（ボタンらしさ）を表現"""
     bubbles = []
     fav_list = []
 
@@ -1056,41 +1054,67 @@ def get_user_setting(user_id):
         print(f"[Supabase取得エラー] {e}")
         return ('ウェザーニュース', '')
 
-def add_favorite_spot(user_id, spot_name):
-    if not supabase: return False, "DB接続未完了です。"
-    candidates = find_candidate_spots(spot_name)
-    target_name = candidates[0] if candidates else spot_name
+def add_favorite_spots(user_id, spot_names):
+    """【一括処理】複数のお気に入り追加を1回のDB書き込みで行う"""
+    if not supabase: return False, [], ["DB接続未完了です。"]
     source, favorites = get_user_setting(user_id)
     fav_list = [s for s in favorites.split(',') if s]
-    if target_name in fav_list:
-        return False, f"「{target_name}」はすでに登録されています。"
-    if len(fav_list) >= MAX_FAVORITES:
-        return False, f"お気に入り釣り場は最大{MAX_FAVORITES}箇所まで登録可能です。"
-    fav_list.append(target_name)
-    try:
-        supabase.table('user_settings').upsert({
-            'user_id': user_id, 'weather_source': source, 'favorite_spots': ','.join(fav_list)
-        }).execute()
-        return True, f"「{target_name}」をお気に入りに追加しました。"
-    except Exception as e:
-        return False, f"保存に失敗しました: {e}"
+    
+    added = []
+    errors = []
+    for spot_name in spot_names:
+        candidates = find_candidate_spots(spot_name)
+        if not candidates:
+            errors.append(f"{spot_name}(不明)")
+            continue
+        target_name = candidates[0]
+        
+        if target_name in fav_list:
+            errors.append(f"{target_name}(登録済)")
+            continue
+        if len(fav_list) >= MAX_FAVORITES:
+            errors.append(f"{target_name}(上限{MAX_FAVORITES}件超過)")
+            continue
+            
+        fav_list.append(target_name)
+        added.append(target_name)
+        
+    if added:
+        try:
+            supabase.table('user_settings').upsert({
+                'user_id': user_id, 'weather_source': source, 'favorite_spots': ','.join(fav_list)
+            }).execute()
+        except Exception as e:
+            return False, [], [f"DB保存エラー"]
+    return True, added, errors
 
-def remove_favorite_spot(user_id, spot_name):
-    if not supabase: return False, "DB接続未完了です。"
-    candidates = find_candidate_spots(spot_name)
-    target_name = candidates[0] if candidates else spot_name
+def remove_favorite_spots(user_id, spot_names):
+    """【一括処理】複数のお気に入り削除を1回のDB書き込みで行う"""
+    if not supabase: return False, [], ["DB接続未完了です。"]
     source, favorites = get_user_setting(user_id)
     fav_list = [s for s in favorites.split(',') if s]
-    if target_name not in fav_list:
-        return False, f"「{target_name}」は登録されていません。"
-    fav_list.remove(target_name)
-    try:
-        supabase.table('user_settings').upsert({
-            'user_id': user_id, 'weather_source': source, 'favorite_spots': ','.join(fav_list)
-        }).execute()
-        return True, f"「{target_name}」をお気に入りから削除しました。"
-    except Exception as e:
-        return False, f"削除に失敗しました: {e}"
+    
+    removed = []
+    errors = []
+    for spot_name in spot_names:
+        candidates = find_candidate_spots(spot_name)
+        target_name = candidates[0] if candidates else spot_name
+        
+        if target_name not in fav_list:
+            errors.append(f"{target_name}(未登録)")
+            continue
+            
+        fav_list.remove(target_name)
+        removed.append(target_name)
+        
+    if removed:
+        try:
+            supabase.table('user_settings').upsert({
+                'user_id': user_id, 'weather_source': source, 'favorite_spots': ','.join(fav_list)
+            }).execute()
+        except Exception as e:
+            return False, [], [f"DB保存エラー"]
+    return True, removed, errors
 
 def move_favorite_spot(user_id, spot_name, direction):
     if not supabase: return False, "DB接続未完了です。"
@@ -1278,18 +1302,42 @@ def handle_message(event):
         raw_msg = event.message.text.strip()
         user_id = event.source.user_id
 
-        add_match = re.match(r'^追加[\s:： ]*(.+)$', raw_msg)
+        # まとめて追加処理 (スペースやカンマで分割)
+        add_match = re.match(r'^追加[\s:： ]+(.+)$', raw_msg)
         if add_match:
-            spot_name = add_match.group(1).strip()
-            success, msg = add_favorite_spot(user_id, spot_name)
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"✅ {msg}" if success else f"⚠️ {msg}"))
+            spots_str = add_match.group(1).strip()
+            spot_names = [s for s in re.split(r'[\s,、 ]+', spots_str) if s]
+            
+            success, added, errors = add_favorite_spots(user_id, spot_names)
+            reply_lines = []
+            if added:
+                reply_lines.append(f"✅ 追加しました: {', '.join(added)}")
+            if errors:
+                reply_lines.append(f"⚠️ スキップ・失敗: {', '.join(errors)}")
+            
+            if not reply_lines:
+                reply_lines.append("⚠️ 釣り場名が認識できませんでした。")
+                
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="\n".join(reply_lines)))
             return
 
-        del_match = re.match(r'^削除[\s:： ]*(.+)$', raw_msg)
+        # まとめて削除処理
+        del_match = re.match(r'^削除[\s:： ]+(.+)$', raw_msg)
         if del_match:
-            spot_name = del_match.group(1).strip()
-            success, msg = remove_favorite_spot(user_id, spot_name)
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"✅ {msg}" if success else f"⚠️ {msg}"))
+            spots_str = del_match.group(1).strip()
+            spot_names = [s for s in re.split(r'[\s,、 ]+', spots_str) if s]
+            
+            success, removed, errors = remove_favorite_spots(user_id, spot_names)
+            reply_lines = []
+            if removed:
+                reply_lines.append(f"✅ 削除しました: {', '.join(removed)}")
+            if errors:
+                reply_lines.append(f"⚠️ スキップ・失敗: {', '.join(errors)}")
+                
+            if not reply_lines:
+                reply_lines.append("⚠️ 釣り場名が認識できませんでした。")
+                
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="\n".join(reply_lines)))
             return
 
         if raw_msg in ["一覧", "リスト", "釣り場一覧", "エリア"]:
@@ -1341,19 +1389,22 @@ def handle_postback(event):
         action, spot_name = data_dict.get("action"), data_dict.get("spot")
 
         if action == "fav_add":
-            success, msg = add_favorite_spot(user_id, spot_name)
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"✅ {msg}"))
+            success, added, errors = add_favorite_spots(user_id, [spot_name])
+            msg = f"✅ 追加しました: {added[0]}" if added else f"⚠️ {errors[0]}"
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text=msg))
 
         elif action == "fav_del_confirm":
             flex_msg = build_delete_confirm_message(spot_name)
             line_bot_api.reply_message(event.reply_token, flex_msg)
 
         elif action == "fav_del_execute":
-            success, msg = remove_favorite_spot(user_id, spot_name)
+            success, removed, errors = remove_favorite_spots(user_id, [spot_name])
             _, favorites = get_user_setting(user_id)
             fav_list = [s for s in favorites.split(',') if s]
             flex_msg = build_settings_flex_message(fav_list)
-            line_bot_api.reply_message(event.reply_token, [TextSendMessage(text=f"✅ {msg}"), flex_msg])
+            
+            msg = f"✅ 削除しました: {removed[0]}" if removed else f"⚠️ {errors[0]}"
+            line_bot_api.reply_message(event.reply_token, [TextSendMessage(text=msg), flex_msg])
 
         elif action == "fav_del_cancel":
             _, favorites = get_user_setting(user_id)
