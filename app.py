@@ -1,13 +1,13 @@
 import os
 import time
 import random
-import sqlite3
 import requests
 from bs4 import BeautifulSoup
 from flask import Flask, request, abort, jsonify
 from linebot import LineBotApi, WebhookHandler
 from linebot.exceptions import InvalidSignatureError
 from linebot.models import MessageEvent, TextMessage, TextSendMessage, FlexSendMessage
+from supabase import create_client, Client
 
 # ==========================================
 # 1. 日本時間（JST）設定と初期化
@@ -28,10 +28,13 @@ line_bot_api = LineBotApi(LINE_CHANNEL_ACCESS_TOKEN)
 handler = WebhookHandler(LINE_CHANNEL_SECRET)
 
 ADMIN_USER_ID = os.getenv('ADMIN_USER_ID', '').strip()
-IS_TEST_MODE = True
-MAX_LIMIT = 5
+IS_TEST_MODE = True  # テストモード: Trueのときは指定の管理者以外への誤送信を制限
+MAX_LIMIT = 5        # 大量通知ストッパー（安全装置）
 
-DB_PATH = 'user_data.db'
+# Supabase接続初期化
+SUPABASE_URL = os.getenv('SUPABASE_URL', '').strip()
+SUPABASE_KEY = os.getenv('SUPABASE_KEY', '').strip()
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY) if SUPABASE_URL and SUPABASE_KEY else None
 
 # ==========================================
 # 3. ウェザーニュース 釣り場URL辞書 (全国網羅版)
@@ -140,48 +143,35 @@ SPOT_WEATHER_URLS = {
 }
 
 # ==========================================
-# 4. データベース（SQLite）管理関数
+# 4. Supabase データベース管理関数
 # ==========================================
-def init_db():
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS user_settings (
-            user_id TEXT PRIMARY KEY,
-            weather_source TEXT DEFAULT 'ウェザーニュース',
-            favorite_spots TEXT DEFAULT ''
-        )
-    ''')
-    conn.commit()
-    conn.close()
-
-init_db()
-
 def get_user_setting(user_id):
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    cursor.execute('SELECT weather_source, favorite_spots FROM user_settings WHERE user_id = ?', (user_id,))
-    row = cursor.fetchone()
-    if not row:
-        cursor.execute(
-            'INSERT INTO user_settings (user_id, weather_source, favorite_spots) VALUES (?, ?, ?)',
-            (user_id, 'ウェザーニュース', '')
-        )
-        conn.commit()
-        result = ('ウェザーニュース', '')
-    else:
-        result = row
-    conn.close()
-    return result
+    if not supabase:
+        return ('ウェザーニュース', '')
+    try:
+        res = supabase.table('user_settings').select('*').eq('user_id', user_id).execute()
+        if not res.data:
+            supabase.table('user_settings').insert({
+                'user_id': user_id,
+                'weather_source': 'ウェザーニュース',
+                'favorite_spots': ''
+            }).execute()
+            return ('ウェザーニュース', '')
+        row = res.data[0]
+        return (row.get('weather_source', 'ウェザーニュース'), row.get('favorite_spots', ''))
+    except Exception as e:
+        print(f"[Supabase取得エラー] {e}")
+        return ('ウェザーニュース', '')
 
 def update_user_source(user_id, source):
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    cursor.execute('UPDATE user_settings SET weather_source = ? WHERE user_id = ?', (source, user_id))
-    conn.commit()
-    conn.close()
+    if not supabase: return
+    try:
+        supabase.table('user_settings').update({'weather_source': source}).eq('user_id', user_id).execute()
+    except Exception as e:
+        print(f"[Supabase更新エラー] {e}")
 
 def add_favorite_spot(user_id, spot_name):
+    if not supabase: return False, "DB接続エラー"
     _, favorites = get_user_setting(user_id)
     fav_list = [s for s in favorites.split(',') if s]
     if spot_name in fav_list:
@@ -189,32 +179,31 @@ def add_favorite_spot(user_id, spot_name):
     if len(fav_list) >= 5:
         return False, "お気に入り釣り場は最大5箇所まで登録可能です。"
     fav_list.append(spot_name)
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    cursor.execute('UPDATE user_settings SET favorite_spots = ? WHERE user_id = ?', (','.join(fav_list), user_id))
-    conn.commit()
-    conn.close()
-    return True, f"「{spot_name}」をお気に入りに追加しました。"
+    try:
+        supabase.table('user_settings').update({'favorite_spots': ','.join(fav_list)}).eq('user_id', user_id).execute()
+        return True, f"「{spot_name}」をお気に入りに追加しました。"
+    except Exception as e:
+        return False, f"保存失敗: {e}"
 
 def remove_favorite_spot(user_id, spot_name):
+    if not supabase: return False, "DB接続エラー"
     _, favorites = get_user_setting(user_id)
     fav_list = [s for s in favorites.split(',') if s]
     if spot_name not in fav_list:
         return False, "登録されていない釣り場です。"
     fav_list.remove(spot_name)
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    cursor.execute('UPDATE user_settings SET favorite_spots = ? WHERE user_id = ?', (','.join(fav_list), user_id))
-    conn.commit()
-    conn.close()
-    return True, f"「{spot_name}」をお気に入りから削除しました。"
+    try:
+        supabase.table('user_settings').update({'favorite_spots': ','.join(fav_list)}).eq('user_id', user_id).execute()
+        return True, f"「{spot_name}」をお気に入りから削除しました。"
+    except Exception as e:
+        return False, f"削除失敗: {e}"
 
 # ==========================================
 # 5. ウェザーニュース 実データスクレイピング関数
 # ==========================================
 def fetch_spot_1hour_data(url):
-    """指定されたURLから現在時刻以降の予報を取得（24時間すべて表示版）"""
-    time.sleep(random.uniform(1.0, 2.0))
+    """指定されたURLから現在時刻以降の予報を取得（サーバー負荷軽減のゆらぎ待機付）"""
+    time.sleep(random.uniform(1.0, 2.5))  # ゆらぎ待機（サーバー負荷防止）
     headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}
     
     try:
@@ -240,13 +229,8 @@ def fetch_spot_1hour_data(url):
                 
                 time_tag = item.find('li', class_='time')
                 hour_str = time_tag.text.strip() if time_tag else ""
-                
-                if not hour_str.isdigit():
-                    continue
-                hour_int = int(hour_str)
-                
-                # 24時間すべてのデータを表示するため、夜間カットの条件を削除
-                hour = f"{hour_int:02d}時"
+                if not hour_str.isdigit(): continue
+                hour = f"{int(hour_str):02d}時"
                 
                 img_url = "https://gvs.weathernews.jp/onebox/img/wxicon/200.png"
                 weather_tag = item.find('li', class_='weather')
@@ -274,7 +258,6 @@ def fetch_spot_1hour_data(url):
             if daily_list:
                 weather_by_date[date_str] = daily_list
             
-            # 最大4日分取得（2行×2列のグリッド用）
             if len(weather_by_date) >= 4:
                 break
             
@@ -284,17 +267,14 @@ def fetch_spot_1hour_data(url):
         return None
 
 def build_grid_flex_message(spot_name, weather_by_date):
-    """1画面に4日分を収める田の字型（2行×2列）グリッドレイアウト"""
+    """田の字型（2行×2列）グリッドレイアウト"""
     dates = list(weather_by_date.keys())
     
-    # 1日分のカラム（縦列）を生成する関数
     def create_day_column(date_str):
         if not date_str:
             return {"type": "box", "layout": "vertical", "flex": 1, "contents": []}
             
         daily_data = weather_by_date[date_str]
-        
-        # 単位をヘッダーに集約し、超コンパクト化
         rows = [
             {
                 "type": "box", "layout": "horizontal", "margin": "none",
@@ -310,7 +290,6 @@ def build_grid_flex_message(spot_name, weather_by_date):
         ]
         
         for data in daily_data:
-            # 表示幅削減のため、データから単位文字を取り除く
             t_val = data['temp'].replace("℃", "")
             r_val = data['rain'].replace("mm", "")
             w_val = data['wind'].replace("m/s", "").replace("m", "")
@@ -347,13 +326,11 @@ def build_grid_flex_message(spot_name, weather_by_date):
             ]
         }
 
-    # 左列：今日(dates[0])、明日(dates[1])
     col1_boxes = [create_day_column(dates[0] if len(dates) > 0 else None)]
     if len(dates) > 1:
         col1_boxes.append({"type": "separator", "margin": "md"})
         col1_boxes.append(create_day_column(dates[1]))
 
-    # 右列：明後日(dates[2])、明明後日(dates[3])
     col2_boxes = [create_day_column(dates[2] if len(dates) > 2 else None)]
     if len(dates) > 3:
         col2_boxes.append({"type": "separator", "margin": "md"})
@@ -361,7 +338,7 @@ def build_grid_flex_message(spot_name, weather_by_date):
 
     bubble = {
         "type": "bubble",
-        "size": "giga", # 最大幅を利用
+        "size": "giga",
         "header": {
             "type": "box", "layout": "vertical", "backgroundColor": "#0066cc", "paddingAll": "12px",
             "contents": [
@@ -377,7 +354,6 @@ def build_grid_flex_message(spot_name, weather_by_date):
             ]
         }
     }
-    
     return FlexSendMessage(alt_text=f"{spot_name}の天気予報(4日間)", contents=bubble)
 
 # ==========================================
@@ -385,7 +361,7 @@ def build_grid_flex_message(spot_name, weather_by_date):
 # ==========================================
 @app.route("/", methods=['GET'])
 def top_page():
-    return "LINE Reply Bot Server (Grid Layout 24h) is running!", 200
+    return "LINE Reply Bot Server (Supabase DB) is running!", 200
 
 @app.route("/callback", methods=['POST'])
 def callback():
@@ -405,6 +381,11 @@ def handle_message(event):
     user_message = event.message.text.strip()
     user_id = event.source.user_id
 
+    # テストモードガードレール: IS_TEST_MODEかつ管理者以外からの応答を制御
+    if IS_TEST_MODE and ADMIN_USER_ID and user_id != ADMIN_USER_ID:
+        print(f"[テストモード制限] 管理者以外のアクセスをスキップ: {user_id}")
+        return
+
     print(f"[受信] ユーザー({user_id}): {user_message}")
 
     target_spot_name = None
@@ -419,7 +400,6 @@ def handle_message(event):
         weather_by_date = fetch_spot_1hour_data(target_url)
         if weather_by_date:
             flex_msg = build_grid_flex_message(target_spot_name, weather_by_date)
-            
             try:
                 line_bot_api.reply_message(event.reply_token, flex_msg)
                 print(f"[送信] {target_spot_name}の Grid FlexMessage応答を完了しました。")
@@ -443,15 +423,9 @@ def handle_message(event):
             f"■ 参照ソース: {source}\n"
             f"■ お気に入り釣り場:\n{fav_display}\n\n"
             "【設定変更コマンド】\n"
-            "・「ウェザーニュース」「tenki.jp」\n"
             "・「追加:釣り場名」\n"
             "・「削除:釣り場名」"
         )
-        line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
-
-    elif user_message in ["ウェザーニュース", "tenki.jp"]:
-        update_user_source(user_id, user_message)
-        reply_text = f"✅ 参照ソースを「{user_message}」に変更しました。"
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
 
     elif user_message.startswith("追加:"):
@@ -467,7 +441,6 @@ def handle_message(event):
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
 
     else:
-        # 定型文
         reply_text = (
             "🔍 その釣り場は現在対応していません、もしくは名前が間違っています。\n\n"
             "【対応済みの主な釣り場】\n"
@@ -475,19 +448,21 @@ def handle_message(event):
             "※部分一致で検索できます（例: 「キング」と送信すると「キングフィッシャー」の天気が表示されます）"
         )
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
-        print("[送信] 未登録釣り場の定型文を完了しました。")
 
 # ==========================================
-# 8. 定期データ更新用エンドポイント（安全装置付き）
+# 8. 定期トリガーエンドポイント（大量通知ストッパー組み込み）
 # ==========================================
 @app.route("/cron_trigger", methods=['GET', 'POST'])
 def cron_trigger():
-    print("\n--- cron-job.org からの定期トリガーを受信 ---")
-    item_count = 0
-    if item_count > MAX_LIMIT:
+    print("\n--- 定期トリガーを受信 ---")
+    detect_count = 0
+    # 大量通知ストッパー制御
+    if detect_count > MAX_LIMIT:
+        print("[安全装置作動] 検知数が上限を超えたため自動通知をスキップしました。")
         return jsonify({"status": "skipped", "reason": "MAX_LIMIT_EXCEEDED"}), 200
-    time.sleep(random.uniform(1.0, 3.0))
-    return jsonify({"status": "success", "message": "DB updated safely."}), 200
+    
+    time.sleep(random.uniform(1.0, 3.0))  # ゆらぎ待機
+    return jsonify({"status": "success", "message": "Trigger processed safely."}), 200
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
