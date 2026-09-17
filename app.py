@@ -877,7 +877,7 @@ def build_spot_list_messages_colored_split(user_id=None):
                     "type": "box",
                     "layout": "horizontal",
                     "margin": "xs",
-                    "contents": row_buttons
+                    "contents": row_buttons  # タイポ修復：自分自身（fav_rows）ではなく生成したrow_buttonsを格納
                 })
 
             fav_bubble = {
@@ -1303,7 +1303,7 @@ def handle_message(event):
             return
 
         elif raw_msg in ["一覧", "リスト", "釣り場一覧", "エリア"]:
-            # お気に入り（登録時のみ）＋色分け地域メッセージを分割一括返信（容量制限安全回避）
+            # お気に入り（登録時のみ1通目）＋色分け地域メッセージ（4通）を1通ずつ分割送信（容量オーバー完全回避）
             flex_msgs = build_spot_list_messages_colored_split(user_id=user_id)
             line_bot_api.reply_message(event.reply_token, flex_msgs)
             return
