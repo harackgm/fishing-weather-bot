@@ -46,7 +46,7 @@ if SUPABASE_URL and SUPABASE_KEY:
         print(f"[Supabase初期化エラー] {e}")
 
 # ==========================================
-# 3. 釣り場URL・HP・Googleマップ・電話番号・表記揺れ辞書（ブログ全57箇所網羅）
+# 3. 釣り場URL・HP・Googleマップ・電話番号・表記揺れ辞書（全国版）
 # ==========================================
 SPOT_WEATHER_DATA = {
     # --- 静岡県 ---
@@ -916,7 +916,7 @@ def fetch_spot_1hour_data(url):
         return None
 
 def build_grid_flex_message(spot_name, weather_by_date, hp_url="", map_url="", tel=""):
-    """田の字型（2行×2列）グリッドレイアウト"""
+    """田の字型（2行×2列）グリッドレイアウト（ヘッダー部:HP/地図, 最下段:電話リンク）"""
     dates = list(weather_by_date.keys())
     
     def create_day_column(date_str):
@@ -1001,7 +1001,24 @@ def build_grid_flex_message(spot_name, weather_by_date, hp_url="", map_url="", t
         }
         body_contents.append(row2)
 
-    # ヘッダー内のリンクボタン組み立て（HP / Google Map / 電話）
+    # 最下段に控えめな電話ボタン（誤タップ防止用リンクスタイル）を配置
+    if tel:
+        clean_tel = tel.replace('-', '').strip()
+        body_contents.append({"type": "separator", "margin": "md"})
+        body_contents.append({
+            "type": "box", "layout": "horizontal", "margin": "sm", "justifyContent": "center",
+            "contents": [
+                {
+                    "type": "button",
+                    "action": {"type": "uri", "label": f"📞 電話問合せ ({tel})", "uri": f"tel:{clean_tel}"},
+                    "style": "link",
+                    "height": "sm",
+                    "color": "#888888"
+                }
+            ]
+        })
+
+    # ヘッダー内のリンクボタン組み立て（HP / Google Map のみ）
     header_buttons = []
     if hp_url:
         header_buttons.append({
@@ -1013,13 +1030,6 @@ def build_grid_flex_message(spot_name, weather_by_date, hp_url="", map_url="", t
         header_buttons.append({
             "type": "button",
             "action": {"type": "uri", "label": "🗺️ 地図", "uri": map_url},
-            "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"
-        })
-    if tel:
-        clean_tel = tel.replace('-', '').strip()
-        header_buttons.append({
-            "type": "button",
-            "action": {"type": "uri", "label": "📞 電話", "uri": f"tel:{clean_tel}"},
             "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"
         })
 
