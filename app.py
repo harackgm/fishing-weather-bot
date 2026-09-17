@@ -802,48 +802,6 @@ def clean_url(url_str):
         return ""
     return cleaned
 
-def find_candidate_spots(user_text):
-    text = user_text.strip().lower()
-    exact_matches = []
-    for spot_key, data in SPOT_WEATHER_DATA.items():
-        if text == spot_key.lower():
-            return [spot_key]
-        for alias in data["aliases"]:
-            if text == alias.lower():
-                if spot_key not in exact_matches:
-                    exact_matches.append(spot_key)
-
-    if len(exact_matches) == 1:
-        return exact_matches
-
-    matched_spots = exact_matches
-    for spot_key, data in SPOT_WEATHER_DATA.items():
-        for alias in data["aliases"]:
-            alias_lower = alias.lower()
-            if alias_lower in text or text in alias_lower:
-                if spot_key not in matched_spots:
-                    matched_spots.append(spot_key)
-                break
-
-    if matched_spots:
-        return matched_spots
-
-    all_aliases = []
-    alias_to_spot = {}
-    for spot_key, data in SPOT_WEATHER_DATA.items():
-        for alias in data["aliases"]:
-            all_aliases.append(alias.lower())
-            alias_to_spot[alias.lower()] = spot_key
-
-    matches = difflib.get_close_matches(text, all_aliases, n=5, cutoff=0.55)
-    if matches:
-        for m in matches:
-            sp = alias_to_spot[m]
-            if sp not in matched_spots:
-                matched_spots.append(sp)
-
-    return matched_spots
-
 def get_spot_details(spot_key):
     data = SPOT_WEATHER_DATA.get(spot_key)
     if not data:
@@ -979,7 +937,6 @@ def build_spot_list_carousel_horizontal(user_id=None):
                         "flex": 1,
                         "justifyContent": "center",
                         "alignItems": "center",
-                        # ★ 天気検索を Postback に変更し、見た目だけメッセージと同じ挙動に
                         "action": {"type": "postback", "label": spot, "data": f"action=show_weather&spot={spot}", "displayText": spot},
                         "contents": [
                             {
@@ -1025,7 +982,6 @@ def build_spot_list_carousel_horizontal(user_id=None):
                     label_text = f"★ {spot}" if spot in fav_list else spot
                     row_buttons.append({
                         "type": "button",
-                        # ★ 天気検索を Postback に変更
                         "action": {"type": "postback", "label": label_text, "data": f"action=show_weather&spot={spot}", "displayText": spot},
                         "style": "secondary",
                         "color": btn_bg,
@@ -1071,12 +1027,17 @@ def add_favorite_spots(user_id, spot_names):
     added = []
     errors = []
     for spot_name in spot_names:
-        candidates = find_candidate_spots(spot_name)
-        if not candidates:
+        # 検索機能を廃止したため、候補検索は行わず直接リストから一致確認を行う
+        target_name = None
+        for spot_key, data in SPOT_WEATHER_DATA.items():
+            if spot_name.lower() == spot_key.lower() or spot_name.lower() in [a.lower() for a in data["aliases"]]:
+                target_name = spot_key
+                break
+        
+        if not target_name:
             errors.append(f"{spot_name}(不明)")
             continue
-        target_name = candidates[0]
-        
+            
         if target_name in fav_list:
             errors.append(f"{target_name}(登録済)")
             continue
@@ -1104,9 +1065,15 @@ def remove_favorite_spots(user_id, spot_names):
     removed = []
     errors = []
     for spot_name in spot_names:
-        candidates = find_candidate_spots(spot_name)
-        target_name = candidates[0] if candidates else spot_name
+        target_name = None
+        for spot_key, data in SPOT_WEATHER_DATA.items():
+            if spot_name.lower() == spot_key.lower() or spot_name.lower() in [a.lower() for a in data["aliases"]]:
+                target_name = spot_key
+                break
         
+        if not target_name:
+            target_name = spot_name # 辞書になくてもお気に入りに残っていれば削除を試みる
+            
         if target_name not in fav_list:
             errors.append(f"{target_name}(未登録)")
             continue
@@ -1320,7 +1287,6 @@ def handle_message(event):
         raw_msg = event.message.text.strip()
         user_id = event.source.user_id
 
-        # 追加コマンド
         add_match = re.match(r'^追加[\s:： ]+(.+)$', raw_msg)
         if add_match:
             spots_str = add_match.group(1).strip()
@@ -1339,7 +1305,6 @@ def handle_message(event):
             line_bot_api.reply_message(event.reply_token, [TextSendMessage(text="\n".join(reply_lines)), flex_msg])
             return
 
-        # 削除コマンド
         del_match = re.match(r'^削除[\s:： ]+(.+)$', raw_msg)
         if del_match:
             spots_str = del_match.group(1).strip()
@@ -1358,13 +1323,11 @@ def handle_message(event):
             line_bot_api.reply_message(event.reply_token, [TextSendMessage(text="\n".join(reply_lines)), flex_msg])
             return
 
-        # 一覧コマンド
         if raw_msg in ["一覧", "リスト", "釣り場一覧", "エリア"]:
             flex_msg = build_spot_list_carousel_horizontal(user_id=user_id)
             line_bot_api.reply_message(event.reply_token, flex_msg)
             return
 
-        # 設定コマンド
         if raw_msg == "設定":
             _, favorites = get_user_setting(user_id)
             fav_list = [s for s in favorites.split(',') if s]
@@ -1372,7 +1335,6 @@ def handle_message(event):
             line_bot_api.reply_message(event.reply_token, flex_msg)
             return
 
-        # ★ 直接検索廃止に伴う案内メッセージ ★
         reply_text = "🔍 コマンドが認識できませんでした。\n\n【利用可能なコマンド】\n・一覧\n・設定\n・追加 釣り場名\n・削除 釣り場名\n\n※天気予報の確認は「一覧」からボタンをタップしてください。"
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
 
@@ -1389,9 +1351,6 @@ def handle_postback(event):
         data_dict = dict(parse_qsl(event.postback.data))
         action, spot_name = data_dict.get("action"), data_dict.get("spot")
 
-        # -------------------------------------------------------------------
-        # ⛅ 天気カードの表示（一覧ボタンからPostbackでリクエストされた時）
-        # -------------------------------------------------------------------
         if action == "show_weather":
             target_spot_name, target_url, hp_url, map_url, tel = get_spot_details(spot_name)
             _, favorites = get_user_setting(user_id)
@@ -1434,8 +1393,10 @@ def handle_postback(event):
             flex_msg = build_settings_flex_message(fav_list)
             line_bot_api.reply_message(event.reply_token, [TextSendMessage(text=msg), flex_msg])
 
+        # ★ キャンセル時の画面遷移を追加修正
         elif action == "fav_del_cancel_and_list":
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="キャンセルしました。"))
+            flex_msg = build_spot_list_carousel_horizontal(user_id=user_id)
+            line_bot_api.reply_message(event.reply_token, [TextSendMessage(text="キャンセルしました。"), flex_msg])
 
         elif action == "fav_del_cancel_and_settings":
             _, favorites = get_user_setting(user_id)
