@@ -882,6 +882,7 @@ def build_delete_confirm_message(spot_name, source):
     return FlexSendMessage(alt_text=f"{spot_name}の削除確認", contents=bubble)
 
 def build_settings_flex_message(fav_list):
+    """【スマホレイアウト最適化】 flexを調整し、ボタン幅を確保して「…」表示を回避"""
     rows = []
     if not fav_list:
         rows.append({
@@ -894,21 +895,21 @@ def build_settings_flex_message(fav_list):
             rows.append({
                 "type": "box", "layout": "horizontal", "margin": "md", "alignItems": "center",
                 "contents": [
-                    {"type": "text", "text": f"{spot}", "size": "sm", "weight": "bold", "flex": 7, "color": "#333333", "wrap": True},
+                    {"type": "text", "text": f"{spot}", "size": "sm", "weight": "bold", "flex": 4, "color": "#333333", "wrap": True},
                     {
                         "type": "button",
                         "action": {"type": "postback", "label": "⬆️", "data": f"action=fav_up&spot={spot}"},
-                        "style": "secondary", "height": "sm", "flex": 3, "margin": "xs"
+                        "style": "secondary", "height": "sm", "flex": 2, "margin": "xs"
                     },
                     {
                         "type": "button",
                         "action": {"type": "postback", "label": "⬇️", "data": f"action=fav_down&spot={spot}"},
-                        "style": "secondary", "height": "sm", "flex": 3, "margin": "xs"
+                        "style": "secondary", "height": "sm", "flex": 2, "margin": "xs"
                     },
                     {
                         "type": "button",
                         "action": {"type": "postback", "label": "🗑️", "data": f"action=fav_del_confirm_and_settings&spot={spot}"},
-                        "style": "secondary", "color": "#ffe6e6", "height": "sm", "flex": 3, "margin": "xs"
+                        "style": "secondary", "color": "#ffe6e6", "height": "sm", "flex": 2, "margin": "xs"
                     }
                 ]
             })
@@ -923,7 +924,8 @@ def build_settings_flex_message(fav_list):
             ]
         },
         "body": {
-            "type": "box", "layout": "vertical", "spacing": "sm", "paddingAll": "15px",
+            # paddingAllを少し減らし、スマホでも横幅を広く確保
+            "type": "box", "layout": "vertical", "spacing": "sm", "paddingAll": "10px",
             "contents": rows
         }
     }
@@ -1308,7 +1310,6 @@ def handle_message(event):
         raw_msg = event.message.text.strip()
         user_id = event.source.user_id
 
-        # まとめて追加処理 (手打ちコマンド時は一覧を出す)
         add_match = re.match(r'^追加[\s:： ]+(.+)$', raw_msg)
         if add_match:
             spots_str = add_match.group(1).strip()
@@ -1327,7 +1328,6 @@ def handle_message(event):
             line_bot_api.reply_message(event.reply_token, [TextSendMessage(text="\n".join(reply_lines)), flex_msg])
             return
 
-        # まとめて削除処理 (手打ちコマンド時も一覧を出す)
         del_match = re.match(r'^削除[\s:： ]+(.+)$', raw_msg)
         if del_match:
             spots_str = del_match.group(1).strip()
@@ -1394,18 +1394,12 @@ def handle_postback(event):
         data_dict = dict(parse_qsl(event.postback.data))
         action, spot_name = data_dict.get("action"), data_dict.get("spot")
 
-        # -------------------------------------------------------------------
-        # ⭐️ 登録（天気カードのボタンから）-> 完了後に「一覧カルーセル」を出す
-        # -------------------------------------------------------------------
         if action == "fav_add_and_list":
             success, added, errors = add_favorite_spots(user_id, [spot_name])
             msg = f"✅ 追加しました: {added[0]}" if added else f"⚠️ {errors[0]}"
             flex_msg = build_spot_list_carousel_horizontal(user_id=user_id)
             line_bot_api.reply_message(event.reply_token, [TextSendMessage(text=msg), flex_msg])
 
-        # -------------------------------------------------------------------
-        # 🗑️ 削除確認ダイアログの表示
-        # -------------------------------------------------------------------
         elif action == "fav_del_confirm_and_list":
             flex_msg = build_delete_confirm_message(spot_name, "list")
             line_bot_api.reply_message(event.reply_token, flex_msg)
@@ -1414,9 +1408,6 @@ def handle_postback(event):
             flex_msg = build_delete_confirm_message(spot_name, "settings")
             line_bot_api.reply_message(event.reply_token, flex_msg)
 
-        # -------------------------------------------------------------------
-        # 🗑️ 削除の実行
-        # -------------------------------------------------------------------
         elif action == "fav_del_execute_and_list":
             success, removed, errors = remove_favorite_spots(user_id, [spot_name])
             msg = f"✅ 削除しました: {removed[0]}" if removed else f"⚠️ {errors[0]}"
@@ -1431,9 +1422,6 @@ def handle_postback(event):
             flex_msg = build_settings_flex_message(fav_list)
             line_bot_api.reply_message(event.reply_token, [TextSendMessage(text=msg), flex_msg])
 
-        # -------------------------------------------------------------------
-        # 🚫 キャンセル時
-        # -------------------------------------------------------------------
         elif action == "fav_del_cancel_and_list":
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text="キャンセルしました。"))
 
@@ -1443,9 +1431,6 @@ def handle_postback(event):
             flex_msg = build_settings_flex_message(fav_list)
             line_bot_api.reply_message(event.reply_token, [TextSendMessage(text="キャンセルしました。"), flex_msg])
 
-        # -------------------------------------------------------------------
-        # ⬆️ ⬇️ 並び替え
-        # -------------------------------------------------------------------
         elif action in ["fav_up", "fav_down"]:
             direction = "up" if action == "fav_up" else "down"
             move_favorite_spot(user_id, spot_name, direction)
