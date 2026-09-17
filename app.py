@@ -853,11 +853,6 @@ def get_spot_details(spot_key):
     return spot_key, data["url"], hp_url, map_url, data.get("tel", "")
 
 def build_delete_confirm_message(spot_name, source):
-    """
-    【画面遷移の安全管理】
-    source = "list" -> 削除後、一覧カルーセルへ戻る
-    source = "settings" -> 削除後、設定パネルへ戻る
-    """
     execute_action = f"fav_del_execute_and_{source}"
     cancel_action = f"fav_del_cancel_and_{source}"
     
@@ -881,8 +876,29 @@ def build_delete_confirm_message(spot_name, source):
     }
     return FlexSendMessage(alt_text=f"{spot_name}の削除確認", contents=bubble)
 
+def build_delete_all_confirm_message():
+    """【誤操作防止】全て削除用の確認ダイアログ"""
+    bubble = {
+        "type": "bubble",
+        "size": "kilo",
+        "body": {
+            "type": "box", "layout": "vertical", "spacing": "md", "paddingAll": "15px",
+            "contents": [
+                {"type": "text", "text": "⚠️ 全て削除の確認", "weight": "bold", "color": "#ff0000", "size": "md"},
+                {"type": "text", "text": "登録されているすべてのお気に入りを削除しますか？\n（この操作は元に戻せません）", "wrap": True, "size": "sm", "color": "#333333"}
+            ]
+        },
+        "footer": {
+            "type": "box", "layout": "horizontal", "spacing": "sm",
+            "contents": [
+                {"type": "button", "style": "secondary", "height": "sm", "flex": 1, "action": {"type": "postback", "label": "キャンセル", "data": "action=fav_del_cancel_and_settings"}},
+                {"type": "button", "style": "primary", "color": "#e53935", "height": "sm", "flex": 1, "action": {"type": "postback", "label": "全て削除", "data": "action=fav_del_all_execute"}}
+            ]
+        }
+    }
+    return FlexSendMessage(alt_text="全て削除の確認", contents=bubble)
+
 def build_settings_flex_message(fav_list):
-    """【スマホレイアウト最適化】 flexを調整し、ボタン幅を確保して「…」表示を回避"""
     rows = []
     if not fav_list:
         rows.append({
@@ -895,24 +911,35 @@ def build_settings_flex_message(fav_list):
             rows.append({
                 "type": "box", "layout": "horizontal", "margin": "md", "alignItems": "center",
                 "contents": [
-                    {"type": "text", "text": f"{spot}", "size": "sm", "weight": "bold", "flex": 4, "color": "#333333", "wrap": True},
+                    {"type": "text", "text": f"{spot}", "size": "sm", "weight": "bold", "flex": 7, "color": "#333333", "wrap": True},
                     {
                         "type": "button",
                         "action": {"type": "postback", "label": "⬆️", "data": f"action=fav_up&spot={spot}"},
-                        "style": "secondary", "height": "sm", "flex": 2, "margin": "xs"
+                        "style": "secondary", "height": "sm", "flex": 3, "margin": "xs"
                     },
                     {
                         "type": "button",
                         "action": {"type": "postback", "label": "⬇️", "data": f"action=fav_down&spot={spot}"},
-                        "style": "secondary", "height": "sm", "flex": 2, "margin": "xs"
+                        "style": "secondary", "height": "sm", "flex": 3, "margin": "xs"
                     },
                     {
                         "type": "button",
                         "action": {"type": "postback", "label": "🗑️", "data": f"action=fav_del_confirm_and_settings&spot={spot}"},
-                        "style": "secondary", "color": "#ffe6e6", "height": "sm", "flex": 2, "margin": "xs"
+                        "style": "secondary", "color": "#ffe6e6", "height": "sm", "flex": 3, "margin": "xs"
                     }
                 ]
             })
+
+        # 「全て削除」ボタンをリストの最後に追加
+        rows.append({"type": "separator", "margin": "md"})
+        rows.append({
+            "type": "button",
+            "action": {"type": "postback", "label": "🗑️ 全て削除", "data": "action=fav_del_all_confirm"},
+            "style": "primary",
+            "color": "#e53935",
+            "height": "sm",
+            "margin": "md"
+        })
 
     bubble = {
         "type": "bubble",
@@ -924,7 +951,6 @@ def build_settings_flex_message(fav_list):
             ]
         },
         "body": {
-            # paddingAllを少し減らし、スマホでも横幅を広く確保
             "type": "box", "layout": "vertical", "spacing": "sm", "paddingAll": "10px",
             "contents": rows
         }
@@ -1123,6 +1149,18 @@ def remove_favorite_spots(user_id, spot_names):
         except Exception as e:
             return False, [], [f"DB保存エラー"]
     return True, removed, errors
+
+def clear_favorite_spots(user_id):
+    """【DBリセット機能】すべてのお気に入りを空にして保存する"""
+    if not supabase: return False, "DB接続未完了です。"
+    source, _ = get_user_setting(user_id)
+    try:
+        supabase.table('user_settings').upsert({
+            'user_id': user_id, 'weather_source': source, 'favorite_spots': ''
+        }).execute()
+        return True, "すべてのお気に入りを削除しました。"
+    except Exception as e:
+        return False, f"削除に失敗しました: {e}"
 
 def move_favorite_spot(user_id, spot_name, direction):
     if not supabase: return False, "DB接続未完了です。"
@@ -1431,6 +1469,21 @@ def handle_postback(event):
             flex_msg = build_settings_flex_message(fav_list)
             line_bot_api.reply_message(event.reply_token, [TextSendMessage(text="キャンセルしました。"), flex_msg])
 
+        # -------------------------------------------------------------------
+        # 🗑️ 【追加】全て削除アクション
+        # -------------------------------------------------------------------
+        elif action == "fav_del_all_confirm":
+            flex_msg = build_delete_all_confirm_message()
+            line_bot_api.reply_message(event.reply_token, flex_msg)
+
+        elif action == "fav_del_all_execute":
+            success, msg = clear_favorite_spots(user_id)
+            flex_msg = build_settings_flex_message([])
+            line_bot_api.reply_message(event.reply_token, [TextSendMessage(text=f"✅ {msg}"), flex_msg])
+
+        # -------------------------------------------------------------------
+        # ⬆️ ⬇️ 並び替え
+        # -------------------------------------------------------------------
         elif action in ["fav_up", "fav_down"]:
             direction = "up" if action == "fav_up" else "down"
             move_favorite_spot(user_id, spot_name, direction)
