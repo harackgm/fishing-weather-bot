@@ -139,9 +139,78 @@ SPOT_WEATHER_URLS = {
     "千早川": "https://weathernews.jp/onebox/34.417118/135.647482/"
 }
 
+# ==========================================
+# 4. データベース（SQLite）管理関数
+# ==========================================
+def init_db():
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS user_settings (
+            user_id TEXT PRIMARY KEY,
+            weather_source TEXT DEFAULT 'ウェザーニュース',
+            favorite_spots TEXT DEFAULT ''
+        )
+    ''')
+    conn.commit()
+    conn.close()
+
+init_db()
+
+def get_user_setting(user_id):
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute('SELECT weather_source, favorite_spots FROM user_settings WHERE user_id = ?', (user_id,))
+    row = cursor.fetchone()
+    if not row:
+        cursor.execute(
+            'INSERT INTO user_settings (user_id, weather_source, favorite_spots) VALUES (?, ?, ?)',
+            (user_id, 'ウェザーニュース', '')
+        )
+        conn.commit()
+        result = ('ウェザーニュース', '')
+    else:
+        result = row
+    conn.close()
+    return result
+
+def update_user_source(user_id, source):
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute('UPDATE user_settings SET weather_source = ? WHERE user_id = ?', (source, user_id))
+    conn.commit()
+    conn.close()
+
+def add_favorite_spot(user_id, spot_name):
+    _, favorites = get_user_setting(user_id)
+    fav_list = [s for s in favorites.split(',') if s]
+    if spot_name in fav_list:
+        return False, "すでに登録されている釣り場です。"
+    if len(fav_list) >= 5:
+        return False, "お気に入り釣り場は最大5箇所まで登録可能です。"
+    fav_list.append(spot_name)
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute('UPDATE user_settings SET favorite_spots = ? WHERE user_id = ?', (','.join(fav_list), user_id))
+    conn.commit()
+    conn.close()
+    return True, f"「{spot_name}」をお気に入りに追加しました。"
+
+def remove_favorite_spot(user_id, spot_name):
+    _, favorites = get_user_setting(user_id)
+    fav_list = [s for s in favorites.split(',') if s]
+    if spot_name not in fav_list:
+        return False, "登録されていない釣り場です。"
+    fav_list.remove(spot_name)
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute('UPDATE user_settings SET favorite_spots = ? WHERE user_id = ?', (','.join(fav_list), user_id))
+    conn.commit()
+    conn.close()
+    return True, f"「{spot_name}」をお気に入りから削除しました。"
 
 # ==========================================
-# 4. ウェザーニュース 実データスクレイピング関数
+# 5. ウェザーニュース 実データスクレイピング関数
 # ==========================================
 def fetch_spot_1hour_data(url):
     """指定されたURLから現在時刻以降の予報を「日付」をキーとした辞書で取得"""
@@ -197,7 +266,7 @@ def fetch_spot_1hour_data(url):
             if daily_list:
                 weather_by_date[date_str] = daily_list
             
-            # LINEで1回に送れる最大メッセージ数(5つ)に合わせて5日分取得
+            # 最大5日分取得
             if len(weather_by_date) >= 5:
                 break
             
@@ -207,7 +276,7 @@ def fetch_spot_1hour_data(url):
         return None
 
 def build_vertical_flex_messages(spot_name, weather_by_date):
-    """【修正済】カルーセルを廃止し、日付ごとに独立した吹き出しのリスト(最大5件)を返す"""
+    """日付ごとに独立したFlexMessageを作成"""
     messages = []
     
     for date_str, daily_data in weather_by_date.items():
@@ -242,7 +311,7 @@ def build_vertical_flex_messages(spot_name, weather_by_date):
             
         bubble = {
             "type": "bubble",
-            "size": "giga",  # 横幅は最大サイズ
+            "size": "giga",  
             "header": {
                 "type": "box", "layout": "vertical", "backgroundColor": "#0066cc", "paddingAll": "16px",
                 "contents": [
@@ -256,21 +325,19 @@ def build_vertical_flex_messages(spot_name, weather_by_date):
             }
         }
         
-        # FlexSendMessageの「リスト」として追加
         messages.append(FlexSendMessage(alt_text=f"{spot_name} {date_str}の天気", contents=bubble))
         
-        # LINEの仕様上、1度のリプライで送信できるメッセージ（吹き出し）は最大5件まで
         if len(messages) >= 5:
             break
             
     return messages
 
 # ==========================================
-# 5. Webサーバーのエンドポイント
+# 6. Webサーバーのエンドポイント
 # ==========================================
 @app.route("/", methods=['GET'])
 def top_page():
-    return "LINE Reply Bot Server (Vertical List Only) is running!", 200
+    return "LINE Reply Bot Server (Reversed Vertical) is running!", 200
 
 @app.route("/callback", methods=['POST'])
 def callback():
@@ -283,7 +350,7 @@ def callback():
     return 'OK', 200
 
 # ==========================================
-# 6. LINEメッセージ受信処理
+# 7. LINEメッセージ受信処理
 # ==========================================
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
@@ -292,7 +359,6 @@ def handle_message(event):
 
     print(f"[受信] ユーザー({user_id}): {user_message}")
 
-    # 辞書(SPOT_WEATHER_URLS)から部分一致で釣り場を検索
     target_spot_name = None
     target_url = None
     for spot_key, url in SPOT_WEATHER_URLS.items():
@@ -301,24 +367,58 @@ def handle_message(event):
             target_url = url
             break
 
-    # 登録されている釣り場のスクレイピング実行
     if target_url:
         weather_by_date = fetch_spot_1hour_data(target_url)
         if weather_by_date:
-            # build_vertical_flex_messages は FlexSendMessage の「リスト」を返します
             messages = build_vertical_flex_messages(target_spot_name, weather_by_date)
             
-            # リストをそのまま渡すことで、横スクロールではなく「縦に複数の吹き出し」として送信されます
+            # 【重要追加】メッセージの送信順序を反転させる (今日が一番下に来るように)
+            messages.reverse()
+            
             line_bot_api.reply_message(event.reply_token, messages)
-            print(f"[送信] {target_spot_name}のVertical FlexMessage応答を完了しました。")
+            print(f"[送信] {target_spot_name}のReversed Vertical FlexMessage応答を完了しました。")
             return
         else:
             error_msg = f"⚠️ 【{target_spot_name}】の天気データの取得に失敗しました。"
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text=error_msg))
             return
 
+    elif user_message == "設定":
+        user_setting = get_user_setting(user_id)
+        source, favorites = user_setting
+        fav_list = [s for s in favorites.split(',') if s]
+        fav_display = "\n".join([f"・{spot}" for spot in fav_list]) if fav_list else "・未登録"
+        reply_text = (
+            "⚙️ 【現在の設定状況】\n\n"
+            "■ 天気詳細度: 常に最詳細モード\n"
+            f"■ 参照ソース: {source}\n"
+            f"■ お気に入り釣り場:\n{fav_display}\n\n"
+            "【設定変更コマンド】\n"
+            "・「ウェザーニュース」「tenki.jp」\n"
+            "・「追加:釣り場名」\n"
+            "・「削除:釣り場名」"
+        )
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
+
+    elif user_message in ["ウェザーニュース", "tenki.jp"]:
+        update_user_source(user_id, user_message)
+        reply_text = f"✅ 参照ソースを「{user_message}」に変更しました。"
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
+
+    elif user_message.startswith("追加:"):
+        spot_name = user_message.replace("追加:", "").strip()
+        success, msg = add_favorite_spot(user_id, spot_name) if spot_name else (False, "⚠️ 釣り場名を入力してください。")
+        reply_text = f"✅ {msg}" if success else f"⚠️ {msg}"
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
+
+    elif user_message.startswith("削除:"):
+        spot_name = user_message.replace("削除:", "").strip()
+        success, msg = remove_favorite_spot(user_id, spot_name) if spot_name else (False, "⚠️ 削除する釣り場名を入力してください。")
+        reply_text = f"✅ {msg}" if success else f"⚠️ {msg}"
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
+
     else:
-        # どの釣り場にもマッチしなかった場合の定型文
+        # 定型文
         reply_text = (
             "🔍 その釣り場は現在対応していません、もしくは名前が間違っています。\n\n"
             "【対応済みの主な釣り場】\n"
@@ -329,7 +429,7 @@ def handle_message(event):
         print("[送信] 未登録釣り場の定型文を完了しました。")
 
 # ==========================================
-# 7. 定期データ更新用エンドポイント（安全装置付き）
+# 8. 定期データ更新用エンドポイント（安全装置付き）
 # ==========================================
 @app.route("/cron_trigger", methods=['GET', 'POST'])
 def cron_trigger():
