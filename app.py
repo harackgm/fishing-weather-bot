@@ -474,6 +474,185 @@ SPOT_WEATHER_DATA = {
         "aliases": ["あずみ野", "あずみ野FC", "あずみの"]
     },
 
+    # --- 群馬県 ---
+    "川場": {
+        "url": "https://weathernews.jp/onebox/36.690767/139.121662/",
+        "hp_url": "http://www.kawaba-fp.jp/",
+        "search_name": "川場フィッシングプラザ",
+        "tel": "0278-52-3200",
+        "aliases": ["川場", "川場FP", "かわば"]
+    },
+    "川場キングダム": {
+        "url": "https://weathernews.jp/onebox/36.754213/139.142256/",
+        "hp_url": "http://kawaba-kingdomfishing.com/",
+        "search_name": "川場キングダムフィッシング",
+        "tel": "0278-52-2002",
+        "aliases": ["川場キングダム", "キングダム", "かわばきんぐだむ"]
+    },
+    "おくとね": {
+        "url": "https://weathernews.jp/onebox/36.663005/139.163750/",
+        "hp_url": "http://www7.wind.ne.jp/okutone/",
+        "search_name": "おくとねフィッシングパーク",
+        "tel": "0278-53-3802",
+        "aliases": ["おくとね", "おくとねFP"]
+    },
+    "イワナセンター": {
+        "url": "https://weathernews.jp/onebox/36.610095/139.243740/",
+        "hp_url": "http://www7.wind.ne.jp/okutone/",
+        "search_name": "日本イワナセンター",
+        "tel": "0278-54-8433",
+        "aliases": ["イワナセンター", "日本イワナセンター", "いわなせんたー"]
+    },
+    "黒保根": {
+        "url": "https://weathernews.jp/onebox/36.515041/139.252324/",
+        "hp_url": "https://www.kurohone-fishing.com/",
+        "search_name": "黒保根渓流フィッシング",
+        "tel": "0277-96-2091",
+        "aliases": ["黒保根", "くろほね"]
+    },
+    "迦葉山": {
+        "url": "https://weathernews.jp/onebox/36.685419/139.071387/",
+        "hp_url": "http://www.fp-berrys.net/",
+        "search_name": "ベリーズ迦葉山",
+        "tel": "0278-23-9333",
+        "aliases": ["迦葉山", "ベリーズ迦葉山", "かしょうざん"]
+    },
+    "片品": {
+        "url": "https://weathernews.jp/onebox/36.624564/139.046703/",
+        "hp_url": "https://www.turinavi.info/gunma/katashinagawakokusai/",
+        "search_name": "片品川国際マス釣り場",
+        "tel": "0278-24-1188",
+        "aliases": ["片品", "片品川国際", "かたしな"]
+    },
+    "中之沢": {
+        "url": "https://weathernews.jp/onebox/36.492057/139.195293/",
+        "hp_url": "http://gfc.sakura.ne.jp/index.htm",
+        "search_name": "GFC中之沢",
+        "tel": "027-283-3532",
+        "aliases": ["中之沢", "GFC中之沢", "なかのさわ"]
+    },
+    "宮城": {
+        "url": "https://weathernews.jp/onebox/36.483735/139.188251/",
+        "hp_url": "http://www.anglers-village.com/index2.html",
+        "search_name": "宮城アングラーズヴィレッジ",
+        "tel": "027-283-0035",
+        "aliases": ["宮城", "宮城AV", "みやぎあんぐらーず"]
+    },
+    "大崎": {
+        "url": "https://weathernews.jp/onebox/36.463209/139.164867/",
+        "hp_url": "https://nijimasu.com/",
+        "search_name": "大崎つりぼり",
+        "tel": "027-283-2945",
+        "aliases": ["大崎", "大崎つりぼり", "おおさき"]
+    },
+    "けん太": {
+        "url": "https://weathernews.jp/onebox/36.386648/138.960021/",
+        "hp_url": "http://www.tsurikichikenta.com/index.htm",
+        "search_name": "釣りキチけん太",
+        "tel": "027-371-3312",
+        "aliases": ["けん太", "釣りキチけん太", "けんた"]
+    },
+    "フック": {
+        "url": "https://weathernews.jp/onebox/36.457699/139.173191/",
+        "hp_url": "https://aa-hook.jp/",
+        "search_name": "アングラーズエリアHOOK",
+        "tel": "027-283-0535",
+        "aliases": ["フック", "HOOK", "ふっく"]
+    },
+    "赤久縄": {
+        "url": "https://weathernews.jp/onebox/36.160894/138.895355/",
+        "hp_url": "https://www.akaguna.net/",
+        "search_name": "赤久縄",
+        "tel": "0274-56-0230",
+        "aliases": ["赤久縄", "あかぐな"]
+    },
+    "太田": {
+        "url": "https://weathernews.jp/onebox/36.357774/139.330830/",
+        "hp_url": "https://www.facebook.com/otafishingclub/",
+        "search_name": "太田フィッシングクラブ",
+        "tel": "0276-32-1230",
+        "aliases": ["太田", "太田FC", "おおた"]
+    },
+    "東山道": {
+        "url": "https://weathernews.jp/onebox/36.323047/139.280989/",
+        "hp_url": "https://emrp-fishing.com/",
+        "search_name": "東山道公園フィッシングエリア",
+        "tel": "0276-56-1180",
+        "aliases": ["東山道", "東山道FA", "とうさんどう"]
+    },
+    "榛名": {
+        "url": "https://weathernews.jp/onebox/36.443570/138.898498/",
+        "hp_url": "https://haruna-turibori.com/",
+        "search_name": "榛名高原つり堀センター",
+        "tel": "027-374-2228",
+        "aliases": ["榛名", "榛名高原", "はるな"]
+    },
+
+    # --- 茨城県 ---
+    "水戸南": {
+        "url": "https://weathernews.jp/onebox/36.326377/140.501362/",
+        "hp_url": "http://www.mitominami-fa.jp/index.html",
+        "search_name": "水戸南フィッシングエリア",
+        "tel": "029-246-1233",
+        "aliases": ["水戸南", "水戸南FA", "みとみなみ"]
+    },
+    "高萩": {
+        "url": "https://weathernews.jp/onebox/36.788035/140.577243/",
+        "hp_url": "https://takahagifureainosato.web.fc2.com/",
+        "search_name": "高萩ふれあいの里フィッシングエリア",
+        "tel": "0293-24-1888",
+        "aliases": ["高萩", "高萩ふれあいの里", "たかはぎ"]
+    },
+    "つくば園": {
+        "url": "https://weathernews.jp/onebox/36.224122/140.144261/",
+        "hp_url": "http://tsukuba-en.jp/",
+        "search_name": "フィッシングパークつくば園",
+        "tel": "0299-43-6111",
+        "aliases": ["つくば園", "つくばえん"]
+    },
+    "FAJ": {
+        "url": "https://weathernews.jp/onebox/36.081494/140.164360/",
+        "hp_url": "https://sites.google.com/view/fishing-area-j/",
+        "search_name": "フィッシングエリアJ",
+        "tel": "029-842-1698",
+        "aliases": ["FAJ", "フィッシングエリアJ", "ふぃっしんぐえりあじぇい"]
+    },
+    "ユザキ": {
+        "url": "https://weathernews.jp/onebox/36.314550/140.335285/",
+        "hp_url": "https://yuzakiko.com/",
+        "search_name": "レイクユザキ",
+        "tel": "0296-77-8500",
+        "aliases": ["ユザキ", "レイクユザキ", "ゆざき"]
+    },
+    "笠間": {
+        "url": "https://weathernews.jp/onebox/36.412866/140.208145/",
+        "hp_url": "http://www.leisure-park-kasama.jp/",
+        "search_name": "レジャーパーク笠間",
+        "tel": "0296-72-8888",
+        "aliases": ["笠間", "LP笠間", "かさま"]
+    },
+    "DoDoo": {
+        "url": "https://weathernews.jp/onebox/36.187994/140.216734/",
+        "hp_url": "http://www.fishing-dodoo.com/",
+        "search_name": "フィッシングDoDoo",
+        "tel": "0299-59-7052",
+        "aliases": ["DoDoo", "ドゥドゥー", "どぅどぅー"]
+    },
+    "若栗": {
+        "url": "https://weathernews.jp/onebox/36.779644/140.633185/",
+        "hp_url": "http://wakagurinomori.ina-ka.com/",
+        "search_name": "若栗フィッシングの森",
+        "tel": "0293-23-3882",
+        "aliases": ["若栗", "若栗フィッシングの森", "わかぐり"]
+    },
+    "ミッドクリーク": {
+        "url": "https://weathernews.jp/onebox/36.192975/140.164058/",
+        "hp_url": "http://midcreek.jp/",
+        "search_name": "ミッドクリークフィッシングエリア",
+        "tel": "0299-42-4578",
+        "aliases": ["ミッドクリーク", "みっどくりーく"]
+    },
+
     # --- 東北・東海・関西 ---
     "不忘": {
         "url": "https://weathernews.jp/onebox/38.042491/140.554478/",
@@ -638,7 +817,6 @@ def build_spot_list_carousel():
                     "flex": 1,
                     "margin": "xs"
                 })
-            # 奇数個の場合は右側に空スペースを追加して揃える
             if len(pair) == 1:
                 row_buttons.append({"type": "spacer", "size": "xs", "flex": 1})
                 
@@ -804,7 +982,7 @@ def fetch_spot_1hour_data(url):
         return None
 
 def build_grid_flex_message(spot_name, weather_by_date, hp_url="", map_url="", tel=""):
-    """田の字型（2行×2列）グリッドレイアウト"""
+    """田の字型（2行×2列）グリッドレイアウト（最下段中央・誤タップ防止電話ボタン配置）"""
     dates = list(weather_by_date.keys())
     
     def create_day_column(date_str):
@@ -889,20 +1067,22 @@ def build_grid_flex_message(spot_name, weather_by_date, hp_url="", map_url="", t
         }
         body_contents.append(row2)
 
-    # 最下段に控えめな電話ボタン（誤タップ防止用リンクスタイル）を配置
+    # 【改修】最下段に幅を絞った角丸ボタン型電話問い合わせ（誤タップ防止＆明確なボタン感）
     if tel:
         clean_tel = tel.replace('-', '').strip()
         body_contents.append({"type": "separator", "margin": "md"})
         body_contents.append({
-            "type": "box", "layout": "horizontal", "margin": "sm", "justifyContent": "center",
+            "type": "box", "layout": "horizontal", "margin": "sm",
             "contents": [
+                {"type": "spacer", "flex": 1},
                 {
                     "type": "button",
-                    "action": {"type": "uri", "label": f"📞 電話問合せ ({tel})", "uri": f"tel:{clean_tel}"},
-                    "style": "link",
+                    "action": {"type": "uri", "label": f"📞 電話問い合わせ ({tel})", "uri": f"tel:{clean_tel}"},
+                    "style": "secondary",
                     "height": "sm",
-                    "color": "#888888"
-                }
+                    "flex": 3
+                },
+                {"type": "spacer", "flex": 1}
             ]
         })
 
