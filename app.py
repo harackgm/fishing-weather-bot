@@ -848,10 +848,10 @@ def get_spot_details(spot_key):
     return spot_key, data["url"], hp_url, map_url, data.get("tel", "")
 
 def build_spot_list_carousel_colored(user_id=None):
-    """ユーザーのお気に入りカード（1枚目）＋4つの地域カードを横スワイプ形式で並べるカルーセル構築"""
+    """ユーザーのお気に入りカード（1枚目）＋4つの地域カードをカルーセル構造で構築（10KB上限完全適合）"""
     bubbles = []
 
-    # ユーザーのお気に入り登録があれば1枚目にゴールドカードとして特別配置（ユーザー別動的順序）
+    # ユーザーのお気に入り登録があれば1枚目にゴールドカードとして特別配置
     if user_id:
         _, favorites = get_user_setting(user_id)
         fav_list = [s for s in favorites.split(',') if s]
@@ -865,7 +865,7 @@ def build_spot_list_carousel_colored(user_id=None):
                         "type": "button",
                         "action": {"type": "message", "label": spot, "text": spot},
                         "style": "secondary",
-                        "color": "#fffde7",
+                        "color": "#fffde7",  # 薄いゴールド
                         "height": "sm",
                         "flex": 1,
                         "margin": "xs"
@@ -1290,7 +1290,7 @@ def handle_message(event):
 
         print(f"[受信] ユーザー({user_id}): {user_message}")
 
-        # 1. 一覧コマンド（ユーザー別のお気に入り＋地域別色分けカードカルーセルを送信）
+        # 1. 一覧コマンド（お気に入りがある場合は1枚目にゴールドカード＋色分け4地域カルーセルを返信）
         if user_message in ["一覧", "リスト", "釣り場一覧", "エリア"]:
             flex_msg = build_spot_list_carousel_colored(user_id=user_id)
             line_bot_api.reply_message(event.reply_token, flex_msg)
