@@ -238,7 +238,7 @@ def fetch_spot_1hour_data(url):
                 hour_str = time_tag.text.strip() if time_tag else ""
                 if not hour_str.isdigit(): continue
                 
-                # 【テスト】6時〜21時の1時間毎に抽出（30KB制限の限界テスト）
+                # 【テスト】6時〜21時の1時間毎に抽出
                 hour_int = int(hour_str)
                 if not (6 <= hour_int <= 21): 
                     continue
@@ -280,7 +280,7 @@ def fetch_spot_1hour_data(url):
         return None
 
 def build_grid_flex_message(spot_name, weather_by_date):
-    """田の字型（2行×2列）グリッドレイアウト（空文字ガード強化版）"""
+    """田の字型（2行×2列）グリッドレイアウト（横読み・Z字順修正版）"""
     dates = list(weather_by_date.keys())
     
     def create_day_column(date_str):
@@ -341,15 +341,19 @@ def build_grid_flex_message(spot_name, weather_by_date):
             ] + [{"type": "box", "layout": "vertical", "spacing": "none", "margin": "sm", "contents": rows}]
         }
 
+    # === 【並び順の変更】 横読み（Z字）になるよう配置 ===
+    # 左列： 1日目(dates[0]) と 3日目(dates[2])
     col1_boxes = [create_day_column(dates[0] if len(dates) > 0 else None)]
-    if len(dates) > 1:
+    if len(dates) > 2:
         col1_boxes.append({"type": "separator", "margin": "md"})
-        col1_boxes.append(create_day_column(dates[1]))
+        col1_boxes.append(create_day_column(dates[2]))
 
-    col2_boxes = [create_day_column(dates[2] if len(dates) > 2 else None)]
+    # 右列： 2日目(dates[1]) と 4日目(dates[3])
+    col2_boxes = [create_day_column(dates[1] if len(dates) > 1 else None)]
     if len(dates) > 3:
         col2_boxes.append({"type": "separator", "margin": "md"})
         col2_boxes.append(create_day_column(dates[3]))
+    # =======================================================
 
     bubble = {
         "type": "bubble",
@@ -389,7 +393,7 @@ def callback():
     return 'OK', 200
 
 # ==========================================
-# 7. LINEメッセージ受信処理（優先順位・エラー詳細出力追加版）
+# 7. LINEメッセージ受信処理
 # ==========================================
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
@@ -461,7 +465,6 @@ def handle_message(event):
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
 
     except Exception as e:
-        # 万が一LINEに弾かれた際に、詳細なJSONエラーをログに残す
         print("\n=== システムエラー詳細 ===")
         traceback.print_exc()
         print("==========================\n")
