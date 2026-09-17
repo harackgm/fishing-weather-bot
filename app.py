@@ -157,11 +157,63 @@ def init_db():
 
 init_db()
 
+def get_user_setting(user_id):
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute('SELECT weather_source, favorite_spots FROM user_settings WHERE user_id = ?', (user_id,))
+    row = cursor.fetchone()
+    if not row:
+        cursor.execute(
+            'INSERT INTO user_settings (user_id, weather_source, favorite_spots) VALUES (?, ?, ?)',
+            (user_id, 'ウェザーニュース', '')
+        )
+        conn.commit()
+        result = ('ウェザーニュース', '')
+    else:
+        result = row
+    conn.close()
+    return result
+
+def update_user_source(user_id, source):
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute('UPDATE user_settings SET weather_source = ? WHERE user_id = ?', (source, user_id))
+    conn.commit()
+    conn.close()
+
+def add_favorite_spot(user_id, spot_name):
+    _, favorites = get_user_setting(user_id)
+    fav_list = [s for s in favorites.split(',') if s]
+    if spot_name in fav_list:
+        return False, "すでに登録されている釣り場です。"
+    if len(fav_list) >= 5:
+        return False, "お気に入り釣り場は最大5箇所まで登録可能です。"
+    fav_list.append(spot_name)
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute('UPDATE user_settings SET favorite_spots = ? WHERE user_id = ?', (','.join(fav_list), user_id))
+    conn.commit()
+    conn.close()
+    return True, f"「{spot_name}」をお気に入りに追加しました。"
+
+def remove_favorite_spot(user_id, spot_name):
+    _, favorites = get_user_setting(user_id)
+    fav_list = [s for s in favorites.split(',') if s]
+    if spot_name not in fav_list:
+        return False, "登録されていない釣り場です。"
+    fav_list.remove(spot_name)
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute('UPDATE user_settings SET favorite_spots = ? WHERE user_id = ?', (','.join(fav_list), user_id))
+    conn.commit()
+    conn.close()
+    return True, f"「{spot_name}」をお気に入りから削除しました。"
+
 # ==========================================
 # 5. ウェザーニュース 実データスクレイピング関数
 # ==========================================
 def fetch_spot_1hour_data(url):
-    """指定されたURLから現在時刻以降の予報を取得（夜間カット対応）"""
+    """指定されたURLから現在時刻以降の予報を取得（24時間すべて表示版）"""
     time.sleep(random.uniform(1.0, 2.0))
     headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}
     
@@ -193,9 +245,7 @@ def fetch_spot_1hour_data(url):
                     continue
                 hour_int = int(hour_str)
                 
-                # 【極限コンパクト化】釣り場に不要な夜間（19時〜翌4時）をカット
-                if not (5 <= hour_int <= 18):
-                    continue
+                # 24時間すべてのデータを表示するため、夜間カットの条件を削除
                 hour = f"{hour_int:02d}時"
                 
                 img_url = "https://gvs.weathernews.jp/onebox/img/wxicon/200.png"
@@ -206,7 +256,6 @@ def fetch_spot_1hour_data(url):
                     if src.startswith('//'): img_url = "https:" + src
                     elif src.startswith('/'): img_url = "https://weathernews.jp" + src
                     else: img_url = src
-                # LINEで弾かれないよう確実にhttps化
                 img_url = img_url.replace("http://", "https://")
 
                 rain = item.find('li', class_='rain').text.strip().replace("ミリ", "mm") if item.find('li', class_='rain') else "-"
@@ -235,7 +284,7 @@ def fetch_spot_1hour_data(url):
         return None
 
 def build_grid_flex_message(spot_name, weather_by_date):
-    """【新開発】1画面に4日分を収める田の字型（2行×2列）グリッドレイアウト"""
+    """1画面に4日分を収める田の字型（2行×2列）グリッドレイアウト"""
     dates = list(weather_by_date.keys())
     
     # 1日分のカラム（縦列）を生成する関数
@@ -316,7 +365,7 @@ def build_grid_flex_message(spot_name, weather_by_date):
         "header": {
             "type": "box", "layout": "vertical", "backgroundColor": "#0066cc", "paddingAll": "12px",
             "contents": [
-                {"type": "text", "text": f"📍 {spot_name} (5時〜18時)", "color": "#ffffff", "weight": "bold", "size": "md"}
+                {"type": "text", "text": f"📍 {spot_name}", "color": "#ffffff", "weight": "bold", "size": "md"}
             ]
         },
         "body": {
@@ -336,7 +385,7 @@ def build_grid_flex_message(spot_name, weather_by_date):
 # ==========================================
 @app.route("/", methods=['GET'])
 def top_page():
-    return "LINE Reply Bot Server (Grid Layout) is running!", 200
+    return "LINE Reply Bot Server (Grid Layout 24h) is running!", 200
 
 @app.route("/callback", methods=['POST'])
 def callback():
@@ -369,7 +418,6 @@ def handle_message(event):
     if target_url:
         weather_by_date = fetch_spot_1hour_data(target_url)
         if weather_by_date:
-            # グリッドレイアウトのFlexMessageを1つだけ構築して送信
             flex_msg = build_grid_flex_message(target_spot_name, weather_by_date)
             
             try:
@@ -384,8 +432,42 @@ def handle_message(event):
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text=error_msg))
             return
 
+    elif user_message == "設定":
+        user_setting = get_user_setting(user_id)
+        source, favorites = user_setting
+        fav_list = [s for s in favorites.split(',') if s]
+        fav_display = "\n".join([f"・{spot}" for spot in fav_list]) if fav_list else "・未登録"
+        reply_text = (
+            "⚙️ 【現在の設定状況】\n\n"
+            "■ 天気詳細度: 常に最詳細モード\n"
+            f"■ 参照ソース: {source}\n"
+            f"■ お気に入り釣り場:\n{fav_display}\n\n"
+            "【設定変更コマンド】\n"
+            "・「ウェザーニュース」「tenki.jp」\n"
+            "・「追加:釣り場名」\n"
+            "・「削除:釣り場名」"
+        )
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
+
+    elif user_message in ["ウェザーニュース", "tenki.jp"]:
+        update_user_source(user_id, user_message)
+        reply_text = f"✅ 参照ソースを「{user_message}」に変更しました。"
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
+
+    elif user_message.startswith("追加:"):
+        spot_name = user_message.replace("追加:", "").strip()
+        success, msg = add_favorite_spot(user_id, spot_name) if spot_name else (False, "⚠️ 釣り場名を入力してください。")
+        reply_text = f"✅ {msg}" if success else f"⚠️ {msg}"
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
+
+    elif user_message.startswith("削除:"):
+        spot_name = user_message.replace("削除:", "").strip()
+        success, msg = remove_favorite_spot(user_id, spot_name) if spot_name else (False, "⚠️ 削除する釣り場名を入力してください。")
+        reply_text = f"✅ {msg}" if success else f"⚠️ {msg}"
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
+
     else:
-        # 定型文（AIは完全排除）
+        # 定型文
         reply_text = (
             "🔍 その釣り場は現在対応していません、もしくは名前が間違っています。\n\n"
             "【対応済みの主な釣り場】\n"
