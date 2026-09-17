@@ -1,6 +1,5 @@
 import os
 import time
-import random
 import requests
 import traceback
 import difflib
@@ -31,9 +30,6 @@ LINE_CHANNEL_SECRET = os.getenv('LINE_CHANNEL_SECRET', '').strip()
 line_bot_api = LineBotApi(LINE_CHANNEL_ACCESS_TOKEN)
 handler = WebhookHandler(LINE_CHANNEL_SECRET)
 
-ADMIN_USER_ID = os.getenv('ADMIN_USER_ID', '').strip()
-IS_TEST_MODE = True  # テストモード（Trueの場合、ADMIN_USER_IDのみに通知送信）
-MAX_LIMIT = 5        # 大量通知ストッパー（1回の処理上限数）
 MAX_FAVORITES = 30   # ★お気に入り登録の最大数（30箇所）
 
 # Supabase接続初期化
@@ -938,7 +934,7 @@ def build_spot_list_carousel_horizontal(user_id=None):
         
         fav_rows = []
         if not fav_list:
-            # ★ お気に入りが空の場合の案内セルを常設
+            # お気に入りが空の場合の案内セル
             fav_rows.append({
                 "type": "box",
                 "layout": "vertical",
@@ -1055,7 +1051,7 @@ def build_spot_list_carousel_horizontal(user_id=None):
         }
         bubbles.append(bubble)
 
-    # ★ 使い方ガイド（例文を5箇所に増やし詳細化）
+    # 使い方ガイド
     guide_bubble = {
         "type": "bubble",
         "size": "giga",
@@ -1210,9 +1206,8 @@ def move_favorite_spot(user_id, spot_name, direction):
         return False, f"移動失敗: {e}"
 
 def fetch_spot_1hour_data(url):
-    time.sleep(random.uniform(1.0, 2.5))
-    headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}
     try:
+        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}
         response = requests.get(url, headers=headers, timeout=8)
         response.raise_for_status()
         soup = BeautifulSoup(response.text, 'html.parser')
@@ -1535,43 +1530,6 @@ def handle_postback(event):
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ 処理中にエラーが発生しました。"))
         except Exception:
             pass
-
-@app.route("/cron_trigger", methods=['GET', 'POST'])
-def cron_trigger():
-    if not supabase: return jsonify({"status": "error", "reason": "DB_NOT_CONNECTED"}), 500
-    try:
-        res = supabase.table('user_settings').select('*').execute()
-        users = res.data or []
-
-        if IS_TEST_MODE:
-            users = [u for u in users if u.get('user_id') == ADMIN_USER_ID]
-            if not users and ADMIN_USER_ID: users = [{'user_id': ADMIN_USER_ID, 'favorite_spots': ''}]
-
-        if len(users) > MAX_LIMIT: return jsonify({"status": "skipped", "reason": "MAX_LIMIT_EXCEEDED"}), 200
-
-        for user in users:
-            uid = user.get('user_id')
-            _, favorites = get_user_setting(uid)
-            fav_list = [s for s in favorites.split(',') if s]
-            if not fav_list: continue
-
-            for spot_name in fav_list:
-                candidates = find_candidate_spots(spot_name)
-                if not candidates: continue
-                matched_spot = candidates[0]
-                matched_spot, url, hp_url, map_url, tel = get_spot_details(matched_spot)
-                if not url: continue
-
-                weather_data = fetch_spot_1hour_data(url)
-                if weather_data:
-                    flex_msg = build_grid_flex_message(matched_spot, weather_data, hp_url, map_url, tel, is_favorite=False)
-                    line_bot_api.push_message(uid, flex_msg)
-                time.sleep(random.uniform(1.5, 3.0))
-
-        return jsonify({"status": "success", "processed_users": len(users)}), 200
-    except Exception as e:
-        traceback.print_exc()
-        return jsonify({"status": "error", "message": str(e)}), 500
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
