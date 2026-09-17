@@ -1,0 +1,18 @@
+name: Update Weather Cache
+
+on:
+  schedule:
+    # 毎時17分に実行（0分などの混雑するジャストタイムを回避）
+    # ※CronはUTC時間基準ですが、毎時実行なので日本時間でも「毎時17分」に実行されます
+    - cron: '17 * * * *'
+  workflow_dispatch: # GitHub画面から手動でテスト実行できるようにするスイッチ
+
+jobs:
+  update-cache:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Cron Endpoint
+        # 下記のURLを、ご自身がRender等でデプロイしているボットのURLに書き換えてください
+        # 例: https://your-bot-name.onrender.com/cron_trigger
+        run: |
+          curl -s -X GET "https://【あなたのボットのURL】/cron_trigger"
