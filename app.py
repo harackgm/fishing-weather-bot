@@ -55,7 +55,6 @@ PREFECTURE_SPOTS = {
     "長野県": ["平谷湖フィッシングスポット", "鹿島槍ガーデン", "ハーブの里フィッシングエリア"]
 }
 
-
 # ==========================================
 # 3. データベース（SQLite）管理関数
 # ==========================================
@@ -127,7 +126,6 @@ def remove_favorite_spot(user_id, spot_name):
     conn.close()
     return True, f"「{spot_name}」をお気に入りから削除しました。"
 
-
 # ==========================================
 # 4. ウェザーニュース 実データスクレイピング関数 (日付別グループ化)
 # ==========================================
@@ -155,15 +153,12 @@ def fetch_hirayako_1hour_data():
             daily_list = []
             lists = group.find_all('ul', class_='list')
             for item in lists:
-                # 過去のデータは除外
                 if 'past' in item.get('class', []):
                     continue
                 
-                # 時間
                 time_tag = item.find('li', class_='time')
                 hour = time_tag.text.strip().zfill(2) + "時" if time_tag else "--時"
                 
-                # 天気画像URL抽出
                 img_url = "https://gvs.weathernews.jp/onebox/img/wxicon/200.png"
                 weather_tag = item.find('li', class_='weather')
                 img_tag = weather_tag.find('img') if weather_tag else None
@@ -173,11 +168,10 @@ def fetch_hirayako_1hour_data():
                     elif src.startswith('/'): img_url = "https://weathernews.jp" + src
                     else: img_url = src
 
-                # 降水・気温・風速
                 rain = item.find('li', class_='rain').text.strip().replace("ミリ", "mm") if item.find('li', class_='rain') else "-"
                 temp = item.find('li', class_='temp').text.strip() if item.find('li', class_='temp') else "-"
                 wind_p = item.find('li', class_='wind').find('p') if item.find('li', class_='wind') else None
-                wind = wind_p.text.strip() if wind_p else "-" # 元データに"m/s"が含まれているため追記しない
+                wind = wind_p.text.strip() if wind_p else "-"
 
                 daily_list.append({
                     "time": hour,
@@ -187,11 +181,9 @@ def fetch_hirayako_1hour_data():
                     "wind": wind
                 })
             
-            # 未来のデータがある日付のみ追加
             if daily_list:
                 weather_by_date[date_str] = daily_list
             
-            # LINEのカルーセル上限に対応（最大10日分）
             if len(weather_by_date) >= 10:
                 break
             
@@ -201,38 +193,36 @@ def fetch_hirayako_1hour_data():
         return None
 
 def build_daily_carousel_flex_message(spot_name, weather_by_date):
-    """日付ごとにカード（バブル）を分けたカルーセルを構築"""
+    """日付ごとに極限まで圧縮したカルーセルを構築"""
     bubbles = []
     
     for date_str, daily_data in weather_by_date.items():
-        # ヘッダー行（項目名）
         rows = [
             {
-                "type": "box", "layout": "horizontal", "margin": "sm",
+                "type": "box", "layout": "horizontal", "margin": "none",
                 "contents": [
-                    {"type": "text", "text": "時間", "weight": "bold", "size": "xs", "flex": 1, "align": "center"},
-                    {"type": "text", "text": "天気", "weight": "bold", "size": "xs", "flex": 1, "align": "center"},
-                    {"type": "text", "text": "気温", "weight": "bold", "size": "xs", "flex": 1, "align": "center"},
-                    {"type": "text", "text": "降水", "weight": "bold", "size": "xs", "flex": 1, "align": "center"},
-                    {"type": "text", "text": "風速", "weight": "bold", "size": "xs", "flex": 1, "align": "center"}
+                    {"type": "text", "text": "時間", "weight": "bold", "size": "xxs", "flex": 1, "align": "center", "color": "#888888"},
+                    {"type": "text", "text": "天気", "weight": "bold", "size": "xxs", "flex": 1, "align": "center", "color": "#888888"},
+                    {"type": "text", "text": "気温", "weight": "bold", "size": "xxs", "flex": 1, "align": "center", "color": "#888888"},
+                    {"type": "text", "text": "降水", "weight": "bold", "size": "xxs", "flex": 1, "align": "center", "color": "#888888"},
+                    {"type": "text", "text": "風速", "weight": "bold", "size": "xxs", "flex": 1, "align": "center", "color": "#888888"}
                 ]
             },
-            {"type": "separator", "margin": "sm"}
+            {"type": "separator", "margin": "xs"}
         ]
         
-        # データ行
         for data in daily_data:
             temp_color = "#ff0000" if "℃" in data['temp'] and int(data['temp'].replace("℃","")) >= 25 else "#333333"
             rain_color = "#0000ff" if "mm" in data['rain'] and data['rain'] not in ["0mm", "-"] else "#333333"
             
             rows.append({
-                "type": "box", "layout": "horizontal", "margin": "sm", "alignItems": "center",
+                "type": "box", "layout": "horizontal", "margin": "xs", "alignItems": "center",
                 "contents": [
-                    {"type": "text", "text": data['time'], "size": "xs", "flex": 1, "align": "center", "weight": "bold"},
+                    {"type": "text", "text": data['time'], "size": "xxs", "flex": 1, "align": "center", "weight": "bold"},
                     {"type": "image", "url": data['img_url'], "size": "xxs", "flex": 1, "align": "center"},
-                    {"type": "text", "text": data['temp'], "size": "xs", "flex": 1, "align": "center", "color": temp_color},
-                    {"type": "text", "text": data['rain'], "size": "xs", "flex": 1, "align": "center", "color": rain_color},
-                    {"type": "text", "text": data['wind'].replace("m/s", "m"), "size": "xs", "flex": 1, "align": "center"} # 見やすさのため短縮
+                    {"type": "text", "text": data['temp'], "size": "xxs", "flex": 1, "align": "center", "color": temp_color},
+                    {"type": "text", "text": data['rain'], "size": "xxs", "flex": 1, "align": "center", "color": rain_color},
+                    {"type": "text", "text": data['wind'].replace("m/s", "m"), "size": "xxs", "flex": 1, "align": "center"}
                 ]
             })
             
@@ -240,21 +230,20 @@ def build_daily_carousel_flex_message(spot_name, weather_by_date):
             "type": "bubble",
             "size": "kilo",
             "header": {
-                "type": "box", "layout": "vertical", "backgroundColor": "#0066cc", "paddingAll": "12px",
+                "type": "box", "layout": "vertical", "backgroundColor": "#0066cc", "paddingAll": "8px",
                 "contents": [
-                    {"type": "text", "text": f"📍 {spot_name}", "color": "#ffffff", "weight": "bold", "size": "xs"},
-                    {"type": "text", "text": date_str, "color": "#ffffff", "weight": "bold", "size": "md", "margin": "sm"}
+                    {"type": "text", "text": f"📍 {spot_name}", "color": "#ffffff", "weight": "bold", "size": "xxs"},
+                    {"type": "text", "text": date_str, "color": "#ffffff", "weight": "bold", "size": "sm", "margin": "xs"}
                 ]
             },
             "body": {
-                "type": "box", "layout": "vertical", "spacing": "sm", "paddingAll": "12px",
+                "type": "box", "layout": "vertical", "spacing": "none", "paddingAll": "8px",
                 "contents": rows
             }
         }
         bubbles.append(bubble)
             
     return {"type": "carousel", "contents": bubbles}
-
 
 # ==========================================
 # 5. Gemini AI応答生成関数
@@ -286,13 +275,12 @@ def generate_gemini_response(user_message, user_setting):
             continue
     return None, f"AI応答の生成に失敗しました。\n詳細: {last_error_msg[:150]}"
 
-
 # ==========================================
 # 6. Webサーバーのエンドポイント
 # ==========================================
 @app.route("/", methods=['GET'])
 def top_page():
-    return "LINE Reply Bot Server (Daily Carousel) is running!", 200
+    return "LINE Reply Bot Server (Compact Carousel) is running!", 200
 
 @app.route("/callback", methods=['POST'])
 def callback():
@@ -303,7 +291,6 @@ def callback():
     except InvalidSignatureError:
         abort(400)
     return 'OK', 200
-
 
 # ==========================================
 # 7. LINEメッセージ受信処理
@@ -324,7 +311,7 @@ def handle_message(event):
             matched_pref = pref
             break
 
-    # 平谷湖のピンポイント予報（日付別カルーセル表示）
+    # 平谷湖のピンポイント予報（コンパクトカルーセル表示）
     if "平谷湖" in user_message:
         weather_by_date = fetch_hirayako_1hour_data()
         if weather_by_date:
@@ -335,7 +322,7 @@ def handle_message(event):
                 FlexSendMessage(alt_text="平谷湖の天気予報", contents=flex_obj)
             ]
             line_bot_api.reply_message(event.reply_token, messages)
-            print("[送信] Daily Carousel FlexMessage応答を完了しました。")
+            print("[送信] Compact Carousel FlexMessage応答を完了しました。")
             return
         else:
             ai_text, error_text = generate_gemini_response(user_message, user_setting)
