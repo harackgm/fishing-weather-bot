@@ -853,6 +853,7 @@ def get_spot_details(spot_key):
     return spot_key, data["url"], hp_url, map_url, data.get("tel", "")
 
 def build_settings_flex_message(fav_list):
+    """【ワンタップ並び替えUI】 ⬆️・⬇️・🗑️ ボタンを備えた管理パネル"""
     rows = []
     if not fav_list:
         rows.append({
@@ -865,11 +866,21 @@ def build_settings_flex_message(fav_list):
             rows.append({
                 "type": "box", "layout": "horizontal", "margin": "md", "alignItems": "center",
                 "contents": [
-                    {"type": "text", "text": f"・ {spot}", "size": "sm", "weight": "bold", "flex": 2, "color": "#333333"},
+                    {"type": "text", "text": f"{spot}", "size": "sm", "weight": "bold", "flex": 3, "color": "#333333"},
                     {
                         "type": "button",
-                        "action": {"type": "postback", "label": "🗑️ 削除", "data": f"action=fav_del&spot={spot}"},
-                        "style": "secondary", "color": "#ffe6e6", "height": "sm", "flex": 1
+                        "action": {"type": "postback", "label": "⬆️", "data": f"action=fav_up&spot={spot}"},
+                        "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"
+                    },
+                    {
+                        "type": "button",
+                        "action": {"type": "postback", "label": "⬇️", "data": f"action=fav_down&spot={spot}"},
+                        "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"
+                    },
+                    {
+                        "type": "button",
+                        "action": {"type": "postback", "label": "🗑️", "data": f"action=fav_del&spot={spot}"},
+                        "style": "secondary", "color": "#ffe6e6", "height": "sm", "flex": 1, "margin": "xs"
                     }
                 ]
             })
@@ -880,7 +891,7 @@ def build_settings_flex_message(fav_list):
         "header": {
             "type": "box", "layout": "vertical", "backgroundColor": "#d4af37", "paddingAll": "10px",
             "contents": [
-                {"type": "text", "text": f"⚙️ お気に入り管理 ({len(fav_list)}/{MAX_FAVORITES}件)", "color": "#ffffff", "weight": "bold", "size": "md"}
+                {"type": "text", "text": f"⚙️ お気に入り並び替え ({len(fav_list)}/{MAX_FAVORITES}件)", "color": "#ffffff", "weight": "bold", "size": "md"}
             ]
         },
         "body": {
@@ -891,7 +902,6 @@ def build_settings_flex_message(fav_list):
     return FlexSendMessage(alt_text="お気に入り管理パネル", contents=bubble)
 
 def build_spot_list_carousel_horizontal(user_id=None):
-    """【横並びカルーセル形式】お気に入り登録済みマーク対応"""
     bubbles = []
     fav_list = []
 
@@ -908,7 +918,7 @@ def build_spot_list_carousel_horizontal(user_id=None):
                         "type": "button",
                         "action": {"type": "message", "label": spot, "text": spot},
                         "style": "secondary",
-                        "color": "#fff59d",  # お気に入りボタンの色を少し濃い黄色に変更
+                        "color": "#fff59d",
                         "height": "sm",
                         "margin": "xs",
                         "flex": 1
@@ -938,9 +948,7 @@ def build_spot_list_carousel_horizontal(user_id=None):
                 pair = spots[i:i+2]
                 row_buttons = []
                 for spot in pair:
-                    # お気に入り登録済みなら「★」を付ける（送信されるテキストはそのまま）
                     label_text = f"★ {spot}" if spot in fav_list else spot
-                    
                     row_buttons.append({
                         "type": "button",
                         "action": {"type": "message", "label": label_text, "text": spot},
@@ -1045,6 +1053,35 @@ def remove_favorite_spot(user_id, spot_name):
         return True, f"「{target_name}」をお気に入りから削除しました。"
     except Exception as e:
         return False, f"削除に失敗しました: {e}"
+
+def move_favorite_spot(user_id, spot_name, direction):
+    """【並び替え専用関数】指定した釣り場の順番を1つ上（左）または下（右）へ移動させる"""
+    if not supabase: return False, "DB接続未完了です。"
+    source, favorites = get_user_setting(user_id)
+    fav_list = [s for s in favorites.split(',') if s]
+    
+    if spot_name not in fav_list:
+        return False, "登録されていません。"
+    
+    idx = fav_list.index(spot_name)
+    
+    if direction == "up" and idx > 0:
+        # 上（左）へ移動：前の要素と入れ替え
+        fav_list[idx - 1], fav_list[idx] = fav_list[idx], fav_list[idx - 1]
+    elif direction == "down" and idx < len(fav_list) - 1:
+        # 下（右）へ移動：後の要素と入れ替え
+        fav_list[idx + 1], fav_list[idx] = fav_list[idx], fav_list[idx + 1]
+    else:
+        # 既に一番上、または一番下の場合は何もしない
+        return True, "移動不要"
+        
+    try:
+        supabase.table('user_settings').upsert({
+            'user_id': user_id, 'weather_source': source, 'favorite_spots': ','.join(fav_list)
+        }).execute()
+        return True, "移動しました"
+    except Exception as e:
+        return False, f"移動失敗: {e}"
 
 def fetch_spot_1hour_data(url):
     time.sleep(random.uniform(1.0, 2.5))
@@ -1172,7 +1209,6 @@ def build_grid_flex_message(spot_name, weather_by_date, hp_url="", map_url="", t
     if is_favorite:
         header_buttons.append({"type": "button", "action": {"type": "postback", "label": "🗑️ 解除", "data": f"action=fav_del&spot={spot_name}"}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs", "color": "#ffcccc"})
     else:
-        # 天気カードの「⭐️登録」ボタンも同じ濃い黄色に変更
         header_buttons.append({"type": "button", "action": {"type": "postback", "label": "⭐️ 登録", "data": f"action=fav_add&spot={spot_name}"}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs", "color": "#fff59d"})
 
     clean_hp = clean_url(hp_url)
@@ -1270,15 +1306,31 @@ def handle_postback(event):
         data_dict = dict(parse_qsl(event.postback.data))
         action, spot_name = data_dict.get("action"), data_dict.get("spot")
 
+        # ⭐️ 登録
         if action == "fav_add":
             success, msg = add_favorite_spot(user_id, spot_name)
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"✅ {msg}"))
+
+        # 🗑️ 削除
         elif action == "fav_del":
             success, msg = remove_favorite_spot(user_id, spot_name)
             _, favorites = get_user_setting(user_id)
             fav_list = [s for s in favorites.split(',') if s]
             flex_msg = build_settings_flex_message(fav_list)
+            # テキスト通知と更新された設定パネルを両方返す
             line_bot_api.reply_message(event.reply_token, [TextSendMessage(text=f"✅ {msg}"), flex_msg])
+
+        # ⬆️ ⬇️ 並び替え（画面だけを瞬時に更新する）
+        elif action in ["fav_up", "fav_down"]:
+            direction = "up" if action == "fav_up" else "down"
+            move_favorite_spot(user_id, spot_name, direction)
+            
+            # 再描画用のデータを取得してパネルだけを送信（テキストを出さないことで画面を埋めない）
+            _, favorites = get_user_setting(user_id)
+            fav_list = [s for s in favorites.split(',') if s]
+            flex_msg = build_settings_flex_message(fav_list)
+            line_bot_api.reply_message(event.reply_token, flex_msg)
+
     except Exception as e:
         print(f"Postback Error: {e}")
 
