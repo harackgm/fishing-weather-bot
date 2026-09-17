@@ -209,7 +209,7 @@ def remove_favorite_spot(user_id, spot_name):
 # 5. ウェザーニュース 実データスクレイピング関数
 # ==========================================
 def fetch_spot_1hour_data(url):
-    """指定されたURLから現在時刻以降の予報を取得（データ容量圧縮版）"""
+    """指定されたURLから現在時刻以降の予報を取得（6〜21時抽出テスト版）"""
     time.sleep(random.uniform(1.0, 2.5))  # ゆらぎ待機
     headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}
     
@@ -238,9 +238,9 @@ def fetch_spot_1hour_data(url):
                 hour_str = time_tag.text.strip() if time_tag else ""
                 if not hour_str.isdigit(): continue
                 
-                # 【重要追加】LINEの容量制限(30KB)を回避するため、3時間おきに間引く
+                # 【テスト】6時〜21時の1時間毎に抽出（30KB制限の限界テスト）
                 hour_int = int(hour_str)
-                if hour_int % 3 != 0: 
+                if not (6 <= hour_int <= 21): 
                     continue
                     
                 hour = f"{hour_int:02d}時"
