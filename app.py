@@ -853,7 +853,6 @@ def get_spot_details(spot_key):
     return spot_key, data["url"], hp_url, map_url, data.get("tel", "")
 
 def build_delete_confirm_message(spot_name):
-    """【誤操作防止】削除確認ダイアログの構築"""
     bubble = {
         "type": "bubble",
         "size": "kilo",
@@ -867,21 +866,15 @@ def build_delete_confirm_message(spot_name):
         "footer": {
             "type": "box", "layout": "horizontal", "spacing": "sm",
             "contents": [
-                {
-                    "type": "button", "style": "secondary", "height": "sm", "flex": 1,
-                    "action": {"type": "postback", "label": "キャンセル", "data": "action=fav_del_cancel"}
-                },
-                {
-                    "type": "button", "style": "primary", "color": "#e53935", "height": "sm", "flex": 1,
-                    "action": {"type": "postback", "label": "削除する", "data": f"action=fav_del_execute&spot={spot_name}"}
-                }
+                {"type": "button", "style": "secondary", "height": "sm", "flex": 1, "action": {"type": "postback", "label": "キャンセル", "data": "action=fav_del_cancel"}},
+                {"type": "button", "style": "primary", "color": "#e53935", "height": "sm", "flex": 1, "action": {"type": "postback", "label": "削除する", "data": f"action=fav_del_execute&spot={spot_name}"}}
             ]
         }
     }
     return FlexSendMessage(alt_text=f"{spot_name}の削除確認", contents=bubble)
 
 def build_settings_flex_message(fav_list):
-    """【ウィザード】お気に入り管理・並び替えパネル"""
+    """【ウィザード表示崩れ修正】 flex比率を微調整し、長い名前の折り返しを最適化"""
     rows = []
     if not fav_list:
         rows.append({
@@ -894,22 +887,21 @@ def build_settings_flex_message(fav_list):
             rows.append({
                 "type": "box", "layout": "horizontal", "margin": "md", "alignItems": "center",
                 "contents": [
-                    {"type": "text", "text": f"{spot}", "size": "sm", "weight": "bold", "flex": 3, "color": "#333333", "wrap": True},
+                    {"type": "text", "text": f"{spot}", "size": "sm", "weight": "bold", "flex": 7, "color": "#333333", "wrap": True},
                     {
                         "type": "button",
                         "action": {"type": "postback", "label": "⬆️", "data": f"action=fav_up&spot={spot}"},
-                        "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"
+                        "style": "secondary", "height": "sm", "flex": 3, "margin": "xs"
                     },
                     {
                         "type": "button",
                         "action": {"type": "postback", "label": "⬇️", "data": f"action=fav_down&spot={spot}"},
-                        "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"
+                        "style": "secondary", "height": "sm", "flex": 3, "margin": "xs"
                     },
                     {
                         "type": "button",
-                        # 確認画面を挟むため、data を fav_del_confirm に変更
                         "action": {"type": "postback", "label": "🗑️", "data": f"action=fav_del_confirm&spot={spot}"},
-                        "style": "secondary", "color": "#ffe6e6", "height": "sm", "flex": 1, "margin": "xs"
+                        "style": "secondary", "color": "#ffe6e6", "height": "sm", "flex": 3, "margin": "xs"
                     }
                 ]
             })
@@ -931,7 +923,7 @@ def build_settings_flex_message(fav_list):
     return FlexSendMessage(alt_text="お気に入り管理パネル", contents=bubble)
 
 def build_spot_list_carousel_horizontal(user_id=None):
-    """【横並びカルーセル形式】"""
+    """【お気に入りセル】標準ボタンではなく、枠線付きのBOXを使用して立体感（ボタンらしさ）を表現"""
     bubbles = []
     fav_list = []
 
@@ -945,13 +937,29 @@ def build_spot_list_carousel_horizontal(user_id=None):
                 row_buttons = []
                 for spot in pair:
                     row_buttons.append({
-                        "type": "button",
-                        "action": {"type": "message", "label": spot, "text": spot},
-                        "style": "secondary",
-                        "color": "#fff59d",
-                        "height": "sm",
+                        "type": "box",
+                        "layout": "vertical",
+                        "backgroundColor": "#fff59d",  # 少し濃い黄色
+                        "cornerRadius": "md",          # 角丸
+                        "borderWidth": "normal",
+                        "borderColor": "#d4af37",      # ゴールド色で縁取り（陰影の代用）
+                        "paddingAll": "sm",            # 内側余白
                         "margin": "xs",
-                        "flex": 1
+                        "flex": 1,
+                        "justifyContent": "center",
+                        "alignItems": "center",
+                        "action": {"type": "message", "label": spot, "text": spot},
+                        "contents": [
+                            {
+                                "type": "text",
+                                "text": spot,
+                                "size": "sm",
+                                "color": "#333333",
+                                "weight": "bold",
+                                "align": "center",
+                                "wrap": True
+                            }
+                        ]
                     })
                 if len(pair) == 1:
                     row_buttons.append({"type": "box", "layout": "vertical", "flex": 1, "contents": [{"type": "text", "text": " "}]})
@@ -1233,7 +1241,6 @@ def build_grid_flex_message(spot_name, weather_by_date, hp_url="", map_url="", t
 
     header_buttons = []
     if is_favorite:
-        # 天気カードからの削除時も、いきなり消さずに確認ダイアログを出す
         header_buttons.append({"type": "button", "action": {"type": "postback", "label": "🗑️ 解除", "data": f"action=fav_del_confirm&spot={spot_name}"}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs", "color": "#ffcccc"})
     else:
         header_buttons.append({"type": "button", "action": {"type": "postback", "label": "⭐️ 登録", "data": f"action=fav_add&spot={spot_name}"}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs", "color": "#fff59d"})
@@ -1333,34 +1340,27 @@ def handle_postback(event):
         data_dict = dict(parse_qsl(event.postback.data))
         action, spot_name = data_dict.get("action"), data_dict.get("spot")
 
-        # ⭐️ 新規登録
         if action == "fav_add":
             success, msg = add_favorite_spot(user_id, spot_name)
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"✅ {msg}"))
 
-        # 🗑️ 【新規実装】削除の確認ダイアログを表示
         elif action == "fav_del_confirm":
             flex_msg = build_delete_confirm_message(spot_name)
             line_bot_api.reply_message(event.reply_token, flex_msg)
 
-        # 🗑️ 削除の実行（確認画面で「削除する」を押した時）
         elif action == "fav_del_execute":
             success, msg = remove_favorite_spot(user_id, spot_name)
             _, favorites = get_user_setting(user_id)
             fav_list = [s for s in favorites.split(',') if s]
             flex_msg = build_settings_flex_message(fav_list)
-            # 完了メッセージと、最新の設定パネルを再送する
             line_bot_api.reply_message(event.reply_token, [TextSendMessage(text=f"✅ {msg}"), flex_msg])
 
-        # キャンセル（確認画面で「キャンセル」を押した時）
         elif action == "fav_del_cancel":
             _, favorites = get_user_setting(user_id)
             fav_list = [s for s in favorites.split(',') if s]
             flex_msg = build_settings_flex_message(fav_list)
-            # キャンセル通知と、元の設定パネルを再送する
             line_bot_api.reply_message(event.reply_token, [TextSendMessage(text="キャンセルしました。"), flex_msg])
 
-        # ⬆️ ⬇️ 並び替え
         elif action in ["fav_up", "fav_down"]:
             direction = "up" if action == "fav_up" else "down"
             move_favorite_spot(user_id, spot_name, direction)
