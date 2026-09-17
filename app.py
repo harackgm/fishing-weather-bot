@@ -209,7 +209,7 @@ def remove_favorite_spot(user_id, spot_name):
 # 5. ウェザーニュース 実データスクレイピング関数
 # ==========================================
 def fetch_spot_1hour_data(url):
-    """指定されたURLから現在時刻以降の予報を取得（サーバー負荷軽減のゆらぎ待機付）"""
+    """指定されたURLから現在時刻以降の予報を取得（データ容量圧縮版）"""
     time.sleep(random.uniform(1.0, 2.5))  # ゆらぎ待機
     headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}
     
@@ -237,7 +237,13 @@ def fetch_spot_1hour_data(url):
                 time_tag = item.find('li', class_='time')
                 hour_str = time_tag.text.strip() if time_tag else ""
                 if not hour_str.isdigit(): continue
-                hour = f"{int(hour_str):02d}時"
+                
+                # 【重要追加】LINEの容量制限(30KB)を回避するため、3時間おきに間引く
+                hour_int = int(hour_str)
+                if hour_int % 3 != 0: 
+                    continue
+                    
+                hour = f"{hour_int:02d}時"
                 
                 img_url = "https://gvs.weathernews.jp/onebox/img/wxicon/200.png"
                 weather_tag = item.find('li', class_='weather')
@@ -331,12 +337,8 @@ def build_grid_flex_message(spot_name, weather_by_date):
                     "contents": [
                         {"type": "text", "text": date_str, "weight": "bold", "size": "sm", "align": "center", "color": "#0066cc"}
                     ]
-                },
-                {
-                    "type": "box", "layout": "vertical", "spacing": "none", "margin": "sm",
-                    "contents": rows
                 }
-            ]
+            ] + [{"type": "box", "layout": "vertical", "spacing": "none", "margin": "sm", "contents": rows}]
         }
 
     col1_boxes = [create_day_column(dates[0] if len(dates) > 0 else None)]
