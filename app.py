@@ -877,7 +877,7 @@ def build_spot_list_messages_colored_split(user_id=None):
                     "type": "box",
                     "layout": "horizontal",
                     "margin": "xs",
-                    "contents": row_buttons  # タイポ修復：自分自身（fav_rows）ではなく生成したrow_buttonsを格納
+                    "contents": row_buttons
                 })
 
             fav_bubble = {
@@ -986,15 +986,10 @@ def get_user_setting(user_id):
         return ('ウェザーニュース', '')
     try:
         res = supabase.table('user_settings').select('*').eq('user_id', user_id).execute()
-        if not res.data:
-            supabase.table('user_settings').insert({
-                'user_id': user_id,
-                'weather_source': 'ウェザーニュース',
-                'favorite_spots': ''
-            }).execute()
-            return ('ウェザーニュース', '')
-        row = res.data[0]
-        return (row.get('weather_source', 'ウェザーニュース'), row.get('favorite_spots', ''))
+        if res.data and len(res.data) > 0:
+            row = res.data[0]
+            return (row.get('weather_source', 'ウェザーニュース'), row.get('favorite_spots', ''))
+        return ('ウェザーニュース', '')
     except Exception as e:
         print(f"[Supabase取得エラー] {e}")
         return ('ウェザーニュース', '')
@@ -1005,7 +1000,7 @@ def add_favorite_spot(user_id, spot_name):
     candidates = find_candidate_spots(spot_name)
     target_name = candidates[0] if candidates else spot_name
 
-    _, favorites = get_user_setting(user_id)
+    source, favorites = get_user_setting(user_id)
     fav_list = [s for s in favorites.split(',') if s]
     if target_name in fav_list:
         return False, f"「{target_name}」はすでに登録されています。"
@@ -1014,9 +1009,15 @@ def add_favorite_spot(user_id, spot_name):
     
     fav_list.append(target_name)
     try:
-        supabase.table('user_settings').update({'favorite_spots': ','.join(fav_list)}).eq('user_id', user_id).execute()
+        # upsert（確実な作成・更新処理）を利用してデータ保存を担保
+        supabase.table('user_settings').upsert({
+            'user_id': user_id,
+            'weather_source': source,
+            'favorite_spots': ','.join(fav_list)
+        }).execute()
         return True, f"「{target_name}」をお気に入りに追加しました。"
     except Exception as e:
+        print(f"[Supabase保存エラー] {e}")
         return False, f"保存に失敗しました: {e}"
 
 def remove_favorite_spot(user_id, spot_name):
@@ -1025,16 +1026,22 @@ def remove_favorite_spot(user_id, spot_name):
     candidates = find_candidate_spots(spot_name)
     target_name = candidates[0] if candidates else spot_name
 
-    _, favorites = get_user_setting(user_id)
+    source, favorites = get_user_setting(user_id)
     fav_list = [s for s in favorites.split(',') if s]
     if target_name not in fav_list:
         return False, f"「{target_name}」は登録されていません。"
     
     fav_list.remove(target_name)
     try:
-        supabase.table('user_settings').update({'favorite_spots': ','.join(fav_list)}).eq('user_id', user_id).execute()
+        # upsert（確実な作成・更新処理）を利用してデータ削除を担保
+        supabase.table('user_settings').upsert({
+            'user_id': user_id,
+            'weather_source': source,
+            'favorite_spots': ','.join(fav_list)
+        }).execute()
         return True, f"「{target_name}」をお気に入りから削除しました。"
     except Exception as e:
+        print(f"[Supabase削除エラー] {e}")
         return False, f"削除に失敗しました: {e}"
 
 # ==========================================
