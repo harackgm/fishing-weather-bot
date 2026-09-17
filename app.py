@@ -127,7 +127,7 @@ def remove_favorite_spot(user_id, spot_name):
     return True, f"「{spot_name}」をお気に入りから削除しました。"
 
 # ==========================================
-# 4. ウェザーニュース 実データスクレイピング関数 (縦並び独立メッセージ化)
+# 4. ウェザーニュース 実データスクレイピング関数
 # ==========================================
 def fetch_hirayako_1hour_data():
     """現在時刻以降の予報を「日付」をキーとした辞書で取得"""
@@ -184,7 +184,6 @@ def fetch_hirayako_1hour_data():
             if daily_list:
                 weather_by_date[date_str] = daily_list
             
-            # LINEの1回あたりの送信上限（最大5つの吹き出し）に対応
             if len(weather_by_date) >= 5:
                 break
             
@@ -194,7 +193,7 @@ def fetch_hirayako_1hour_data():
         return None
 
 def build_vertical_flex_messages(spot_name, weather_by_date):
-    """日付ごとに独立したFlexMessage（吹き出し）のリストを作成し、文字サイズをmdに拡大"""
+    """日付ごとに独立したFlexMessageを最大サイズ(giga)で構築"""
     messages = []
     
     for date_str, daily_data in weather_by_date.items():
@@ -202,11 +201,11 @@ def build_vertical_flex_messages(spot_name, weather_by_date):
             {
                 "type": "box", "layout": "horizontal", "margin": "none",
                 "contents": [
-                    {"type": "text", "text": "時間", "weight": "bold", "size": "md", "flex": 1, "align": "center", "color": "#888888"},
-                    {"type": "text", "text": "天気", "weight": "bold", "size": "md", "flex": 1, "align": "center", "color": "#888888"},
-                    {"type": "text", "text": "気温", "weight": "bold", "size": "md", "flex": 1, "align": "center", "color": "#888888"},
-                    {"type": "text", "text": "降水", "weight": "bold", "size": "md", "flex": 1, "align": "center", "color": "#888888"},
-                    {"type": "text", "text": "風速", "weight": "bold", "size": "md", "flex": 1, "align": "center", "color": "#888888"}
+                    {"type": "text", "text": "時間", "weight": "bold", "size": "lg", "flex": 1, "align": "center", "color": "#888888"},
+                    {"type": "text", "text": "天気", "weight": "bold", "size": "lg", "flex": 1, "align": "center", "color": "#888888"},
+                    {"type": "text", "text": "気温", "weight": "bold", "size": "lg", "flex": 1, "align": "center", "color": "#888888"},
+                    {"type": "text", "text": "降水", "weight": "bold", "size": "lg", "flex": 1, "align": "center", "color": "#888888"},
+                    {"type": "text", "text": "風速", "weight": "bold", "size": "lg", "flex": 1, "align": "center", "color": "#888888"}
                 ]
             },
             {"type": "separator", "margin": "md"}
@@ -219,33 +218,33 @@ def build_vertical_flex_messages(spot_name, weather_by_date):
             rows.append({
                 "type": "box", "layout": "horizontal", "margin": "md", "alignItems": "center",
                 "contents": [
-                    {"type": "text", "text": data['time'], "size": "md", "flex": 1, "align": "center", "weight": "bold"},
-                    {"type": "image", "url": data['img_url'], "size": "sm", "flex": 1, "align": "center"},
-                    {"type": "text", "text": data['temp'], "size": "md", "flex": 1, "align": "center", "color": temp_color},
-                    {"type": "text", "text": data['rain'], "size": "md", "flex": 1, "align": "center", "color": rain_color},
-                    {"type": "text", "text": data['wind'].replace("m/s", "m"), "size": "md", "flex": 1, "align": "center"}
+                    {"type": "text", "text": data['time'], "size": "lg", "flex": 1, "align": "center", "weight": "bold"},
+                    {"type": "image", "url": data['img_url'], "size": "md", "flex": 1, "align": "center"},
+                    {"type": "text", "text": data['temp'], "size": "lg", "flex": 1, "align": "center", "color": temp_color},
+                    {"type": "text", "text": data['rain'], "size": "lg", "flex": 1, "align": "center", "color": rain_color},
+                    {"type": "text", "text": data['wind'].replace("m/s", "m"), "size": "lg", "flex": 1, "align": "center"}
                 ]
             })
             
         bubble = {
             "type": "bubble",
-            "size": "mega", # 横幅を広げて文字の折り返しを防止
+            "size": "giga", # LINE Flex Messageで最大の横幅
             "header": {
-                "type": "box", "layout": "vertical", "backgroundColor": "#0066cc", "paddingAll": "12px",
+                "type": "box", "layout": "vertical", "backgroundColor": "#0066cc", "paddingAll": "16px",
                 "contents": [
-                    {"type": "text", "text": f"📍 {spot_name}", "color": "#ffffff", "weight": "bold", "size": "md"},
-                    {"type": "text", "text": date_str, "color": "#ffffff", "weight": "bold", "size": "lg", "margin": "sm"}
+                    {"type": "text", "text": f"📍 {spot_name}", "color": "#ffffff", "weight": "bold", "size": "lg"},
+                    {"type": "text", "text": date_str, "color": "#ffffff", "weight": "bold", "size": "xl", "margin": "sm"}
                 ]
             },
             "body": {
-                "type": "box", "layout": "vertical", "spacing": "none", "paddingAll": "12px",
+                "type": "box", "layout": "vertical", "spacing": "none", "paddingAll": "16px",
                 "contents": rows
             }
         }
         
-        messages.append(FlexSendMessage(alt_text=f"{date_str}の天気", contents=bubble))
+        # alt_text（通知に表示されるテキスト）も分かりやすく設定
+        messages.append(FlexSendMessage(alt_text=f"{spot_name} {date_str}の天気", contents=bubble))
         
-        # LINE制限（1度に5件まで）
         if len(messages) >= 5:
             break
             
@@ -286,7 +285,7 @@ def generate_gemini_response(user_message, user_setting):
 # ==========================================
 @app.route("/", methods=['GET'])
 def top_page():
-    return "LINE Reply Bot Server (Vertical Flex - Resize Up) is running!", 200
+    return "LINE Reply Bot Server (Vertical Flex - Max Size) is running!", 200
 
 @app.route("/callback", methods=['POST'])
 def callback():
@@ -317,18 +316,17 @@ def handle_message(event):
             matched_pref = pref
             break
 
-    # 平谷湖のピンポイント予報（独立した吹き出しを縦並びで返信）
+    # 平谷湖のピンポイント予報
     if "平谷湖" in user_message:
         weather_by_date = fetch_hirayako_1hour_data()
         if weather_by_date:
             messages = build_vertical_flex_messages("平谷湖フィッシングスポット", weather_by_date)
-            
             line_bot_api.reply_message(event.reply_token, messages)
             print("[送信] Vertical FlexMessage応答を完了しました。")
             return
         else:
             ai_text, error_text = generate_gemini_response(user_message, user_setting)
-            reply_text = ai_text if ai_text else error_text
+            reply_text = ai_text if error_text is None else error_text
 
     elif user_message == "設定":
         fav_list = [s for s in favorites.split(',') if s]
