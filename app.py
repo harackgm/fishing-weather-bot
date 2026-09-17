@@ -49,6 +49,12 @@ if SUPABASE_URL and SUPABASE_KEY:
 # 3. 釣り場URL・HP・Googleマップ・表記揺れ辞書
 # ==========================================
 SPOT_WEATHER_DATA = {
+    "座間": {
+        "url": "https://weathernews.jp/onebox/35.843581/140.010676/",
+        "hp_url": "http://zamayougyo.com/",
+        "search_name": "座間養魚場",
+        "aliases": ["座間", "座間養魚場", "ざま", "ざまようぎょじょう"]
+    },
     "東山湖": {
         "url": "https://weathernews.jp/onebox/35.296739/138.955925/",
         "hp_url": "http://www.higashiyamako.com/",
@@ -321,7 +327,7 @@ def fetch_spot_1hour_data(url):
         return None
 
 def build_grid_flex_message(spot_name, weather_by_date, hp_url="", map_url=""):
-    """田の字型（2行×2列）グリッドレイアウト（ヘッダー部HP・MAPリンクボタン追加版）"""
+    """田の字型（2行×2列）グリッドレイアウト"""
     dates = list(weather_by_date.keys())
     
     def create_day_column(date_str):
@@ -520,8 +526,8 @@ def handle_message(event):
         reply_text = (
             "🔍 その釣り場は現在対応していません、もしくは名前が間違っています。\n\n"
             "【対応済みの主な釣り場】\n"
-            "東山湖 / なら山沼 / キングフィッシャー / 加賀 / すその / 朝霞 / 開成 / 王禅寺 / 白河...などに対応！\n\n"
-            "※「すそぱ」「寺」「てら」「ならやま」「がし山」などの略称でも検索可能です。"
+            "座間 / 東山湖 / なら山沼 / キングフィッシャー / 加賀 / すその / 朝霞 / 開成 / 王禅寺...などに対応！\n\n"
+            "※「ざま」「すそぱ」「寺」「てら」「ならやま」「がし山」などの略称でも検索可能です。"
         )
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
 
@@ -547,12 +553,14 @@ def cron_trigger():
         res = supabase.table('user_settings').select('*').execute()
         users = res.data or []
 
+        # テストモード安全ガード: IS_TEST_MODE が True の場合は ADMIN_USER_ID のみに絞り込み
         if IS_TEST_MODE:
             print(f"[テストモード有効] 送信対象を管理者({ADMIN_USER_ID})のみに絞り込みます。")
             users = [u for u in users if u.get('user_id') == ADMIN_USER_ID]
             if not users and ADMIN_USER_ID:
                 users = [{'user_id': ADMIN_USER_ID, 'favorite_spots': ''}]
 
+        # 大量通知ストッパー（安全装置）
         if len(users) > MAX_LIMIT:
             print(f"[安全装置作動] 対象件数({len(users)}件)が上限({MAX_LIMIT}件)を超えたためスキップします。")
             return jsonify({"status": "skipped", "reason": "MAX_LIMIT_EXCEEDED"}), 200
