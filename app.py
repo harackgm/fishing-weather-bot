@@ -194,7 +194,7 @@ SPOT_WEATHER_DATA = {
         "tel": "0289-84-0335",
         "aliases": ["上永野", "上永野FR", "かみながの"]
     },
-    "柏仓": {
+    "柏倉": {
         "url": "https://weathernews.jp/onebox/36.398276/139.660428/",
         "hp_url": "http://kashiwagurafishingpk.g3.xrea.com/",
         "search_name": "柏倉フィッシングパーク",
@@ -979,7 +979,8 @@ def build_spot_list_carousel_horizontal(user_id=None):
                         "flex": 1,
                         "justifyContent": "center",
                         "alignItems": "center",
-                        "action": {"type": "message", "label": spot, "text": spot},
+                        # ★ 天気検索を Postback に変更し、見た目だけメッセージと同じ挙動に
+                        "action": {"type": "postback", "label": spot, "data": f"action=show_weather&spot={spot}", "displayText": spot},
                         "contents": [
                             {
                                 "type": "text",
@@ -996,8 +997,6 @@ def build_spot_list_carousel_horizontal(user_id=None):
                     row_buttons.append({"type": "box", "layout": "vertical", "flex": 1, "contents": [{"type": "text", "text": " "}]})
                     
                 row_box = {"type": "box", "layout": "horizontal", "contents": row_buttons}
-                
-                # ★ 10個（5行）ごとに隙間（margin）を追加
                 if i > 0 and i % 10 == 0:
                     row_box["margin"] = "lg"
                     
@@ -1026,7 +1025,8 @@ def build_spot_list_carousel_horizontal(user_id=None):
                     label_text = f"★ {spot}" if spot in fav_list else spot
                     row_buttons.append({
                         "type": "button",
-                        "action": {"type": "message", "label": label_text, "text": spot},
+                        # ★ 天気検索を Postback に変更
+                        "action": {"type": "postback", "label": label_text, "data": f"action=show_weather&spot={spot}", "displayText": spot},
                         "style": "secondary",
                         "color": btn_bg,
                         "height": "sm",
@@ -1050,36 +1050,6 @@ def build_spot_list_carousel_horizontal(user_id=None):
         bubbles.append(bubble)
 
     return FlexSendMessage(alt_text="釣り場一覧", contents={"type": "carousel", "contents": bubbles})
-
-def build_candidates_flex_message(candidates, query_text):
-    buttons = []
-    for spot in candidates[:8]:
-        buttons.append({
-            "type": "button",
-            "action": {"type": "message", "label": spot, "text": spot},
-            "style": "secondary",
-            "height": "sm",
-            "margin": "xs"
-        })
-
-    bubble = {
-        "type": "bubble",
-        "size": "mega",
-        "header": {
-            "type": "box", "layout": "vertical", "backgroundColor": "#0066cc", "paddingAll": "10px",
-            "contents": [{"type": "text", "text": "🔍 釣り場の選択", "color": "#ffffff", "weight": "bold", "size": "md"}]
-        },
-        "body": {
-            "type": "box", "layout": "vertical", "spacing": "sm", "paddingAll": "12px",
-            "contents": [
-                {
-                    "type": "text", "text": f"「{query_text}」に該当する候補が見つかりました。タップして選択してください。",
-                    "wrap": True, "size": "xs", "color": "#555555"
-                }
-            ] + buttons
-        }
-    }
-    return FlexSendMessage(alt_text="釣り場候補の選択", contents=bubble)
 
 def get_user_setting(user_id):
     if not supabase: return ('ウェザーニュース', '')
@@ -1350,6 +1320,7 @@ def handle_message(event):
         raw_msg = event.message.text.strip()
         user_id = event.source.user_id
 
+        # 追加コマンド
         add_match = re.match(r'^追加[\s:： ]+(.+)$', raw_msg)
         if add_match:
             spots_str = add_match.group(1).strip()
@@ -1368,6 +1339,7 @@ def handle_message(event):
             line_bot_api.reply_message(event.reply_token, [TextSendMessage(text="\n".join(reply_lines)), flex_msg])
             return
 
+        # 削除コマンド
         del_match = re.match(r'^削除[\s:： ]+(.+)$', raw_msg)
         if del_match:
             spots_str = del_match.group(1).strip()
@@ -1386,11 +1358,13 @@ def handle_message(event):
             line_bot_api.reply_message(event.reply_token, [TextSendMessage(text="\n".join(reply_lines)), flex_msg])
             return
 
+        # 一覧コマンド
         if raw_msg in ["一覧", "リスト", "釣り場一覧", "エリア"]:
             flex_msg = build_spot_list_carousel_horizontal(user_id=user_id)
             line_bot_api.reply_message(event.reply_token, flex_msg)
             return
 
+        # 設定コマンド
         if raw_msg == "設定":
             _, favorites = get_user_setting(user_id)
             fav_list = [s for s in favorites.split(',') if s]
@@ -1398,27 +1372,8 @@ def handle_message(event):
             line_bot_api.reply_message(event.reply_token, flex_msg)
             return
 
-        candidates = find_candidate_spots(raw_msg)
-        if len(candidates) == 1:
-            target_spot_name = candidates[0]
-            target_spot_name, target_url, hp_url, map_url, tel = get_spot_details(target_spot_name)
-            _, favorites = get_user_setting(user_id)
-            fav_list = [s for s in favorites.split(',') if s]
-            is_fav = target_spot_name in fav_list
-
-            weather_by_date = fetch_spot_1hour_data(target_url)
-            if weather_by_date:
-                flex_msg = build_grid_flex_message(target_spot_name, weather_by_date, hp_url, map_url, tel, is_favorite=is_fav)
-                line_bot_api.reply_message(event.reply_token, flex_msg)
-            else:
-                line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"⚠️ 【{target_spot_name}】の天気データの取得に失敗しました。"))
-            return
-        elif len(candidates) > 1:
-            flex_msg = build_candidates_flex_message(candidates, raw_msg)
-            line_bot_api.reply_message(event.reply_token, flex_msg)
-            return
-
-        reply_text = "🔍 その釣り場は現在対応していません、もしくは名前が間違っています。\n\n「一覧」と送信すると全国60箇所の釣り場リストを表示できます！"
+        # ★ 直接検索廃止に伴う案内メッセージ ★
+        reply_text = "🔍 コマンドが認識できませんでした。\n\n【利用可能なコマンド】\n・一覧\n・設定\n・追加 釣り場名\n・削除 釣り場名\n\n※天気予報の確認は「一覧」からボタンをタップしてください。"
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
 
     except Exception as e:
@@ -1434,7 +1389,24 @@ def handle_postback(event):
         data_dict = dict(parse_qsl(event.postback.data))
         action, spot_name = data_dict.get("action"), data_dict.get("spot")
 
-        if action == "fav_add_and_list":
+        # -------------------------------------------------------------------
+        # ⛅ 天気カードの表示（一覧ボタンからPostbackでリクエストされた時）
+        # -------------------------------------------------------------------
+        if action == "show_weather":
+            target_spot_name, target_url, hp_url, map_url, tel = get_spot_details(spot_name)
+            _, favorites = get_user_setting(user_id)
+            fav_list = [s for s in favorites.split(',') if s]
+            is_fav = target_spot_name in fav_list
+
+            weather_by_date = fetch_spot_1hour_data(target_url)
+            if weather_by_date:
+                flex_msg = build_grid_flex_message(target_spot_name, weather_by_date, hp_url, map_url, tel, is_favorite=is_fav)
+                line_bot_api.reply_message(event.reply_token, flex_msg)
+            else:
+                line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"⚠️ 【{target_spot_name}】の天気データの取得に失敗しました。"))
+            return
+
+        elif action == "fav_add_and_list":
             success, added, errors = add_favorite_spots(user_id, [spot_name])
             msg = f"✅ 追加しました: {added[0]}" if added else f"⚠️ {errors[0]}"
             flex_msg = build_spot_list_carousel_horizontal(user_id=user_id)
