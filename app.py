@@ -3,6 +3,7 @@ import time
 import random
 import requests
 import traceback
+import difflib
 from bs4 import BeautifulSoup
 from flask import Flask, request, abort, jsonify
 from linebot import LineBotApi, WebhookHandler
@@ -29,7 +30,7 @@ line_bot_api = LineBotApi(LINE_CHANNEL_ACCESS_TOKEN)
 handler = WebhookHandler(LINE_CHANNEL_SECRET)
 
 ADMIN_USER_ID = os.getenv('ADMIN_USER_ID', '').strip()
-IS_TEST_MODE = True  # 自動一斉通知（Cron）時のみ使用するテスト制限フラグ
+IS_TEST_MODE = True  # テストモード（Trueの場合、ADMIN_USER_IDのみに通知送信）
 MAX_LIMIT = 5        # 大量通知ストッパー（1回の処理上限数）
 
 # Supabase接続初期化
@@ -44,110 +45,110 @@ if SUPABASE_URL and SUPABASE_KEY:
         print(f"[Supabase初期化エラー] {e}")
 
 # ==========================================
-# 3. ウェザーニュース 釣り場URL辞書 (全国網羅版)
+# 3. 釣り場URLおよび表記揺れ（エイリアス）辞書
 # ==========================================
-SPOT_WEATHER_URLS = {
-    # 北海道・東北
-    "上浜": "https://weathernews.jp/onebox/39.142616/139.945938/",
-    "不忘": "https://weathernews.jp/onebox/38.042491/140.554478/",
-    "白河": "https://weathernews.jp/onebox/37.127955/140.081827/",
-    "ほのぼの": "https://weathernews.jp/onebox/36.837687/140.472433/",
-    "WaDoNa": "https://weathernews.jp/onebox/36.877372/140.540954/",
-    "鶴沼川": "https://weathernews.jp/onebox/37.255460/139.872256/",
-    "オーパ": "https://weathernews.jp/onebox/37.314342/140.449245/",
-    "あいづ": "https://weathernews.jp/onebox/37.204977/139.729681/",
-    # 関東（栃木・群馬・茨城）
-    "キングフィッシャー": "https://weathernews.jp/onebox/36.907054/140.078650/",
-    "みどり": "https://weathernews.jp/onebox/36.834975/140.002410/",
-    "那須高原": "https://weathernews.jp/onebox/37.001929/140.104991/",
-    "尚仁沢": "https://weathernews.jp/onebox/37.001929/140.104991/",
-    "つり天国": "https://weathernews.jp/onebox/37.073444/140.044452/",
-    "関根": "https://weathernews.jp/onebox/36.851308/139.979065/",
-    "408": "https://weathernews.jp/onebox/36.763055/139.858269/",
-    "308": "https://weathernews.jp/onebox/36.824828/139.896229/",
-    "蛇尾川": "https://weathernews.jp/onebox/36.981351/139.901534/",
-    "なら山沼": "https://weathernews.jp/onebox/36.373741/139.802713/",
-    "大芦川": "https://weathernews.jp/onebox/36.590732/139.693652/",
-    "加賀": "https://weathernews.jp/onebox/36.388609/139.537247/",
-    "発光路": "https://weathernews.jp/onebox/36.580281/139.532829/",
-    "上永野": "https://weathernews.jp/onebox/36.511884/139.573442/",
-    "柏倉": "https://weathernews.jp/onebox/36.398276/139.660428/",
-    "遊水園": "https://weathernews.jp/onebox/36.342013/139.863541/",
-    "アルクス宇都宮": "https://weathernews.jp/onebox/36.566488/139.960060/",
-    "エリア21": "https://weathernews.jp/onebox/36.496150/139.899522/",
-    "ベアーズパーク": "https://weathernews.jp/onebox/36.513221/139.956989/",
-    "鬼怒川": "https://weathernews.jp/onebox/36.617621/139.937106/",
-    "名草": "https://weathernews.jp/onebox/36.418930/139.466355/",
-    "川場": "https://weathernews.jp/onebox/36.690767/139.121662/",
-    "おくとね": "https://weathernews.jp/onebox/36.663005/139.163750/",
-    "イワナセンター": "https://weathernews.jp/onebox/36.610095/139.243740/",
-    "黒保根": "https://weathernews.jp/onebox/36.515041/139.252324/",
-    "迦葉山": "https://weathernews.jp/onebox/36.685419/139.071387/",
-    "片品": "https://weathernews.jp/onebox/36.624564/139.046703/",
-    "中之沢": "https://weathernews.jp/onebox/36.492057/139.195293/",
-    "宮城": "https://weathernews.jp/onebox/36.483735/139.188251/",
-    "大崎": "https://weathernews.jp/onebox/36.463209/139.164867/",
-    "赤城": "https://weathernews.jp/onebox/36.463209/139.164867/",
-    "けん太": "https://weathernews.jp/onebox/36.386648/138.960021/",
-    "フック": "https://weathernews.jp/onebox/36.457699/139.173191/",
-    "赤久縄": "https://weathernews.jp/onebox/36.160894/138.895355/",
-    "太田": "https://weathernews.jp/onebox/36.357774/139.330830/",
-    "東山道": "https://weathernews.jp/onebox/36.323047/139.280989/",
-    "榛名": "https://weathernews.jp/onebox/36.443570/138.898498/",
-    "水戸南": "https://weathernews.jp/onebox/36.326377/140.501362/",
-    "高萩": "https://weathernews.jp/onebox/36.788035/140.577243/",
-    "つくば園": "https://weathernews.jp/onebox/36.224122/140.144261/",
-    "FAJ": "https://weathernews.jp/onebox/36.081494/140.164360/",
-    "ユザキ": "https://weathernews.jp/onebox/36.314550/140.335285/",
-    "笠間": "https://weathernews.jp/onebox/36.412866/140.208145/",
-    "DoDoo": "https://weathernews.jp/onebox/36.187994/140.216734/",
-    "若栗": "https://weathernews.jp/onebox/36.779644/140.633185/",
-    "ミッドクリーク": "https://weathernews.jp/onebox/36.192975/140.164058/",
-    # 関東（埼玉・東京・千葉・神奈川）
-    "長瀞": "https://weathernews.jp/onebox/36.084376/139.104604/",
-    "彩の国": "https://weathernews.jp/onebox/35.992469/139.473372/",
-    "朝霞": "https://weathernews.jp/onebox/35.813481/139.604736/",
-    "しらこばと": "https://weathernews.jp/onebox/35.917970/139.752203/",
-    "川越": "https://weathernews.jp/onebox/35.907152/139.444046/",
-    "はなさき": "https://weathernews.jp/onebox/36.096192/139.636601/",
-    "多摩湖": "https://weathernews.jp/onebox/35.780248/139.440732/",
-    "中里": "https://weathernews.jp/onebox/36.163896/139.176567/",
-    "伊古": "https://weathernews.jp/onebox/36.071547/139.339037/",
-    "座間": "https://weathernews.jp/onebox/35.843581/140.010676/",
-    "ジョイバレー": "https://weathernews.jp/onebox/35.744779/140.417401/",
-    "ウォルトン": "https://weathernews.jp/onebox/35.863326/140.290525/",
-    "NOIKE": "https://weathernews.jp/onebox/35.576969/140.234786/",
-    "パラダイス": "https://weathernews.jp/onebox/35.653330/140.338663/",
-    "いなプー": "https://weathernews.jp/onebox/35.619254/140.074365/",
-    "足柄": "https://weathernews.jp/onebox/35.319275/139.042723/",
-    "中津川": "https://weathernews.jp/onebox/35.521698/139.285609/",
-    "早戸川": "https://weathernews.jp/onebox/35.543063/139.216090/",
-    "王禅寺": "https://weathernews.jp/onebox/35.587020/139.524309/",
-    "開成": "https://weathernews.jp/onebox/35.334342/139.130344/",
-    "浅川": "https://weathernews.jp/onebox/35.641903/139.231262/",
-    # 甲信越・東海・関西
-    "鹿留": "https://weathernews.jp/onebox/35.512350/138.887160/",
-    "小菅": "https://weathernews.jp/onebox/35.760330/138.940529/",
-    "シルフ": "https://weathernews.jp/onebox/35.778458/138.316489/",
-    "竜華池": "https://weathernews.jp/onebox/35.681978/138.576164/",
-    "平谷湖": "https://weathernews.jp/onebox/35.332243/137.632213/",
-    "ハーブ": "https://weathernews.jp/onebox/36.403436/137.890526/",
-    "ニレ池": "https://weathernews.jp/onebox/36.712669/137.845826/",
-    "鹿島槍": "https://weathernews.jp/onebox/36.548940/137.809757/",
-    "槻の池": "https://weathernews.jp/onebox/36.011582/138.197271/",
-    "あずみ野": "https://weathernews.jp/onebox/36.337699/137.885455/",
-    "東山湖": "https://weathernews.jp/onebox/35.296739/138.955925/",
-    "すその": "https://weathernews.jp/onebox/35.166667/138.899162/",
-    "須川": "https://weathernews.jp/onebox/35.359818/138.977710/",
-    "アルクス焼津": "https://weathernews.jp/onebox/34.789110/138.294771/",
-    "浜名湖": "https://weathernews.jp/onebox/34.712749/137.629457/",
-    "五頭": "https://weathernews.jp/onebox/37.819471/139.238518/",
-    "瑞浪": "https://weathernews.jp/onebox/35.433516/137.295266/",
-    "サンクチュアリ": "https://weathernews.jp/onebox/35.187504/136.457803/",
-    "醒井": "https://weathernews.jp/onebox/35.303671/136.349914/",
-    "高島": "https://weathernews.jp/onebox/35.348308/136.052288/",
-    "千早川": "https://weathernews.jp/onebox/34.417118/135.647482/"
+# url: スクレイピング先URL
+# aliases: ユーザーが入力しそうな表記揺れ（ひらがな、略称、正式名称など）
+SPOT_WEATHER_DATA = {
+    "東山湖": {
+        "url": "https://weathernews.jp/onebox/35.296739/138.955925/",
+        "aliases": ["東山湖", "東山湖フィッシングエリア", "ひがしやまこ", "ひがしやま", "東山"]
+    },
+    "キングフィッシャー": {
+        "url": "https://weathernews.jp/onebox/36.907054/140.078650/",
+        "aliases": ["キングフィッシャー", "キング", "キングフィッシャ", "きんぐふぃっしゃー"]
+    },
+    "加賀": {
+        "url": "https://weathernews.jp/onebox/36.388609/139.537247/",
+        "aliases": ["加賀", "加賀フィッシングエリア", "加賀FA", "かが", "加賀FA"]
+    },
+    "すその": {
+        "url": "https://weathernews.jp/onebox/35.166667/138.899162/",
+        "aliases": ["すその", "すそのフィッシングパーク", "すそのFP", "裾野"]
+    },
+    "朝霞": {
+        "url": "https://weathernews.jp/onebox/35.813481/139.604736/",
+        "aliases": ["朝霞", "朝霞ガーデン", "あさか", "あさかガーデン"]
+    },
+    "開成": {
+        "url": "https://weathernews.jp/onebox/35.334342/139.130344/",
+        "aliases": ["開成", "開成水辺フォレストスプリングス", "開成FS", "かいせい"]
+    },
+    "王禅寺": {
+        "url": "https://weathernews.jp/onebox/35.587020/139.524309/",
+        "aliases": ["王禅寺", "ベリーパーク in 王禅寺", "おうぜんじ", "王禅寺ベリーパーク"]
+    },
+    "白河": {
+        "url": "https://weathernews.jp/onebox/37.127955/140.081827/",
+        "aliases": ["白河", "白河フォレストスプリングス", "白河FS", "しらかわ"]
+    },
+    "発光路": {
+        "url": "https://weathernews.jp/onebox/36.580281/139.532829/",
+        "aliases": ["発光路", "発光路の森", "発光路の森ファアルクス", "ほっこうじ"]
+    },
+    "鹿島槍": {
+        "url": "https://weathernews.jp/onebox/36.548940/137.809757/",
+        "aliases": ["鹿島槍", "鹿島槍ガーデン", "かしまやり"]
+    },
+    "平谷湖": {
+        "url": "https://weathernews.jp/onebox/35.332243/137.632213/",
+        "aliases": ["平谷湖", "平谷湖フィッシングスポット", "ひらやこ"]
+    },
+    "サンクチュアリ": {
+        "url": "https://weathernews.jp/onebox/35.187504/136.457803/",
+        "aliases": ["サンクチュアリ", "サンク", "さんくちゅあり"]
+    },
+    "不忘": {
+        "url": "https://weathernews.jp/onebox/38.042491/140.554478/",
+        "aliases": ["不忘", "グリーンコンプラザ不忘", "ふぼう"]
+    },
+    "上浜": {
+        "url": "https://weathernews.jp/onebox/39.142616/139.945938/",
+        "aliases": ["上浜", "上浜釣り場", "かみはま"]
+    },
+    "ほのぼの": {
+        "url": "https://weathernews.jp/onebox/36.837687/140.472433/",
+        "aliases": ["ほのぼの", "ほのぼのプール", "ほのぼの"]
+    },
+    "WaDoNa": {
+        "url": "https://weathernews.jp/onebox/36.877372/140.540954/",
+        "aliases": ["WaDoNa", "ワドナ", "わどな"]
+    },
+    "鬼怒川": {
+        "url": "https://weathernews.jp/onebox/36.617621/139.937106/",
+        "aliases": ["鬼怒川", "鬼怒川フィッシングエリア", "鬼怒川FA", "きぬがわ"]
+    }
 }
+
+# 簡易互換用の辞書（既存のコード構造を壊さないためのマッピング）
+SPOT_WEATHER_URLS = {spot: data["url"] for spot, data in SPOT_WEATHER_DATA.items()}
+
+
+def find_best_match_spot(user_text):
+    """ユーザー入力から最適な釣り場名を推完・検索する高度なゆらぎ検索判定"""
+    text = user_text.strip().lower()
+
+    # 1. エイリアス完全・部分一致検索
+    for spot_key, data in SPOT_WEATHER_DATA.items():
+        for alias in data["aliases"]:
+            alias_lower = alias.lower()
+            if alias_lower in text or text in alias_lower:
+                return spot_key, data["url"]
+
+    # 2. あいまい類似度検索 (difflib)
+    all_aliases = []
+    alias_to_spot = {}
+    for spot_key, data in SPOT_WEATHER_DATA.items():
+        for alias in data["aliases"]:
+            all_aliases.append(alias.lower())
+            alias_to_spot[alias.lower()] = (spot_key, data["url"])
+
+    matches = difflib.get_close_matches(text, all_aliases, n=1, cutoff=0.5)
+    if matches:
+        matched_alias = matches[0]
+        return alias_to_spot[matched_alias]
+
+    return None, None
 
 # ==========================================
 # 4. Supabase データベース管理関数
@@ -170,38 +171,42 @@ def get_user_setting(user_id):
         print(f"[Supabase取得エラー] {e}")
         return ('ウェザーニュース', '')
 
-def update_user_source(user_id, source):
-    if not supabase: return
-    try:
-        supabase.table('user_settings').update({'weather_source': source}).eq('user_id', user_id).execute()
-    except Exception as e:
-        print(f"[Supabase更新エラー] {e}")
-
 def add_favorite_spot(user_id, spot_name):
     if not supabase: return False, "DB接続未完了です。"
+    
+    # 追加時もゆらぎ検索を通して正しい正式名称に変換
+    matched_spot, _ = find_best_match_spot(spot_name)
+    target_name = matched_spot if matched_spot else spot_name
+
     _, favorites = get_user_setting(user_id)
     fav_list = [s for s in favorites.split(',') if s]
-    if spot_name in fav_list:
-        return False, "すでに登録されている釣り場です。"
+    if target_name in fav_list:
+        return False, f"「{target_name}」はすでに登録されています。"
     if len(fav_list) >= 5:
         return False, "お気に入り釣り場は最大5箇所まで登録可能です。"
-    fav_list.append(spot_name)
+    
+    fav_list.append(target_name)
     try:
         supabase.table('user_settings').update({'favorite_spots': ','.join(fav_list)}).eq('user_id', user_id).execute()
-        return True, f"「{spot_name}」をお気に入りに追加しました。"
+        return True, f"「{target_name}」をお気に入りに追加しました。"
     except Exception as e:
         return False, f"保存に失敗しました: {e}"
 
 def remove_favorite_spot(user_id, spot_name):
     if not supabase: return False, "DB接続未完了です。"
+    
+    matched_spot, _ = find_best_match_spot(spot_name)
+    target_name = matched_spot if matched_spot else spot_name
+
     _, favorites = get_user_setting(user_id)
     fav_list = [s for s in favorites.split(',') if s]
-    if spot_name not in fav_list:
-        return False, "登録されていない釣り場です。"
-    fav_list.remove(spot_name)
+    if target_name not in fav_list:
+        return False, f"「{target_name}」は登録されていません。"
+    
+    fav_list.remove(target_name)
     try:
         supabase.table('user_settings').update({'favorite_spots': ','.join(fav_list)}).eq('user_id', user_id).execute()
-        return True, f"「{spot_name}」をお気に入りから削除しました。"
+        return True, f"「{target_name}」をお気に入りから削除しました。"
     except Exception as e:
         return False, f"削除に失敗しました: {e}"
 
@@ -238,7 +243,6 @@ def fetch_spot_1hour_data(url):
                 hour_str = time_tag.text.strip() if time_tag else ""
                 if not hour_str.isdigit(): continue
                 
-                # 6時〜21時の1時間毎に抽出
                 hour_int = int(hour_str)
                 if not (6 <= hour_int <= 21): 
                     continue
@@ -280,7 +284,7 @@ def fetch_spot_1hour_data(url):
         return None
 
 def build_grid_flex_message(spot_name, weather_by_date):
-    """田の字型（2行×2列）グリッドレイアウト（横行ブロック化・上下位置完全同期版）"""
+    """田の字型（2行×2列）グリッドレイアウト"""
     dates = list(weather_by_date.keys())
     
     def create_day_column(date_str):
@@ -339,10 +343,9 @@ def build_grid_flex_message(spot_name, weather_by_date):
             ] + [{"type": "box", "layout": "vertical", "spacing": "none", "margin": "sm", "contents": rows}]
         }
 
-    # === 行（Row）単位でブロック化して上端位置を揃える ===
     body_contents = []
 
-    # 1行目（上段）：1日目(dates[0]) と 2日目(dates[1])
+    # 1行目（上段）
     row1 = {
         "type": "box", "layout": "horizontal", "spacing": "sm",
         "contents": [
@@ -353,7 +356,7 @@ def build_grid_flex_message(spot_name, weather_by_date):
     }
     body_contents.append(row1)
 
-    # 2行目（下段）：3日目(dates[2]) と 4日目(dates[3])
+    # 2行目（下段）
     if len(dates) > 2:
         body_contents.append({"type": "separator", "margin": "md"})
         row2 = {
@@ -400,7 +403,7 @@ def callback():
     return 'OK', 200
 
 # ==========================================
-# 7. LINEメッセージ受信処理
+# 7. LINEメッセージ受信処理（ゆらぎ検索統合版）
 # ==========================================
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
@@ -410,7 +413,7 @@ def handle_message(event):
 
         print(f"[受信] ユーザー({user_id}): {user_message}")
 
-        # 1. ユーザーコマンドを「最優先」で判定
+        # 1. ユーザーコマンド優先判定
         if user_message == "設定":
             user_setting = get_user_setting(user_id)
             source, favorites = user_setting
@@ -442,14 +445,8 @@ def handle_message(event):
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
             return
 
-        # 2. コマンド以外の場合は「天気検索」として判定
-        target_spot_name = None
-        target_url = None
-        for spot_key, url in SPOT_WEATHER_URLS.items():
-            if spot_key in user_message or user_message in spot_key:
-                target_spot_name = spot_key
-                target_url = url
-                break
+        # 2. ゆらぎ検索（エイリアス＋あいまい一致）で釣り場判定
+        target_spot_name, target_url = find_best_match_spot(user_message)
 
         if target_url:
             weather_by_date = fetch_spot_1hour_data(target_url)
@@ -462,12 +459,12 @@ def handle_message(event):
                 line_bot_api.reply_message(event.reply_token, TextSendMessage(text=error_msg))
             return
             
-        # 3. どちらにも該当しない場合
+        # 3. 該当なしの場合
         reply_text = (
             "🔍 その釣り場は現在対応していません、もしくは名前が間違っています。\n\n"
             "【対応済みの主な釣り場】\n"
-            "不忘 / 白河 / 朝霞 / 加賀 / 鬼怒川 / 鹿島槍 / 平谷湖 / 東山湖 / すその / サンクチュアリ...など、全国60箇所以上に対応！\n\n"
-            "※部分一致で検索できます（例: 「キング」と送信すると「キングフィッシャー」の天気が表示されます）"
+            "東山湖 / キングフィッシャー / 加賀 / すその / 朝霞 / 開成 / 王禅寺 / 白河...などに対応！\n\n"
+            "※略称やひらがなでも検索できます（例: 「ひがしやまこ」「加賀FA」など）"
         )
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
 
@@ -475,31 +472,68 @@ def handle_message(event):
         print("\n=== システムエラー詳細 ===")
         traceback.print_exc()
         print("==========================\n")
-        
         try:
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ 処理中にエラーが発生しました。時間を置いて再度お試しください。"))
         except Exception:
             pass
 
 # ==========================================
-# 8. 定期トリガーエンドポイント（一斉通知ガードレール）
+# 8. 定期トリガーエンドポイント（Cron自動通知用）
 # ==========================================
 @app.route("/cron_trigger", methods=['GET', 'POST'])
 def cron_trigger():
-    print("\n--- 定期トリガーを受信 ---")
-    
-    # 1. 大量通知ストッパー（安全装置）
-    detect_count = 0
-    if detect_count > MAX_LIMIT:
-        print("[安全装置作動] 上限を超えたため送信スキップ")
-        return jsonify({"status": "skipped", "reason": "MAX_LIMIT_EXCEEDED"}), 200
+    print("\n--- 定期トリガーを受信しました ---")
+    if not supabase:
+        return jsonify({"status": "error", "reason": "DB_NOT_CONNECTED"}), 500
 
-    # 2. テストモード制御（本番環境以外の誤送信防止）
-    if IS_TEST_MODE and ADMIN_USER_ID:
-        print(f"[テストモード] 管理者({ADMIN_USER_ID})のみに制限して処理実行")
+    try:
+        res = supabase.table('user_settings').select('*').execute()
+        users = res.data or []
 
-    time.sleep(random.uniform(1.0, 3.0))  # サーバ負荷軽減のゆらぎ
-    return jsonify({"status": "success", "message": "Trigger processed safely."}), 200
+        # テストモード安全ガード: IS_TEST_MODE が True の場合は ADMIN_USER_ID のみに絞り込み
+        if IS_TEST_MODE:
+            print(f"[テストモード有効] 送信対象を管理者({ADMIN_USER_ID})のみに絞り込みます。")
+            users = [u for u in users if u.get('user_id') == ADMIN_USER_ID]
+            if not users and ADMIN_USER_ID:
+                users = [{'user_id': ADMIN_USER_ID, 'favorite_spots': ''}]
+
+        # 大量通知ストッパー（安全装置）
+        if len(users) > MAX_LIMIT:
+            print(f"[安全装置作動] 対象件数({len(users)}件)が上限({MAX_LIMIT}件)を超えたためスキップします。")
+            return jsonify({"status": "skipped", "reason": "MAX_LIMIT_EXCEEDED"}), 200
+
+        print(f"配信対象件数: {len(users)}件")
+
+        for user in users:
+            uid = user.get('user_id')
+            _, favorites = get_user_setting(uid)
+            fav_list = [s for s in favorites.split(',') if s]
+
+            if not fav_list:
+                print(f"ユーザー({uid}): お気に入り未登録のためスキップ")
+                continue
+
+            for spot_name in fav_list:
+                # ゆらぎ検索を通してURLを取得
+                matched_spot, url = find_best_match_spot(spot_name)
+                if not url:
+                    continue
+
+                print(f"ユーザー({uid}) へ 「{matched_spot}」 の定期通知を処理中...")
+                weather_data = fetch_spot_1hour_data(url)
+                if weather_data:
+                    flex_msg = build_grid_flex_message(matched_spot, weather_data)
+                    line_bot_api.push_message(uid, flex_msg)
+                    print(f"-> 「{matched_spot}」 のPush送信成功")
+                
+                time.sleep(random.uniform(1.5, 3.0))
+
+        return jsonify({"status": "success", "processed_users": len(users)}), 200
+
+    except Exception as e:
+        print("\n=== Cron処理エラー ===")
+        traceback.print_exc()
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
