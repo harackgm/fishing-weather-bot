@@ -47,12 +47,14 @@ if SUPABASE_URL and SUPABASE_KEY:
 # ==========================================
 # 3. 釣り場URLおよび表記揺れ（エイリアス）辞書
 # ==========================================
-# url: スクレイピング先URL
-# aliases: ユーザーが入力しそうな表記揺れ（ひらがな、略称、正式名称など）
 SPOT_WEATHER_DATA = {
     "東山湖": {
         "url": "https://weathernews.jp/onebox/35.296739/138.955925/",
-        "aliases": ["東山湖", "東山湖フィッシングエリア", "ひがしやまこ", "ひがしやま", "東山"]
+        "aliases": ["東山湖", "東山湖フィッシングエリア", "東山湖FA", "ひがしやまこ", "ひがしやま", "東山", "がし山", "がしやま"]
+    },
+    "なら山沼": {
+        "url": "https://weathernews.jp/onebox/36.373741/139.802713/",
+        "aliases": ["なら山沼", "なら山沼漁場", "ならやま", "なら山", "ならやまぬま", "ならやま沼"]
     },
     "キングフィッシャー": {
         "url": "https://weathernews.jp/onebox/36.907054/140.078650/",
@@ -60,11 +62,11 @@ SPOT_WEATHER_DATA = {
     },
     "加賀": {
         "url": "https://weathernews.jp/onebox/36.388609/139.537247/",
-        "aliases": ["加賀", "加賀フィッシングエリア", "加賀FA", "かが", "加賀FA"]
+        "aliases": ["加賀", "加賀フィッシングエリア", "加賀FA", "かが"]
     },
     "すその": {
         "url": "https://weathernews.jp/onebox/35.166667/138.899162/",
-        "aliases": ["すその", "すそのフィッシングパーク", "すそのFP", "裾野"]
+        "aliases": ["すその", "すそのフィッシングパーク", "すそのFP", "裾野", "すそぱ", "すそパ"]
     },
     "朝霞": {
         "url": "https://weathernews.jp/onebox/35.813481/139.604736/",
@@ -76,7 +78,7 @@ SPOT_WEATHER_DATA = {
     },
     "王禅寺": {
         "url": "https://weathernews.jp/onebox/35.587020/139.524309/",
-        "aliases": ["王禅寺", "ベリーパーク in 王禅寺", "おうぜんじ", "王禅寺ベリーパーク"]
+        "aliases": ["王禅寺", "ベリーパーク in 王禅寺", "おうぜんじ", "王禅寺ベリーパーク", "寺", "てら"]
     },
     "白河": {
         "url": "https://weathernews.jp/onebox/37.127955/140.081827/",
@@ -108,7 +110,7 @@ SPOT_WEATHER_DATA = {
     },
     "ほのぼの": {
         "url": "https://weathernews.jp/onebox/36.837687/140.472433/",
-        "aliases": ["ほのぼの", "ほのぼのプール", "ほのぼの"]
+        "aliases": ["ほのぼの", "ほのぼのプール"]
     },
     "WaDoNa": {
         "url": "https://weathernews.jp/onebox/36.877372/140.540954/",
@@ -120,22 +122,18 @@ SPOT_WEATHER_DATA = {
     }
 }
 
-# 簡易互換用の辞書（既存のコード構造を壊さないためのマッピング）
-SPOT_WEATHER_URLS = {spot: data["url"] for spot, data in SPOT_WEATHER_DATA.items()}
-
-
 def find_best_match_spot(user_text):
     """ユーザー入力から最適な釣り場名を推完・検索する高度なゆらぎ検索判定"""
     text = user_text.strip().lower()
 
-    # 1. エイリアス完全・部分一致検索
+    # 1. エイリアス完全一致および部分一致検索（最優先）
     for spot_key, data in SPOT_WEATHER_DATA.items():
         for alias in data["aliases"]:
             alias_lower = alias.lower()
-            if alias_lower in text or text in alias_lower:
+            if text == alias_lower or alias_lower in text or text in alias_lower:
                 return spot_key, data["url"]
 
-    # 2. あいまい類似度検索 (difflib)
+    # 2. あいまい類似度検索 (difflib) - 閾値0.6
     all_aliases = []
     alias_to_spot = {}
     for spot_key, data in SPOT_WEATHER_DATA.items():
@@ -143,7 +141,7 @@ def find_best_match_spot(user_text):
             all_aliases.append(alias.lower())
             alias_to_spot[alias.lower()] = (spot_key, data["url"])
 
-    matches = difflib.get_close_matches(text, all_aliases, n=1, cutoff=0.5)
+    matches = difflib.get_close_matches(text, all_aliases, n=1, cutoff=0.6)
     if matches:
         matched_alias = matches[0]
         return alias_to_spot[matched_alias]
@@ -174,7 +172,6 @@ def get_user_setting(user_id):
 def add_favorite_spot(user_id, spot_name):
     if not supabase: return False, "DB接続未完了です。"
     
-    # 追加時もゆらぎ検索を通して正しい正式名称に変換
     matched_spot, _ = find_best_match_spot(spot_name)
     target_name = matched_spot if matched_spot else spot_name
 
@@ -215,7 +212,7 @@ def remove_favorite_spot(user_id, spot_name):
 # ==========================================
 def fetch_spot_1hour_data(url):
     """指定されたURLから現在時刻以降の予報を取得（6〜21時抽出版）"""
-    time.sleep(random.uniform(1.0, 2.5))  # ゆらぎ待機
+    time.sleep(random.uniform(1.0, 2.5))  # サーバー負荷軽減のゆらぎ待機
     headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}
     
     try:
@@ -403,7 +400,7 @@ def callback():
     return 'OK', 200
 
 # ==========================================
-# 7. LINEメッセージ受信処理（ゆらぎ検索統合版）
+# 7. LINEメッセージ受信処理
 # ==========================================
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
@@ -413,7 +410,6 @@ def handle_message(event):
 
         print(f"[受信] ユーザー({user_id}): {user_message}")
 
-        # 1. ユーザーコマンド優先判定
         if user_message == "設定":
             user_setting = get_user_setting(user_id)
             source, favorites = user_setting
@@ -445,7 +441,7 @@ def handle_message(event):
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
             return
 
-        # 2. ゆらぎ検索（エイリアス＋あいまい一致）で釣り場判定
+        # ゆらぎ検索で釣り場を特定
         target_spot_name, target_url = find_best_match_spot(user_message)
 
         if target_url:
@@ -459,12 +455,11 @@ def handle_message(event):
                 line_bot_api.reply_message(event.reply_token, TextSendMessage(text=error_msg))
             return
             
-        # 3. 該当なしの場合
         reply_text = (
             "🔍 その釣り場は現在対応していません、もしくは名前が間違っています。\n\n"
             "【対応済みの主な釣り場】\n"
-            "東山湖 / キングフィッシャー / 加賀 / すその / 朝霞 / 開成 / 王禅寺 / 白河...などに対応！\n\n"
-            "※略称やひらがなでも検索できます（例: 「ひがしやまこ」「加賀FA」など）"
+            "東山湖 / なら山沼 / キングフィッシャー / 加賀 / すその / 朝霞 / 開成 / 王禅寺 / 白河...などに対応！\n\n"
+            "※「すそぱ」「寺」「てら」「ならやま」「がし山」などの略称でも検索可能です。"
         )
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
 
@@ -514,7 +509,6 @@ def cron_trigger():
                 continue
 
             for spot_name in fav_list:
-                # ゆらぎ検索を通してURLを取得
                 matched_spot, url = find_best_match_spot(spot_name)
                 if not url:
                     continue
@@ -526,7 +520,7 @@ def cron_trigger():
                     line_bot_api.push_message(uid, flex_msg)
                     print(f"-> 「{matched_spot}」 のPush送信成功")
                 
-                time.sleep(random.uniform(1.5, 3.0))
+                time.sleep(random.uniform(1.5, 3.0))  # サーバー負荷軽減のゆらぎ待機
 
         return jsonify({"status": "success", "processed_users": len(users)}), 200
 
