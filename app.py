@@ -786,7 +786,7 @@ COLOR_GROUPS = [
         "title": "📍 甲信・東北・東海・関西",
         "header_bg": "#6a1b9a",
         "sub_groups": [
-            {"bg": "#f3e5f5", "spots": ["鹿留", "小菅", "シルフ", "JF in Tsugane", "竜華池", "平谷湖", "ハーブ", "ニレ池", "鹿島槍", "槻の池", "あずみ野"]},
+            {"bg": "#f3e5f5", "spots": ["鹿留", "小菅", "シルフ", "JF in Tsugane", "竜华池", "平谷湖", "ハーブ", "ニレ池", "鹿島槍", "槻の池", "あずみ野"]},
             {"bg": "#e1bee7", "spots": ["不忘", "白河", "ほのぼの", "WaDoNa", "鶴沼川", "オーパ", "あいづ", "上浜", "GOZU"]},
             {"bg": "#d1c4e9", "spots": ["瑞浪", "サンクチュアリ", "醒井", "高島", "千早川"]}
         ]
@@ -1034,7 +1034,7 @@ def build_spot_list_carousel_horizontal(user_id=None):
         }
         bubbles.append(bubble)
 
-    # ★基本操作部分を削除して軽量化、テキストを修正
+    # ★修正箇所：使い方ガイドの文言を以前の丁寧なものに復元しました。
     guide_bubble = {
         "type": "bubble",
         "size": "giga",
@@ -1043,15 +1043,30 @@ def build_spot_list_carousel_horizontal(user_id=None):
             "contents": [{"type": "text", "text": "📖 使い方ガイド", "color": "#ffffff", "weight": "bold", "size": "md"}]
         },
         "body": {
-            "type": "box", "layout": "vertical", "spacing": "sm", "paddingAll": "15px",
+            "type": "box", "layout": "vertical", "spacing": "md", "paddingAll": "15px",
             "contents": [
-                {"type": "text", "text": "💬 テキストコマンド", "weight": "bold", "size": "sm", "color": "#333333"},
-                {"type": "text", "text": "【追加 / 削除】", "weight": "bold", "size": "xs", "color": "#333333", "margin": "sm"},
-                {"type": "text", "text": "「追加 東山湖 すその」のようにスペース区切りで一括処理", "wrap": True, "size": "xs", "color": "#666666"},
-                {"type": "text", "text": "【設定】", "weight": "bold", "size": "xs", "color": "#333333", "margin": "sm"},
-                {"type": "text", "text": "「設定」送信で並び替え・全削除", "wrap": True, "size": "xs", "color": "#666666"},
-                {"type": "text", "text": "【一覧の表示】", "weight": "bold", "size": "xs", "color": "#333333", "margin": "sm"},
-                {"type": "text", "text": "”あ” でも ”い” でも適当な文字送信でこの一覧を表示", "wrap": True, "size": "xs", "color": "#666666"}
+                {
+                    "type": "box", "layout": "vertical", "spacing": "sm",
+                    "contents": [
+                        {"type": "text", "text": "👇 基本の操作", "weight": "bold", "size": "sm", "color": "#333333"},
+                        {"type": "text", "text": "・一覧のボタンをタップで天気予報を表示", "wrap": True, "size": "xs", "color": "#666666"}
+                    ]
+                },
+                {"type": "separator", "margin": "md"},
+                {
+                    "type": "box", "layout": "vertical", "spacing": "sm",
+                    "contents": [
+                        {"type": "text", "text": "💬 テキストコマンド", "weight": "bold", "size": "sm", "color": "#333333"},
+                        {"type": "text", "text": "【まとめて追加】", "weight": "bold", "size": "xs", "color": "#333333", "margin": "sm"},
+                        {"type": "text", "text": "例：「追加 東山湖 すその 足柄 座間 醒井」\n※釣り場と釣り場の名前の間にスペースを入れてください（最大30件まで一気に登録可能）。", "wrap": True, "size": "xs", "color": "#666666"},
+                        {"type": "text", "text": "【まとめて削除】", "weight": "bold", "size": "xs", "color": "#333333", "margin": "sm"},
+                        {"type": "text", "text": "例：「削除 東山湖 すその 足柄」\n※追加と同じく、名前の間にスペースを入れて複数同時に解除できます。", "wrap": True, "size": "xs", "color": "#666666"},
+                        {"type": "text", "text": "【設定】", "weight": "bold", "size": "xs", "color": "#333333", "margin": "sm"},
+                        {"type": "text", "text": "「設定」と送信すると、並び替え・全削除パネルが出ます。", "wrap": True, "size": "xs", "color": "#666666"},
+                        {"type": "text", "text": "【一覧（メニュー）の出し方】", "weight": "bold", "size": "xs", "color": "#333333", "margin": "sm"},
+                        {"type": "text", "text": "「一覧」という言葉や、それ以外の適当な文字（「あ」「1」「a」など）を送信すると、この一覧表が表示されます。", "wrap": True, "size": "xs", "color": "#666666"}
+                    ]
+                }
             ]
         }
     }
@@ -1565,7 +1580,7 @@ def handle_postback(event):
         print(e.error.message)
         for d in e.error.details:
             print(f" - {d.property}: {d.message}")
-        try: line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ LINE通信エラーが発生しました。（データ容量制限エラー等の可能性があります）"))
+        try: line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ LINE通信エラーが発生しました。（データ容量オーバー等の可能性があります）"))
         except Exception: pass
     except Exception as e:
         print(f"Postback Error: {e}")
