@@ -47,7 +47,7 @@ if SUPABASE_URL and SUPABASE_KEY:
         print(f"[Supabase初期化エラー] {e}")
 
 # ==========================================
-# 3. 釣り場URL・HP・Googleマップ・電話番号・表記揺れ辞書（全55箇所）
+# 3. 釣り場URL・HP・Googleマップ・電話番号・表記揺れ辞書
 # ==========================================
 SPOT_WEATHER_DATA = {
     # --- 静岡県 ---
@@ -295,12 +295,12 @@ SPOT_WEATHER_DATA = {
         "tel": "049-297-7815",
         "aliases": ["彩の国", "FF彩の国", "さいのくに"]
     },
-    "朝霞": {
+    "朝霞Ｇ": {
         "url": "https://weathernews.jp/onebox/35.813481/139.604736/",
         "hp_url": "http://www.asaka-garden.com/",
         "search_name": "朝霞ガーデン",
         "tel": "048-456-0260",
-        "aliases": ["朝霞", "朝霞ガーデン", "あさか", "あさかガーデン"]
+        "aliases": ["朝霞Ｇ", "朝霞", "朝霞ガーデン", "アサカガーデン", "ガーデン", "あさか", "アサカ", "あさかガーデン"]
     },
     "しらこばと": {
         "url": "https://weathernews.jp/onebox/35.917970/139.752203/",
@@ -409,7 +409,7 @@ SPOT_WEATHER_DATA = {
         "hp_url": "http://www6.nns.ne.jp/~joy-field/index.html",
         "search_name": "ジョイフィールド in Tsugane",
         "tel": "0551-20-7888",
-        "aliases": ["JF in Tsugane", "Tsugane", "ジョイフィールド", "つがね"]
+        "aliases": ["JF in Tsugane", "Tsugane", "ジョイフィールド", "つがね", "ツガネ", "じょいふぃーるど"]
     },
     "竜華池": {
         "url": "https://weathernews.jp/onebox/35.681978/138.576164/",
@@ -641,12 +641,12 @@ SPOT_WEATHER_DATA = {
     },
 
     # --- 東北・東海・関西 ---
-    "不忘": {
+    "GP不忘": {
         "url": "https://weathernews.jp/onebox/38.042491/140.554478/",
         "hp_url": "http://www.fubou.jp/",
-        "search_name": "グリーンコンプラザ不忘",
+        "search_name": "グリーンパーク不忘",
         "tel": "0224-24-8131",
-        "aliases": ["不忘", "グリーンコンプラザ不忘", "ふぼう"]
+        "aliases": ["GP不忘", "不忘", "グリーンパーク不忘", "グリーンパーク", "ぐりーんぱーく", "ふぼう", "フボウ"]
     },
     "白河": {
         "url": "https://weathernews.jp/onebox/37.127955/140.081827/",
@@ -756,7 +756,7 @@ COLOR_GROUPS = [
         "title": "📍 埼玉・群馬",
         "header_bg": "#2e7d32",
         "sub_groups": [
-            {"bg": "#e8f5e9", "spots": ["長瀞", "彩の国", "朝霞", "しらこばと", "川越パーク", "加須はなさき", "中里", "伊古の里"]},
+            {"bg": "#e8f5e9", "spots": ["長瀞", "彩の国", "朝霞Ｇ", "しらこばと", "川越パーク", "加須はなさき", "中里", "伊古の里"]},
             {"bg": "#c8e6c9", "spots": ["川場", "川場キングダム", "おくとね", "イワナセンター", "黒保根", "迦葉山", "片品", "中之沢", "ＭＡＶ", "大崎", "けん太", "フック", "赤久縄", "太田", "東山道", "榛名"]}
         ]
     },
@@ -773,7 +773,7 @@ COLOR_GROUPS = [
         "header_bg": "#6a1b9a",
         "sub_groups": [
             {"bg": "#f3e5f5", "spots": ["鹿留", "小菅", "シルフ", "JF in Tsugane", "竜華池", "平谷湖", "ハーブの里", "ニレ池", "鹿島槍", "つきの池", "あずみ野"]},
-            {"bg": "#e1bee7", "spots": ["不忘", "白河", "ほのぼの", "WaDoNa", "鶴沼川", "オーパ", "あいづ", "上浜", "GOZU"]},
+            {"bg": "#e1bee7", "spots": ["GP不忘", "白河", "ほのぼの", "WaDoNa", "鶴沼川", "オーパ", "あいづ", "上浜", "GOZU"]},
             {"bg": "#d1c4e9", "spots": ["FCE瑞浪", "３９", "醒井", "高島の泉", "千早川"]}
         ]
     }
@@ -1114,7 +1114,9 @@ def get_user_setting(user_id):
                 "宮城": "ＭＡＶ",
                 "浅川": "浅川国際",
                 "関根": "関根養魚場",
-                "FAJ": "Ｊ"
+                "FAJ": "Ｊ",
+                "朝霞": "朝霞Ｇ",
+                "不忘": "GP不忘"
             }
             
             raw_favs = [s.strip() for s in favs.split(',')]
