@@ -960,36 +960,15 @@ def build_spot_list_carousel_horizontal(user_id=None):
                 row_buttons = []
                 for spot in pair:
                     row_buttons.append({
-                        "type": "box",
-                        "layout": "vertical",
-                        "backgroundColor": "#fff59d",  
-                        "cornerRadius": "md",          
-                        "borderWidth": "normal",
-                        "borderColor": "#d4af37",      
-                        "paddingAll": "sm",  
+                        "type": "button",
+                        "style": "secondary",
+                        "color": "#fff59d",  
                         "margin": "xs",
-                        "flex": 1,
-                        "justifyContent": "center",
-                        "alignItems": "center",
-                        "action": {"type": "postback", "data": f"w={spot}", "displayText": spot},
-                        "contents": [
-                            {
-                                "type": "text",
-                                "text": spot,
-                                "size": "xs", 
-                                "weight": "bold",
-                                "align": "center",
-                                "wrap": True
-                            }
-                        ]
+                        "height": "sm",
+                        "action": {"type": "postback", "label": spot, "data": f"w={spot}"}
                     })
                 if len(pair) == 1:
-                    row_buttons.append({
-                        "type": "box", 
-                        "layout": "vertical", 
-                        "flex": 1, 
-                        "contents": [{"type": "filler"}]
-                    })
+                    row_buttons.append({"type": "filler"})
                     
                 row_box = {"type": "box", "layout": "horizontal", "contents": row_buttons}
                 if i > 0 and i % 10 == 0:
@@ -1031,36 +1010,16 @@ def build_spot_list_carousel_horizontal(user_id=None):
                 row_buttons = []
                 for spot in pair:
                     label_text = f"★ {spot}" if spot in fav_list else spot
-                    
                     row_buttons.append({
-                        "type": "box",
-                        "layout": "vertical",
-                        "backgroundColor": btn_bg,
-                        "cornerRadius": "md",
-                        "paddingAll": "sm",
+                        "type": "button",
+                        "style": "secondary",
+                        "color": btn_bg,
                         "margin": "xs",
-                        "flex": 1,
-                        "justifyContent": "center",
-                        "alignItems": "center",
-                        "action": {"type": "postback", "data": f"w={spot}", "displayText": spot},
-                        "contents": [
-                            {
-                                "type": "text",
-                                "text": label_text,
-                                "size": "xs",
-                                "weight": "bold",
-                                "align": "center",
-                                "wrap": True
-                            }
-                        ]
+                        "height": "sm",
+                        "action": {"type": "postback", "label": label_text, "data": f"w={spot}"}
                     })
                 if len(pair) == 1:
-                    row_buttons.append({
-                        "type": "box", 
-                        "layout": "vertical", 
-                        "flex": 1, 
-                        "contents": [{"type": "filler"}]
-                    })
+                    row_buttons.append({"type": "filler"})
                     
                 rows.append({"type": "box", "layout": "horizontal", "contents": row_buttons})
             
@@ -1075,6 +1034,7 @@ def build_spot_list_carousel_horizontal(user_id=None):
         }
         bubbles.append(bubble)
 
+    # ★基本操作部分を削除して軽量化、テキストを修正
     guide_bubble = {
         "type": "bubble",
         "size": "giga",
@@ -1605,7 +1565,7 @@ def handle_postback(event):
         print(e.error.message)
         for d in e.error.details:
             print(f" - {d.property}: {d.message}")
-        try: line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ LINE通信エラーが発生しました。（データ容量オーバー等の可能性があります）"))
+        try: line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ LINE通信エラーが発生しました。（データ容量制限エラー等の可能性があります）"))
         except Exception: pass
     except Exception as e:
         print(f"Postback Error: {e}")
