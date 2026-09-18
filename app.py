@@ -473,285 +473,6 @@ SPOT_WEATHER_DATA = {
         "search_name": "あずみ野フィッシングセンター",
         "tel": "0263-82-8280",
         "aliases": ["あずみ野", "あずみ野FC", "あずみの"]
-    },
-
-    # --- 群馬県 ---
-    "川場": {
-        "url": "https://weathernews.jp/onebox/36.690767/139.121662/",
-        "hp_url": "http://www.kawaba-fp.jp/",
-        "search_name": "川場フィッシングプラザ",
-        "tel": "0278-52-3200",
-        "aliases": ["川場", "川場FP", "かわば"]
-    },
-    "川場キングダム": {
-        "url": "https://weathernews.jp/onebox/36.754213/139.142256/",
-        "hp_url": "http://kawaba-kingdomfishing.com/",
-        "search_name": "川場キングダムフィッシング",
-        "tel": "0278-52-2002",
-        "aliases": ["川場キングダム", "キングダム", "かわばきんぐだむ"]
-    },
-    "おくとね": {
-        "url": "https://weathernews.jp/onebox/36.663005/139.163750/",
-        "hp_url": "http://www7.wind.ne.jp/okutone/",
-        "search_name": "おくとねフィッシングパーク",
-        "tel": "0278-53-3802",
-        "aliases": ["おくとね", "おくとねFP"]
-    },
-    "イワナセンター": {
-        "url": "https://weathernews.jp/onebox/36.610095/139.243740/",
-        "hp_url": "http://www7.wind.ne.jp/okutone/",
-        "search_name": "日本イワナセンター",
-        "tel": "0278-54-8433",
-        "aliases": ["イワナセンター", "日本イワナセンター", "いわなせんたー"]
-    },
-    "黒保根": {
-        "url": "https://weathernews.jp/onebox/36.515041/139.252324/",
-        "hp_url": "https://www.kurohone-fishing.com/",
-        "search_name": "黒保根渓流フィッシング",
-        "tel": "0277-96-2091",
-        "aliases": ["黒保根", "くろほね"]
-    },
-    "迦葉山": {
-        "url": "https://weathernews.jp/onebox/36.685419/139.071387/",
-        "hp_url": "http://www.fp-berrys.net/",
-        "search_name": "ベリーズ迦葉山",
-        "tel": "0278-23-9333",
-        "aliases": ["迦葉山", "ベリーズ迦葉山", "かしょうざん", "ベリーズ"]
-    },
-    "片品": {
-        "url": "https://weathernews.jp/onebox/36.624564/139.046703/",
-        "hp_url": "https://www.turinavi.info/gunma/katashinagawakokusai/",
-        "search_name": "片品川国際マス釣り場",
-        "tel": "0278-24-1188",
-        "aliases": ["片品", "片品川国際", "かたしな"]
-    },
-    "中之沢": {
-        "url": "https://weathernews.jp/onebox/36.492057/139.195293/",
-        "hp_url": "http://gfc.sakura.ne.jp/index.htm",
-        "search_name": "GFC中之沢",
-        "tel": "027-283-3532",
-        "aliases": ["中之沢", "GFC中之沢", "なかのさわ"]
-    },
-    "宮城": {
-        "url": "https://weathernews.jp/onebox/36.483735/139.188251/",
-        "hp_url": "http://www.anglers-village.com/index2.html",
-        "search_name": "宮城アングラーズヴィレッジ",
-        "tel": "027-283-0035",
-        "aliases": ["宮城", "宮城AV", "みやぎあんぐらーず"]
-    },
-    "大崎": {
-        "url": "https://weathernews.jp/onebox/36.463209/139.164867/",
-        "hp_url": "https://nijimasu.com/",
-        "search_name": "大崎つりぼり",
-        "tel": "027-283-2945",
-        "aliases": ["大崎", "大崎つりぼり", "おおさき"]
-    },
-    "けん太": {
-        "url": "https://weathernews.jp/onebox/36.386648/138.960021/",
-        "hp_url": "http://www.tsurikichikenta.com/index.htm",
-        "search_name": "釣りキチけん太",
-        "tel": "027-371-3312",
-        "aliases": ["けん太", "釣りキチけん太", "けんた"]
-    },
-    "フック": {
-        "url": "https://weathernews.jp/onebox/36.457699/139.173191/",
-        "hp_url": "https://aa-hook.jp/",
-        "search_name": "アングラーズエリアHOOK",
-        "tel": "027-283-0535",
-        "aliases": ["フック", "HOOK", "ふっく"]
-    },
-    "赤久縄": {
-        "url": "https://weathernews.jp/onebox/36.160894/138.895355/",
-        "hp_url": "https://www.akaguna.net/",
-        "search_name": "赤久縄",
-        "tel": "0274-56-0230",
-        "aliases": ["赤久縄", "あかぐな"]
-    },
-    "太田": {
-        "url": "https://weathernews.jp/onebox/36.357774/139.330830/",
-        "hp_url": "https://www.facebook.com/otafishingclub/",
-        "search_name": "太田フィッシングクラブ",
-        "tel": "0276-32-1230",
-        "aliases": ["太田", "太田FC", "おおた"]
-    },
-    "東山道": {
-        "url": "https://weathernews.jp/onebox/36.323047/139.280989/",
-        "hp_url": "https://emrp-fishing.com/",
-        "search_name": "東山道公園フィッシングエリア",
-        "tel": "0276-56-1180",
-        "aliases": ["東山道", "東山道FA", "とうさんどう"]
-    },
-    "榛名": {
-        "url": "https://weathernews.jp/onebox/36.443570/138.898498/",
-        "hp_url": "https://haruna-turibori.com/",
-        "search_name": "榛名高原つり堀センター",
-        "tel": "027-374-2228",
-        "aliases": ["榛名", "榛名高原", "はるな"]
-    },
-
-    # --- 茨城県 ---
-    "水戸南": {
-        "url": "https://weathernews.jp/onebox/36.326377/140.501362/",
-        "hp_url": "http://www.mitominami-fa.jp/index.html",
-        "search_name": "水戸南フィッシングエリア",
-        "tel": "029-246-1233",
-        "aliases": ["水戸南", "水戸南FA", "みとみなみ"]
-    },
-    "高萩": {
-        "url": "https://weathernews.jp/onebox/36.788035/140.577243/",
-        "hp_url": "https://takahagifureainosato.web.fc2.com/",
-        "search_name": "高萩ふれあいの里フィッシングエリア",
-        "tel": "0293-24-1888",
-        "aliases": ["高萩", "高萩ふれあいの里", "たかはぎ"]
-    },
-    "つくば園": {
-        "url": "https://weathernews.jp/onebox/36.224122/140.144261/",
-        "hp_url": "http://tsukuba-en.jp/",
-        "search_name": "フィッシングパークつくば園",
-        "tel": "0299-43-6111",
-        "aliases": ["つくば園", "つくばえん"]
-    },
-    "FAJ": {
-        "url": "https://weathernews.jp/onebox/36.081494/140.164360/",
-        "hp_url": "https://sites.google.com/view/fishing-area-j/",
-        "search_name": "フィッシングエリアJ",
-        "tel": "029-842-1698",
-        "aliases": ["FAJ", "フィッシングエリアJ", "ふぃっしんぐえりあじぇい"]
-    },
-    "ユザキ": {
-        "url": "https://weathernews.jp/onebox/36.314550/140.335285/",
-        "hp_url": "https://yuzakiko.com/",
-        "search_name": "レイクユザキ",
-        "tel": "0296-77-8500",
-        "aliases": ["ユザキ", "レイクユザキ", "ゆざき"]
-    },
-    "笠間": {
-        "url": "https://weathernews.jp/onebox/36.412866/140.208145/",
-        "hp_url": "http://www.leisure-park-kasama.jp/",
-        "search_name": "レジャーパーク笠間",
-        "tel": "0296-72-8888",
-        "aliases": ["笠間", "LP笠間", "かさま"]
-    },
-    "DoDoo": {
-        "url": "https://weathernews.jp/onebox/36.187994/140.216734/",
-        "hp_url": "http://www.fishing-dodoo.com/",
-        "search_name": "フィッシングDoDoo",
-        "tel": "0299-59-7052",
-        "aliases": ["DoDoo", "ドゥドゥー", "どぅどぅー"]
-    },
-    "若栗": {
-        "url": "https://weathernews.jp/onebox/36.779644/140.633185/",
-        "hp_url": "http://wakagurinomori.ina-ka.com/",
-        "search_name": "若栗フィッシングの森",
-        "tel": "0293-23-3882",
-        "aliases": ["若栗", "若栗フィッシングの森", "わかぐり"]
-    },
-    "ミッドクリーク": {
-        "url": "https://weathernews.jp/onebox/36.192975/140.164058/",
-        "hp_url": "http://midcreek.jp/",
-        "search_name": "ミッドクリークフィッシングエリア",
-        "tel": "0299-42-4578",
-        "aliases": ["ミッドクリーク", "みっどくりーく"]
-    },
-
-    # --- 東北・東海・関西 ---
-    "不忘": {
-        "url": "https://weathernews.jp/onebox/38.042491/140.554478/",
-        "hp_url": "http://www.fubou.jp/",
-        "search_name": "グリーンコンプラザ不忘",
-        "tel": "0224-24-8131",
-        "aliases": ["不忘", "グリーンコンプラザ不忘", "ふぼう"]
-    },
-    "白河": {
-        "url": "https://weathernews.jp/onebox/37.127955/140.081827/",
-        "hp_url": "https://shirakawa.forest-springs.com/",
-        "search_name": "白河フォレストスプリングス",
-        "tel": "0248-25-3535",
-        "aliases": ["白河", "白河フォレストスプリングス", "白河FS", "しらかわ"]
-    },
-    "ほのぼの": {
-        "url": "https://weathernews.jp/onebox/36.837687/140.472433/",
-        "hp_url": "http://honobono.travel.coocan.jp/",
-        "search_name": "ほのぼのフィッシングエリア",
-        "tel": "0247-46-3200",
-        "aliases": ["ほのぼの", "ほのぼのプール"]
-    },
-    "WaDoNa": {
-        "url": "https://weathernews.jp/onebox/36.877372/140.540954/",
-        "hp_url": "https://wadona.work/",
-        "search_name": "WaDoNa 釣り場",
-        "tel": "090-3121-6677",
-        "aliases": ["WaDoNa", "ワドナ", "わどな"]
-    },
-    "鶴沼川": {
-        "url": "https://weathernews.jp/onebox/37.255460/139.872256/",
-        "hp_url": "https://aizuiwanacenter.com/",
-        "search_name": "鶴沼川フィッシングパーク",
-        "tel": "0241-67-2708",
-        "aliases": ["鶴沼川", "つるぬまがわ"]
-    },
-    "オーパ": {
-        "url": "https://weathernews.jp/onebox/37.314342/140.449245/",
-        "hp_url": "https://welcomeohpa.com/",
-        "search_name": "ウエルカムオーパ",
-        "tel": "024-954-2007",
-        "aliases": ["オーパ", "ウエルカムオーパ", "おーぱ"]
-    },
-    "あいづ": {
-        "url": "https://weathernews.jp/onebox/37.204977/139.729681/",
-        "hp_url": "https://aizufishing.jp/",
-        "search_name": "あいづフィッシングエリア",
-        "tel": "0241-64-2101",
-        "aliases": ["あいづ", "あいづFA"]
-    },
-    "上浜": {
-        "url": "https://weathernews.jp/onebox/39.142616/139.945938/",
-        "hp_url": "http://kamihama.web.fc2.com/",
-        "search_name": "上浜釣り場",
-        "tel": "0184-38-3488",
-        "aliases": ["上浜", "上浜釣り場", "かみはま"]
-    },
-    "五頭": {
-        "url": "https://weathernews.jp/onebox/37.819471/139.238518/",
-        "hp_url": "http://www.gozu-fp.jp/",
-        "search_name": "五頭フィッシングパーク",
-        "tel": "0250-63-0051",
-        "aliases": ["五頭", "五頭FP", "ごず"]
-    },
-    "瑞浪": {
-        "url": "https://weathernews.jp/onebox/35.433516/137.295266/",
-        "hp_url": "https://www.fishing-autocamp-mizunami.com/",
-        "search_name": "フィッシングキャンプエリア瑞浪",
-        "tel": "0572-68-1212",
-        "aliases": ["瑞浪", "FC瑞浪", "みずなみ"]
-    },
-    "サンクチュアリ": {
-        "url": "https://weathernews.jp/onebox/35.187504/136.457803/",
-        "hp_url": "https://go-sanctuary.com/",
-        "search_name": "フィッシングサンクチュアリ",
-        "tel": "0594-46-8820",
-        "aliases": ["サンクチュアリ", "サンク", "さんくちゅあり"]
-    },
-    "醒井": {
-        "url": "https://weathernews.jp/onebox/35.303671/136.349914/",
-        "hp_url": "http://samegai.siga.jp/",
-        "search_name": "醒井養鱒場",
-        "tel": "0749-54-0301",
-        "aliases": ["醒井", "醒井養鱒場", "さめがい"]
-    },
-    "高島": {
-        "url": "https://weathernews.jp/onebox/35.348308/136.052288/",
-        "hp_url": "https://www.takashimanoizumi.com/",
-        "search_name": "高島の泉",
-        "tel": "0740-25-3790",
-        "aliases": ["高島", "高島の泉", "たかしまのいずみ"]
-    },
-    "千早川": {
-        "url": "https://weathernews.jp/onebox/34.417118/135.647482/",
-        "hp_url": "http://chihayagawa.jp/",
-        "search_name": "千早川マス釣り場",
-        "tel": "0721-74-0116",
-        "aliases": ["千早川", "千早川マス釣り場", "ちはやがわ"]
     }
 }
 
@@ -810,8 +531,9 @@ def get_spot_details(spot_key):
     return spot_key, data["url"], hp_url, map_url, data.get("tel", "")
 
 def build_delete_confirm_message(spot_name, source):
-    execute_action = f"fav_del_execute_and_{source}"
-    cancel_action = f"fav_del_cancel_and_{source}"
+    # データ量削減のためアクション名を短縮
+    execute_action = f"del_{source}"
+    cancel_action = f"can_{source}"
     
     bubble = {
         "type": "bubble",
@@ -847,8 +569,8 @@ def build_delete_all_confirm_message():
         "footer": {
             "type": "box", "layout": "horizontal", "spacing": "sm",
             "contents": [
-                {"type": "button", "style": "secondary", "height": "sm", "flex": 1, "action": {"type": "postback", "label": "キャンセル", "data": "action=fav_del_cancel_and_settings"}},
-                {"type": "button", "style": "primary", "color": "#e53935", "height": "sm", "flex": 1, "action": {"type": "postback", "label": "全て削除", "data": "action=fav_del_all_execute"}}
+                {"type": "button", "style": "secondary", "height": "sm", "flex": 1, "action": {"type": "postback", "label": "キャンセル", "data": "action=can_settings"}},
+                {"type": "button", "style": "primary", "color": "#e53935", "height": "sm", "flex": 1, "action": {"type": "postback", "label": "全て削除", "data": "action=del_all"}}
             ]
         }
     }
@@ -870,17 +592,17 @@ def build_settings_flex_message(fav_list):
                     {"type": "text", "text": f"{spot}", "size": "sm", "weight": "bold", "flex": 4, "color": "#333333", "wrap": True},
                     {
                         "type": "button",
-                        "action": {"type": "postback", "label": "⬆️", "data": f"action=fav_up&spot={spot}"},
+                        "action": {"type": "postback", "label": "⬆️", "data": f"action=up&spot={spot}"},
                         "style": "secondary", "flex": 2, "margin": "xs"
                     },
                     {
                         "type": "button",
-                        "action": {"type": "postback", "label": "⬇️", "data": f"action=fav_down&spot={spot}"},
+                        "action": {"type": "postback", "label": "⬇️", "data": f"action=down&spot={spot}"},
                         "style": "secondary", "flex": 2, "margin": "xs"
                     },
                     {
                         "type": "button",
-                        "action": {"type": "postback", "label": "🗑️", "data": f"action=fav_del_confirm_and_settings&spot={spot}"},
+                        "action": {"type": "postback", "label": "🗑️", "data": f"action=dcl_set&spot={spot}"},
                         "style": "secondary", "color": "#ffe6e6", "flex": 2, "margin": "xs"
                     }
                 ]
@@ -896,14 +618,14 @@ def build_settings_flex_message(fav_list):
             "contents": [
                 {
                     "type": "button",
-                    "action": {"type": "postback", "label": "📋 一覧", "data": "action=show_list", "displayText": "📋 一覧"},
+                    "action": {"type": "postback", "label": "📋 一覧", "data": "action=list", "displayText": "📋 一覧"},
                     "style": "secondary",
                     "color": "#fff59d",
                     "flex": 1
                 },
                 {
                     "type": "button",
-                    "action": {"type": "postback", "label": "🗑️ 全て削除", "data": "action=fav_del_all_confirm"},
+                    "action": {"type": "postback", "label": "🗑️ 全て削除", "data": "action=del_all_c"},
                     "style": "primary",
                     "color": "#e53935",
                     "flex": 1
@@ -947,7 +669,7 @@ def build_spot_list_carousel_horizontal(user_id=None):
                 "contents": [
                     {
                         "type": "text",
-                        "text": "現在お気に入りは登録されていません。\n\n右へスワイプして釣り場を探し、「⭐️ 登録」ボタンを押すか、テキストで「追加 東山湖 すその」と送信して登録してください。",
+                        "text": "現在お気に入りは登録されていません。\n右へスワイプして釣り場を探し、「⭐️ 登録」ボタンを押すか、テキストで「追加 東山湖」と送信して登録してください。",
                         "wrap": True,
                         "size": "sm",
                         "color": "#555555"
@@ -959,7 +681,7 @@ def build_spot_list_carousel_horizontal(user_id=None):
                 pair = fav_list[i:i+2]
                 row_buttons = []
                 for spot in pair:
-                    # ★ お気に入り一覧のボタン（Box構造）
+                    # ★ 容量削減のため action の data 文字列を極限まで短縮
                     row_buttons.append({
                         "type": "box",
                         "layout": "vertical",
@@ -972,35 +694,26 @@ def build_spot_list_carousel_horizontal(user_id=None):
                         "flex": 1,
                         "justifyContent": "center",
                         "alignItems": "center",
-                        "action": {"type": "postback", "data": f"action=show_weather&spot={spot}", "displayText": spot},
+                        "action": {"type": "postback", "data": f"w={spot}", "displayText": spot},
                         "contents": [
                             {
                                 "type": "text",
                                 "text": spot,
-                                "size": "xs", # ★ 省略されにくいようにサイズを縮小
-                                "color": "#333333",
+                                "size": "xs", 
                                 "weight": "bold",
                                 "align": "center",
-                                "wrap": True # ★ はみ出る場合は綺麗に2行に改行させる
+                                "wrap": True
                             }
                         ]
                     })
-                # ★ 奇数個の時の枠ズレ対策ダミー：実物のボタンと「外寸（余白・枠線）」が完全に同じ透明な箱を置く
+                # ★ 奇数個の時の枠ズレ対策（最もシンプルで容量を食わないダミー設計）
                 if len(pair) == 1:
                     row_buttons.append({
-                        "type": "box",
-                        "layout": "vertical",
-                        "cornerRadius": "md",
-                        "borderWidth": "normal",
-                        "borderColor": "#ffffff", # 背景に溶け込ませる白枠
-                        "paddingAll": "sm",
-                        "margin": "xs",
-                        "flex": 1,
-                        "contents": [
-                            {
-                                "type": "filler"
-                            }
-                        ]
+                        "type": "box", 
+                        "layout": "vertical", 
+                        "flex": 1, 
+                        "margin": "xs", 
+                        "contents": [{"type": "filler"}]
                     })
                     
                 row_box = {"type": "box", "layout": "horizontal", "contents": row_buttons}
@@ -1012,7 +725,7 @@ def build_spot_list_carousel_horizontal(user_id=None):
         fav_rows.append({"type": "separator", "margin": "lg" if fav_list else "md", "color": "#cccccc"})
         fav_rows.append({
             "type": "button",
-            "action": {"type": "postback", "label": "⚙️ 設定（並び替え・削除）", "data": "action=show_settings", "displayText": "⚙️ 設定"},
+            "action": {"type": "postback", "label": "⚙️ 設定（並び替え・削除）", "data": "action=set", "displayText": "⚙️ 設定"},
             "style": "secondary",
             "color": "#f8f9fa",
             "height": "sm",
@@ -1044,7 +757,6 @@ def build_spot_list_carousel_horizontal(user_id=None):
                 for spot in pair:
                     label_text = f"★ {spot}" if spot in fav_list else spot
                     
-                    # ★ 全体一覧のボタン（Box構造に統一してエラーを解消し、文字切れを防止）
                     row_buttons.append({
                         "type": "box",
                         "layout": "vertical",
@@ -1055,33 +767,26 @@ def build_spot_list_carousel_horizontal(user_id=None):
                         "flex": 1,
                         "justifyContent": "center",
                         "alignItems": "center",
-                        "action": {"type": "postback", "data": f"action=show_weather&spot={spot}", "displayText": spot},
+                        "action": {"type": "postback", "data": f"w={spot}", "displayText": spot},
                         "contents": [
                             {
                                 "type": "text",
                                 "text": label_text,
-                                "size": "xs", # ★ 省略されにくいようにサイズを縮小
-                                "color": "#333333",
+                                "size": "xs",
                                 "weight": "bold",
                                 "align": "center",
-                                "wrap": True # ★ はみ出る場合は綺麗に2行に改行させる
+                                "wrap": True
                             }
                         ]
                     })
-                # ★ 奇数個の時の枠ズレ対策ダミー：実物のボタンと「外寸（余白・枠線）」が完全に同じ透明な箱を置く
+                # ★ 奇数個の時の枠ズレ対策
                 if len(pair) == 1:
                     row_buttons.append({
-                        "type": "box",
-                        "layout": "vertical",
-                        "cornerRadius": "md",
-                        "paddingAll": "sm",
-                        "margin": "xs",
-                        "flex": 1,
-                        "contents": [
-                            {
-                                "type": "filler"
-                            }
-                        ]
+                        "type": "box", 
+                        "layout": "vertical", 
+                        "flex": 1, 
+                        "margin": "xs", 
+                        "contents": [{"type": "filler"}]
                     })
                     
                 rows.append({"type": "box", "layout": "horizontal", "contents": row_buttons})
@@ -1097,6 +802,7 @@ def build_spot_list_carousel_horizontal(user_id=None):
         }
         bubbles.append(bubble)
 
+    # ★ 容量超軽量化のためガイドバブルの構造を大幅にシンプル化
     guide_bubble = {
         "type": "bubble",
         "size": "giga",
@@ -1105,32 +811,16 @@ def build_spot_list_carousel_horizontal(user_id=None):
             "contents": [{"type": "text", "text": "📖 使い方ガイド", "color": "#ffffff", "weight": "bold", "size": "md"}]
         },
         "body": {
-            "type": "box", "layout": "vertical", "spacing": "md", "paddingAll": "15px",
+            "type": "box", "layout": "vertical", "paddingAll": "15px",
             "contents": [
-                {
-                    "type": "box", "layout": "vertical", "spacing": "sm",
-                    "contents": [
-                        {"type": "text", "text": "👇 基本の操作", "weight": "bold", "size": "sm", "color": "#333333"},
-                        {"type": "text", "text": "・一覧のボタンをタップで天気予報を表示", "wrap": True, "size": "xs", "color": "#666666"}
-                    ]
-                },
-                {"type": "separator", "margin": "md"},
-                {
-                    "type": "box", "layout": "vertical", "spacing": "sm", "margin": "md",
-                    "contents": [
-                        {"type": "text", "text": "💬 テキストコマンド", "weight": "bold", "size": "sm", "color": "#333333"},
-                        {"type": "text", "text": "【まとめて追加】\n例：「追加 東山湖 すその 足柄 座間 醒井」\n※釣り場と釣り場の名前の間にスペースを入れてください（最大30件まで一気に登録可能）。", "wrap": True, "size": "xs", "color": "#666666"},
-                        {"type": "text", "text": "【まとめて削除】\n例：「削除 東山湖 すその 足柄」\n※追加と同じく、名前の間にスペースを入れて複数同時に解除できます。", "wrap": True, "size": "xs", "color": "#666666", "margin": "sm"},
-                        {"type": "text", "text": "【設定】\n「設定」と送信すると、並び替え・全削除パネルが出ます。", "wrap": True, "size": "xs", "color": "#666666", "margin": "sm"},
-                        {"type": "text", "text": "【一覧（メニュー）の出し方】\n「一覧」という言葉や、それ以外の適当な文字（「あ」「1」「a」など）を送信すると、この一覧表が表示されます。", "wrap": True, "size": "xs", "color": "#666666", "margin": "sm"}
-                    ]
-                }
+                {"type": "text", "text": "👇 基本の操作\n一覧のボタンをタップで天気予報を表示\n\n💬 テキストコマンド\n【追加】例: 追加 東山湖 すその\n【削除】例: 削除 東山湖\n【設定】並び替え・全削除パネル\n【一覧】この一覧表を再表示", "wrap": True, "size": "sm", "color": "#333333"}
             ]
         }
     }
     bubbles.append(guide_bubble)
 
     return FlexSendMessage(alt_text="釣り場一覧", contents={"type": "carousel", "contents": bubbles})
+
 
 def get_cached_weather(spot_name):
     if not supabase: return None
@@ -1408,7 +1098,8 @@ def build_grid_flex_message(spot_name, weather_by_date, hp_url="", map_url="", t
         clean_tel = tel.replace('-', '').strip()
         bottom_buttons.append({"type": "button", "action": {"type": "uri", "label": "📞 電話", "uri": f"tel:{clean_tel}"}, "style": "secondary", "height": "sm", "flex": 1})
     
-    bottom_buttons.append({"type": "button", "action": {"type": "postback", "label": "📋 一覧", "data": "action=show_list", "displayText": "📋 一覧"}, "style": "secondary", "color": "#fff59d", "height": "sm", "flex": 1})
+    # 容量削減
+    bottom_buttons.append({"type": "button", "action": {"type": "postback", "label": "📋 一覧", "data": "action=list", "displayText": "📋 一覧"}, "style": "secondary", "color": "#fff59d", "height": "sm", "flex": 1})
 
     body_contents.append({"type": "separator", "margin": "md"})
     body_contents.append({
@@ -1418,9 +1109,9 @@ def build_grid_flex_message(spot_name, weather_by_date, hp_url="", map_url="", t
 
     header_buttons = []
     if is_favorite:
-        header_buttons.append({"type": "button", "action": {"type": "postback", "label": "🗑️ 解除", "data": f"action=fav_del_confirm_and_list&spot={spot_name}"}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs", "color": "#ffcccc"})
+        header_buttons.append({"type": "button", "action": {"type": "postback", "label": "🗑️ 解除", "data": f"action=dcl_list&spot={spot_name}"}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs", "color": "#ffcccc"})
     else:
-        header_buttons.append({"type": "button", "action": {"type": "postback", "label": "⭐️ 登録", "data": f"action=fav_add_and_list&spot={spot_name}"}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs", "color": "#fff59d"})
+        header_buttons.append({"type": "button", "action": {"type": "postback", "label": "⭐️ 登録", "data": f"action=add&spot={spot_name}"}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs", "color": "#fff59d"})
 
     clean_hp = clean_url(hp_url)
     clean_map = clean_url(map_url)
@@ -1435,11 +1126,11 @@ def build_grid_flex_message(spot_name, weather_by_date, hp_url="", map_url="", t
         "header": {"type": "box", "layout": "vertical", "backgroundColor": header_color, "paddingAll": "10px", "contents": header_contents},
         "body": {"type": "box", "layout": "vertical", "spacing": "md", "paddingAll": "8px", "contents": body_contents}
     }
-    return FlexSendMessage(alt_text=f"{spot_name}の天気予報(4日間)", contents=bubble)
+    return FlexSendMessage(alt_text=f"{spot_name}の天気予報", contents=bubble)
 
 @app.route("/", methods=['GET'])
 def top_page():
-    return "LINE Reply Bot Server (Supabase DB) is running!", 200
+    return "LINE Reply Bot Server is running!", 200
 
 @app.route("/callback", methods=['POST'])
 def callback():
@@ -1455,10 +1146,11 @@ def handle_message(event):
         raw_msg = event.message.text.strip()
         user_id = event.source.user_id
 
-        add_match = re.match(r'^追加[\s:： ]+(.+)$', raw_msg)
+        # \s で全角半角スペースを全て許可
+        add_match = re.match(r'^追加[\s:：]+(.+)$', raw_msg)
         if add_match:
             spots_str = add_match.group(1).strip()
-            spot_names = [s for s in re.split(r'[\s,、 ]+', spots_str) if s]
+            spot_names = [s for s in re.split(r'[\s,、]+', spots_str) if s]
             
             success, added, errors = add_favorite_spots(user_id, spot_names)
             reply_lines = []
@@ -1473,10 +1165,10 @@ def handle_message(event):
             line_bot_api.reply_message(event.reply_token, [TextSendMessage(text="\n".join(reply_lines)), flex_msg])
             return
 
-        del_match = re.match(r'^削除[\s:： ]+(.+)$', raw_msg)
+        del_match = re.match(r'^削除[\s:：]+(.+)$', raw_msg)
         if del_match:
             spots_str = del_match.group(1).strip()
-            spot_names = [s for s in re.split(r'[\s,、 ]+', spots_str) if s]
+            spot_names = [s for s in re.split(r'[\s,、]+', spots_str) if s]
             
             success, removed, errors = remove_favorite_spots(user_id, spot_names)
             reply_lines = []
@@ -1506,6 +1198,13 @@ def handle_message(event):
         flex_msg = build_spot_list_carousel_horizontal(user_id=user_id)
         line_bot_api.reply_message(event.reply_token, flex_msg)
 
+    except LineBotApiError as e:
+        print(f"\n=== LINE API エラー: {e.status_code} ===")
+        print(e.error.message)
+        for d in e.error.details:
+            print(f" - {d.property}: {d.message}")
+        try: line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ LINE通信エラーが発生しました。"))
+        except Exception: pass
     except Exception as e:
         print("\n=== システムエラー詳細 ===")
         traceback.print_exc()
@@ -1517,7 +1216,38 @@ def handle_postback(event):
     try:
         user_id = event.source.user_id
         data_dict = dict(parse_qsl(event.postback.data))
-        action, spot_name = data_dict.get("action"), data_dict.get("spot")
+        
+        action = data_dict.get("action")
+        spot_name = data_dict.get("spot")
+
+        # 軽量化されたコマンドの復元処理
+        if "w" in data_dict:
+            action = "show_weather"
+            spot_name = data_dict["w"]
+        elif action == "list":
+            action = "show_list"
+        elif action == "set":
+            action = "show_settings"
+        elif action == "add":
+            action = "fav_add_and_list"
+        elif action == "dcl_list":
+            action = "fav_del_confirm_and_list"
+        elif action == "dcl_set":
+            action = "fav_del_confirm_and_settings"
+        elif action == "del_list":
+            action = "fav_del_execute_and_list"
+        elif action == "del_set":
+            action = "fav_del_execute_and_settings"
+        elif action == "can_list":
+            action = "fav_del_cancel_and_list"
+        elif action == "can_settings":
+            action = "fav_del_cancel_and_settings"
+        elif action == "del_all_c":
+            action = "fav_del_all_confirm"
+        elif action == "del_all":
+            action = "fav_del_all_execute"
+        elif action in ["up", "down"]:
+            action = f"fav_{action}"
 
         if action == "show_list":
             flex_msg = build_spot_list_carousel_horizontal(user_id=user_id)
