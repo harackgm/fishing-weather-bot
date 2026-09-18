@@ -397,6 +397,13 @@ SPOT_WEATHER_DATA = {
         "tel": "0428-87-0373",
         "aliases": ["小菅", "小菅TG", "こすげ"]
     },
+    "奈良子": {
+        "url": "https://weathernews.jp/onebox/35.672184/138.917831/",
+        "hp_url": "https://www.narago.jp/index.html",
+        "search_name": "奈良子釣りセンター",
+        "tel": "0554-24-7636",
+        "aliases": ["奈良子", "奈良子釣りセンター", "ならこ", "ならご", "ナラコ", "ナラゴ", "ならごつりせんたー", "ナラゴツリセンター"]
+    },
     "シルフ": {
         "url": "https://weathernews.jp/onebox/35.778458/138.316489/",
         "hp_url": "https://shylph.boy.jp/",
@@ -772,7 +779,7 @@ COLOR_GROUPS = [
         "title": "📍 甲信・東北・東海・関西",
         "header_bg": "#6a1b9a",
         "sub_groups": [
-            {"bg": "#f3e5f5", "spots": ["鹿留", "小菅", "シルフ", "JF in Tsugane", "竜華池", "平谷湖", "ハーブの里", "ニレ池", "鹿島槍", "つきの池", "あずみ野"]},
+            {"bg": "#f3e5f5", "spots": ["鹿留", "小菅", "奈良子", "シルフ", "JF in Tsugane", "竜華池", "平谷湖", "ハーブの里", "ニレ池", "鹿島槍", "つきの池", "あずみ野"]},
             {"bg": "#e1bee7", "spots": ["GP不忘", "白河", "ほのぼの", "WaDoNa", "鶴沼川", "オーパ", "あいづ", "上浜", "GOZU"]},
             {"bg": "#d1c4e9", "spots": ["FCE瑞浪", "３９", "醒井", "高島の泉", "千早川"]}
         ]
@@ -1390,7 +1397,6 @@ def build_grid_flex_message(spot_name, weather_by_date, hp_url="", map_url="", t
     bottom_buttons = []
     if tel:
         clean_tel = tel.replace('-', '').strip()
-        # ★変更点：電話のflexを2、一覧のflexを3にして文字が見切れない幅を確保
         bottom_buttons.append({"type": "button", "action": {"type": "uri", "label": "📞 電話", "uri": f"tel:{clean_tel}"}, "style": "secondary", "height": "sm", "flex": 2})
     
     bottom_buttons.append({"type": "button", "action": {"type": "postback", "label": "📋 一覧", "data": "action=show_list", "displayText": "📋 一覧"}, "style": "secondary", "color": "#fff59d", "height": "sm", "flex": 3})
