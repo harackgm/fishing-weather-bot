@@ -1390,8 +1390,8 @@ def build_grid_flex_message(spot_name, weather_by_date, hp_url="", map_url="", t
     bottom_buttons = []
     if tel:
         clean_tel = tel.replace('-', '').strip()
-        # ★変更点：電話のflexを1、一覧のflexを3にして電話ボタンを小さくしました
-        bottom_buttons.append({"type": "button", "action": {"type": "uri", "label": "📞 電話", "uri": f"tel:{clean_tel}"}, "style": "secondary", "height": "sm", "flex": 1})
+        # ★変更点：電話のflexを2、一覧のflexを3にして文字が見切れない幅を確保
+        bottom_buttons.append({"type": "button", "action": {"type": "uri", "label": "📞 電話", "uri": f"tel:{clean_tel}"}, "style": "secondary", "height": "sm", "flex": 2})
     
     bottom_buttons.append({"type": "button", "action": {"type": "postback", "label": "📋 一覧", "data": "action=show_list", "displayText": "📋 一覧"}, "style": "secondary", "color": "#fff59d", "height": "sm", "flex": 3})
 
