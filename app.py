@@ -841,15 +841,33 @@ def build_delete_all_confirm_message():
     return FlexSendMessage(alt_text="全て削除の確認", contents=bubble)
 
 def build_settings_flex_message(fav_list):
-    rows = []
     if not fav_list:
-        rows.append({
-            "type": "text",
-            "text": "現在お気に入りは登録されていません。\n\n釣り場を検索し、天気カード内の「⭐️ 登録」ボタンを押すだけで追加できます！",
-            "wrap": True, "size": "sm", "color": "#555555"
-        })
-    else:
-        for spot in fav_list:
+        bubble = {
+            "type": "bubble",
+            "size": "mega",
+            "header": {
+                "type": "box", "layout": "vertical", "backgroundColor": "#d4af37", "paddingAll": "10px",
+                "contents": [
+                    {"type": "text", "text": "⚙️ お気に入り設定", "color": "#ffffff", "weight": "bold", "size": "md"}
+                ]
+            },
+            "body": {
+                "type": "box", "layout": "vertical", "spacing": "sm", "paddingAll": "10px",
+                "contents": [{
+                    "type": "text",
+                    "text": "現在お気に入りは登録されていません。\n\n釣り場を検索し、天気カード内の「⭐️ 登録」ボタンを押すだけで追加できます！",
+                    "wrap": True, "size": "sm", "color": "#555555"
+                }]
+            }
+        }
+        return FlexSendMessage(alt_text="お気に入り管理パネル", contents=bubble)
+
+    bubbles = []
+    chunk_size = 10
+    for i in range(0, len(fav_list), chunk_size):
+        chunk = fav_list[i:i + chunk_size]
+        rows = []
+        for spot in chunk:
             rows.append({
                 "type": "box", "layout": "horizontal", "margin": "md", "alignItems": "center",
                 "contents": [
@@ -897,21 +915,25 @@ def build_settings_flex_message(fav_list):
             ]
         })
 
-    bubble = {
-        "type": "bubble",
-        "size": "mega",
-        "header": {
-            "type": "box", "layout": "vertical", "backgroundColor": "#d4af37", "paddingAll": "10px",
-            "contents": [
-                {"type": "text", "text": f"⚙️ お気に入り並び替え ({len(fav_list)}/{MAX_FAVORITES}件)", "color": "#ffffff", "weight": "bold", "size": "md"}
-            ]
-        },
-        "body": {
-            "type": "box", "layout": "vertical", "spacing": "sm", "paddingAll": "10px",
-            "contents": rows
-        }
-    }
-    return FlexSendMessage(alt_text="お気に入り管理パネル", contents=bubble)
+        bubbles.append({
+            "type": "bubble",
+            "size": "mega",
+            "header": {
+                "type": "box", "layout": "vertical", "backgroundColor": "#d4af37", "paddingAll": "10px",
+                "contents": [
+                    {"type": "text", "text": f"⚙️ お気に入り ({i+1}-{min(i+chunk_size, len(fav_list))}/{len(fav_list)}件)", "color": "#ffffff", "weight": "bold", "size": "md"}
+                ]
+            },
+            "body": {
+                "type": "box", "layout": "vertical", "spacing": "sm", "paddingAll": "10px",
+                "contents": rows
+            }
+        })
+    
+    if len(bubbles) == 1:
+        return FlexSendMessage(alt_text="お気に入り管理パネル", contents=bubbles[0])
+    else:
+        return FlexSendMessage(alt_text="お気に入り管理パネル", contents={"type": "carousel", "contents": bubbles})
 
 def build_spot_list_carousel_horizontal(user_id=None):
     bubbles = []
@@ -1368,9 +1390,10 @@ def build_grid_flex_message(spot_name, weather_by_date, hp_url="", map_url="", t
     bottom_buttons = []
     if tel:
         clean_tel = tel.replace('-', '').strip()
+        # ★変更点：電話のflexを1、一覧のflexを3にして電話ボタンを小さくしました
         bottom_buttons.append({"type": "button", "action": {"type": "uri", "label": "📞 電話", "uri": f"tel:{clean_tel}"}, "style": "secondary", "height": "sm", "flex": 1})
     
-    bottom_buttons.append({"type": "button", "action": {"type": "postback", "label": "📋 一覧", "data": "action=show_list", "displayText": "📋 一覧"}, "style": "secondary", "color": "#fff59d", "height": "sm", "flex": 1})
+    bottom_buttons.append({"type": "button", "action": {"type": "postback", "label": "📋 一覧", "data": "action=show_list", "displayText": "📋 一覧"}, "style": "secondary", "color": "#fff59d", "height": "sm", "flex": 3})
 
     body_contents.append({"type": "separator", "margin": "md"})
     body_contents.append({
