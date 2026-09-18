@@ -244,12 +244,12 @@ SPOT_WEATHER_DATA = {
     },
 
     # --- 千葉県 ---
-    "座間": {
+    "座間・amaz": {
         "url": "https://weathernews.jp/onebox/35.843581/140.010676/",
         "hp_url": "http://zamayougyo.com/",
         "search_name": "座間養魚場",
         "tel": "04-7192-1080",
-        "aliases": ["座間", "座間養魚場", "ざま", "ざまようぎょじょう"]
+        "aliases": ["座間・amaz", "座間", "座間養魚場", "ざま", "ザマ", "ざまようぎょじょう", "アメイズ", "あめいず"]
     },
     "ジョイバレー": {
         "url": "https://weathernews.jp/onebox/35.744779/140.417401/",
@@ -749,7 +749,7 @@ COLOR_GROUPS = [
         "sub_groups": [
             {"bg": "#e6f0fa", "spots": ["東山湖", "すその", "須川", "アルクス焼津", "浜名湖"]},
             {"bg": "#d4e6f1", "spots": ["足柄", "中津川", "早戸川", "王禅寺", "開成", "浅川国際"]},
-            {"bg": "#cce5ff", "spots": ["座間", "ジョイバレー", "ウォルトン", "NOIKE", "パラダイス"]}
+            {"bg": "#cce5ff", "spots": ["座間・amaz", "ジョイバレー", "ウォルトン", "NOIKE", "パラダイス"]}
         ]
     },
     {
@@ -1020,7 +1020,6 @@ def build_spot_list_carousel_horizontal(user_id=None):
         }
         bubbles.append(bubble)
 
-    # ガイドの復元
     guide_bubble = {
         "type": "bubble",
         "size": "giga",
@@ -1116,7 +1115,8 @@ def get_user_setting(user_id):
                 "関根": "関根養魚場",
                 "FAJ": "Ｊ",
                 "朝霞": "朝霞Ｇ",
-                "不忘": "GP不忘"
+                "不忘": "GP不忘",
+                "座間": "座間・amaz"
             }
             
             raw_favs = [s.strip() for s in favs.split(',')]
