@@ -1378,11 +1378,21 @@ def build_grid_flex_message(spot_name, weather_by_date, hp_url="", map_url="", t
                     {"type": "text", "text": w_val, "size": "xs", "flex": 1, "align": "center"}
                 ]
             })
+            
+        header_bg_color = "#f5f5f5"
+        header_text_color = "#333333"
+        if "(土)" in date_str:
+            header_bg_color = "#e6f2ff"
+            header_text_color = "#0066cc"
+        elif "(日)" in date_str or "(祝)" in date_str:
+            header_bg_color = "#ffe6e6"
+            header_text_color = "#cc0000"
+
         return {
             "type": "box", "layout": "vertical", "flex": 1,
             "contents": [
-                {"type": "box", "layout": "vertical", "backgroundColor": "#e6f2ff", "paddingAll": "4px", "margin": "sm",
-                 "contents": [{"type": "text", "text": date_str, "weight": "bold", "size": "sm", "align": "center", "color": "#0066cc"}]}
+                {"type": "box", "layout": "vertical", "backgroundColor": header_bg_color, "paddingAll": "4px", "margin": "sm",
+                 "contents": [{"type": "text", "text": date_str, "weight": "bold", "size": "sm", "align": "center", "color": header_text_color}]}
             ] + [{"type": "box", "layout": "vertical", "spacing": "none", "margin": "sm", "contents": rows}]
         }
 
