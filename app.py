@@ -365,7 +365,7 @@ SPOT_WEATHER_DATA = {
         "hp_url": "http://www.nakatugawa-gyokyou.jp/",
         "search_name": "フィッシングフィールド中津川",
         "tel": "046-281-5421",
-        "aliases": ["中津川", "FF中津川", "なかつがわ", "なかつ"]
+        "aliases": ["中津川", "FF中津川", "なかつがわ", "なかつ", "中津"]
     },
     "早戸川": {
         "url": "https://weathernews.jp/onebox/35.543063/139.216090/",
@@ -1075,7 +1075,6 @@ def build_spot_list_carousel_horizontal(user_id=None):
         }
         bubbles.append(bubble)
 
-    # ★修正: データ容量削減のため、階層とテキストを極限までシンプルに縮小し、元のカルーセルに統合
     guide_bubble = {
         "type": "bubble",
         "size": "giga",
@@ -1086,22 +1085,18 @@ def build_spot_list_carousel_horizontal(user_id=None):
         "body": {
             "type": "box", "layout": "vertical", "spacing": "sm", "paddingAll": "15px",
             "contents": [
-                {"type": "text", "text": "👇 基本操作", "weight": "bold", "size": "sm", "color": "#333333"},
-                {"type": "text", "text": "ボタンをタップで天気を表示", "wrap": True, "size": "xs", "color": "#666666"},
-                {"type": "separator", "margin": "md"},
-                {"type": "text", "text": "💬 テキストコマンド", "weight": "bold", "size": "sm", "color": "#333333", "margin": "md"},
+                {"type": "text", "text": "💬 テキストコマンド", "weight": "bold", "size": "sm", "color": "#333333"},
                 {"type": "text", "text": "【追加 / 削除】", "weight": "bold", "size": "xs", "color": "#333333", "margin": "sm"},
-                {"type": "text", "text": "「追加 東山湖 すその」のようにスペース区切りで一括処理（最大30件）", "wrap": True, "size": "xs", "color": "#666666"},
+                {"type": "text", "text": "「追加 東山湖 すその」のようにスペース区切りで一括処理", "wrap": True, "size": "xs", "color": "#666666"},
                 {"type": "text", "text": "【設定】", "weight": "bold", "size": "xs", "color": "#333333", "margin": "sm"},
                 {"type": "text", "text": "「設定」送信で並び替え・全削除", "wrap": True, "size": "xs", "color": "#666666"},
                 {"type": "text", "text": "【一覧の表示】", "weight": "bold", "size": "xs", "color": "#333333", "margin": "sm"},
-                {"type": "text", "text": "適当な文字送信でこの一覧を表示", "wrap": True, "size": "xs", "color": "#666666"}
+                {"type": "text", "text": "”あ” でも ”い” でも適当な文字送信でこの一覧を表示", "wrap": True, "size": "xs", "color": "#666666"}
             ]
         }
     }
     bubbles.append(guide_bubble)
 
-    # 1つのカルーセルとして返す（分割しない）
     return FlexSendMessage(alt_text="釣り場一覧", contents={"type": "carousel", "contents": bubbles})
 
 
@@ -1610,7 +1605,7 @@ def handle_postback(event):
         print(e.error.message)
         for d in e.error.details:
             print(f" - {d.property}: {d.message}")
-        try: line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ LINE通信エラーが発生しました。（データ容量制限エラー等の可能性があります）"))
+        try: line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ LINE通信エラーが発生しました。（データ容量オーバー等の可能性があります）"))
         except Exception: pass
     except Exception as e:
         print(f"Postback Error: {e}")
