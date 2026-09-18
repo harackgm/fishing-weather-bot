@@ -47,7 +47,7 @@ if SUPABASE_URL and SUPABASE_KEY:
         print(f"[Supabase初期化エラー] {e}")
 
 # ==========================================
-# 3. 釣り場URL・HP・Googleマップ・電話番号・表記揺れ辞書（全57箇所完全復元）
+# 3. 釣り場URL・HP・Googleマップ・電話番号・表記揺れ辞書（全57箇所）
 # ==========================================
 SPOT_WEATHER_DATA = {
     # --- 静岡県 ---
@@ -810,8 +810,8 @@ def get_spot_details(spot_key):
     return spot_key, data["url"], hp_url, map_url, data.get("tel", "")
 
 def build_delete_confirm_message(spot_name, source):
-    execute_action = f"del_{source}"
-    cancel_action = f"can_{source}"
+    execute_action = f"fav_del_execute_and_{source}"
+    cancel_action = f"fav_del_cancel_and_{source}"
     
     bubble = {
         "type": "bubble",
@@ -847,8 +847,8 @@ def build_delete_all_confirm_message():
         "footer": {
             "type": "box", "layout": "horizontal", "spacing": "sm",
             "contents": [
-                {"type": "button", "style": "secondary", "height": "sm", "flex": 1, "action": {"type": "postback", "label": "キャンセル", "data": "action=can_settings"}},
-                {"type": "button", "style": "primary", "color": "#e53935", "height": "sm", "flex": 1, "action": {"type": "postback", "label": "全て削除", "data": "action=del_all"}}
+                {"type": "button", "style": "secondary", "height": "sm", "flex": 1, "action": {"type": "postback", "label": "キャンセル", "data": "action=fav_del_cancel_and_settings"}},
+                {"type": "button", "style": "primary", "color": "#e53935", "height": "sm", "flex": 1, "action": {"type": "postback", "label": "全て削除", "data": "action=fav_del_all_execute"}}
             ]
         }
     }
@@ -870,17 +870,17 @@ def build_settings_flex_message(fav_list):
                     {"type": "text", "text": f"{spot}", "size": "sm", "weight": "bold", "flex": 4, "color": "#333333", "wrap": True},
                     {
                         "type": "button",
-                        "action": {"type": "postback", "label": "⬆️", "data": f"action=up&spot={spot}"},
+                        "action": {"type": "postback", "label": "⬆️", "data": f"action=fav_up&spot={spot}"},
                         "style": "secondary", "flex": 2, "margin": "xs"
                     },
                     {
                         "type": "button",
-                        "action": {"type": "postback", "label": "⬇️", "data": f"action=down&spot={spot}"},
+                        "action": {"type": "postback", "label": "⬇️", "data": f"action=fav_down&spot={spot}"},
                         "style": "secondary", "flex": 2, "margin": "xs"
                     },
                     {
                         "type": "button",
-                        "action": {"type": "postback", "label": "🗑️", "data": f"action=dcl_set&spot={spot}"},
+                        "action": {"type": "postback", "label": "🗑️", "data": f"action=fav_del_confirm_and_settings&spot={spot}"},
                         "style": "secondary", "color": "#ffe6e6", "flex": 2, "margin": "xs"
                     }
                 ]
@@ -896,14 +896,14 @@ def build_settings_flex_message(fav_list):
             "contents": [
                 {
                     "type": "button",
-                    "action": {"type": "postback", "label": "📋 一覧", "data": "action=list", "displayText": "📋 一覧"},
+                    "action": {"type": "postback", "label": "📋 一覧", "data": "action=show_list", "displayText": "📋 一覧"},
                     "style": "secondary",
                     "color": "#fff59d",
                     "flex": 1
                 },
                 {
                     "type": "button",
-                    "action": {"type": "postback", "label": "🗑️ 全て削除", "data": "action=del_all_c"},
+                    "action": {"type": "postback", "label": "🗑️ 全て削除", "data": "action=fav_del_all_confirm"},
                     "style": "primary",
                     "color": "#e53935",
                     "flex": 1
@@ -987,10 +987,8 @@ def build_spot_list_carousel_horizontal(user_id=None):
                     row_buttons.append({
                         "type": "box", 
                         "layout": "vertical", 
-                        "paddingAll": "sm", 
-                        "margin": "xs", 
                         "flex": 1, 
-                        "contents": [{"type": "text", "text": " ", "size": "xs"}]
+                        "contents": [{"type": "filler"}]
                     })
                     
                 row_box = {"type": "box", "layout": "horizontal", "contents": row_buttons}
@@ -1002,7 +1000,7 @@ def build_spot_list_carousel_horizontal(user_id=None):
         fav_rows.append({"type": "separator", "margin": "lg" if fav_list else "md", "color": "#cccccc"})
         fav_rows.append({
             "type": "button",
-            "action": {"type": "postback", "label": "⚙️ 設定（並び替え・削除）", "data": "action=set", "displayText": "⚙️ 設定"},
+            "action": {"type": "postback", "label": "⚙️ 設定（並び替え・削除）", "data": "action=show_settings", "displayText": "⚙️ 設定"},
             "style": "secondary",
             "color": "#f8f9fa",
             "height": "sm",
@@ -1060,10 +1058,8 @@ def build_spot_list_carousel_horizontal(user_id=None):
                     row_buttons.append({
                         "type": "box", 
                         "layout": "vertical", 
-                        "paddingAll": "sm", 
-                        "margin": "xs", 
                         "flex": 1, 
-                        "contents": [{"type": "text", "text": " ", "size": "xs"}]
+                        "contents": [{"type": "filler"}]
                     })
                     
                 rows.append({"type": "box", "layout": "horizontal", "contents": row_buttons})
@@ -1079,6 +1075,7 @@ def build_spot_list_carousel_horizontal(user_id=None):
         }
         bubbles.append(bubble)
 
+    # ★修正：50KB制限による無言エラーを防ぐため、ガイドバブルのみを分離して2通目に送る構造を採用（カルーセル一覧のデザイン自体は変えずに維持）
     guide_bubble = {
         "type": "bubble",
         "size": "giga",
@@ -1114,10 +1111,11 @@ def build_spot_list_carousel_horizontal(user_id=None):
             ]
         }
     }
-    bubbles.append(guide_bubble)
-
-    return FlexSendMessage(alt_text="釣り場一覧", contents={"type": "carousel", "contents": bubbles})
-
+    
+    list_flex = FlexSendMessage(alt_text="釣り場一覧", contents={"type": "carousel", "contents": bubbles})
+    guide_flex = FlexSendMessage(alt_text="使い方ガイド", contents=guide_bubble)
+    
+    return [list_flex, guide_flex]
 
 def get_cached_weather(spot_name):
     if not supabase: return None
@@ -1158,7 +1156,8 @@ def get_user_setting(user_id):
         if res.data and len(res.data) > 0:
             row = res.data[0]
             favs = row.get('favorite_spots') or ''
-            favs_list = ["GOZU" if s == "五頭" else s for s in favs.split(',')]
+            # ★エラー対策：古いデータにスペース等が混入していても確実に除去（strip）して正常に読み込む
+            favs_list = ["GOZU" if s.strip() == "五頭" else s.strip() for s in favs.split(',')]
             favs_list = [s for s in favs_list if s]
             return (row.get('weather_source', 'ウェザーニュース'), ','.join(favs_list))
         return ('ウェザーニュース', '')
@@ -1463,8 +1462,9 @@ def handle_message(event):
             if not reply_lines:
                 reply_lines.append("⚠️ 釣り場名が認識できませんでした。")
                 
-            flex_msg = build_spot_list_carousel_horizontal(user_id=user_id)
-            line_bot_api.reply_message(event.reply_token, [TextSendMessage(text="\n".join(reply_lines)), flex_msg])
+            flex_msgs = build_spot_list_carousel_horizontal(user_id=user_id)
+            messages = [TextSendMessage(text="\n".join(reply_lines))] + flex_msgs
+            line_bot_api.reply_message(event.reply_token, messages)
             return
 
         del_match = re.match(r'^削除[\s:：]+(.+)$', raw_msg, re.DOTALL)
@@ -1481,31 +1481,34 @@ def handle_message(event):
             if not reply_lines:
                 reply_lines.append("⚠️ 釣り場名が認識できませんでした。")
                 
-            flex_msg = build_spot_list_carousel_horizontal(user_id=user_id)
-            line_bot_api.reply_message(event.reply_token, [TextSendMessage(text="\n".join(reply_lines)), flex_msg])
+            flex_msgs = build_spot_list_carousel_horizontal(user_id=user_id)
+            messages = [TextSendMessage(text="\n".join(reply_lines))] + flex_msgs
+            line_bot_api.reply_message(event.reply_token, messages)
             return
 
         if raw_msg in ["一覧", "リスト", "釣り場一覧", "エリア", "📋 一覧", "📋一覧"]:
-            flex_msg = build_spot_list_carousel_horizontal(user_id=user_id)
-            line_bot_api.reply_message(event.reply_token, flex_msg)
+            flex_msgs = build_spot_list_carousel_horizontal(user_id=user_id)
+            line_bot_api.reply_message(event.reply_token, flex_msgs)
             return
 
-        if raw_msg == "設定":
+        # ★修正：ユーザーがボタンやリッチメニュー経由で送信した「⚙️設定」などの表記ゆれに対応
+        if raw_msg in ["設定", "⚙️設定", "⚙️ 設定", "設定（並び替え・削除）", "⚙️ 設定（並び替え・削除）"]:
             _, favorites = get_user_setting(user_id)
-            fav_list = [s for s in favorites.split(',') if s]
+            fav_list = [s.strip() for s in favorites.split(',')]
+            fav_list = [s for s in fav_list if s]
             flex_msg = build_settings_flex_message(fav_list)
             line_bot_api.reply_message(event.reply_token, flex_msg)
             return
 
-        flex_msg = build_spot_list_carousel_horizontal(user_id=user_id)
-        line_bot_api.reply_message(event.reply_token, flex_msg)
+        flex_msgs = build_spot_list_carousel_horizontal(user_id=user_id)
+        line_bot_api.reply_message(event.reply_token, flex_msgs)
 
     except LineBotApiError as e:
         print(f"\n=== LINE API エラー: {e.status_code} ===")
         print(e.error.message)
         for d in e.error.details:
             print(f" - {d.property}: {d.message}")
-        try: line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ LINE通信エラーが発生しました。（お気に入りが多すぎる可能性があります）"))
+        try: line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ LINE通信エラーが発生しました。（データ容量制限エラー等の可能性があります）"))
         except Exception: pass
     except Exception as e:
         print("\n=== システムエラー詳細 ===")
@@ -1527,13 +1530,14 @@ def handle_postback(event):
             spot_name = data_dict["w"]
 
         if action == "show_list":
-            flex_msg = build_spot_list_carousel_horizontal(user_id=user_id)
-            line_bot_api.reply_message(event.reply_token, flex_msg)
+            flex_msgs = build_spot_list_carousel_horizontal(user_id=user_id)
+            line_bot_api.reply_message(event.reply_token, flex_msgs)
             return
             
         elif action == "show_settings":
             _, favorites = get_user_setting(user_id)
-            fav_list = [s for s in favorites.split(',') if s]
+            fav_list = [s.strip() for s in favorites.split(',')]
+            fav_list = [s for s in fav_list if s]
             flex_msg = build_settings_flex_message(fav_list)
             line_bot_api.reply_message(event.reply_token, flex_msg)
             return
@@ -1541,7 +1545,8 @@ def handle_postback(event):
         elif action == "show_weather":
             target_spot_name, target_url, hp_url, map_url, tel = get_spot_details(spot_name)
             _, favorites = get_user_setting(user_id)
-            fav_list = [s for s in favorites.split(',') if s]
+            fav_list = [s.strip() for s in favorites.split(',')]
+            fav_list = [s for s in fav_list if s]
             is_fav = target_spot_name in fav_list
 
             weather_by_date = get_cached_weather(target_spot_name)
@@ -1561,8 +1566,8 @@ def handle_postback(event):
         elif action == "fav_add_and_list":
             success, added, errors = add_favorite_spots(user_id, [spot_name])
             msg = f"✅ 追加しました: {added[0]}" if added else f"⚠️ {errors[0]}"
-            flex_msg = build_spot_list_carousel_horizontal(user_id=user_id)
-            line_bot_api.reply_message(event.reply_token, [TextSendMessage(text=msg), flex_msg])
+            flex_msgs = build_spot_list_carousel_horizontal(user_id=user_id)
+            line_bot_api.reply_message(event.reply_token, [TextSendMessage(text=msg)] + flex_msgs)
 
         elif action == "fav_del_confirm_and_list":
             flex_msg = build_delete_confirm_message(spot_name, "list")
@@ -1575,24 +1580,26 @@ def handle_postback(event):
         elif action == "fav_del_execute_and_list":
             success, removed, errors = remove_favorite_spots(user_id, [spot_name])
             msg = f"✅ 削除しました: {removed[0]}" if removed else f"⚠️ {errors[0]}"
-            flex_msg = build_spot_list_carousel_horizontal(user_id=user_id)
-            line_bot_api.reply_message(event.reply_token, [TextSendMessage(text=msg), flex_msg])
+            flex_msgs = build_spot_list_carousel_horizontal(user_id=user_id)
+            line_bot_api.reply_message(event.reply_token, [TextSendMessage(text=msg)] + flex_msgs)
 
         elif action == "fav_del_execute_and_settings":
             success, removed, errors = remove_favorite_spots(user_id, [spot_name])
             msg = f"✅ 削除しました: {removed[0]}" if removed else f"⚠️ {errors[0]}"
             _, favorites = get_user_setting(user_id)
-            fav_list = [s for s in favorites.split(',') if s]
+            fav_list = [s.strip() for s in favorites.split(',')]
+            fav_list = [s for s in fav_list if s]
             flex_msg = build_settings_flex_message(fav_list)
             line_bot_api.reply_message(event.reply_token, [TextSendMessage(text=msg), flex_msg])
 
         elif action == "fav_del_cancel_and_list":
-            flex_msg = build_spot_list_carousel_horizontal(user_id=user_id)
-            line_bot_api.reply_message(event.reply_token, [TextSendMessage(text="キャンセルしました。"), flex_msg])
+            flex_msgs = build_spot_list_carousel_horizontal(user_id=user_id)
+            line_bot_api.reply_message(event.reply_token, [TextSendMessage(text="キャンセルしました。")] + flex_msgs)
 
         elif action == "fav_del_cancel_and_settings":
             _, favorites = get_user_setting(user_id)
-            fav_list = [s for s in favorites.split(',') if s]
+            fav_list = [s.strip() for s in favorites.split(',')]
+            fav_list = [s for s in fav_list if s]
             flex_msg = build_settings_flex_message(fav_list)
             line_bot_api.reply_message(event.reply_token, [TextSendMessage(text="キャンセルしました。"), flex_msg])
 
@@ -1602,14 +1609,15 @@ def handle_postback(event):
 
         elif action == "fav_del_all_execute":
             success, msg = clear_favorite_spots(user_id)
-            flex_msg = build_spot_list_carousel_horizontal(user_id=user_id)
-            line_bot_api.reply_message(event.reply_token, [TextSendMessage(text=f"✅ {msg}"), flex_msg])
+            flex_msgs = build_spot_list_carousel_horizontal(user_id=user_id)
+            line_bot_api.reply_message(event.reply_token, [TextSendMessage(text=f"✅ {msg}")] + flex_msgs)
 
         elif action in ["fav_up", "fav_down"]:
             direction = "up" if action == "fav_up" else "down"
             move_favorite_spot(user_id, spot_name, direction)
             _, favorites = get_user_setting(user_id)
-            fav_list = [s for s in favorites.split(',') if s]
+            fav_list = [s.strip() for s in favorites.split(',')]
+            fav_list = [s for s in fav_list if s]
             flex_msg = build_settings_flex_message(fav_list)
             line_bot_api.reply_message(event.reply_token, flex_msg)
             
