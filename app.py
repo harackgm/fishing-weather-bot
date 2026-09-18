@@ -704,7 +704,6 @@ def build_spot_list_carousel_horizontal(user_id=None):
                             }
                         ]
                     })
-                # ★修正: エラー原因を排除した「安全な透明ダミー枠」
                 if len(pair) == 1:
                     row_buttons.append({
                         "type": "box", 
@@ -778,7 +777,6 @@ def build_spot_list_carousel_horizontal(user_id=None):
                             }
                         ]
                     })
-                # ★修正: エラー原因を排除した「安全な透明ダミー枠」
                 if len(pair) == 1:
                     row_buttons.append({
                         "type": "box", 
@@ -802,7 +800,6 @@ def build_spot_list_carousel_horizontal(user_id=None):
         }
         bubbles.append(bubble)
 
-    # ガイドバブル（軽量版）
     guide_bubble = {
         "type": "bubble",
         "size": "giga",
@@ -813,7 +810,7 @@ def build_spot_list_carousel_horizontal(user_id=None):
         "body": {
             "type": "box", "layout": "vertical", "paddingAll": "15px",
             "contents": [
-                {"type": "text", "text": "👇 基本の操作\n一覧のボタンをタップで天気予報を表示\n\n💬 テキストコマンド\n【追加】例: 追加 東山湖 すその\n【削除】例: 削除 東山湖\n【設定】並び替え・全削除パネル\n【一覧】この一覧表を再表示\n\n🎯 直接入力（新機能）\n「すそぱ」など名前を直接打つだけで天気が表示されます！", "wrap": True, "size": "sm", "color": "#333333"}
+                {"type": "text", "text": "👇 基本の操作\n一覧のボタンをタップで天気予報を表示\n\n💬 テキストコマンド\n【追加】例: 追加 東山湖 すその\n【削除】例: 削除 東山湖\n【設定】並び替え・全削除パネル\n【一覧】この一覧表を再表示", "wrap": True, "size": "sm", "color": "#333333"}
             ]
         }
     }
@@ -1098,6 +1095,7 @@ def build_grid_flex_message(spot_name, weather_by_date, hp_url="", map_url="", t
         clean_tel = tel.replace('-', '').strip()
         bottom_buttons.append({"type": "button", "action": {"type": "uri", "label": "📞 電話", "uri": f"tel:{clean_tel}"}, "style": "secondary", "height": "sm", "flex": 1})
     
+    # 容量削減
     bottom_buttons.append({"type": "button", "action": {"type": "postback", "label": "📋 一覧", "data": "action=list", "displayText": "📋 一覧"}, "style": "secondary", "color": "#fff59d", "height": "sm", "flex": 1})
 
     body_contents.append({"type": "separator", "margin": "md"})
@@ -1145,7 +1143,7 @@ def handle_message(event):
         raw_msg = event.message.text.strip()
         user_id = event.source.user_id
 
-        # ★ 強化版：追加コマンド（全角スペースや改行も区切りとして認識）
+        # \s で全角半角スペースを全て許可
         add_match = re.match(r'^追加[\s:：]+(.+)$', raw_msg, re.DOTALL)
         if add_match:
             spots_str = add_match.group(1).strip()
@@ -1164,7 +1162,6 @@ def handle_message(event):
             line_bot_api.reply_message(event.reply_token, [TextSendMessage(text="\n".join(reply_lines)), flex_msg])
             return
 
-        # ★ 強化版：削除コマンド
         del_match = re.match(r'^削除[\s:：]+(.+)$', raw_msg, re.DOTALL)
         if del_match:
             spots_str = del_match.group(1).strip()
@@ -1195,33 +1192,7 @@ def handle_message(event):
             line_bot_api.reply_message(event.reply_token, flex_msg)
             return
 
-        # ★ 新機能：テキストで「すそぱ」等と直接入力された場合、ゆらぎ判定して即座に天気を返す
-        target_direct_spot = None
-        for spot_key, data in SPOT_WEATHER_DATA.items():
-            if raw_msg.lower() == spot_key.lower() or raw_msg.lower() in [a.lower() for a in data["aliases"]]:
-                target_direct_spot = spot_key
-                break
-                
-        if target_direct_spot:
-            target_spot_name, target_url, hp_url, map_url, tel = get_spot_details(target_direct_spot)
-            _, favorites = get_user_setting(user_id)
-            fav_list = [s for s in favorites.split(',') if s]
-            is_fav = target_spot_name in fav_list
-
-            weather_by_date = get_cached_weather(target_spot_name)
-            if not weather_by_date:
-                weather_by_date = fetch_spot_1hour_data(target_url)
-                if weather_by_date:
-                    save_cached_weather(target_spot_name, weather_by_date)
-
-            if weather_by_date:
-                flex_msg = build_grid_flex_message(target_spot_name, weather_by_date, hp_url, map_url, tel, is_favorite=is_fav)
-                line_bot_api.reply_message(event.reply_token, flex_msg)
-            else:
-                line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"⚠️ 【{target_spot_name}】の天気データの取得に失敗しました。"))
-            return
-
-        # どのコマンドにも当てはまらない場合は一覧を表示
+        # どのコマンドにも当てはまらない場合は一覧を表示（ゆらぎ等による直接検索機能は削除）
         flex_msg = build_spot_list_carousel_horizontal(user_id=user_id)
         line_bot_api.reply_message(event.reply_token, flex_msg)
 
