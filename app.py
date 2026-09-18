@@ -959,42 +959,40 @@ def build_spot_list_carousel_horizontal(user_id=None):
                 pair = fav_list[i:i+2]
                 row_buttons = []
                 for spot in pair:
-                    font_size = "xxs" if len(spot) >= 7 else "sm"
-                    
                     row_buttons.append({
                         "type": "box",
                         "layout": "vertical",
                         "backgroundColor": "#fff59d",  
                         "cornerRadius": "md",          
+                        "borderWidth": "normal",
+                        "borderColor": "#d4af37",      
                         "paddingAll": "md",  
                         "margin": "xs",
                         "flex": 1,
                         "justifyContent": "center",
                         "alignItems": "center",
-                        "action": {"type": "postback", "label": spot, "data": f"action=show_weather&spot={spot}", "displayText": spot},
+                        "action": {"type": "postback", "label": spot[:20], "data": f"action=show_weather&spot={spot}", "displayText": spot},
                         "contents": [
                             {
                                 "type": "text",
                                 "text": spot,
-                                "size": font_size,
+                                "size": "sm",
                                 "color": "#333333",
                                 "weight": "bold",
                                 "align": "center",
-                                "wrap": False
+                                "wrap": False, # ★自動縮小で対応するため改行(wrap)を禁止
+                                "adjustMode": "shrink-to-fit" # ★文字数に応じて1行に自動縮小する安全設定
                             }
                         ]
                     })
-                # ★修正：エラーの原因だった透明コードを削除し、実体ボタンと全く同じ余白構造の空Boxを配置
+                # 奇数個の時の枠ズレ対策ダミー（標準で動作が確認された安全な構造）
                 if len(pair) == 1:
                     row_buttons.append({
-                        "type": "box",
-                        "layout": "vertical",
-                        "paddingAll": "md",
+                        "type": "box", 
+                        "layout": "vertical", 
+                        "flex": 1, 
                         "margin": "xs",
-                        "flex": 1,
-                        "contents": [
-                            {"type": "filler"}
-                        ]
+                        "contents": [{"type": "filler"}]
                     })
                     
                 row_box = {"type": "box", "layout": "horizontal", "contents": row_buttons}
@@ -1037,42 +1035,24 @@ def build_spot_list_carousel_horizontal(user_id=None):
                 row_buttons = []
                 for spot in pair:
                     label_text = f"★ {spot}" if spot in fav_list else spot
-                    font_size = "xxs" if len(label_text) >= 7 else "xs"
-
                     row_buttons.append({
-                        "type": "box",
-                        "layout": "vertical",
-                        "backgroundColor": btn_bg,
-                        "cornerRadius": "md",
-                        "paddingAll": "sm",
+                        "type": "button",
+                        "action": {"type": "postback", "label": label_text, "data": f"action=show_weather&spot={spot}", "displayText": spot},
+                        "style": "secondary",
+                        "color": btn_bg,
+                        "height": "sm",
                         "margin": "xs",
                         "flex": 1,
-                        "justifyContent": "center",
-                        "alignItems": "center",
-                        "action": {"type": "postback", "label": spot, "data": f"action=show_weather&spot={spot}", "displayText": spot},
-                        "contents": [
-                            {
-                                "type": "text",
-                                "text": label_text,
-                                "size": font_size,
-                                "color": "#333333",
-                                "weight": "bold",
-                                "align": "center",
-                                "wrap": False
-                            }
-                        ]
+                        "adjustMode": "shrink-to-fit"  # ★追加：キングフィッシャー等のみ1行に自動縮小する安全設定
                     })
-                # ★修正：エラーの原因だった透明コードを削除し、実体ボタンと全く同じ余白構造の空Boxを配置
+                # 奇数個の時の枠ズレ対策ダミー（標準で動作が確認された安全な構造）
                 if len(pair) == 1:
                     row_buttons.append({
-                        "type": "box",
-                        "layout": "vertical",
-                        "paddingAll": "sm",
+                        "type": "box", 
+                        "layout": "vertical", 
+                        "flex": 1, 
                         "margin": "xs",
-                        "flex": 1,
-                        "contents": [
-                            {"type": "filler"}
-                        ]
+                        "contents": [{"type": "filler"}]
                     })
                     
                 rows.append({"type": "box", "layout": "horizontal", "contents": row_buttons})
@@ -1482,7 +1462,6 @@ def handle_message(event):
             line_bot_api.reply_message(event.reply_token, [TextSendMessage(text="\n".join(reply_lines)), flex_msg])
             return
 
-        # ★ 絵文字付きの「📋 一覧」なども確実にヒットするように追加補強
         if raw_msg in ["一覧", "リスト", "釣り場一覧", "エリア", "📋 一覧", "📋一覧"]:
             flex_msg = build_spot_list_carousel_horizontal(user_id=user_id)
             line_bot_api.reply_message(event.reply_token, flex_msg)
