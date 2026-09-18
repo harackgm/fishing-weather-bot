@@ -47,7 +47,7 @@ if SUPABASE_URL and SUPABASE_KEY:
         print(f"[Supabase初期化エラー] {e}")
 
 # ==========================================
-# 3. 釣り場URL・HP・Googleマップ・電話番号・表記揺れ辞書（全57箇所完全復元）
+# 3. 釣り場URL・HP・Googleマップ・電話番号・表記揺れ辞書（全55箇所）
 # ==========================================
 SPOT_WEATHER_DATA = {
     # --- 静岡県 ---
@@ -123,12 +123,12 @@ SPOT_WEATHER_DATA = {
         "tel": "0287-64-4286",
         "aliases": ["つり天国", "ツリテンゴク", "つりてんごく"]
     },
-    "関根": {
+    "関根養魚場": {
         "url": "https://weathernews.jp/onebox/36.851308/139.979065/",
         "hp_url": "http://sekine-fish.com/",
         "search_name": "関根養魚場",
         "tel": "0287-35-2630",
-        "aliases": ["関根", "関根養魚場", "せきね"]
+        "aliases": ["関根養魚場", "関根", "せきね", "せきねようぎょじょう"]
     },
     "408": {
         "url": "https://weathernews.jp/onebox/36.763055/139.858269/",
@@ -279,13 +279,6 @@ SPOT_WEATHER_DATA = {
         "tel": "043-445-1216",
         "aliases": ["パラダイス", "釣りパラダイス", "つりぱら"]
     },
-    "いなプー": {
-        "url": "https://weathernews.jp/onebox/35.619254/140.074365/",
-        "hp_url": "https://sunsetbeachpark.jp/",
-        "search_name": "稲毛海浜公園プール",
-        "tel": "043-247-2700",
-        "aliases": ["いなプー", "稲毛プール", "いなぷー"]
-    },
 
     # --- 埼玉県 ---
     "長瀞": {
@@ -316,12 +309,12 @@ SPOT_WEATHER_DATA = {
         "tel": "048-977-5111",
         "aliases": ["しらこばと", "しらこばと水上公園"]
     },
-    "川越": {
+    "川越パーク": {
         "url": "https://weathernews.jp/onebox/35.907152/139.444046/",
         "hp_url": "https://www.parks.or.jp/kawagoesuijo/",
         "search_name": "川越水上公園",
         "tel": "049-241-2241",
-        "aliases": ["川越", "川越水上公園", "かわごえ"]
+        "aliases": ["川越パーク", "川越", "川越水上公園", "かわごえ"]
     },
     "加須はなさき": {
         "url": "https://weathernews.jp/onebox/36.096192/139.636601/",
@@ -329,13 +322,6 @@ SPOT_WEATHER_DATA = {
         "search_name": "加須はなさき水上公園",
         "tel": "0480-65-7155",
         "aliases": ["加須はなさき", "はなさき", "はなさき公園"]
-    },
-    "多摩湖": {
-        "url": "https://weathernews.jp/onebox/35.780248/139.440732/",
-        "hp_url": "https://www.s-fishingarea.com/",
-        "search_name": "多摩湖フィッシングエリア",
-        "tel": "042-922-1371",
-        "aliases": ["多摩湖", "西武園", "たまこ"]
     },
     "中里": {
         "url": "https://weathernews.jp/onebox/36.163896/139.176567/",
@@ -388,12 +374,12 @@ SPOT_WEATHER_DATA = {
         "tel": "0465-85-2020",
         "aliases": ["開成", "開成水辺フォレストスプリングス", "開成FS", "かいせい", "フォレストスプリングス"]
     },
-    "浅川": {
+    "浅川国際": {
         "url": "https://weathernews.jp/onebox/35.641903/139.231262/",
         "hp_url": "http://www5c.biglobe.ne.jp/~fly-lure/",
         "search_name": "浅川国際マス釣り場",
         "tel": "042-661-2228",
-        "aliases": ["浅川", "浅川国際マス釣り場", "あさかわ"]
+        "aliases": ["浅川国際", "浅川", "浅川国際マス釣り場", "あさかわ", "あさかわこくさい", "あさこく", "アサコク"]
     },
 
     # --- 山梨県・長野県 ---
@@ -439,12 +425,12 @@ SPOT_WEATHER_DATA = {
         "tel": "0265-48-1127",
         "aliases": ["平谷湖", "平谷湖フィッシングスポット", "ひらやこ"]
     },
-    "ハーブ": {
+    "ハーブの里": {
         "url": "https://weathernews.jp/onebox/36.403436/137.890526/",
         "hp_url": "https://herbfa1995.kikirara.jp/",
         "search_name": "ハーブの里フィッシングエリア",
         "tel": "0261-62-6322",
-        "aliases": ["ハーブ", "ハーブの里", "はーぶ"]
+        "aliases": ["ハーブの里", "ハーブ", "はーぶ"]
     },
     "ニレ池": {
         "url": "https://weathernews.jp/onebox/36.712669/137.845826/",
@@ -460,12 +446,12 @@ SPOT_WEATHER_DATA = {
         "tel": "0261-22-2253",
         "aliases": ["鹿島槍", "鹿島槍ガーデン", "かしまやり"]
     },
-    "槻の池": {
+    "つきの池": {
         "url": "https://weathernews.jp/onebox/36.011582/138.197271/",
         "hp_url": "http://www.tsukinoike.jp/",
         "search_name": "槻の池フィッシングエリア",
         "tel": "0266-76-2280",
-        "aliases": ["槻の池", "つきのいけ"]
+        "aliases": ["つきの池", "槻の池", "槻の池フィッシングエリア"]
     },
     "あずみ野": {
         "url": "https://weathernews.jp/onebox/36.337699/137.885455/",
@@ -532,12 +518,12 @@ SPOT_WEATHER_DATA = {
         "tel": "027-283-3532",
         "aliases": ["中之沢", "GFC中之沢", "なかのさわ"]
     },
-    "宮城": {
+    "ＭＡＶ": {
         "url": "https://weathernews.jp/onebox/36.483735/139.188251/",
         "hp_url": "http://www.anglers-village.com/index2.html",
         "search_name": "宮城アングラーズヴィレッジ",
         "tel": "027-283-0035",
-        "aliases": ["宮城", "宮城AV", "みやぎあんぐらーず"]
+        "aliases": ["ＭＡＶ", "宮城", "宮城AV", "みやぎあんぐらーず", "まぶ", "マブ", "あんびれ", "アンビレ", "MAV", "mav"]
     },
     "大崎": {
         "url": "https://weathernews.jp/onebox/36.463209/139.164867/",
@@ -611,12 +597,12 @@ SPOT_WEATHER_DATA = {
         "tel": "0299-43-6111",
         "aliases": ["つくば園", "つくばえん"]
     },
-    "FAJ": {
+    "Ｊ": {
         "url": "https://weathernews.jp/onebox/36.081494/140.164360/",
         "hp_url": "https://sites.google.com/view/fishing-area-j/",
         "search_name": "フィッシングエリアJ",
         "tel": "029-842-1698",
-        "aliases": ["FAJ", "フィッシングエリアJ", "ふぃっしんぐえりあじぇい"]
+        "aliases": ["Ｊ", "J", "FAJ", "フィッシングエリアJ", "ふぃっしんぐえりあじぇい", "じぇー", "じぇい", "ジェー"]
     },
     "ユザキ": {
         "url": "https://weathernews.jp/onebox/36.314550/140.335285/",
@@ -718,19 +704,19 @@ SPOT_WEATHER_DATA = {
         "tel": "0250-63-0051",
         "aliases": ["GOZU", "ごず", "五頭", "ごづ", "五頭FP", "五頭フィッシングパーク", "gozu"]
     },
-    "瑞浪": {
+    "FCE瑞浪": {
         "url": "https://weathernews.jp/onebox/35.433516/137.295266/",
         "hp_url": "https://www.fishing-autocamp-mizunami.com/",
         "search_name": "フィッシングキャンプエリア瑞浪",
         "tel": "0572-68-1212",
-        "aliases": ["瑞浪", "FC瑞浪", "みずなみ"]
+        "aliases": ["FCE瑞浪", "瑞浪", "FC瑞浪", "みずなみ", "フィッシングキャンプエリアミズナミ", "フィッシングキャンプエリア瑞浪"]
     },
-    "サンクチュアリ": {
+    "３９": {
         "url": "https://weathernews.jp/onebox/35.187504/136.457803/",
         "hp_url": "https://go-sanctuary.com/",
         "search_name": "フィッシングサンクチュアリ",
         "tel": "0594-46-8820",
-        "aliases": ["サンクチュアリ", "サンク", "さんくちゅあり"]
+        "aliases": ["３９", "サンクチュアリ", "サンク", "さんくちゅあり", "39"]
     },
     "醒井": {
         "url": "https://weathernews.jp/onebox/35.303671/136.349914/",
@@ -739,12 +725,12 @@ SPOT_WEATHER_DATA = {
         "tel": "0749-54-0301",
         "aliases": ["醒井", "醒井養鱒場", "さめがい"]
     },
-    "高島": {
+    "高島の泉": {
         "url": "https://weathernews.jp/onebox/35.348308/136.052288/",
         "hp_url": "https://www.takashimanoizumi.com/",
         "search_name": "高島の泉",
         "tel": "0740-25-3790",
-        "aliases": ["高島", "高島の泉", "たかしまのいずみ"]
+        "aliases": ["高島の泉", "高島", "たかしまのいずみ", "たかしま"]
     },
     "千早川": {
         "url": "https://weathernews.jp/onebox/34.417118/135.647482/",
@@ -762,33 +748,33 @@ COLOR_GROUPS = [
         "header_bg": "#0066cc",
         "sub_groups": [
             {"bg": "#e6f0fa", "spots": ["東山湖", "すその", "須川", "アルクス焼津", "浜名湖"]},
-            {"bg": "#d4e6f1", "spots": ["足柄", "中津川", "早戸川", "王禅寺", "開成", "浅川"]},
-            {"bg": "#cce5ff", "spots": ["座間", "ジョイバレー", "ウォルトン", "NOIKE", "パラダイス", "いなプー"]}
+            {"bg": "#d4e6f1", "spots": ["足柄", "中津川", "早戸川", "王禅寺", "開成", "浅川国際"]},
+            {"bg": "#cce5ff", "spots": ["座間", "ジョイバレー", "ウォルトン", "NOIKE", "パラダイス"]}
         ]
     },
     {
         "title": "📍 埼玉・群馬",
         "header_bg": "#2e7d32",
         "sub_groups": [
-            {"bg": "#e8f5e9", "spots": ["長瀞", "彩の国", "朝霞", "しらこばと", "川越", "加須はなさき", "多摩湖", "中里", "伊古の里"]},
-            {"bg": "#c8e6c9", "spots": ["川場", "川場キングダム", "おくとね", "イワナセンター", "黒保根", "迦葉山", "片品", "中之沢", "宮城", "大崎", "けん太", "フック", "赤久縄", "太田", "東山道", "榛名"]}
+            {"bg": "#e8f5e9", "spots": ["長瀞", "彩の国", "朝霞", "しらこばと", "川越パーク", "加須はなさき", "中里", "伊古の里"]},
+            {"bg": "#c8e6c9", "spots": ["川場", "川場キングダム", "おくとね", "イワナセンター", "黒保根", "迦葉山", "片品", "中之沢", "ＭＡＶ", "大崎", "けん太", "フック", "赤久縄", "太田", "東山道", "榛名"]}
         ]
     },
     {
         "title": "📍 栃木・茨城",
         "header_bg": "#e65100",
         "sub_groups": [
-            {"bg": "#fff3e0", "spots": ["キングフィッシャー", "みどり", "那須高原", "尚仁沢", "つり天国", "関根", "408", "308", "蛇尾川", "レイクウッド", "なら山沼", "大芦川", "加賀", "発光路", "上永野", "柏倉", "遊水園", "アルクス宇都宮", "エリア21", "ベアーズパーク", "鬼怒川", "名草"]},
-            {"bg": "#ffe0b2", "spots": ["水戸南", "高萩", "つくば園", "FAJ", "ユザキ", "笠間", "DoDoo", "若栗", "ミッドクリーク"]}
+            {"bg": "#fff3e0", "spots": ["キングフィッシャー", "みどり", "那須高原", "尚仁沢", "つり天国", "関根養魚場", "408", "308", "蛇尾川", "レイクウッド", "なら山沼", "大芦川", "加賀", "発光路", "上永野", "柏倉", "遊水園", "アルクス宇都宮", "エリア21", "ベアーズパーク", "鬼怒川", "名草"]},
+            {"bg": "#ffe0b2", "spots": ["水戸南", "高萩", "つくば園", "Ｊ", "ユザキ", "笠間", "DoDoo", "若栗", "ミッドクリーク"]}
         ]
     },
     {
         "title": "📍 甲信・東北・東海・関西",
         "header_bg": "#6a1b9a",
         "sub_groups": [
-            {"bg": "#f3e5f5", "spots": ["鹿留", "小菅", "シルフ", "JF in Tsugane", "竜华池", "平谷湖", "ハーブ", "ニレ池", "鹿島槍", "槻の池", "あずみ野"]},
+            {"bg": "#f3e5f5", "spots": ["鹿留", "小菅", "シルフ", "JF in Tsugane", "竜華池", "平谷湖", "ハーブの里", "ニレ池", "鹿島槍", "つきの池", "あずみ野"]},
             {"bg": "#e1bee7", "spots": ["不忘", "白河", "ほのぼの", "WaDoNa", "鶴沼川", "オーパ", "あいづ", "上浜", "GOZU"]},
-            {"bg": "#d1c4e9", "spots": ["瑞浪", "サンクチュアリ", "醒井", "高島", "千早川"]}
+            {"bg": "#d1c4e9", "spots": ["FCE瑞浪", "３９", "醒井", "高島の泉", "千早川"]}
         ]
     }
 ]
@@ -1034,7 +1020,7 @@ def build_spot_list_carousel_horizontal(user_id=None):
         }
         bubbles.append(bubble)
 
-    # ★修正箇所：使い方ガイドの文言を以前の丁寧なものに復元しました。
+    # ガイドの復元
     guide_bubble = {
         "type": "bubble",
         "size": "giga",
@@ -1058,7 +1044,7 @@ def build_spot_list_carousel_horizontal(user_id=None):
                     "contents": [
                         {"type": "text", "text": "💬 テキストコマンド", "weight": "bold", "size": "sm", "color": "#333333"},
                         {"type": "text", "text": "【まとめて追加】", "weight": "bold", "size": "xs", "color": "#333333", "margin": "sm"},
-                        {"type": "text", "text": "例：「追加 東山湖 すその 足柄 座間 醒井」\n※釣り場と釣り場の名前の間にスペースを入れてください（最大30件まで一気に登録可能）。", "wrap": True, "size": "xs", "color": "#666666"},
+                        {"type": "text", "text": "例：「追加 東山湖 すその 足柄 座間 醒井」\n※釣り場と釣り場の名前の間にスペースを入れてください。", "wrap": True, "size": "xs", "color": "#666666"},
                         {"type": "text", "text": "【まとめて削除】", "weight": "bold", "size": "xs", "color": "#333333", "margin": "sm"},
                         {"type": "text", "text": "例：「削除 東山湖 すその 足柄」\n※追加と同じく、名前の間にスペースを入れて複数同時に解除できます。", "wrap": True, "size": "xs", "color": "#666666"},
                         {"type": "text", "text": "【設定】", "weight": "bold", "size": "xs", "color": "#333333", "margin": "sm"},
@@ -1114,8 +1100,32 @@ def get_user_setting(user_id):
         if res.data and len(res.data) > 0:
             row = res.data[0]
             favs = row.get('favorite_spots') or ''
-            favs_list = ["GOZU" if s.strip() == "五頭" else s.strip() for s in favs.split(',')]
-            favs_list = [s for s in favs_list if s]
+            
+            # 名称変更対応マップ（過去登録された古い名前を自動で新しい名前に変換）
+            rename_map = {
+                "五頭": "GOZU",
+                "竜华池": "竜華池",
+                "ハーブ": "ハーブの里",
+                "サンクチュアリ": "３９",
+                "高島": "高島の泉",
+                "瑞浪": "FCE瑞浪",
+                "槻の池": "つきの池",
+                "川越": "川越パーク",
+                "宮城": "ＭＡＶ",
+                "浅川": "浅川国際",
+                "関根": "関根養魚場",
+                "FAJ": "Ｊ"
+            }
+            
+            raw_favs = [s.strip() for s in favs.split(',')]
+            favs_list = []
+            for s in raw_favs:
+                if s in rename_map:
+                    s = rename_map[s]
+                # 削除された釣り場は除外する
+                if s not in ["多摩湖", "いなプー"] and s:
+                    favs_list.append(s)
+                    
             return (row.get('weather_source', 'ウェザーニュース'), ','.join(favs_list))
         return ('ウェザーニュース', '')
     except Exception as e:
