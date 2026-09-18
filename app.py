@@ -473,285 +473,6 @@ SPOT_WEATHER_DATA = {
         "search_name": "あずみ野フィッシングセンター",
         "tel": "0263-82-8280",
         "aliases": ["あずみ野", "あずみ野FC", "あずみの"]
-    },
-
-    # --- 群馬県 ---
-    "川場": {
-        "url": "https://weathernews.jp/onebox/36.690767/139.121662/",
-        "hp_url": "http://www.kawaba-fp.jp/",
-        "search_name": "川場フィッシングプラザ",
-        "tel": "0278-52-3200",
-        "aliases": ["川場", "川場FP", "かわば"]
-    },
-    "川場キングダム": {
-        "url": "https://weathernews.jp/onebox/36.754213/139.142256/",
-        "hp_url": "http://kawaba-kingdomfishing.com/",
-        "search_name": "川場キングダムフィッシング",
-        "tel": "0278-52-2002",
-        "aliases": ["川場キングダム", "キングダム", "かわばきんぐだむ"]
-    },
-    "おくとね": {
-        "url": "https://weathernews.jp/onebox/36.663005/139.163750/",
-        "hp_url": "http://www7.wind.ne.jp/okutone/",
-        "search_name": "おくとねフィッシングパーク",
-        "tel": "0278-53-3802",
-        "aliases": ["おくとね", "おくとねFP"]
-    },
-    "イワナセンター": {
-        "url": "https://weathernews.jp/onebox/36.610095/139.243740/",
-        "hp_url": "http://www7.wind.ne.jp/okutone/",
-        "search_name": "日本イワナセンター",
-        "tel": "0278-54-8433",
-        "aliases": ["イワナセンター", "日本イワナセンター", "いわなせんたー"]
-    },
-    "黒保根": {
-        "url": "https://weathernews.jp/onebox/36.515041/139.252324/",
-        "hp_url": "https://www.kurohone-fishing.com/",
-        "search_name": "黒保根渓流フィッシング",
-        "tel": "0277-96-2091",
-        "aliases": ["黒保根", "くろほね"]
-    },
-    "迦葉山": {
-        "url": "https://weathernews.jp/onebox/36.685419/139.071387/",
-        "hp_url": "http://www.fp-berrys.net/",
-        "search_name": "ベリーズ迦葉山",
-        "tel": "0278-23-9333",
-        "aliases": ["迦葉山", "ベリーズ迦葉山", "かしょうざん", "ベリーズ"]
-    },
-    "片品": {
-        "url": "https://weathernews.jp/onebox/36.624564/139.046703/",
-        "hp_url": "https://www.turinavi.info/gunma/katashinagawakokusai/",
-        "search_name": "片品川国際マス釣り場",
-        "tel": "0278-24-1188",
-        "aliases": ["片品", "片品川国際", "かたしな"]
-    },
-    "中之沢": {
-        "url": "https://weathernews.jp/onebox/36.492057/139.195293/",
-        "hp_url": "http://gfc.sakura.ne.jp/index.htm",
-        "search_name": "GFC中之沢",
-        "tel": "027-283-3532",
-        "aliases": ["中之沢", "GFC中之沢", "なかのさわ"]
-    },
-    "宮城": {
-        "url": "https://weathernews.jp/onebox/36.483735/139.188251/",
-        "hp_url": "http://www.anglers-village.com/index2.html",
-        "search_name": "宮城アングラーズヴィレッジ",
-        "tel": "027-283-0035",
-        "aliases": ["宮城", "宮城AV", "みやぎあんぐらーず"]
-    },
-    "大崎": {
-        "url": "https://weathernews.jp/onebox/36.463209/139.164867/",
-        "hp_url": "https://nijimasu.com/",
-        "search_name": "大崎つりぼり",
-        "tel": "027-283-2945",
-        "aliases": ["大崎", "大崎つりぼり", "おおさき"]
-    },
-    "けん太": {
-        "url": "https://weathernews.jp/onebox/36.386648/138.960021/",
-        "hp_url": "http://www.tsurikichikenta.com/index.htm",
-        "search_name": "釣りキチけん太",
-        "tel": "027-371-3312",
-        "aliases": ["けん太", "釣りキチけん太", "けんた"]
-    },
-    "フック": {
-        "url": "https://weathernews.jp/onebox/36.457699/139.173191/",
-        "hp_url": "https://aa-hook.jp/",
-        "search_name": "アングラーズエリアHOOK",
-        "tel": "027-283-0535",
-        "aliases": ["フック", "HOOK", "ふっく"]
-    },
-    "赤久縄": {
-        "url": "https://weathernews.jp/onebox/36.160894/138.895355/",
-        "hp_url": "https://www.akaguna.net/",
-        "search_name": "赤久縄",
-        "tel": "0274-56-0230",
-        "aliases": ["赤久縄", "あかぐな"]
-    },
-    "太田": {
-        "url": "https://weathernews.jp/onebox/36.357774/139.330830/",
-        "hp_url": "https://www.facebook.com/otafishingclub/",
-        "search_name": "太田フィッシングクラブ",
-        "tel": "0276-32-1230",
-        "aliases": ["太田", "太田FC", "おおた"]
-    },
-    "東山道": {
-        "url": "https://weathernews.jp/onebox/36.323047/139.280989/",
-        "hp_url": "https://emrp-fishing.com/",
-        "search_name": "東山道公園フィッシングエリア",
-        "tel": "0276-56-1180",
-        "aliases": ["東山道", "東山道FA", "とうさんどう"]
-    },
-    "榛名": {
-        "url": "https://weathernews.jp/onebox/36.443570/138.898498/",
-        "hp_url": "https://haruna-turibori.com/",
-        "search_name": "榛名高原つり堀センター",
-        "tel": "027-374-2228",
-        "aliases": ["榛名", "榛名高原", "はるな"]
-    },
-
-    # --- 茨城県 ---
-    "水戸南": {
-        "url": "https://weathernews.jp/onebox/36.326377/140.501362/",
-        "hp_url": "http://www.mitominami-fa.jp/index.html",
-        "search_name": "水戸南フィッシングエリア",
-        "tel": "029-246-1233",
-        "aliases": ["水戸南", "水戸南FA", "みとみなみ"]
-    },
-    "高萩": {
-        "url": "https://weathernews.jp/onebox/36.788035/140.577243/",
-        "hp_url": "https://takahagifureainosato.web.fc2.com/",
-        "search_name": "高萩ふれあいの里フィッシングエリア",
-        "tel": "0293-24-1888",
-        "aliases": ["高萩", "高萩ふれあいの里", "たかはぎ"]
-    },
-    "つくば園": {
-        "url": "https://weathernews.jp/onebox/36.224122/140.144261/",
-        "hp_url": "http://tsukuba-en.jp/",
-        "search_name": "フィッシングパークつくば園",
-        "tel": "0299-43-6111",
-        "aliases": ["つくば園", "つくばえん"]
-    },
-    "FAJ": {
-        "url": "https://weathernews.jp/onebox/36.081494/140.164360/",
-        "hp_url": "https://sites.google.com/view/fishing-area-j/",
-        "search_name": "フィッシングエリアJ",
-        "tel": "029-842-1698",
-        "aliases": ["FAJ", "フィッシングエリアJ", "ふぃっしんぐえりあじぇい"]
-    },
-    "ユザキ": {
-        "url": "https://weathernews.jp/onebox/36.314550/140.335285/",
-        "hp_url": "https://yuzakiko.com/",
-        "search_name": "レイクユザキ",
-        "tel": "0296-77-8500",
-        "aliases": ["ユザキ", "レイクユザキ", "ゆざき"]
-    },
-    "笠間": {
-        "url": "https://weathernews.jp/onebox/36.412866/140.208145/",
-        "hp_url": "http://www.leisure-park-kasama.jp/",
-        "search_name": "レジャーパーク笠間",
-        "tel": "0296-72-8888",
-        "aliases": ["笠間", "LP笠間", "かさま"]
-    },
-    "DoDoo": {
-        "url": "https://weathernews.jp/onebox/36.187994/140.216734/",
-        "hp_url": "http://www.fishing-dodoo.com/",
-        "search_name": "フィッシングDoDoo",
-        "tel": "0299-59-7052",
-        "aliases": ["DoDoo", "ドゥドゥー", "どぅどぅー"]
-    },
-    "若栗": {
-        "url": "https://weathernews.jp/onebox/36.779644/140.633185/",
-        "hp_url": "http://wakagurinomori.ina-ka.com/",
-        "search_name": "若栗フィッシングの森",
-        "tel": "0293-23-3882",
-        "aliases": ["若栗", "若栗フィッシングの森", "わかぐり"]
-    },
-    "ミッドクリーク": {
-        "url": "https://weathernews.jp/onebox/36.192975/140.164058/",
-        "hp_url": "http://midcreek.jp/",
-        "search_name": "ミッドクリークフィッシングエリア",
-        "tel": "0299-42-4578",
-        "aliases": ["ミッドクリーク", "みっどくりーく"]
-    },
-
-    # --- 東北・東海・関西 ---
-    "不忘": {
-        "url": "https://weathernews.jp/onebox/38.042491/140.554478/",
-        "hp_url": "http://www.fubou.jp/",
-        "search_name": "グリーンコンプラザ不忘",
-        "tel": "0224-24-8131",
-        "aliases": ["不忘", "グリーンコンプラザ不忘", "ふぼう"]
-    },
-    "白河": {
-        "url": "https://weathernews.jp/onebox/37.127955/140.081827/",
-        "hp_url": "https://shirakawa.forest-springs.com/",
-        "search_name": "白河フォレストスプリングス",
-        "tel": "0248-25-3535",
-        "aliases": ["白河", "白河フォレストスプリングス", "白河FS", "しらかわ"]
-    },
-    "ほのぼの": {
-        "url": "https://weathernews.jp/onebox/36.837687/140.472433/",
-        "hp_url": "http://honobono.travel.coocan.jp/",
-        "search_name": "ほのぼのフィッシングエリア",
-        "tel": "0247-46-3200",
-        "aliases": ["ほのぼの", "ほのぼのプール"]
-    },
-    "WaDoNa": {
-        "url": "https://weathernews.jp/onebox/36.877372/140.540954/",
-        "hp_url": "https://wadona.work/",
-        "search_name": "WaDoNa 釣り場",
-        "tel": "090-3121-6677",
-        "aliases": ["WaDoNa", "ワドナ", "わどな"]
-    },
-    "鶴沼川": {
-        "url": "https://weathernews.jp/onebox/37.255460/139.872256/",
-        "hp_url": "https://aizuiwanacenter.com/",
-        "search_name": "鶴沼川フィッシングパーク",
-        "tel": "0241-67-2708",
-        "aliases": ["鶴沼川", "つるぬまがわ"]
-    },
-    "オーパ": {
-        "url": "https://weathernews.jp/onebox/37.314342/140.449245/",
-        "hp_url": "https://welcomeohpa.com/",
-        "search_name": "ウエルカムオーパ",
-        "tel": "024-954-2007",
-        "aliases": ["オーパ", "ウエルカムオーパ", "おーぱ"]
-    },
-    "あいづ": {
-        "url": "https://weathernews.jp/onebox/37.204977/139.729681/",
-        "hp_url": "https://aizufishing.jp/",
-        "search_name": "あいづフィッシングエリア",
-        "tel": "0241-64-2101",
-        "aliases": ["あいづ", "あいづFA"]
-    },
-    "上浜": {
-        "url": "https://weathernews.jp/onebox/39.142616/139.945938/",
-        "hp_url": "http://kamihama.web.fc2.com/",
-        "search_name": "上浜釣り場",
-        "tel": "0184-38-3488",
-        "aliases": ["上浜", "上浜釣り場", "かみはま"]
-    },
-    "五頭": {
-        "url": "https://weathernews.jp/onebox/37.819471/139.238518/",
-        "hp_url": "http://www.gozu-fp.jp/",
-        "search_name": "五頭フィッシングパーク",
-        "tel": "0250-63-0051",
-        "aliases": ["五頭", "五頭FP", "ごず"]
-    },
-    "瑞浪": {
-        "url": "https://weathernews.jp/onebox/35.433516/137.295266/",
-        "hp_url": "https://www.fishing-autocamp-mizunami.com/",
-        "search_name": "フィッシングキャンプエリア瑞浪",
-        "tel": "0572-68-1212",
-        "aliases": ["瑞浪", "FC瑞浪", "みずなみ"]
-    },
-    "サンクチュアリ": {
-        "url": "https://weathernews.jp/onebox/35.187504/136.457803/",
-        "hp_url": "https://go-sanctuary.com/",
-        "search_name": "フィッシングサンクチュアリ",
-        "tel": "0594-46-8820",
-        "aliases": ["サンクチュアリ", "サンク", "さんくちゅあり"]
-    },
-    "醒井": {
-        "url": "https://weathernews.jp/onebox/35.303671/136.349914/",
-        "hp_url": "http://samegai.siga.jp/",
-        "search_name": "醒井養鱒場",
-        "tel": "0749-54-0301",
-        "aliases": ["醒井", "醒井養鱒場", "さめがい"]
-    },
-    "高島": {
-        "url": "https://weathernews.jp/onebox/35.348308/136.052288/",
-        "hp_url": "https://www.takashimanoizumi.com/",
-        "search_name": "高島の泉",
-        "tel": "0740-25-3790",
-        "aliases": ["高島", "高島の泉", "たかしまのいずみ"]
-    },
-    "千早川": {
-        "url": "https://weathernews.jp/onebox/34.417118/135.647482/",
-        "hp_url": "http://chihayagawa.jp/",
-        "search_name": "千早川マス釣り場",
-        "tel": "0721-74-0116",
-        "aliases": ["千早川", "千早川マス釣り場", "ちはやがわ"]
     }
 }
 
@@ -966,7 +687,7 @@ def build_spot_list_carousel_horizontal(user_id=None):
                         "cornerRadius": "md",          
                         "borderWidth": "normal",
                         "borderColor": "#d4af37",      
-                        "paddingAll": "md",  
+                        "paddingAll": "sm",  # 少し内側の余白を詰める
                         "margin": "xs",
                         "flex": 1,
                         "justifyContent": "center",
@@ -976,23 +697,36 @@ def build_spot_list_carousel_horizontal(user_id=None):
                             {
                                 "type": "text",
                                 "text": spot,
-                                "size": "sm",
+                                "size": "xs", # ★文字を小さくして一行に収まりやすくする
                                 "color": "#333333",
                                 "weight": "bold",
                                 "align": "center",
-                                "wrap": False, # ★自動縮小で対応するため改行(wrap)を禁止
-                                "adjustMode": "shrink-to-fit" # ★文字数に応じて1行に自動縮小する安全設定
+                                "wrap": True # ★どうしても入らない場合は「...」にならず改行させる
                             }
                         ]
                     })
-                # 奇数個の時の枠ズレ対策ダミー（標準で動作が確認された安全な構造）
+                # ★奇数個の時のダミーボックス：実物のボタンと「完全に同じ構造」を持ちつつ、色だけ「白」にして隠す
                 if len(pair) == 1:
                     row_buttons.append({
-                        "type": "box", 
-                        "layout": "vertical", 
-                        "flex": 1, 
+                        "type": "box",
+                        "layout": "vertical",
+                        "backgroundColor": "#ffffff",
+                        "cornerRadius": "md",
+                        "borderWidth": "normal",
+                        "borderColor": "#ffffff",
+                        "paddingAll": "sm",
                         "margin": "xs",
-                        "contents": [{"type": "filler"}]
+                        "flex": 1,
+                        "justifyContent": "center",
+                        "alignItems": "center",
+                        "contents": [
+                            {
+                                "type": "text",
+                                "text": " ",
+                                "size": "xs",
+                                "wrap": True
+                            }
+                        ]
                     })
                     
                 row_box = {"type": "box", "layout": "horizontal", "contents": row_buttons}
@@ -1036,23 +770,48 @@ def build_spot_list_carousel_horizontal(user_id=None):
                 for spot in pair:
                     label_text = f"★ {spot}" if spot in fav_list else spot
                     row_buttons.append({
-                        "type": "button",
-                        "action": {"type": "postback", "label": label_text, "data": f"action=show_weather&spot={spot}", "displayText": spot},
-                        "style": "secondary",
-                        "color": btn_bg,
-                        "height": "sm",
+                        "type": "box",
+                        "layout": "vertical",
+                        "backgroundColor": btn_bg,
+                        "cornerRadius": "md",
+                        "paddingAll": "sm",
                         "margin": "xs",
                         "flex": 1,
-                        "adjustMode": "shrink-to-fit"  # ★追加：キングフィッシャー等のみ1行に自動縮小する安全設定
+                        "justifyContent": "center",
+                        "alignItems": "center",
+                        "action": {"type": "postback", "label": spot[:20], "data": f"action=show_weather&spot={spot}", "displayText": spot},
+                        "contents": [
+                            {
+                                "type": "text",
+                                "text": label_text,
+                                "size": "xs", # ★文字を小さくして一行に収まりやすくする
+                                "color": "#333333",
+                                "weight": "bold",
+                                "align": "center",
+                                "wrap": True # ★どうしても入らない場合は「...」にならず改行させる
+                            }
+                        ]
                     })
-                # 奇数個の時の枠ズレ対策ダミー（標準で動作が確認された安全な構造）
+                # ★奇数個の時のダミーボックス：実物のボタンと「完全に同じ構造」を持ちつつ、色だけ「白」にして隠す
                 if len(pair) == 1:
                     row_buttons.append({
-                        "type": "box", 
-                        "layout": "vertical", 
-                        "flex": 1, 
+                        "type": "box",
+                        "layout": "vertical",
+                        "backgroundColor": "#ffffff",
+                        "cornerRadius": "md",
+                        "paddingAll": "sm",
                         "margin": "xs",
-                        "contents": [{"type": "filler"}]
+                        "flex": 1,
+                        "justifyContent": "center",
+                        "alignItems": "center",
+                        "contents": [
+                            {
+                                "type": "text",
+                                "text": " ",
+                                "size": "xs",
+                                "wrap": True
+                            }
+                        ]
                     })
                     
                 rows.append({"type": "box", "layout": "horizontal", "contents": row_buttons})
