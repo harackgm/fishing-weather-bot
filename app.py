@@ -692,7 +692,7 @@ def build_spot_list_carousel_horizontal(user_id=None):
                         "flex": 1,
                         "justifyContent": "center",
                         "alignItems": "center",
-                        "action": {"type": "postback", "data": f"action=show_weather&spot={spot}", "displayText": spot},
+                        "action": {"type": "postback", "data": f"w={spot}", "displayText": spot},
                         "contents": [
                             {
                                 "type": "text",
@@ -704,14 +704,13 @@ def build_spot_list_carousel_horizontal(user_id=None):
                             }
                         ]
                     })
+                # ★修正: 1つのカルーセルに戻しつつ、ダミー枠を極限まで軽くする `filler` を使用
                 if len(pair) == 1:
                     row_buttons.append({
                         "type": "box", 
                         "layout": "vertical", 
-                        "paddingAll": "sm", 
-                        "margin": "xs", 
                         "flex": 1, 
-                        "contents": [{"type": "text", "text": " ", "size": "xs"}]
+                        "contents": [{"type": "filler"}]
                     })
                     
                 row_box = {"type": "box", "layout": "horizontal", "contents": row_buttons}
@@ -765,7 +764,7 @@ def build_spot_list_carousel_horizontal(user_id=None):
                         "flex": 1,
                         "justifyContent": "center",
                         "alignItems": "center",
-                        "action": {"type": "postback", "data": f"action=show_weather&spot={spot}", "displayText": spot},
+                        "action": {"type": "postback", "data": f"w={spot}", "displayText": spot},
                         "contents": [
                             {
                                 "type": "text",
@@ -777,14 +776,13 @@ def build_spot_list_carousel_horizontal(user_id=None):
                             }
                         ]
                     })
+                # ★修正: 1つのカルーセルに戻しつつ、ダミー枠を極限まで軽くする `filler` を使用
                 if len(pair) == 1:
                     row_buttons.append({
                         "type": "box", 
                         "layout": "vertical", 
-                        "paddingAll": "sm", 
-                        "margin": "xs", 
                         "flex": 1, 
-                        "contents": [{"type": "text", "text": " ", "size": "xs"}]
+                        "contents": [{"type": "filler"}]
                     })
                     
                 rows.append({"type": "box", "layout": "horizontal", "contents": row_buttons})
@@ -837,11 +835,8 @@ def build_spot_list_carousel_horizontal(user_id=None):
     }
     bubbles.append(guide_bubble)
 
-    # ★修正: カルーセルを2通のメッセージに分割し、50KBの容量制限を確実に回避する
-    return [
-        FlexSendMessage(alt_text="釣り場一覧 (1/2)", contents={"type": "carousel", "contents": bubbles[:3]}),
-        FlexSendMessage(alt_text="釣り場一覧 (2/2)", contents={"type": "carousel", "contents": bubbles[3:]})
-    ]
+    # ★修正: 1つのカルーセルに結合して返す（勝手な分割をやめる）
+    return FlexSendMessage(alt_text="釣り場一覧", contents={"type": "carousel", "contents": bubbles})
 
 
 def get_cached_weather(spot_name):
@@ -1004,7 +999,6 @@ def fetch_spot_1hour_data(url):
         response.raise_for_status()
         soup = BeautifulSoup(response.text, 'html.parser')
         
-        # ★修正: 1時間天気が無い（山間部など）場合は3時間天気に自動フォールバックする
         flick_list = soup.find('div', id='flick_list_1hour')
         if not flick_list:
             flick_list = soup.find('div', id='flick_list_3hour')
@@ -1189,9 +1183,8 @@ def handle_message(event):
             if not reply_lines:
                 reply_lines.append("⚠️ 釣り場名が認識できませんでした。")
                 
-            flex_msgs = build_spot_list_carousel_horizontal(user_id=user_id)
-            messages = [TextSendMessage(text="\n".join(reply_lines))] + flex_msgs
-            line_bot_api.reply_message(event.reply_token, messages)
+            flex_msg = build_spot_list_carousel_horizontal(user_id=user_id)
+            line_bot_api.reply_message(event.reply_token, [TextSendMessage(text="\n".join(reply_lines)), flex_msg])
             return
 
         del_match = re.match(r'^削除[\s:：]+(.+)$', raw_msg, re.DOTALL)
@@ -1208,14 +1201,13 @@ def handle_message(event):
             if not reply_lines:
                 reply_lines.append("⚠️ 釣り場名が認識できませんでした。")
                 
-            flex_msgs = build_spot_list_carousel_horizontal(user_id=user_id)
-            messages = [TextSendMessage(text="\n".join(reply_lines))] + flex_msgs
-            line_bot_api.reply_message(event.reply_token, messages)
+            flex_msg = build_spot_list_carousel_horizontal(user_id=user_id)
+            line_bot_api.reply_message(event.reply_token, [TextSendMessage(text="\n".join(reply_lines)), flex_msg])
             return
 
         if raw_msg in ["一覧", "リスト", "釣り場一覧", "エリア", "📋 一覧", "📋一覧"]:
-            flex_msgs = build_spot_list_carousel_horizontal(user_id=user_id)
-            line_bot_api.reply_message(event.reply_token, flex_msgs)
+            flex_msg = build_spot_list_carousel_horizontal(user_id=user_id)
+            line_bot_api.reply_message(event.reply_token, flex_msg)
             return
 
         if raw_msg == "設定":
@@ -1225,9 +1217,8 @@ def handle_message(event):
             line_bot_api.reply_message(event.reply_token, flex_msg)
             return
 
-        # どのコマンドにも当てはまらない場合は一覧を表示
-        flex_msgs = build_spot_list_carousel_horizontal(user_id=user_id)
-        line_bot_api.reply_message(event.reply_token, flex_msgs)
+        flex_msg = build_spot_list_carousel_horizontal(user_id=user_id)
+        line_bot_api.reply_message(event.reply_token, flex_msg)
 
     except LineBotApiError as e:
         print(f"\n=== LINE API エラー: {e.status_code} ===")
@@ -1251,14 +1242,13 @@ def handle_postback(event):
         action = data_dict.get("action")
         spot_name = data_dict.get("spot")
 
-        # 軽量化されたコマンドの復元処理
         if "w" in data_dict:
             action = "show_weather"
             spot_name = data_dict["w"]
 
         if action == "show_list":
-            flex_msgs = build_spot_list_carousel_horizontal(user_id=user_id)
-            line_bot_api.reply_message(event.reply_token, flex_msgs)
+            flex_msg = build_spot_list_carousel_horizontal(user_id=user_id)
+            line_bot_api.reply_message(event.reply_token, flex_msg)
             return
             
         elif action == "show_settings":
@@ -1291,8 +1281,8 @@ def handle_postback(event):
         elif action == "fav_add_and_list":
             success, added, errors = add_favorite_spots(user_id, [spot_name])
             msg = f"✅ 追加しました: {added[0]}" if added else f"⚠️ {errors[0]}"
-            flex_msgs = build_spot_list_carousel_horizontal(user_id=user_id)
-            line_bot_api.reply_message(event.reply_token, [TextSendMessage(text=msg)] + flex_msgs)
+            flex_msg = build_spot_list_carousel_horizontal(user_id=user_id)
+            line_bot_api.reply_message(event.reply_token, [TextSendMessage(text=msg), flex_msg])
 
         elif action == "fav_del_confirm_and_list":
             flex_msg = build_delete_confirm_message(spot_name, "list")
@@ -1305,8 +1295,8 @@ def handle_postback(event):
         elif action == "fav_del_execute_and_list":
             success, removed, errors = remove_favorite_spots(user_id, [spot_name])
             msg = f"✅ 削除しました: {removed[0]}" if removed else f"⚠️ {errors[0]}"
-            flex_msgs = build_spot_list_carousel_horizontal(user_id=user_id)
-            line_bot_api.reply_message(event.reply_token, [TextSendMessage(text=msg)] + flex_msgs)
+            flex_msg = build_spot_list_carousel_horizontal(user_id=user_id)
+            line_bot_api.reply_message(event.reply_token, [TextSendMessage(text=msg), flex_msg])
 
         elif action == "fav_del_execute_and_settings":
             success, removed, errors = remove_favorite_spots(user_id, [spot_name])
@@ -1317,8 +1307,8 @@ def handle_postback(event):
             line_bot_api.reply_message(event.reply_token, [TextSendMessage(text=msg), flex_msg])
 
         elif action == "fav_del_cancel_and_list":
-            flex_msgs = build_spot_list_carousel_horizontal(user_id=user_id)
-            line_bot_api.reply_message(event.reply_token, [TextSendMessage(text="キャンセルしました。")] + flex_msgs)
+            flex_msg = build_spot_list_carousel_horizontal(user_id=user_id)
+            line_bot_api.reply_message(event.reply_token, [TextSendMessage(text="キャンセルしました。"), flex_msg])
 
         elif action == "fav_del_cancel_and_settings":
             _, favorites = get_user_setting(user_id)
@@ -1332,8 +1322,8 @@ def handle_postback(event):
 
         elif action == "fav_del_all_execute":
             success, msg = clear_favorite_spots(user_id)
-            flex_msgs = build_spot_list_carousel_horizontal(user_id=user_id)
-            line_bot_api.reply_message(event.reply_token, [TextSendMessage(text=f"✅ {msg}")] + flex_msgs)
+            flex_msg = build_spot_list_carousel_horizontal(user_id=user_id)
+            line_bot_api.reply_message(event.reply_token, [TextSendMessage(text=f"✅ {msg}"), flex_msg])
 
         elif action in ["fav_up", "fav_down"]:
             direction = "up" if action == "fav_up" else "down"
