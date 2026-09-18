@@ -256,7 +256,7 @@ SPOT_WEATHER_DATA = {
         "hp_url": "http://www.joyvalley.co.jp/",
         "search_name": "ジョイバレー 成田",
         "tel": "0479-78-1840",
-        "aliases": ["ジョイバレー", "じょいばれー"]
+        "aliases": ["ジョイバレー", "じょいばれー", "ジョイバ"]
     },
     "ウォルトン": {
         "url": "https://weathernews.jp/onebox/35.863326/140.290525/",
@@ -365,7 +365,7 @@ SPOT_WEATHER_DATA = {
         "hp_url": "http://www.nakatugawa-gyokyou.jp/",
         "search_name": "フィッシングフィールド中津川",
         "tel": "046-281-5421",
-        "aliases": ["中津川", "FF中津川", "なかつがわ"]
+        "aliases": ["中津川", "FF中津川", "なかつがわ", "なかつ"]
     },
     "早戸川": {
         "url": "https://weathernews.jp/onebox/35.543063/139.216090/",
@@ -507,7 +507,7 @@ COLOR_GROUPS = [
         "title": "📍 甲信・東北・東海・関西",
         "header_bg": "#6a1b9a",
         "sub_groups": [
-            {"bg": "#f3e5f5", "spots": ["鹿留", "小菅", "シルフ", "JF in Tsugane", "竜华池", "平谷湖", "ハーブ", "ニレ池", "鹿島槍", "槻の池", "あずみ野"]},
+            {"bg": "#f3e5f5", "spots": ["鹿留", "小菅", "シルフ", "JF in Tsugane", "竜華池", "平谷湖", "ハーブ", "ニレ池", "鹿島槍", "槻の池", "あずみ野"]},
             {"bg": "#e1bee7", "spots": ["不忘", "白河", "ほのぼの", "WaDoNa", "鶴沼川", "オーパ", "あいづ", "上浜", "GOZU"]},
             {"bg": "#d1c4e9", "spots": ["瑞浪", "サンクチュアリ", "醒井", "高島", "千早川"]}
         ]
@@ -531,7 +531,6 @@ def get_spot_details(spot_key):
     return spot_key, data["url"], hp_url, map_url, data.get("tel", "")
 
 def build_delete_confirm_message(spot_name, source):
-    # ★修正：全てを元の完全な通信名（fav_del_execute_xxx）に戻し、動作不一致を完全に防ぐ
     execute_action = f"fav_del_execute_and_{source}"
     cancel_action = f"fav_del_cancel_and_{source}"
     
@@ -570,7 +569,6 @@ def build_delete_all_confirm_message():
             "type": "box", "layout": "horizontal", "spacing": "sm",
             "contents": [
                 {"type": "button", "style": "secondary", "height": "sm", "flex": 1, "action": {"type": "postback", "label": "キャンセル", "data": "action=fav_del_cancel_and_settings"}},
-                # ★修正：全て削除の実行コマンドを正しい名前に修正し、ループを解消
                 {"type": "button", "style": "primary", "color": "#e53935", "height": "sm", "flex": 1, "action": {"type": "postback", "label": "全て削除", "data": "action=fav_del_all_execute"}}
             ]
         }
@@ -694,7 +692,6 @@ def build_spot_list_carousel_horizontal(user_id=None):
                         "flex": 1,
                         "justifyContent": "center",
                         "alignItems": "center",
-                        # ★ここだけは全体容量圧縮のために「w=」を維持
                         "action": {"type": "postback", "data": f"w={spot}", "displayText": spot},
                         "contents": [
                             {
@@ -825,10 +822,14 @@ def build_spot_list_carousel_horizontal(user_id=None):
                     "type": "box", "layout": "vertical", "spacing": "sm",
                     "contents": [
                         {"type": "text", "text": "💬 テキストコマンド", "weight": "bold", "size": "sm", "color": "#333333"},
-                        {"type": "text", "text": "【まとめて追加】\n例：「追加 東山湖 すその 足柄 座間 醒井」\n※釣り場と釣り場の名前の間にスペースを入れてください（最大30件まで一気に登録可能）。", "wrap": True, "size": "xs", "color": "#666666"},
-                        {"type": "text", "text": "【まとめて削除】\n例：「削除 東山湖 すその 足柄」\n※追加と同じく、名前の間にスペースを入れて複数同時に解除できます。", "wrap": True, "size": "xs", "color": "#666666"},
-                        {"type": "text", "text": "【設定】\n「設定」と送信すると、並び替え・全削除パネルが出ます。", "wrap": True, "size": "xs", "color": "#666666"},
-                        {"type": "text", "text": "【一覧（メニュー）の出し方】\n「一覧」という言葉や、それ以外の適当な文字（「あ」「1」「a」など）を送信すると、この一覧表が表示されます。", "wrap": True, "size": "xs", "color": "#666666"}
+                        {"type": "text", "text": "【まとめて追加】", "weight": "bold", "size": "xs", "color": "#333333", "margin": "sm"},
+                        {"type": "text", "text": "例：「追加 東山湖 すその 足柄 座間 醒井」\n※釣り場と釣り場の名前の間にスペースを入れてください（最大30件まで一気に登録可能）。", "wrap": True, "size": "xs", "color": "#666666"},
+                        {"type": "text", "text": "【まとめて削除】", "weight": "bold", "size": "xs", "color": "#333333", "margin": "sm"},
+                        {"type": "text", "text": "例：「削除 東山湖 すその 足柄」\n※追加と同じく、名前の間にスペースを入れて複数同時に解除できます。", "wrap": True, "size": "xs", "color": "#666666"},
+                        {"type": "text", "text": "【設定】", "weight": "bold", "size": "xs", "color": "#333333", "margin": "sm"},
+                        {"type": "text", "text": "「設定」と送信すると、並び替え・全削除パネルが出ます。", "wrap": True, "size": "xs", "color": "#666666"},
+                        {"type": "text", "text": "【一覧（メニュー）の出し方】", "weight": "bold", "size": "xs", "color": "#333333", "margin": "sm"},
+                        {"type": "text", "text": "「一覧」という言葉や、それ以外の適当な文字（「あ」「1」「a」など）を送信すると、この一覧表が表示されます。", "wrap": True, "size": "xs", "color": "#666666"}
                     ]
                 }
             ]
@@ -1238,7 +1239,6 @@ def handle_postback(event):
         action = data_dict.get("action")
         spot_name = data_dict.get("spot")
 
-        # 軽量化されたコマンドの復元処理（カルーセルのボタンのみw=を使用）
         if "w" in data_dict:
             action = "show_weather"
             spot_name = data_dict["w"]
