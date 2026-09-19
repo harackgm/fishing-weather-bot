@@ -992,13 +992,30 @@ def build_spot_list_carousel_horizontal(user_id=None):
                 fav_rows.append(row_box)
 
         fav_rows.append({"type": "separator", "margin": "lg" if fav_list else "md", "color": "#cccccc"})
+        # --- 変更箇所：下段ボタンを横並び（設定3：一覧4）に変更 ---
         fav_rows.append({
-            "type": "button",
-            "action": {"type": "postback", "label": "⚙️ 設定（並び替え・削除）", "data": "action=show_settings", "displayText": "⚙️ 設定"},
-            "style": "secondary",
-            "color": "#f8f9fa",
-            "height": "sm",
-            "margin": "md"
+            "type": "box",
+            "layout": "horizontal",
+            "margin": "md",
+            "spacing": "sm",
+            "contents": [
+                {
+                    "type": "button",
+                    "action": {"type": "postback", "label": "⚙️ 設定", "data": "action=show_settings", "displayText": "⚙️ 設定"},
+                    "style": "secondary",
+                    "color": "#f8f9fa",
+                    "height": "sm",
+                    "flex": 3
+                },
+                {
+                    "type": "button",
+                    "action": {"type": "postback", "label": "📋 一覧", "data": "action=show_list", "displayText": "📋 一覧"},
+                    "style": "secondary",
+                    "color": "#fff59d",
+                    "height": "sm",
+                    "flex": 4
+                }
+            ]
         })
 
         fav_bubble = {
