@@ -899,7 +899,6 @@ def build_settings_flex_message(fav_list):
 
         rows.append({"type": "separator", "margin": "md"})
         
-        # --- 再修正：左を「全て削除」、右を「一覧」に変更し、標準の高さに設定 ---
         rows.append({
             "type": "box",
             "layout": "horizontal",
@@ -994,7 +993,7 @@ def build_spot_list_carousel_horizontal(user_id=None):
 
         fav_rows.append({"type": "separator", "margin": "lg" if fav_list else "md", "color": "#cccccc"})
         
-        # --- 再修正：height設定を削除し、設定ボタンと一覧ボタンを標準サイズ（大きめ）で統一 ---
+        # --- 今回の修正箇所：flex を 1:1 にして横幅を均等に設定 ---
         fav_rows.append({
             "type": "box",
             "layout": "horizontal",
@@ -1006,14 +1005,14 @@ def build_spot_list_carousel_horizontal(user_id=None):
                     "action": {"type": "postback", "label": "⚙️ 設定", "data": "action=show_settings", "displayText": "⚙️ 設定"},
                     "style": "secondary",
                     "color": "#f8f9fa",
-                    "flex": 3
+                    "flex": 1
                 },
                 {
                     "type": "button",
                     "action": {"type": "postback", "label": "📋 一覧", "data": "action=show_list", "displayText": "📋 一覧"},
                     "style": "secondary",
                     "color": "#fff59d",
-                    "flex": 4
+                    "flex": 1
                 }
             ]
         })
@@ -1149,7 +1148,7 @@ def get_user_setting(user_id):
             # 名称変更対応マップ（過去登録された古い名前を自動で新しい名前に変換）
             rename_map = {
                 "五頭": "GOZU",
-                "竜华池": "竜華池",
+                "竜华池": "竜华池",
                 "ハーブ": "ハーブの里",
                 "サンクチュアリ": "３９",
                 "高島": "高島の泉",
