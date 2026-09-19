@@ -1297,7 +1297,6 @@ def build_settings_flex_message(fav_list):
 
         rows.append({"type": "separator", "margin": "md"})
         
-        # ▼ 高さを完全に揃え、隙間をなくした下部ボタン群
         rows.append({
             "type": "box",
             "layout": "horizontal",
@@ -1305,40 +1304,25 @@ def build_settings_flex_message(fav_list):
             "spacing": "sm",
             "contents": [
                 {
-                    "type": "box",
-                    "layout": "vertical",
-                    "flex": 1,
-                    "backgroundColor": "#e53935",
-                    "borderWidth": "normal",
-                    "borderColor": "#ffffff",
-                    "cornerRadius": "md",
-                    "paddingAll": "none",
-                    "contents": [
-                        {
-                            "type": "button",
-                            "action": {"type": "postback", "label": "🗑️ 全て削除", "data": "action=fav_del_all_confirm"},
-                            "style": "link",
-                            "color": "#ffffff",
-                            "height": "sm"
-                        }
-                    ]
+                    "type": "button",
+                    "action": {"type": "postback", "label": "🗑️ 全て削除", "data": "action=fav_del_all_confirm"},
+                    "style": "primary",
+                    "color": "#e53935",
+                    "flex": 1
                 },
                 {
                     "type": "box",
                     "layout": "vertical",
                     "flex": 1,
-                    "backgroundColor": "#fff59d",
-                    "borderWidth": "normal",
+                    "borderWidth": "semi-bold",
                     "borderColor": "#d4af37",
                     "cornerRadius": "md",
-                    "paddingAll": "none",
                     "contents": [
                         {
                             "type": "button",
                             "action": {"type": "postback", "label": "📋 一覧", "data": "action=show_list", "displayText": "📋 一覧"},
-                            "style": "link",
-                            "color": "#555555",
-                            "height": "sm"
+                            "style": "secondary",
+                            "color": "#fff59d"
                         }
                     ]
                 }
@@ -1408,15 +1392,12 @@ def build_spot_list_carousel_horizontal(user_id=None):
                 if len(pair) == 1:
                     row_buttons.append({"type": "filler"})
                     
-                row_box = {"type": "box", "layout": "horizontal", "contents": row_buttons}
-                if i > 0 and i % 10 == 0:
-                    row_box["margin"] = "lg"
-                    
+                row_margin = "none" if i == 0 else ("md" if i % 10 == 0 else "xs")
+                row_box = {"type": "box", "layout": "horizontal", "contents": row_buttons, "margin": row_margin}
                 fav_rows.append(row_box)
 
-        fav_rows.append({"type": "separator", "margin": "lg" if fav_list else "md", "color": "#cccccc"})
+        fav_rows.append({"type": "separator", "margin": "md", "color": "#cccccc"})
         
-        # ▼ 高さを完全に揃え、隙間をなくした下部ボタン群
         fav_rows.append({
             "type": "box",
             "layout": "horizontal",
@@ -1424,40 +1405,25 @@ def build_spot_list_carousel_horizontal(user_id=None):
             "spacing": "sm",
             "contents": [
                 {
-                    "type": "box",
-                    "layout": "vertical",
-                    "flex": 1,
-                    "backgroundColor": "#f8f9fa",
-                    "borderWidth": "normal",
-                    "borderColor": "#ffffff",
-                    "cornerRadius": "md",
-                    "paddingAll": "none",
-                    "contents": [
-                        {
-                            "type": "button",
-                            "action": {"type": "postback", "label": "⚙️ 設定", "data": "action=show_settings", "displayText": "⚙️ 設定"},
-                            "style": "link",
-                            "color": "#555555",
-                            "height": "sm"
-                        }
-                    ]
+                    "type": "button",
+                    "action": {"type": "postback", "label": "⚙️ 設定", "data": "action=show_settings", "displayText": "⚙️ 設定"},
+                    "style": "secondary",
+                    "color": "#f8f9fa",
+                    "flex": 1
                 },
                 {
                     "type": "box",
                     "layout": "vertical",
                     "flex": 1,
-                    "backgroundColor": "#fff59d",
-                    "borderWidth": "normal",
+                    "borderWidth": "semi-bold",
                     "borderColor": "#d4af37",
                     "cornerRadius": "md",
-                    "paddingAll": "none",
                     "contents": [
                         {
                             "type": "button",
                             "action": {"type": "postback", "label": "📋 一覧", "data": "action=show_list", "displayText": "📋 一覧"},
-                            "style": "link",
-                            "color": "#555555",
-                            "height": "sm"
+                            "style": "secondary",
+                            "color": "#fff59d"
                         }
                     ]
                 }
@@ -1480,6 +1446,7 @@ def build_spot_list_carousel_horizontal(user_id=None):
 
     for group in COLOR_GROUPS:
         rows = []
+        is_first_row = True
         for sg in group["sub_groups"]:
             spots = sg["spots"]
             btn_bg = sg["bg"]
@@ -1499,7 +1466,9 @@ def build_spot_list_carousel_horizontal(user_id=None):
                 if len(pair) == 1:
                     row_buttons.append({"type": "filler"})
                     
-                rows.append({"type": "box", "layout": "horizontal", "contents": row_buttons})
+                row_margin = "none" if is_first_row else "xs"
+                rows.append({"type": "box", "layout": "horizontal", "contents": row_buttons, "margin": row_margin})
+                is_first_row = False
             
         bubble = {
             "type": "bubble",
@@ -1870,42 +1839,22 @@ def build_grid_flex_message(spot_name, weather_by_date, hp_url="", map_url="", t
     bottom_buttons = []
     if tel:
         clean_tel = tel.replace('-', '').strip()
-        bottom_buttons.append({
-            "type": "box",
-            "layout": "vertical",
-            "flex": 2,
-            "backgroundColor": "#f8f9fa",
-            "borderWidth": "normal",
-            "borderColor": "#ffffff",
-            "cornerRadius": "md",
-            "paddingAll": "none",
-            "contents": [
-                {
-                    "type": "button",
-                    "action": {"type": "uri", "label": "📞 電話", "uri": f"tel:{clean_tel}"},
-                    "style": "link",
-                    "color": "#555555",
-                    "height": "sm"
-                }
-            ]
-        })
+        bottom_buttons.append({"type": "button", "action": {"type": "uri", "label": "📞 電話", "uri": f"tel:{clean_tel}"}, "style": "secondary", "height": "sm", "flex": 2})
     
-    # ▼ 高さを完全に揃え、隙間をなくした下部ボタン群
+    # 一覧ボタンをBoxで囲んで縁取りを追加
     bottom_buttons.append({
         "type": "box",
         "layout": "vertical",
         "flex": 3,
-        "backgroundColor": "#fff59d",
-        "borderWidth": "normal",
+        "borderWidth": "semi-bold",
         "borderColor": "#d4af37",
         "cornerRadius": "md",
-        "paddingAll": "none",
         "contents": [
             {
                 "type": "button",
                 "action": {"type": "postback", "label": "📋 一覧", "data": "action=show_list", "displayText": "📋 一覧"},
-                "style": "link",
-                "color": "#555555",
+                "style": "secondary",
+                "color": "#fff59d",
                 "height": "sm"
             }
         ]
