@@ -899,7 +899,6 @@ def build_settings_flex_message(fav_list):
 
         rows.append({"type": "separator", "margin": "md"})
         
-        # --- 変更箇所：左を「全て削除」、右を「一覧」に変更 ---
         rows.append({
             "type": "box",
             "layout": "horizontal",
@@ -993,8 +992,6 @@ def build_spot_list_carousel_horizontal(user_id=None):
                 fav_rows.append(row_box)
 
         fav_rows.append({"type": "separator", "margin": "lg" if fav_list else "md", "color": "#cccccc"})
-        
-        # --- 変更箇所：height指定を削除し、設定パネルと同じ標準サイズ（大きめ）に統一 ---
         fav_rows.append({
             "type": "box",
             "layout": "horizontal",
@@ -1457,6 +1454,11 @@ def build_grid_flex_message(spot_name, weather_by_date, hp_url="", map_url="", t
 
 @app.route("/", methods=['GET'])
 def top_page():
+    if supabase:
+        try:
+            supabase.table('user_settings').select('user_id').limit(1).execute()
+        except Exception as e:
+            print(f"[Supabase Wakeup Error] {e}")
     return "LINE Reply Bot Server is running!", 200
 
 @app.route("/callback", methods=['POST'])
