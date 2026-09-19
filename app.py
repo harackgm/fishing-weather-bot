@@ -76,7 +76,7 @@ SPOT_WEATHER_DATA = {
     "須川": {
         "url": "https://weathernews.jp/onebox/35.359818/138.977710/",
         "hp_url": "http://www.sukawa.ne.jp/",
-        "x_url": "",
+        "x_url": "https://x.com/sukawafp",
         "fb_url": "",
         "insta_url": "",
         "blog_url": "",
@@ -198,8 +198,8 @@ SPOT_WEATHER_DATA = {
     },
     "蛇尾川": {
         "url": "https://weathernews.jp/onebox/36.981351/139.901534/",
-        "hp_url": "https://www.facebook.com/472959680156166/",
-        "x_url": "",
+        "hp_url": "https://sabigawafishingpark.com/",
+        "x_url": "https://x.com/matagi_nasu?ref_src=twsrc%5Egoogle%7Ctwcamp%5Eserp%7Ctwgr%5Eauthor",
         "fb_url": "",
         "insta_url": "",
         "blog_url": "",
@@ -233,7 +233,7 @@ SPOT_WEATHER_DATA = {
         "url": "https://weathernews.jp/onebox/36.590732/139.693652/",
         "hp_url": "http://park10.wakwak.com/~field-village/",
         "x_url": "",
-        "fb_url": "",
+        "fb_url": "https://ja-jp.facebook.com/ooashigawa.fcfv/",
         "insta_url": "",
         "blog_url": "",
         "search_name": "大芦川 F&C フィールドビレッジ",
@@ -246,18 +246,18 @@ SPOT_WEATHER_DATA = {
         "x_url": "",
         "fb_url": "",
         "insta_url": "",
-        "blog_url": "",
+        "blog_url": "https://ameblo.jp/kaga-fa/",
         "search_name": "加賀フィッシングエリア",
         "tel": "0283-24-1513",
         "aliases": ["加賀", "加賀フィッシングエリア", "加賀FA", "かが"]
     },
     "発光路": {
         "url": "https://weathernews.jp/onebox/36.580281/139.532829/",
-        "hp_url": "https://www.hokkoji.com/",
+        "hp_url": "https://ov-hokkojinomori-fa.jimdosite.com/",
         "x_url": "",
         "fb_url": "",
-        "insta_url": "",
-        "blog_url": "",
+        "insta_url": "https://www.instagram.com/ov.hokkojinomori.fa/",
+        "blog_url": "https://hokkojinomori.livedoor.blog/",
         "search_name": "発光路の森ファアルクス",
         "tel": "0289-85-3503",
         "aliases": ["発光路", "発光路の森", "ほっこうじ", "はっこうじ", "発光時", "発酵時"]
@@ -287,7 +287,7 @@ SPOT_WEATHER_DATA = {
     "遊水園": {
         "url": "https://weathernews.jp/onebox/36.342013/139.863541/",
         "hp_url": "http://meiseikousan.jp/oyamawaterpark/",
-        "x_url": "",
+        "x_url": "https://x.com/ParkOyama",
         "fb_url": "",
         "insta_url": "",
         "blog_url": "",
@@ -299,9 +299,9 @@ SPOT_WEATHER_DATA = {
         "url": "https://weathernews.jp/onebox/36.566488/139.960060/",
         "hp_url": "http://www.arcus-pond.com/",
         "x_url": "",
-        "fb_url": "",
+        "fb_url": "https://www.facebook.com/people/Arcus-Pond%E3%82%A2%E3%83%AB%E3%82%AF%E3%82%B9%E3%83%9D%E3%83%B3%E3%83%89/100041638634155/#",
         "insta_url": "",
-        "blog_url": "",
+        "blog_url": "https://www.arcus-pond.com/wp/category/blog/",
         "search_name": "アルクスポンド宇都宮",
         "tel": "028-652-3210",
         "aliases": ["アルクス宇都宮", "アルクスポンド宇都宮", "あるくすうつのみや", "あるくす", "アルクスポンド", "うつのみや"]
@@ -356,7 +356,7 @@ SPOT_WEATHER_DATA = {
         "url": "https://weathernews.jp/onebox/35.843581/140.010676/",
         "hp_url": "http://zamayougyo.com/",
         "x_url": "",
-        "fb_url": "",
+        "fb_url": "https://www.facebook.com/people/%E5%BA%A7%E9%96%93%E9%A4%8A%E9%AD%9A%E5%A0%B4/100065552678584/#",
         "insta_url": "",
         "blog_url": "",
         "search_name": "座間養魚場",
@@ -706,7 +706,7 @@ SPOT_WEATHER_DATA = {
         "hp_url": "http://www.kawaba-fp.jp/",
         "x_url": "",
         "fb_url": "",
-        "insta_url": "",
+        "insta_url": "https://www.instagram.com/kawaba.numata.fishingplaza/?utm_source=ig_embed",
         "blog_url": "",
         "search_name": "川場フィッシングプラザ",
         "tel": "0278-52-3200",
@@ -748,7 +748,7 @@ SPOT_WEATHER_DATA = {
     "黒保根": {
         "url": "https://weathernews.jp/onebox/36.515041/139.252324/",
         "hp_url": "https://www.kurohone-fishing.com/",
-        "x_url": "",
+        "x_url": "https://twitter.com/kurohoneKF",
         "fb_url": "",
         "insta_url": "",
         "blog_url": "",
@@ -762,7 +762,7 @@ SPOT_WEATHER_DATA = {
         "x_url": "",
         "fb_url": "",
         "insta_url": "",
-        "blog_url": "",
+        "blog_url": "https://ameblo.jp/fp-berrys2006/",
         "search_name": "ベリーズ迦葉山",
         "tel": "0278-23-9333",
         "aliases": ["迦葉山", "ベリーズ迦葉山", "かしょうざん", "ベリーズ"]
@@ -882,9 +882,9 @@ SPOT_WEATHER_DATA = {
     "水戸南": {
         "url": "https://weathernews.jp/onebox/36.326377/140.501362/",
         "hp_url": "http://www.mitominami-fa.jp/index.html",
-        "x_url": "",
+        "x_url": "https://x.com/TSURIBORIMITO?lang=ja",
         "fb_url": "",
-        "insta_url": "",
+        "insta_url": "https://www.instagram.com/tsuriborimitominami/",
         "blog_url": "",
         "search_name": "水戸南フィッシングエリア",
         "tel": "029-246-1233",
@@ -905,7 +905,7 @@ SPOT_WEATHER_DATA = {
         "url": "https://weathernews.jp/onebox/36.224122/140.144261/",
         "hp_url": "http://tsukuba-en.jp/",
         "x_url": "",
-        "fb_url": "",
+        "fb_url": "https://www.facebook.com/tsukubaen5355/?ref=page_internal",
         "insta_url": "",
         "blog_url": "",
         "search_name": "フィッシングパークつくば園",
@@ -915,7 +915,7 @@ SPOT_WEATHER_DATA = {
     "Ｊ": {
         "url": "https://weathernews.jp/onebox/36.081494/140.164360/",
         "hp_url": "https://sites.google.com/view/fishing-area-j/",
-        "x_url": "",
+        "x_url": "https://x.com/madara_area_j",
         "fb_url": "",
         "insta_url": "",
         "blog_url": "",
@@ -1167,7 +1167,7 @@ COLOR_GROUPS = [
         "title": "📍 甲信・東北・東海・関西",
         "header_bg": "#6a1b9a",
         "sub_groups": [
-            {"bg": "#f3e5f5", "spots": ["鹿留", "小菅", "奈良子", "シルフ", "JF in Tsugane", "竜華池", "平谷湖", "ハーブの里", "ニレ池", "鹿島槍", "つきの池", "あずみ野"]},
+            {"bg": "#f3e5f5", "spots": ["鹿留", "小菅", "奈良子", "シルフ", "JF in Tsugane", "竜华池", "平谷湖", "ハーブの里", "ニレ池", "鹿島槍", "つきの池", "あずみ野"]},
             {"bg": "#e1bee7", "spots": ["GP不忘", "白河", "ほのぼの", "WaDoNa", "鶴沼川", "オーパ", "あいづ", "上浜", "GOZU"]},
             {"bg": "#d1c4e9", "spots": ["FCE瑞浪", "３９", "醒井", "高島の泉", "千早川"]}
         ]
@@ -1545,7 +1545,7 @@ def get_user_setting(user_id):
             # 名称変更対応マップ（過去登録された古い名前を自動で新しい名前に変換）
             rename_map = {
                 "五頭": "GOZU",
-                "竜华池": "竜華池",
+                "竜华池": "竜华池",
                 "ハーブ": "ハーブの里",
                 "サンクチュアリ": "３９",
                 "高島": "高島の泉",
