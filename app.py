@@ -1383,18 +1383,18 @@ def build_spot_list_carousel_horizontal(user_id=None):
                 if len(pair) == 1:
                     row_buttons.append({"type": "filler"})
                     
-                row_box = {"type": "box", "layout": "horizontal", "contents": row_buttons}
-                if i > 0 and i % 10 == 0:
-                    row_box["margin"] = "lg"
-                    
+                # 行間を明示的に指定して統一
+                row_margin = "none" if i == 0 else ("md" if i % 10 == 0 else "xs")
+                row_box = {"type": "box", "layout": "horizontal", "contents": row_buttons, "margin": row_margin}
                 fav_rows.append(row_box)
 
-        fav_rows.append({"type": "separator", "margin": "lg" if fav_list else "md", "color": "#cccccc"})
+        # 下部の余白を詰める
+        fav_rows.append({"type": "separator", "margin": "md", "color": "#cccccc"})
         
         fav_rows.append({
             "type": "box",
             "layout": "horizontal",
-            "margin": "md",
+            "margin": "sm",
             "spacing": "sm",
             "contents": [
                 {
@@ -1430,6 +1430,7 @@ def build_spot_list_carousel_horizontal(user_id=None):
 
     for group in COLOR_GROUPS:
         rows = []
+        is_first_row = True
         for sg in group["sub_groups"]:
             spots = sg["spots"]
             btn_bg = sg["bg"]
@@ -1449,7 +1450,10 @@ def build_spot_list_carousel_horizontal(user_id=None):
                 if len(pair) == 1:
                     row_buttons.append({"type": "filler"})
                     
-                rows.append({"type": "box", "layout": "horizontal", "contents": row_buttons})
+                # 行間を明示的に指定して統一
+                row_margin = "none" if is_first_row else "xs"
+                rows.append({"type": "box", "layout": "horizontal", "contents": row_buttons, "margin": row_margin})
+                is_first_row = False
             
         bubble = {
             "type": "bubble",
