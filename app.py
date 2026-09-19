@@ -1311,11 +1311,20 @@ def build_settings_flex_message(fav_list):
                     "flex": 1
                 },
                 {
-                    "type": "button",
-                    "action": {"type": "postback", "label": "📋 一覧", "data": "action=show_list", "displayText": "📋 一覧"},
-                    "style": "secondary",
-                    "color": "#fff59d",
-                    "flex": 1
+                    "type": "box",
+                    "layout": "vertical",
+                    "flex": 1,
+                    "borderWidth": "semi-bold",
+                    "borderColor": "#d4af37",
+                    "cornerRadius": "md",
+                    "contents": [
+                        {
+                            "type": "button",
+                            "action": {"type": "postback", "label": "📋 一覧", "data": "action=show_list", "displayText": "📋 一覧"},
+                            "style": "secondary",
+                            "color": "#fff59d"
+                        }
+                    ]
                 }
             ]
         })
@@ -1383,12 +1392,10 @@ def build_spot_list_carousel_horizontal(user_id=None):
                 if len(pair) == 1:
                     row_buttons.append({"type": "filler"})
                     
-                # 行間を明示的に指定して統一
                 row_margin = "none" if i == 0 else ("md" if i % 10 == 0 else "xs")
                 row_box = {"type": "box", "layout": "horizontal", "contents": row_buttons, "margin": row_margin}
                 fav_rows.append(row_box)
 
-        # 下部の余白を詰める
         fav_rows.append({"type": "separator", "margin": "md", "color": "#cccccc"})
         
         fav_rows.append({
@@ -1405,11 +1412,20 @@ def build_spot_list_carousel_horizontal(user_id=None):
                     "flex": 1
                 },
                 {
-                    "type": "button",
-                    "action": {"type": "postback", "label": "📋 一覧", "data": "action=show_list", "displayText": "📋 一覧"},
-                    "style": "secondary",
-                    "color": "#fff59d",
-                    "flex": 1
+                    "type": "box",
+                    "layout": "vertical",
+                    "flex": 1,
+                    "borderWidth": "semi-bold",
+                    "borderColor": "#d4af37",
+                    "cornerRadius": "md",
+                    "contents": [
+                        {
+                            "type": "button",
+                            "action": {"type": "postback", "label": "📋 一覧", "data": "action=show_list", "displayText": "📋 一覧"},
+                            "style": "secondary",
+                            "color": "#fff59d"
+                        }
+                    ]
                 }
             ]
         })
@@ -1450,7 +1466,6 @@ def build_spot_list_carousel_horizontal(user_id=None):
                 if len(pair) == 1:
                     row_buttons.append({"type": "filler"})
                     
-                # 行間を明示的に指定して統一
                 row_margin = "none" if is_first_row else "xs"
                 rows.append({"type": "box", "layout": "horizontal", "contents": row_buttons, "margin": row_margin})
                 is_first_row = False
@@ -1826,7 +1841,24 @@ def build_grid_flex_message(spot_name, weather_by_date, hp_url="", map_url="", t
         clean_tel = tel.replace('-', '').strip()
         bottom_buttons.append({"type": "button", "action": {"type": "uri", "label": "📞 電話", "uri": f"tel:{clean_tel}"}, "style": "secondary", "height": "sm", "flex": 2})
     
-    bottom_buttons.append({"type": "button", "action": {"type": "postback", "label": "📋 一覧", "data": "action=show_list", "displayText": "📋 一覧"}, "style": "secondary", "color": "#fff59d", "height": "sm", "flex": 3})
+    # 一覧ボタンをBoxで囲んで縁取りを追加
+    bottom_buttons.append({
+        "type": "box",
+        "layout": "vertical",
+        "flex": 3,
+        "borderWidth": "semi-bold",
+        "borderColor": "#d4af37",
+        "cornerRadius": "md",
+        "contents": [
+            {
+                "type": "button",
+                "action": {"type": "postback", "label": "📋 一覧", "data": "action=show_list", "displayText": "📋 一覧"},
+                "style": "secondary",
+                "color": "#fff59d",
+                "height": "sm"
+            }
+        ]
+    })
 
     body_contents.append({"type": "separator", "margin": "md"})
     body_contents.append({
