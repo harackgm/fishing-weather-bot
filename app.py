@@ -60,9 +60,9 @@ SPOT_WEATHER_DATA = {
     },
     "すその": {
         "url": "https://weathernews.jp/onebox/35.166667/138.899162/",
-        "hp_url": "http://www.susono-f-p.jp/",
+        "hp_url": "http://www.susono-f-park.com/",
         "search_name": "すそのフィッシングパーク",
-        "tel": "055-997-0041",
+        "tel": "055-993-5514",
         "aliases": ["すその", "すそのフィッシングパーク", "すそのFP", "裾野", "すそぱ", "すそパ"]
     },
     "須川": {
@@ -111,7 +111,7 @@ SPOT_WEATHER_DATA = {
     },
     "尚仁沢": {
         "url": "https://weathernews.jp/onebox/37.001929/140.104991/",
-        "hp_url": "http://www.shojinzawa.com/",
+        "hp_url": "https://shojinzawa.com/",
         "search_name": "尚仁沢アウトドアフィールド",
         "tel": "0287-41-0051",
         "aliases": ["尚仁沢", "尚仁沢アウトドアフィールド", "尚仁沢AF", "しょうじんざわ"]
@@ -132,7 +132,7 @@ SPOT_WEATHER_DATA = {
     },
     "408": {
         "url": "https://weathernews.jp/onebox/36.763055/139.858269/",
-        "hp_url": "https://408club.com/index.html",
+        "hp_url": "https://408club.com/",
         "search_name": "408Club",
         "tel": "0287-43-0408",
         "aliases": ["408", "408クラブ", "408club", "よんまるはち"]
