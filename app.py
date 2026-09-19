@@ -899,6 +899,7 @@ def build_settings_flex_message(fav_list):
 
         rows.append({"type": "separator", "margin": "md"})
         
+        # --- 変更箇所：左を「全て削除」、右を「一覧」に変更 ---
         rows.append({
             "type": "box",
             "layout": "horizontal",
@@ -907,16 +908,16 @@ def build_settings_flex_message(fav_list):
             "contents": [
                 {
                     "type": "button",
-                    "action": {"type": "postback", "label": "📋 一覧", "data": "action=show_list", "displayText": "📋 一覧"},
-                    "style": "secondary",
-                    "color": "#fff59d",
+                    "action": {"type": "postback", "label": "🗑️ 全て削除", "data": "action=fav_del_all_confirm"},
+                    "style": "primary",
+                    "color": "#e53935",
                     "flex": 1
                 },
                 {
                     "type": "button",
-                    "action": {"type": "postback", "label": "🗑️ 全て削除", "data": "action=fav_del_all_confirm"},
-                    "style": "primary",
-                    "color": "#e53935",
+                    "action": {"type": "postback", "label": "📋 一覧", "data": "action=show_list", "displayText": "📋 一覧"},
+                    "style": "secondary",
+                    "color": "#fff59d",
                     "flex": 1
                 }
             ]
@@ -992,7 +993,8 @@ def build_spot_list_carousel_horizontal(user_id=None):
                 fav_rows.append(row_box)
 
         fav_rows.append({"type": "separator", "margin": "lg" if fav_list else "md", "color": "#cccccc"})
-        # --- 変更箇所：下段ボタンを横並び（設定3：一覧4）に変更 ---
+        
+        # --- 変更箇所：height指定を削除し、設定パネルと同じ標準サイズ（大きめ）に統一 ---
         fav_rows.append({
             "type": "box",
             "layout": "horizontal",
@@ -1004,7 +1006,6 @@ def build_spot_list_carousel_horizontal(user_id=None):
                     "action": {"type": "postback", "label": "⚙️ 設定", "data": "action=show_settings", "displayText": "⚙️ 設定"},
                     "style": "secondary",
                     "color": "#f8f9fa",
-                    "height": "sm",
                     "flex": 3
                 },
                 {
@@ -1012,7 +1013,6 @@ def build_spot_list_carousel_horizontal(user_id=None):
                     "action": {"type": "postback", "label": "📋 一覧", "data": "action=show_list", "displayText": "📋 一覧"},
                     "style": "secondary",
                     "color": "#fff59d",
-                    "height": "sm",
                     "flex": 4
                 }
             ]
