@@ -993,7 +993,6 @@ def build_spot_list_carousel_horizontal(user_id=None):
 
         fav_rows.append({"type": "separator", "margin": "lg" if fav_list else "md", "color": "#cccccc"})
         
-        # --- 今回の修正箇所：flex を 1:1 にして横幅を均等に設定 ---
         fav_rows.append({
             "type": "box",
             "layout": "horizontal",
@@ -1662,15 +1661,74 @@ def handle_postback(event):
         except Exception:
             pass
 
+def get_top_favorite_spots(limit=24):
+    """
+    全ユーザーの登録データを集計し、登録数が多い上位の釣り場名リストを取得する
+    """
+    if not supabase: return []
+    try:
+        res = supabase.table('user_settings').select('favorite_spots').execute()
+        spot_counts = {}
+        if res.data:
+            for row in res.data:
+                favs = row.get('favorite_spots', '')
+                if not favs: continue
+                spots = [s.strip() for s in favs.split(',') if s.strip()]
+                for s in spots:
+                    spot_counts[s] = spot_counts.get(s, 0) + 1
+        
+        # 出現回数の多い順にソートして上位limit件を取得
+        sorted_spots = sorted(spot_counts.items(), key=lambda x: x[1], reverse=True)
+        top_spots = [spot for spot, count in sorted_spots[:limit]]
+        return top_spots
+    except Exception as e:
+        print(f"[Top Favs Error] {e}")
+        return []
+
 def run_background_update():
+    """
+    Cron-job等から定期的に呼ばれる裏側処理。
+    人気上位24件の中で、キャッシュが一番古い4件だけを取得して更新する。
+    """
     if not supabase: return
     try:
-        for spot_name, data in SPOT_WEATHER_DATA.items():
+        # 1. お気に入り登録されている人気上位24件を取得
+        top_spots = get_top_favorite_spots(limit=24)
+        if not top_spots:
+            return
+            
+        cache_times = {}
+        # 2. 対象となる釣り場のキャッシュ更新日時を調べる
+        for spot in top_spots:
+            res = supabase.table('weather_cache').select('updated_at').eq('spot_name', spot).execute()
+            if res.data and len(res.data) > 0:
+                updated_at_str = res.data[0].get('updated_at')
+                try:
+                    updated_time = datetime.fromisoformat(updated_at_str.replace('Z', '+00:00'))
+                    cache_times[spot] = updated_time
+                except:
+                    cache_times[spot] = datetime.min.replace(tzinfo=timezone.utc)
+            else:
+                # キャッシュが存在しない場合は過去のダミー日時を入れる（最優先で取得させるため）
+                cache_times[spot] = datetime.min.replace(tzinfo=timezone.utc)
+                
+        # 3. 古い順にソートし、最大4件を抽出
+        sorted_by_oldest = sorted(cache_times.items(), key=lambda x: x[1])
+        target_spots = [spot for spot, time in sorted_by_oldest[:4]]
+        
+        # 4. 対象の4件を安全にスクレイピング
+        for spot_name in target_spots:
+            data = SPOT_WEATHER_DATA.get(spot_name)
+            if not data: continue
             url = data["url"]
+            
             weather_data = fetch_spot_1hour_data(url)
             if weather_data:
                 save_cached_weather(spot_name, weather_data)
-            time.sleep(random.uniform(1.0, 2.0))
+                
+            # 【重要安全装置】人間の操作を装い連続アクセスを防ぐ（2.0〜3.5秒の待機）
+            time.sleep(random.uniform(2.0, 3.5))
+            
     except Exception as e:
         print(f"[Cron Background Error] {e}")
 
@@ -1678,6 +1736,7 @@ def run_background_update():
 def cron_trigger():
     if not supabase: return jsonify({"status": "error", "reason": "DB_NOT_CONNECTED"}), 500
     try:
+        # バックグラウンドで更新処理を走らせ、Web側の応答はすぐに返す（タイムアウト防止）
         thread = threading.Thread(target=run_background_update)
         thread.start()
         return jsonify({"status": "success", "message": "Background update started"}), 200
