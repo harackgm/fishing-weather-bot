@@ -879,7 +879,7 @@ SPOT_WEATHER_DATA = {
         "blog_url": "",
         "search_name": "榛名高原つり堀センター",
         "tel": "027-374-2228",
-        "aliases": ["榛名", "榛名高原", "はるun"]
+        "aliases": ["榛名", "榛名高原", "はるな"]
     },
 
     # --- 茨城県 ---
@@ -1313,30 +1313,33 @@ def build_settings_flex_message(fav_list):
                     "type": "box",
                     "layout": "vertical",
                     "flex": 1,
-                    "backgroundColor": "#e53935",
-                    "cornerRadius": "md",
-                    "justifyContent": "center",
-                    "alignItems": "center",
-                    "paddingAll": "10px",
-                    "action": {"type": "postback", "label": "🗑️ 全て削除", "data": "action=fav_del_all_confirm"},
+                    "paddingAll": "none",
                     "contents": [
-                        {"type": "text", "text": "🗑️ 全て削除", "weight": "bold", "size": "sm", "color": "#ffffff", "align": "center"}
+                        {
+                            "type": "button",
+                            "action": {"type": "postback", "label": "🗑️ 全て削除", "data": "action=fav_del_all_confirm"},
+                            "style": "primary",
+                            "color": "#e53935",
+                            "height": "sm"
+                        }
                     ]
                 },
                 {
                     "type": "box",
                     "layout": "vertical",
                     "flex": 1,
-                    "backgroundColor": "#fff59d",
                     "borderWidth": "normal",
                     "borderColor": "#d4af37",
                     "cornerRadius": "md",
-                    "justifyContent": "center",
-                    "alignItems": "center",
-                    "paddingAll": "10px",
-                    "action": {"type": "postback", "label": "📋 一覧", "data": "action=show_list", "displayText": "📋 一覧"},
+                    "paddingAll": "none",
                     "contents": [
-                        {"type": "text", "text": "📋 一覧", "weight": "bold", "size": "sm", "color": "#555555", "align": "center"}
+                        {
+                            "type": "button",
+                            "action": {"type": "postback", "label": "📋 一覧", "data": "action=show_list", "displayText": "📋 一覧"},
+                            "style": "secondary",
+                            "color": "#fff59d",
+                            "height": "sm"
+                        }
                     ]
                 }
             ]
@@ -1421,30 +1424,33 @@ def build_spot_list_carousel_horizontal(user_id=None):
                     "type": "box",
                     "layout": "vertical",
                     "flex": 1,
-                    "backgroundColor": "#f8f9fa",
-                    "cornerRadius": "md",
-                    "justifyContent": "center",
-                    "alignItems": "center",
-                    "paddingAll": "10px",
-                    "action": {"type": "postback", "label": "⚙️ 設定", "data": "action=show_settings", "displayText": "⚙️ 設定"},
+                    "paddingAll": "none",
                     "contents": [
-                        {"type": "text", "text": "⚙️ 設定", "weight": "bold", "size": "sm", "color": "#555555", "align": "center"}
+                        {
+                            "type": "button",
+                            "action": {"type": "postback", "label": "⚙️ 設定", "data": "action=show_settings", "displayText": "⚙️ 設定"},
+                            "style": "secondary",
+                            "color": "#f8f9fa",
+                            "height": "sm"
+                        }
                     ]
                 },
                 {
                     "type": "box",
                     "layout": "vertical",
                     "flex": 1,
-                    "backgroundColor": "#fff59d",
                     "borderWidth": "normal",
                     "borderColor": "#d4af37",
                     "cornerRadius": "md",
-                    "justifyContent": "center",
-                    "alignItems": "center",
-                    "paddingAll": "10px",
-                    "action": {"type": "postback", "label": "📋 一覧", "data": "action=show_list", "displayText": "📋 一覧"},
+                    "paddingAll": "none",
                     "contents": [
-                        {"type": "text", "text": "📋 一覧", "weight": "bold", "size": "sm", "color": "#555555", "align": "center"}
+                        {
+                            "type": "button",
+                            "action": {"type": "postback", "label": "📋 一覧", "data": "action=show_list", "displayText": "📋 一覧"},
+                            "style": "secondary",
+                            "color": "#fff59d",
+                            "height": "sm"
+                        }
                     ]
                 }
             ]
@@ -1864,14 +1870,14 @@ def build_grid_flex_message(spot_name, weather_by_date, hp_url="", hp2_url="", m
             "type": "box",
             "layout": "vertical",
             "flex": 2,
-            "backgroundColor": "#f8f9fa",
-            "cornerRadius": "md",
-            "justifyContent": "center",
-            "alignItems": "center",
-            "paddingAll": "10px",
-            "action": {"type": "uri", "label": "📞 電話", "uri": f"tel:{clean_tel}"},
+            "paddingAll": "none",
             "contents": [
-                {"type": "text", "text": "📞 電話", "weight": "bold", "size": "sm", "color": "#555555", "align": "center"}
+                {
+                    "type": "button",
+                    "action": {"type": "uri", "label": "📞 電話", "uri": f"tel:{clean_tel}"},
+                    "style": "secondary",
+                    "height": "sm"
+                }
             ]
         })
     
@@ -1879,16 +1885,18 @@ def build_grid_flex_message(spot_name, weather_by_date, hp_url="", hp2_url="", m
         "type": "box",
         "layout": "vertical",
         "flex": 3,
-        "backgroundColor": "#fff59d",
         "borderWidth": "normal",
         "borderColor": "#d4af37",
         "cornerRadius": "md",
-        "justifyContent": "center",
-        "alignItems": "center",
-        "paddingAll": "10px",
-        "action": {"type": "postback", "label": "📋 一覧", "data": "action=show_list", "displayText": "📋 一覧"},
+        "paddingAll": "none",
         "contents": [
-            {"type": "text", "text": "📋 一覧", "weight": "bold", "size": "sm", "color": "#555555", "align": "center"}
+            {
+                "type": "button",
+                "action": {"type": "postback", "label": "📋 一覧", "data": "action=show_list", "displayText": "📋 一覧"},
+                "style": "secondary",
+                "color": "#fff59d",
+                "height": "sm"
+            }
         ]
     })
 
