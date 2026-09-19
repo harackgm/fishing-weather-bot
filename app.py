@@ -899,6 +899,7 @@ def build_settings_flex_message(fav_list):
 
         rows.append({"type": "separator", "margin": "md"})
         
+        # --- 再修正：左を「全て削除」、右を「一覧」に変更し、標準の高さに設定 ---
         rows.append({
             "type": "box",
             "layout": "horizontal",
@@ -992,6 +993,8 @@ def build_spot_list_carousel_horizontal(user_id=None):
                 fav_rows.append(row_box)
 
         fav_rows.append({"type": "separator", "margin": "lg" if fav_list else "md", "color": "#cccccc"})
+        
+        # --- 再修正：height設定を削除し、設定ボタンと一覧ボタンを標準サイズ（大きめ）で統一 ---
         fav_rows.append({
             "type": "box",
             "layout": "horizontal",
