@@ -1310,25 +1310,40 @@ def build_settings_flex_message(fav_list):
             "spacing": "sm",
             "contents": [
                 {
-                    "type": "button",
-                    "action": {"type": "postback", "label": "🗑️ 全て削除", "data": "action=fav_del_all_confirm"},
-                    "style": "primary",
-                    "color": "#e53935",
-                    "flex": 1
+                    "type": "box",
+                    "layout": "vertical",
+                    "flex": 1,
+                    "borderWidth": "normal",
+                    "borderColor": "#00000000",
+                    "cornerRadius": "md",
+                    "paddingAll": "none",
+                    "contents": [
+                        {
+                            "type": "button",
+                            "action": {"type": "postback", "label": "🗑️ 全て削除", "data": "action=fav_del_all_confirm"},
+                            "style": "primary",
+                            "color": "#e53935",
+                            "height": "sm",
+                            "margin": "none"
+                        }
+                    ]
                 },
                 {
                     "type": "box",
                     "layout": "vertical",
                     "flex": 1,
-                    "borderWidth": "semi-bold",
+                    "borderWidth": "normal",
                     "borderColor": "#d4af37",
                     "cornerRadius": "md",
+                    "paddingAll": "none",
                     "contents": [
                         {
                             "type": "button",
                             "action": {"type": "postback", "label": "📋 一覧", "data": "action=show_list", "displayText": "📋 一覧"},
                             "style": "secondary",
-                            "color": "#fff59d"
+                            "color": "#fff59d",
+                            "height": "sm",
+                            "margin": "none"
                         }
                     ]
                 }
@@ -1411,26 +1426,40 @@ def build_spot_list_carousel_horizontal(user_id=None):
             "spacing": "sm",
             "contents": [
                 {
-                    "type": "button",
-                    "action": {"type": "postback", "label": "⚙️ 設定", "data": "action=show_settings", "displayText": "⚙️ 設定"},
-                    "style": "secondary",
-                    "color": "#f8f9fa",
-                    "flex": 1
+                    "type": "box",
+                    "layout": "vertical",
+                    "flex": 1,
+                    "borderWidth": "normal",
+                    "borderColor": "#00000000",
+                    "cornerRadius": "md",
+                    "paddingAll": "none",
+                    "contents": [
+                        {
+                            "type": "button",
+                            "action": {"type": "postback", "label": "⚙️ 設定", "data": "action=show_settings", "displayText": "⚙️ 設定"},
+                            "style": "secondary",
+                            "color": "#f8f9fa",
+                            "height": "sm",
+                            "margin": "none"
+                        }
+                    ]
                 },
                 {
                     "type": "box",
                     "layout": "vertical",
                     "flex": 1,
-                    "borderWidth": "semi-bold",
+                    "borderWidth": "normal",
                     "borderColor": "#d4af37",
                     "cornerRadius": "md",
+                    "paddingAll": "none",
                     "contents": [
                         {
                             "type": "button",
                             "action": {"type": "postback", "label": "📋 一覧", "data": "action=show_list", "displayText": "📋 一覧"},
                             "style": "secondary",
                             "color": "#fff59d",
-                            "height": "sm"
+                            "height": "sm",
+                            "margin": "none"
                         }
                     ]
                 }
@@ -1847,22 +1876,41 @@ def build_grid_flex_message(spot_name, weather_by_date, hp_url="", hp2_url="", m
     bottom_buttons = []
     if tel:
         clean_tel = tel.replace('-', '').strip()
-        bottom_buttons.append({"type": "button", "action": {"type": "uri", "label": "📞 電話", "uri": f"tel:{clean_tel}"}, "style": "secondary", "height": "sm", "flex": 2})
+        bottom_buttons.append({
+            "type": "box",
+            "layout": "vertical",
+            "flex": 2,
+            "borderWidth": "normal",
+            "borderColor": "#00000000",
+            "cornerRadius": "md",
+            "paddingAll": "none",
+            "contents": [
+                {
+                    "type": "button",
+                    "action": {"type": "uri", "label": "📞 電話", "uri": f"tel:{clean_tel}"},
+                    "style": "secondary",
+                    "height": "sm",
+                    "margin": "none"
+                }
+            ]
+        })
     
     bottom_buttons.append({
         "type": "box",
         "layout": "vertical",
         "flex": 3,
-        "borderWidth": "semi-bold",
+        "borderWidth": "normal",
         "borderColor": "#d4af37",
         "cornerRadius": "md",
+        "paddingAll": "none",
         "contents": [
             {
                 "type": "button",
                 "action": {"type": "postback", "label": "📋 一覧", "data": "action=show_list", "displayText": "📋 一覧"},
                 "style": "secondary",
                 "color": "#fff59d",
-                "height": "sm"
+                "height": "sm",
+                "margin": "none"
             }
         ]
     })
