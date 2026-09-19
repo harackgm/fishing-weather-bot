@@ -90,7 +90,7 @@ SPOT_WEATHER_DATA = {
     # --- 栃木県 ---
     "キングフィッシャー": {
         "url": "https://weathernews.jp/onebox/36.907054/140.078650/",
-        "hp_url": "https://kingfisher-jp.com/",
+        "hp_url": "https://kingfisher-tochigi.com/",
         "search_name": "キングフィッシャー 大田原",
         "tel": "0287-23-1253",
         "aliases": ["キングフィッシャー", "キング", "キングフィッシャ", "きんぐふぃっしゃー"]
@@ -362,7 +362,7 @@ SPOT_WEATHER_DATA = {
     },
     "王禅寺": {
         "url": "https://weathernews.jp/onebox/35.587020/139.524309/",
-        "hp_url": "https://www.berrypark.jp/ozenji/",
+        "hp_url": "https://www.fishon-oz.jp/",
         "search_name": "BerryPark in 王禅寺",
         "tel": "044-959-0037",
         "aliases": ["王禅寺", "ベリーパーク in 王禅寺", "おうぜんじ", "王禅寺ベリーパーク", "寺", "てら"]
@@ -1147,7 +1147,7 @@ def get_user_setting(user_id):
             # 名称変更対応マップ（過去登録された古い名前を自動で新しい名前に変換）
             rename_map = {
                 "五頭": "GOZU",
-                "竜华池": "竜华池",
+                "竜华池": "竜華池",
                 "ハーブ": "ハーブの里",
                 "サンクチュアリ": "３９",
                 "高島": "高島の泉",
