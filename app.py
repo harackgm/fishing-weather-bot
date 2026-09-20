@@ -1297,6 +1297,7 @@ def build_settings_flex_message(fav_list):
 
         rows.append({"type": "separator", "margin": "md"})
         
+        # ▼ 高さを完全に揃え、隙間をなくした設定画面の下部ボタン群
         rows.append({
             "type": "box",
             "layout": "horizontal",
@@ -1304,25 +1305,42 @@ def build_settings_flex_message(fav_list):
             "spacing": "sm",
             "contents": [
                 {
-                    "type": "button",
-                    "action": {"type": "postback", "label": "🗑️ 全て削除", "data": "action=fav_del_all_confirm"},
-                    "style": "primary",
-                    "color": "#e53935",
-                    "flex": 1
+                    "type": "box",
+                    "layout": "vertical",
+                    "flex": 1,
+                    "backgroundColor": "#e53935",
+                    "borderWidth": "normal",
+                    "borderColor": "#e53935",
+                    "cornerRadius": "md",
+                    "paddingAll": "0px",
+                    "contents": [
+                        {
+                            "type": "button",
+                            "action": {"type": "postback", "label": "🗑️ 全て削除", "data": "action=fav_del_all_confirm"},
+                            "style": "link",
+                            "color": "#ffffff",
+                            "height": "sm",
+                            "margin": "none"
+                        }
+                    ]
                 },
                 {
                     "type": "box",
                     "layout": "vertical",
                     "flex": 1,
-                    "borderWidth": "semi-bold",
+                    "backgroundColor": "#fff59d",
+                    "borderWidth": "normal",
                     "borderColor": "#d4af37",
                     "cornerRadius": "md",
+                    "paddingAll": "0px",
                     "contents": [
                         {
                             "type": "button",
                             "action": {"type": "postback", "label": "📋 一覧", "data": "action=show_list", "displayText": "📋 一覧"},
-                            "style": "secondary",
-                            "color": "#fff59d"
+                            "style": "link",
+                            "color": "#555555",
+                            "height": "sm",
+                            "margin": "none"
                         }
                     ]
                 }
@@ -1398,6 +1416,7 @@ def build_spot_list_carousel_horizontal(user_id=None):
 
         fav_rows.append({"type": "separator", "margin": "md", "color": "#cccccc"})
         
+        # ▼ 高さを完全に揃え、隙間をなくした一覧パネルの下部ボタン群
         fav_rows.append({
             "type": "box",
             "layout": "horizontal",
@@ -1405,25 +1424,42 @@ def build_spot_list_carousel_horizontal(user_id=None):
             "spacing": "sm",
             "contents": [
                 {
-                    "type": "button",
-                    "action": {"type": "postback", "label": "⚙️ 設定", "data": "action=show_settings", "displayText": "⚙️ 設定"},
-                    "style": "secondary",
-                    "color": "#f8f9fa",
-                    "flex": 1
+                    "type": "box",
+                    "layout": "vertical",
+                    "flex": 1,
+                    "backgroundColor": "#f8f9fa",
+                    "borderWidth": "normal",
+                    "borderColor": "#f8f9fa",
+                    "cornerRadius": "md",
+                    "paddingAll": "0px",
+                    "contents": [
+                        {
+                            "type": "button",
+                            "action": {"type": "postback", "label": "⚙️ 設定", "data": "action=show_settings", "displayText": "⚙️ 設定"},
+                            "style": "link",
+                            "color": "#555555",
+                            "height": "sm",
+                            "margin": "none"
+                        }
+                    ]
                 },
                 {
                     "type": "box",
                     "layout": "vertical",
                     "flex": 1,
-                    "borderWidth": "semi-bold",
+                    "backgroundColor": "#fff59d",
+                    "borderWidth": "normal",
                     "borderColor": "#d4af37",
                     "cornerRadius": "md",
+                    "paddingAll": "0px",
                     "contents": [
                         {
                             "type": "button",
                             "action": {"type": "postback", "label": "📋 一覧", "data": "action=show_list", "displayText": "📋 一覧"},
-                            "style": "secondary",
-                            "color": "#fff59d"
+                            "style": "link",
+                            "color": "#555555",
+                            "height": "sm",
+                            "margin": "none"
                         }
                     ]
                 }
@@ -1839,23 +1875,46 @@ def build_grid_flex_message(spot_name, weather_by_date, hp_url="", map_url="", t
     bottom_buttons = []
     if tel:
         clean_tel = tel.replace('-', '').strip()
-        bottom_buttons.append({"type": "button", "action": {"type": "uri", "label": "📞 電話", "uri": f"tel:{clean_tel}"}, "style": "secondary", "height": "sm", "flex": 2})
+        # ▼ 高さを完全に揃え、隙間をなくした電話ボタン
+        bottom_buttons.append({
+            "type": "box",
+            "layout": "vertical",
+            "flex": 2,
+            "backgroundColor": "#f8f9fa",
+            "borderWidth": "normal",
+            "borderColor": "#f8f9fa",
+            "cornerRadius": "md",
+            "paddingAll": "0px",
+            "contents": [
+                {
+                    "type": "button",
+                    "action": {"type": "uri", "label": "📞 電話", "uri": f"tel:{clean_tel}"},
+                    "style": "link",
+                    "color": "#555555",
+                    "height": "sm",
+                    "margin": "none"
+                }
+            ]
+        })
     
-    # 一覧ボタンをBoxで囲んで縁取りを追加
+    # ▼ 高さを完全に揃え、隙間をなくした天気カード下部の一覧ボタン
     bottom_buttons.append({
         "type": "box",
         "layout": "vertical",
         "flex": 3,
-        "borderWidth": "semi-bold",
+        "backgroundColor": "#fff59d",
+        "borderWidth": "normal",
         "borderColor": "#d4af37",
         "cornerRadius": "md",
+        "paddingAll": "0px",
         "contents": [
             {
                 "type": "button",
                 "action": {"type": "postback", "label": "📋 一覧", "data": "action=show_list", "displayText": "📋 一覧"},
-                "style": "secondary",
-                "color": "#fff59d",
-                "height": "sm"
+                "style": "link",
+                "color": "#555555",
+                "height": "sm",
+                "margin": "none"
             }
         ]
     })
