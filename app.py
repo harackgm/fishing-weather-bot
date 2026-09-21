@@ -1178,11 +1178,9 @@ COLOR_GROUPS = [
     }
 ]
 
-# ▼ 【ゆらぎ対応】全角・半角・大文字・小文字を統一して比較するための安全な変換機能 ▼
 def normalize_name(name_str):
     if not name_str:
         return ""
-    # NFKC正規化で全角英数字(４０８など)を半角(408)に変換し、小文字に揃えます
     return unicodedata.normalize('NFKC', name_str).lower()
 
 def clean_url(url_str):
@@ -1650,7 +1648,6 @@ def get_user_setting(user_id):
         print(f"[Supabase取得エラー] {e}")
         return ('ウェザーニュース', '')
 
-# ▼ 【新規】全角/半角ゆらぎ対応を追加し、入力文字と辞書の文字を確実に一致させます ▼
 def add_favorite_spots(user_id, spot_names):
     if not supabase: return False, [], ["DB接続未完了です。"]
     source, favorites = get_user_setting(user_id)
@@ -1660,11 +1657,9 @@ def add_favorite_spots(user_id, spot_names):
     errors = []
     for spot_name in spot_names:
         target_name = None
-        # 入力を正規化（全角英数字を半角に、大文字を小文字に統一）
         norm_input = normalize_name(spot_name)
         
         for spot_key, data in SPOT_WEATHER_DATA.items():
-            # 辞書のキーと別名も同じように正規化して比較する
             norm_key = normalize_name(spot_key)
             norm_aliases = [normalize_name(a) for a in data["aliases"]]
             
@@ -1695,7 +1690,6 @@ def add_favorite_spots(user_id, spot_names):
             return False, [], [f"DB保存エラー"]
     return True, added, errors
 
-# ▼ 【新規】全角/半角ゆらぎ対応を追加 ▼
 def remove_favorite_spots(user_id, spot_names):
     if not supabase: return False, [], ["DB接続未完了です。"]
     source, favorites = get_user_setting(user_id)
@@ -2014,7 +2008,8 @@ def handle_message(event):
         add_match = re.match(r'^追加[\s:：]+(.+)$', raw_msg, re.DOTALL)
         if add_match:
             spots_str = add_match.group(1).strip()
-            spot_names = [s for s in re.split(r'[\s,、\n]+', spots_str) if s]
+            # ▼ 「追加」「削除」というキーワードを釣り場名と誤認しないように除外します ▼
+            spot_names = [s for s in re.split(r'[\s,、\n]+', spots_str) if s and s not in ["追加", "削除"]]
             
             success, added, errors = add_favorite_spots(user_id, spot_names)
             
@@ -2038,7 +2033,8 @@ def handle_message(event):
         del_match = re.match(r'^削除[\s:：]+(.+)$', raw_msg, re.DOTALL)
         if del_match:
             spots_str = del_match.group(1).strip()
-            spot_names = [s for s in re.split(r'[\s,、\n]+', spots_str) if s]
+            # ▼ 「追加」「削除」というキーワードを除外します ▼
+            spot_names = [s for s in re.split(r'[\s,、\n]+', spots_str) if s and s not in ["追加", "削除"]]
             
             success, removed, errors = remove_favorite_spots(user_id, spot_names)
             
