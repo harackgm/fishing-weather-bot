@@ -690,7 +690,7 @@ SPOT_WEATHER_DATA = {
         "blog_url": "",
         "search_name": "槻の池フィッシングエリア",
         "tel": "0266-76-2280",
-        "aliases": ["つきの池", "槻の池", "槻の池フィッシングエリア"]
+        "aliases": ["つきの池", "槻の池", "槻の池フィッシングエリア", "つきのいけ"]
     },
     "あずみ野": {
         "url": "https://weathernews.jp/onebox/36.337699/137.885455/",
@@ -2008,7 +2008,6 @@ def handle_message(event):
         add_match = re.match(r'^追加[\s:：]+(.+)$', raw_msg, re.DOTALL)
         if add_match:
             spots_str = add_match.group(1).strip()
-            # ▼ 「追加」「削除」というキーワードを釣り場名と誤認しないように除外します ▼
             spot_names = [s for s in re.split(r'[\s,、\n]+', spots_str) if s and s not in ["追加", "削除"]]
             
             success, added, errors = add_favorite_spots(user_id, spot_names)
@@ -2033,7 +2032,6 @@ def handle_message(event):
         del_match = re.match(r'^削除[\s:：]+(.+)$', raw_msg, re.DOTALL)
         if del_match:
             spots_str = del_match.group(1).strip()
-            # ▼ 「追加」「削除」というキーワードを除外します ▼
             spot_names = [s for s in re.split(r'[\s,、\n]+', spots_str) if s and s not in ["追加", "削除"]]
             
             success, removed, errors = remove_favorite_spots(user_id, spot_names)
