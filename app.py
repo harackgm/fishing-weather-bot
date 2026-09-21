@@ -1319,7 +1319,7 @@ def build_settings_flex_message(fav_list):
                     "borderWidth": "normal",
                     "borderColor": "#e53935",
                     "cornerRadius": "md",
-                    "paddingAll": "none",
+                    "paddingAll": "0px",
                     "contents": [
                         {
                             "type": "button",
@@ -1339,7 +1339,7 @@ def build_settings_flex_message(fav_list):
                     "borderWidth": "normal",
                     "borderColor": "#d4af37",
                     "cornerRadius": "md",
-                    "paddingAll": "none",
+                    "paddingAll": "0px",
                     "contents": [
                         {
                             "type": "button",
@@ -1436,9 +1436,9 @@ def build_spot_list_carousel_horizontal(user_id=None):
                     "flex": 1,
                     "backgroundColor": "#f8f9fa",
                     "borderWidth": "normal",
-                    "borderColor": "#f8f9fa",
+                    "borderColor": "#e0e0e0",
                     "cornerRadius": "md",
-                    "paddingAll": "none",
+                    "paddingAll": "0px",
                     "contents": [
                         {
                             "type": "button",
@@ -1458,7 +1458,7 @@ def build_spot_list_carousel_horizontal(user_id=None):
                     "borderWidth": "normal",
                     "borderColor": "#d4af37",
                     "cornerRadius": "md",
-                    "paddingAll": "none",
+                    "paddingAll": "0px",
                     "contents": [
                         {
                             "type": "button",
@@ -1629,6 +1629,7 @@ def get_user_setting(user_id):
             for s in raw_favs:
                 if s in rename_map:
                     s = rename_map[s]
+                # 削除された釣り場は除外する
                 if s not in ["多摩湖", "いなプー"] and s:
                     favs_list.append(s)
                     
@@ -1744,11 +1745,11 @@ def move_favorite_spot(user_id, spot_name, direction):
     except Exception as e:
         return False, f"移動失敗: {e}"
 
-def fetch_spot_1hour_data(url):
+def fetch_spot_1hour_data(url, custom_timeout=8):
     try:
         headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}
-        # ▼ 【重要】エラーの元凶だった不安定なスレッド処理を削除し、確実な同期処理（タイムアウト8秒）に戻しました
-        response = requests.get(url, headers=headers, timeout=8)
+        # ▼ 【重要】強制タイムアウト時間を引数から受け取る
+        response = requests.get(url, headers=headers, timeout=custom_timeout)
         response.raise_for_status()
         soup = BeautifulSoup(response.text, 'html.parser')
         
@@ -1883,6 +1884,7 @@ def build_grid_flex_message(spot_name, weather_by_date, hp_url="", hp2_url="", m
     bottom_buttons = []
     if tel:
         clean_tel = tel.replace('-', '').strip()
+        # ▼ 高さを完全に揃え、隙間をなくした電話ボタン（Boxタップ化）
         bottom_buttons.append({
             "type": "box",
             "layout": "vertical",
@@ -1891,7 +1893,7 @@ def build_grid_flex_message(spot_name, weather_by_date, hp_url="", hp2_url="", m
             "borderWidth": "normal",
             "borderColor": "#e0e0e0",
             "cornerRadius": "md",
-            "paddingAll": "none",
+            "paddingAll": "0px",
             "contents": [
                 {
                     "type": "button",
@@ -1904,6 +1906,7 @@ def build_grid_flex_message(spot_name, weather_by_date, hp_url="", hp2_url="", m
             ]
         })
     
+    # ▼ 高さを完全に揃え、隙間をなくした天気カード下部の一覧ボタン
     bottom_buttons.append({
         "type": "box",
         "layout": "vertical",
@@ -1912,7 +1915,7 @@ def build_grid_flex_message(spot_name, weather_by_date, hp_url="", hp2_url="", m
         "borderWidth": "normal",
         "borderColor": "#d4af37",
         "cornerRadius": "md",
-        "paddingAll": "none",
+        "paddingAll": "0px",
         "contents": [
             {
                 "type": "button",
@@ -1932,7 +1935,7 @@ def build_grid_flex_message(spot_name, weather_by_date, hp_url="", hp2_url="", m
     })
 
     # ========================================================
-    # ▼ 大崎・赤城対応の安全な2段レイアウト ▼
+    # ▼ 安全な2段レイアウト（上段：登録・地図、下段：HP・大崎等） ▼
     # ========================================================
     header_buttons_top = []
     
@@ -1971,8 +1974,10 @@ def build_grid_flex_message(spot_name, weather_by_date, hp_url="", hp2_url="", m
 
     header_contents = [{"type": "text", "text": f"📍 {spot_name}", "color": "#ffffff", "weight": "bold", "size": "lg"}]
     
+    # 上段を追加
     if header_buttons_top: 
         header_contents.append({"type": "box", "layout": "horizontal", "margin": "sm", "spacing": "xs", "contents": header_buttons_top})
+    # 下段を追加
     if header_buttons_bottom: 
         header_contents.append({"type": "box", "layout": "horizontal", "margin": "sm", "spacing": "xs", "contents": header_buttons_bottom})
 
@@ -2098,7 +2103,6 @@ def handle_postback(event):
             return
 
         elif action == "show_weather":
-            # ▼ 確実にLINEに応答を返す同期処理（エラーの元凶だったスレッドを完全撤去）
             target_spot_name, target_url, hp_url, hp2_url, map_url, tel, x_url, fb_url, insta_url, blog_url = get_spot_details(spot_name)
             _, favorites = get_user_setting(user_id)
             fav_list = [s.strip() for s in favorites.split(',')]
@@ -2108,7 +2112,8 @@ def handle_postback(event):
             weather_by_date = get_cached_weather(target_spot_name)
             
             if not weather_by_date:
-                weather_by_date = fetch_spot_1hour_data(target_url)
+                # ▼ 【重要】LINEの5秒ルールに引っかからないよう、4.5秒で打ち切ります ▼
+                weather_by_date = fetch_spot_1hour_data(target_url, custom_timeout=4.5)
                 if weather_by_date:
                     save_cached_weather(target_spot_name, weather_by_date)
 
@@ -2116,7 +2121,19 @@ def handle_postback(event):
                 flex_msg = build_grid_flex_message(target_spot_name, weather_by_date, hp_url, hp2_url, map_url, tel, x_url, fb_url, insta_url, blog_url, is_favorite=is_fav)
                 line_bot_api.reply_message(event.reply_token, flex_msg)
             else:
-                line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"⚠️ 【{target_spot_name}】の天気データの取得に失敗しました。時間をおいてから再度お試しください。"))
+                # ▼ 無反応エラーを防ぐためのフォールバック処理 ▼
+                error_msg = f"⚠️ 【{target_spot_name}】の天気データの取得に少し時間がかかっています。\n\n裏側で最新データを準備していますので、数秒〜数十秒待ってからもう一度ボタンを押してみてください！"
+                line_bot_api.reply_message(event.reply_token, TextSendMessage(text=error_msg))
+                
+                # エラーメッセージを返した直後に、裏側で長めのタイムアウトを許容してキャッシュを作っておく
+                def background_fetch():
+                    try:
+                        w_data = fetch_spot_1hour_data(target_url, custom_timeout=15)
+                        if w_data:
+                            save_cached_weather(target_spot_name, w_data)
+                    except:
+                        pass
+                threading.Thread(target=background_fetch).start()
             return
 
         elif action == "fav_add_and_list":
