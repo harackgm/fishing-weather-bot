@@ -800,21 +800,16 @@ SPOT_WEATHER_DATA = {
         "tel": "027-283-0035",
         "aliases": ["ＭＡＶ", "宮城", "宮城AV", "みやぎあんぐらーず", "まぶ", "マブ", "あんびれ", "アンビレ", "MAV", "mav"]
     },
-    # ▼ 大崎・赤城の2段統合データ ▼
-    "大崎・赤城": {
+    "大崎": {
         "url": "https://weathernews.jp/onebox/36.463209/139.164867/",
         "hp_url": "https://nijimasu.com/",
-        "hp2_url": "https://anglers-base.com/",
         "x_url": "",
         "fb_url": "https://www.facebook.com/osakituribori/",
         "insta_url": "",
         "blog_url": "",
         "search_name": "大崎つりぼり",
         "tel": "027-283-2945",
-        "aliases": [
-            "大崎・赤城", "大崎", "大崎つりぼり", "おおさきつりぼり", "おおさき", "オオサキ", 
-            "赤城", "赤城山", "あかぎ", "アカギ", "アングラーズベース赤城山", "アングラーズベース", "あんぐらーずべーす", "ABA"
-        ]
+        "aliases": ["大崎", "大崎つりぼり", "おおさき"]
     },
     "けん太": {
         "url": "https://weathernews.jp/onebox/36.386648/138.960021/",
@@ -1157,7 +1152,7 @@ COLOR_GROUPS = [
         "header_bg": "#2e7d32",
         "sub_groups": [
             {"bg": "#e8f5e9", "spots": ["長瀞", "彩の国", "朝霞Ｇ", "しらこばと", "川越パーク", "加須はなさき", "中里", "伊古の里"]},
-            {"bg": "#c8e6c9", "spots": ["川場", "川場キングダム", "おくとね", "イワナセンター", "黒保根", "迦葉山", "片品", "中之沢", "ＭＡＶ", "大崎・赤城", "けん太", "フック", "赤久縄", "太田", "東山道", "榛名"]}
+            {"bg": "#c8e6c9", "spots": ["川場", "川場キングダム", "おくとね", "イワナセンター", "黒保根", "迦葉山", "片品", "中之沢", "ＭＡＶ", "大崎", "けん太", "フック", "赤久縄", "太田", "東山道", "榛名"]}
         ]
     },
     {
@@ -1187,29 +1182,16 @@ def clean_url(url_str):
         return ""
     return cleaned
 
-# ▼ 【重要・安全対策1】「J」や「MAV」等の検索迷子を完全に防ぐ検索処理 ▼
 def get_spot_details(spot_key):
-    actual_key = spot_key
-    if spot_key not in SPOT_WEATHER_DATA:
-        # 半角・全角の違いなどをゆらぎ（aliases）から確実に検索する
-        for k, v in SPOT_WEATHER_DATA.items():
-            if spot_key.lower() in [a.lower() for a in v.get("aliases", [])]:
-                actual_key = k
-                break
-
-    data = SPOT_WEATHER_DATA.get(actual_key)
+    data = SPOT_WEATHER_DATA.get(spot_key)
     if not data:
-        return spot_key, None, "", "", "", "", "", "", "", ""
-    
-    map_url = f"https://www.google.com/maps/search/?api=1&query={quote(data.get('search_name', actual_key))}"
+        return spot_key, None, "", "", "", "", "", "", ""
+    map_url = f"https://www.google.com/maps/search/?api=1&query={quote(data.get('search_name', spot_key))}"
     hp_url = clean_url(data.get("hp_url", ""))
-    hp2_url = clean_url(data.get("hp2_url", ""))
-    
     return (
-        actual_key, 
+        spot_key, 
         data["url"], 
-        hp_url,
-        hp2_url,
+        hp_url, 
         map_url, 
         data.get("tel", ""),
         clean_url(data.get("x_url", "")),
@@ -1315,7 +1297,7 @@ def build_settings_flex_message(fav_list):
 
         rows.append({"type": "separator", "margin": "md"})
         
-        # ▼ 高さを完全に揃え、隙間をなくした設定画面の下部ボタン群
+        # ▼ 高さを完全に揃え、隙間をなくした設定画面の下部ボタン群 ▼
         rows.append({
             "type": "box",
             "layout": "horizontal",
@@ -1434,7 +1416,7 @@ def build_spot_list_carousel_horizontal(user_id=None):
 
         fav_rows.append({"type": "separator", "margin": "md", "color": "#cccccc"})
         
-        # ▼ 高さを完全に揃え、隙間をなくした一覧パネルの下部ボタン群
+        # ▼ 高さを完全に揃え、隙間をなくした一覧パネルの下部ボタン群 ▼
         fav_rows.append({
             "type": "box",
             "layout": "horizontal",
@@ -1615,7 +1597,7 @@ def get_user_setting(user_id):
             row = res.data[0]
             favs = row.get('favorite_spots') or ''
             
-            # ▼「大崎」を「大崎・赤城」に読み替える安全処理 ▼
+            # 名称変更対応マップ（過去登録された古い名前を自動で新しい名前に変換）
             rename_map = {
                 "五頭": "GOZU",
                 "竜华池": "竜華池",
@@ -1631,8 +1613,7 @@ def get_user_setting(user_id):
                 "FAJ": "Ｊ",
                 "朝霞": "朝霞Ｇ",
                 "不忘": "GP不忘",
-                "座間": "座間・amaz",
-                "大崎": "大崎・赤城"
+                "座間": "座間・amaz"
             }
             
             raw_favs = [s.strip() for s in favs.split(',')]
@@ -1813,7 +1794,7 @@ def fetch_spot_1hour_data(url):
         print(f"[スクレイピングエラー] {e}")
         return None
 
-def build_grid_flex_message(spot_name, weather_by_date, hp_url="", hp2_url="", map_url="", tel="", x_url="", fb_url="", insta_url="", blog_url="", is_favorite=False):
+def build_grid_flex_message(spot_name, weather_by_date, hp_url="", map_url="", tel="", x_url="", fb_url="", insta_url="", blog_url="", is_favorite=False):
     dates = list(weather_by_date.keys())
     
     header_color = "#0066cc"
@@ -1891,6 +1872,7 @@ def build_grid_flex_message(spot_name, weather_by_date, hp_url="", hp2_url="", m
         row2 = {"type": "box", "layout": "horizontal", "spacing": "sm", "contents": [create_day_column(dates[2] if len(dates) > 2 else None), {"type": "separator"}, create_day_column(dates[3] if len(dates) > 3 else None)]}
         body_contents.append(row2)
 
+    # ▼ 高さを完全に揃え、隙間をなくした天気カード下部ボタン群 ▼
     bottom_buttons = []
     if tel:
         clean_tel = tel.replace('-', '').strip()
@@ -1942,43 +1924,24 @@ def build_grid_flex_message(spot_name, weather_by_date, hp_url="", hp2_url="", m
         "contents": bottom_buttons
     })
 
-    # ========================================================
-    # ▼ 大崎・赤城対応の安全な2段レイアウト ▼
-    # ========================================================
+    # --- ヘッダーボタン上段（登録・HP・地図） ---
     header_buttons_top = []
-    
     if is_favorite:
         header_buttons_top.append({"type": "button", "action": {"type": "postback", "label": "🗑️ 解除", "data": f"action=fav_del_confirm_and_list&spot={spot_name}"}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs", "color": "#ffcccc"})
     else:
         header_buttons_top.append({"type": "button", "action": {"type": "postback", "label": "⭐️ 登録", "data": f"action=fav_add_and_list&spot={spot_name}"}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs", "color": "#fff59d"})
 
-    clean_map = clean_url(map_url)
-    if clean_map: 
-        header_buttons_top.append({"type": "button", "action": {"type": "uri", "label": "🗺️ 地図", "uri": clean_map}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
-
-    header_buttons_bottom = []
     clean_hp = clean_url(hp_url)
-    clean_hp2 = clean_url(hp2_url)
+    clean_map = clean_url(map_url)
+    if clean_hp: header_buttons_top.append({"type": "button", "action": {"type": "uri", "label": "🌐 HP", "uri": clean_hp}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
+    if clean_map: header_buttons_top.append({"type": "button", "action": {"type": "uri", "label": "🗺️ 地図", "uri": clean_map}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
 
-    if spot_name == "大崎・赤城":
-        if clean_hp: 
-            header_buttons_bottom.append({"type": "button", "action": {"type": "uri", "label": "🌐 大崎", "uri": clean_hp}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
-        if clean_hp2:
-            header_buttons_bottom.append({"type": "button", "action": {"type": "uri", "label": "🌐 赤城", "uri": clean_hp2}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
-    else:
-        if clean_hp: 
-            header_buttons_bottom.append({"type": "button", "action": {"type": "uri", "label": "🌐 HP", "uri": clean_hp}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
-        
-        # ▼ SNSボタン復活（安全な文字列で表示） ▼
-        clean_x = clean_url(x_url)
-        clean_fb = clean_url(fb_url)
-        clean_insta = clean_url(insta_url)
-        clean_blog = clean_url(blog_url)
-        
-        if clean_x: header_buttons_bottom.append({"type": "button", "action": {"type": "uri", "label": "X", "uri": clean_x}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
-        if clean_fb: header_buttons_bottom.append({"type": "button", "action": {"type": "uri", "label": "FB", "uri": clean_fb}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
-        if clean_insta: header_buttons_bottom.append({"type": "button", "action": {"type": "uri", "label": "Insta", "uri": clean_insta}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
-        if clean_blog: header_buttons_bottom.append({"type": "button", "action": {"type": "uri", "label": "Blog", "uri": clean_blog}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
+    # --- ヘッダーボタン下段（SNS等）※入力されているものだけ表示 ---
+    header_buttons_bottom = []
+    if clean_url(x_url): header_buttons_bottom.append({"type": "button", "action": {"type": "uri", "label": "𝕏", "uri": x_url}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
+    if clean_url(fb_url): header_buttons_bottom.append({"type": "button", "action": {"type": "uri", "label": "📘 FB", "uri": fb_url}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
+    if clean_url(insta_url): header_buttons_bottom.append({"type": "button", "action": {"type": "uri", "label": "📷 Insta", "uri": insta_url}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
+    if clean_url(blog_url): header_buttons_bottom.append({"type": "button", "action": {"type": "uri", "label": "📝 Blog", "uri": blog_url}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
 
     header_contents = [{"type": "text", "text": f"📍 {spot_name}", "color": "#ffffff", "weight": "bold", "size": "lg"}]
     
@@ -2079,9 +2042,9 @@ def handle_message(event):
         try: line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ LINE通信エラーが発生しました。（データ容量制限エラー等の可能性があります）"))
         except Exception: pass
     except Exception as e:
-        # 万が一のエラー時に画面にログを出して完全特定するためのガードレール
-        error_msg = traceback.format_exc()
-        try: line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"⚠️ システムエラーが発生しました。開発者用ログ:\n\n{error_msg[:1000]}"))
+        print("\n=== システムエラー詳細 ===")
+        traceback.print_exc()
+        try: line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ 処理中にエラーが発生しました。"))
         except Exception: pass
 
 @handler.add(PostbackEvent)
@@ -2111,13 +2074,7 @@ def handle_postback(event):
             return
 
         elif action == "show_weather":
-            # ▼【重要】エラーの元凶だった非同期処理（スレッド）を消し、良かった頃の同期処理に完全に戻しました
-            target_spot_name, target_url, hp_url, hp2_url, map_url, tel, x_url, fb_url, insta_url, blog_url = get_spot_details(spot_name)
-            
-            if not target_url:
-                line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"⚠️ 【{spot_name}】のデータが見つかりません。"))
-                return
-
+            target_spot_name, target_url, hp_url, map_url, tel, x_url, fb_url, insta_url, blog_url = get_spot_details(spot_name)
             _, favorites = get_user_setting(user_id)
             fav_list = [s.strip() for s in favorites.split(',')]
             fav_list = [s for s in fav_list if s]
@@ -2131,10 +2088,10 @@ def handle_postback(event):
                     save_cached_weather(target_spot_name, weather_by_date)
 
             if weather_by_date:
-                flex_msg = build_grid_flex_message(target_spot_name, weather_by_date, hp_url, hp2_url, map_url, tel, x_url, fb_url, insta_url, blog_url, is_favorite=is_fav)
+                flex_msg = build_grid_flex_message(target_spot_name, weather_by_date, hp_url, map_url, tel, x_url, fb_url, insta_url, blog_url, is_favorite=is_fav)
                 line_bot_api.reply_message(event.reply_token, flex_msg)
             else:
-                line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"⚠️ 【{target_spot_name}】の天気データの取得に失敗しました。時間をおいてから再度お試しください。"))
+                line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"⚠️ 【{target_spot_name}】の天気データの取得に失敗しました。"))
             return
 
         elif action == "fav_add_and_list":
@@ -2203,10 +2160,12 @@ def handle_postback(event):
         try: line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ LINE通信エラーが発生しました。（データ容量オーバー等の可能性があります）"))
         except Exception: pass
     except Exception as e:
-        # 万が一のエラー時に画面にログを出して特定するための安全装置
-        error_msg = traceback.format_exc()
-        try: line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"⚠️ システムエラーが発生しました。開発者用ログ:\n\n{error_msg[:800]}"))
-        except Exception: pass
+        print(f"Postback Error: {e}")
+        traceback.print_exc()
+        try:
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ 処理中にシステムエラーが発生しました。"))
+        except Exception:
+            pass
 
 def get_top_favorite_spots(limit=24):
     """
