@@ -800,16 +800,21 @@ SPOT_WEATHER_DATA = {
         "tel": "027-283-0035",
         "aliases": ["ＭＡＶ", "宮城", "宮城AV", "みやぎあんぐらーず", "まぶ", "マブ", "あんびれ", "アンビレ", "MAV", "mav"]
     },
-    "大崎": {
+    # ▼【変更】「大崎」を「大崎・赤城」に変更し、URLを2つ設定 ▼
+    "大崎・赤城": {
         "url": "https://weathernews.jp/onebox/36.463209/139.164867/",
         "hp_url": "https://nijimasu.com/",
+        "hp2_url": "https://anglers-base.com/",
         "x_url": "",
         "fb_url": "https://www.facebook.com/osakituribori/",
         "insta_url": "",
         "blog_url": "",
         "search_name": "大崎つりぼり",
         "tel": "027-283-2945",
-        "aliases": ["大崎", "大崎つりぼり", "おおさき"]
+        "aliases": [
+            "大崎・赤城", "大崎", "大崎つりぼり", "おおさきつりぼり", "おおさき", "オオサキ", 
+            "赤城", "赤城山", "あかぎ", "アカギ", "アングラーズベース赤城山", "アングラーズベース", "あんぐらーずべーす", "ABA"
+        ]
     },
     "けん太": {
         "url": "https://weathernews.jp/onebox/36.386648/138.960021/",
@@ -1152,7 +1157,7 @@ COLOR_GROUPS = [
         "header_bg": "#2e7d32",
         "sub_groups": [
             {"bg": "#e8f5e9", "spots": ["長瀞", "彩の国", "朝霞Ｇ", "しらこばと", "川越パーク", "加須はなさき", "中里", "伊古の里"]},
-            {"bg": "#c8e6c9", "spots": ["川場", "川場キングダム", "おくとね", "イワナセンター", "黒保根", "迦葉山", "片品", "中之沢", "ＭＡＶ", "大崎", "けん太", "フック", "赤久縄", "太田", "東山道", "榛名"]}
+            {"bg": "#c8e6c9", "spots": ["川場", "川場キングダム", "おくとね", "イワナセンター", "黒保根", "迦葉山", "片品", "中之沢", "ＭＡＶ", "大崎・赤城", "けん太", "フック", "赤久縄", "太田", "東山道", "榛名"]}
         ]
     },
     {
@@ -1185,13 +1190,15 @@ def clean_url(url_str):
 def get_spot_details(spot_key):
     data = SPOT_WEATHER_DATA.get(spot_key)
     if not data:
-        return spot_key, None, "", "", "", "", "", "", ""
+        return spot_key, None, "", "", "", "", "", "", "", ""
     map_url = f"https://www.google.com/maps/search/?api=1&query={quote(data.get('search_name', spot_key))}"
     hp_url = clean_url(data.get("hp_url", ""))
+    hp2_url = clean_url(data.get("hp2_url", ""))
     return (
         spot_key, 
         data["url"], 
         hp_url, 
+        hp2_url,
         map_url, 
         data.get("tel", ""),
         clean_url(data.get("x_url", "")),
@@ -1297,7 +1304,6 @@ def build_settings_flex_message(fav_list):
 
         rows.append({"type": "separator", "margin": "md"})
         
-        # ▼ 高さを完全に揃え、隙間をなくした設定画面の下部ボタン群
         rows.append({
             "type": "box",
             "layout": "horizontal",
@@ -1416,7 +1422,6 @@ def build_spot_list_carousel_horizontal(user_id=None):
 
         fav_rows.append({"type": "separator", "margin": "md", "color": "#cccccc"})
         
-        # ▼ 高さを完全に揃え、隙間をなくした一覧パネルの下部ボタン群
         fav_rows.append({
             "type": "box",
             "layout": "horizontal",
@@ -1429,7 +1434,7 @@ def build_spot_list_carousel_horizontal(user_id=None):
                     "flex": 1,
                     "backgroundColor": "#f8f9fa",
                     "borderWidth": "normal",
-                    "borderColor": "#e0e0e0",
+                    "borderColor": "#f8f9fa",
                     "cornerRadius": "md",
                     "paddingAll": "none",
                     "contents": [
@@ -1597,7 +1602,7 @@ def get_user_setting(user_id):
             row = res.data[0]
             favs = row.get('favorite_spots') or ''
             
-            # 名称変更対応マップ（過去登録された古い名前を自動で新しい名前に変換）
+            # ▼【変更】「大崎」を「大崎・赤城」に読み替える安全処理 ▼
             rename_map = {
                 "五頭": "GOZU",
                 "竜华池": "竜華池",
@@ -1613,7 +1618,8 @@ def get_user_setting(user_id):
                 "FAJ": "Ｊ",
                 "朝霞": "朝霞Ｇ",
                 "不忘": "GP不忘",
-                "座間": "座間・amaz"
+                "座間": "座間・amaz",
+                "大崎": "大崎・赤城"
             }
             
             raw_favs = [s.strip() for s in favs.split(',')]
@@ -1621,7 +1627,6 @@ def get_user_setting(user_id):
             for s in raw_favs:
                 if s in rename_map:
                     s = rename_map[s]
-                # 削除された釣り場は除外する
                 if s not in ["多摩湖", "いなプー"] and s:
                     favs_list.append(s)
                     
@@ -1740,7 +1745,6 @@ def move_favorite_spot(user_id, spot_name, direction):
 def fetch_spot_1hour_data(url):
     try:
         headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}
-        # ▼ 【重要】タイムアウトは「8秒」に戻します。（エラー原因はこれでした）
         response = requests.get(url, headers=headers, timeout=8)
         response.raise_for_status()
         soup = BeautifulSoup(response.text, 'html.parser')
@@ -1795,7 +1799,7 @@ def fetch_spot_1hour_data(url):
         print(f"[スクレイピングエラー] {e}")
         return None
 
-def build_grid_flex_message(spot_name, weather_by_date, hp_url="", map_url="", tel="", x_url="", fb_url="", insta_url="", blog_url="", is_favorite=False):
+def build_grid_flex_message(spot_name, weather_by_date, hp_url="", hp2_url="", map_url="", tel="", x_url="", fb_url="", insta_url="", blog_url="", is_favorite=False):
     dates = list(weather_by_date.keys())
     
     header_color = "#0066cc"
@@ -1876,7 +1880,6 @@ def build_grid_flex_message(spot_name, weather_by_date, hp_url="", map_url="", t
     bottom_buttons = []
     if tel:
         clean_tel = tel.replace('-', '').strip()
-        # ▼ 高さを完全に揃え、隙間をなくした電話ボタン
         bottom_buttons.append({
             "type": "box",
             "layout": "vertical",
@@ -1898,7 +1901,6 @@ def build_grid_flex_message(spot_name, weather_by_date, hp_url="", map_url="", t
             ]
         })
     
-    # ▼ 高さを完全に揃え、隙間をなくした天気カード下部の一覧ボタン
     bottom_buttons.append({
         "type": "box",
         "layout": "vertical",
@@ -1934,20 +1936,21 @@ def build_grid_flex_message(spot_name, weather_by_date, hp_url="", map_url="", t
         header_buttons_top.append({"type": "button", "action": {"type": "postback", "label": "⭐️ 登録", "data": f"action=fav_add_and_list&spot={spot_name}"}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs", "color": "#fff59d"})
 
     clean_hp = clean_url(hp_url)
+    clean_hp2 = clean_url(hp2_url)
     clean_map = clean_url(map_url)
-    if clean_hp: header_buttons_top.append({"type": "button", "action": {"type": "uri", "label": "🌐 HP", "uri": clean_hp}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
-    if clean_map: header_buttons_top.append({"type": "button", "action": {"type": "uri", "label": "🗺️ 地図", "uri": clean_map}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
+    
+    if clean_hp: 
+        lbl = "🌐 大崎" if spot_name == "大崎・赤城" else "🌐 HP"
+        header_buttons_top.append({"type": "button", "action": {"type": "uri", "label": lbl, "uri": clean_hp}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
+    
+    if clean_hp2:
+        lbl2 = "🌐 赤城" if spot_name == "大崎・赤城" else "🌐 HP2"
+        header_buttons_top.append({"type": "button", "action": {"type": "uri", "label": lbl2, "uri": clean_hp2}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
 
-    # ▼ エラーの元凶であったSNSボタン関連処理を完全に削除（コメントアウト）しました ▼
-    # header_buttons_bottom = []
-    # if clean_url(x_url): header_buttons_bottom.append(...)
-    # if clean_url(fb_url): header_buttons_bottom.append(...)
-    # if clean_url(insta_url): header_buttons_bottom.append(...)
-    # if clean_url(blog_url): header_buttons_bottom.append(...)
+    if clean_map: header_buttons_top.append({"type": "button", "action": {"type": "uri", "label": "🗺️ 地図", "uri": clean_map}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
 
     header_contents = [{"type": "text", "text": f"📍 {spot_name}", "color": "#ffffff", "weight": "bold", "size": "lg"}]
     
-    # 上段を追加
     if header_buttons_top: 
         header_contents.append({"type": "box", "layout": "horizontal", "margin": "sm", "spacing": "xs", "contents": header_buttons_top})
 
@@ -2073,13 +2076,12 @@ def handle_postback(event):
             return
 
         elif action == "show_weather":
-            target_spot_name, target_url, hp_url, map_url, tel, x_url, fb_url, insta_url, blog_url = get_spot_details(spot_name)
+            target_spot_name, target_url, hp_url, hp2_url, map_url, tel, x_url, fb_url, insta_url, blog_url = get_spot_details(spot_name)
             _, favorites = get_user_setting(user_id)
             fav_list = [s.strip() for s in favorites.split(',')]
             fav_list = [s for s in fav_list if s]
             is_fav = target_spot_name in fav_list
 
-            # ▼ 安定した元の同期処理（スレッドなし）に戻しました ▼
             weather_by_date = get_cached_weather(target_spot_name)
             
             if not weather_by_date:
@@ -2088,10 +2090,10 @@ def handle_postback(event):
                     save_cached_weather(target_spot_name, weather_by_date)
 
             if weather_by_date:
-                flex_msg = build_grid_flex_message(target_spot_name, weather_by_date, hp_url, map_url, tel, x_url, fb_url, insta_url, blog_url, is_favorite=is_fav)
+                flex_msg = build_grid_flex_message(target_spot_name, weather_by_date, hp_url, hp2_url, map_url, tel, x_url, fb_url, insta_url, blog_url, is_favorite=is_fav)
                 line_bot_api.reply_message(event.reply_token, flex_msg)
             else:
-                line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"⚠️ 【{target_spot_name}】の天気データの取得に失敗しました。時間をおいてから再度お試しください。"))
+                line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"⚠️ 【{target_spot_name}】の天気データの取得に失敗しました。少し時間をおいてから再度お試しください。"))
             return
 
         elif action == "fav_add_and_list":
