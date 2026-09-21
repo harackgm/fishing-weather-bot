@@ -804,16 +804,17 @@ SPOT_WEATHER_DATA = {
         "tel": "027-283-0035",
         "aliases": ["ＭＡＶ", "宮城", "宮城AV", "みやぎあんぐらーず", "まぶ", "マブ", "あんびれ", "アンビレ", "MAV", "mav"]
     },
-    "大崎": {
+    "大崎・赤城": {
         "url": "https://weathernews.jp/onebox/36.463209/139.164867/",
         "hp_url": "https://nijimasu.com/",
+        "hp2_url": "https://anglers-base.com/",  # ★赤城用リンクを追加
         "x_url": "",
         "fb_url": "https://www.facebook.com/osakituribori/",
         "insta_url": "",
         "blog_url": "",
         "search_name": "大崎つりぼり",
         "tel": "027-283-2945",
-        "aliases": ["大崎", "大崎つりぼり", "おおさき"]
+        "aliases": ["大崎・赤城", "大崎", "赤城", "大崎つりぼり", "アングラーズベース", "アングラーズベース赤城山", "おおさき", "あかぎ"]
     },
     "けん太": {
         "url": "https://weathernews.jp/onebox/36.386648/138.960021/",
@@ -1156,7 +1157,7 @@ COLOR_GROUPS = [
         "header_bg": "#2e7d32",
         "sub_groups": [
             {"bg": "#e8f5e9", "spots": ["長瀞", "彩の国", "朝霞Ｇ", "しらこばと", "川越パーク", "加須はなさき", "中里", "伊古の里"]},
-            {"bg": "#c8e6c9", "spots": ["川場", "川場キングダム", "おくとね", "イワナセンター", "黒保根", "迦葉山", "片品", "中之沢", "ＭＡＶ", "大崎", "けん太", "フック", "赤久縄", "太田", "東山道", "榛名"]}
+            {"bg": "#c8e6c9", "spots": ["川場", "川場キングダム", "おくとね", "イワナセンター", "黒保根", "迦葉山", "片品", "中之沢", "ＭＡＶ", "大崎・赤城", "けん太", "フック", "赤久縄", "太田", "東山道", "榛名"]}
         ]
     },
     {
@@ -1196,13 +1197,14 @@ def clean_url(url_str):
 def get_spot_details(spot_key):
     data = SPOT_WEATHER_DATA.get(spot_key)
     if not data:
-        return spot_key, None, "", "", "", "", "", "", ""
+        return spot_key, None, "", "", "", "", "", "", "", ""
     map_url = f"https://www.google.com/maps/search/?api=1&query={quote(data.get('search_name', spot_key))}"
     
     return (
         spot_key, 
         data["url"], 
         clean_url(data.get("hp_url", "")), 
+        clean_url(data.get("hp2_url", "")),  # ★追加
         map_url, 
         data.get("tel", ""),
         clean_url(data.get("x_url", "")),
@@ -1641,7 +1643,8 @@ def get_user_setting(user_id):
                 "不忘": "GP不忘",
                 "座間": "座間・amaz",
                 "パラダイス": "釣パラダイス",
-                "蛇尾川": "蛇尾（さび）川"  # 旧データ移行用
+                "蛇尾川": "蛇尾（さび）川",
+                "大崎": "大崎・赤城"  # ★旧データからの安全な自動移行設定
             }
             
             raw_favs = [s.strip() for s in favs.split(',')]
@@ -1833,7 +1836,7 @@ def fetch_spot_1hour_data(url):
         print(f"[スクレイピングエラー] {e}")
         return None
 
-def build_grid_flex_message(spot_name, weather_by_date, hp_url="", map_url="", tel="", x_url="", fb_url="", insta_url="", blog_url="", is_favorite=False):
+def build_grid_flex_message(spot_name, weather_by_date, hp_url="", hp2_url="", map_url="", tel="", x_url="", fb_url="", insta_url="", blog_url="", is_favorite=False):
     dates = list(weather_by_date.keys())
     
     header_color = "#0066cc"
@@ -1982,8 +1985,16 @@ def build_grid_flex_message(spot_name, weather_by_date, hp_url="", map_url="", t
     if map_url: 
         header_buttons_top.append({"type": "button", "action": {"type": "uri", "label": "🗺️ 地図", "uri": map_url}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
 
+    # ★ 大崎・赤城 専用のボタン名処理を実装
     header_buttons_bottom = []
-    if hp_url: header_buttons_bottom.append({"type": "button", "action": {"type": "uri", "label": "🌐 HP", "uri": hp_url}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
+    if hp_url:
+        label_text = "🌐 大崎HP" if spot_name == "大崎・赤城" else "🌐 HP"
+        header_buttons_bottom.append({"type": "button", "action": {"type": "uri", "label": label_text, "uri": hp_url}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
+    
+    if hp2_url:
+        label_text2 = "🌐 赤城HP" if spot_name == "大崎・赤城" else "🌐 HP2"
+        header_buttons_bottom.append({"type": "button", "action": {"type": "uri", "label": label_text2, "uri": hp2_url}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
+    
     if x_url: header_buttons_bottom.append({"type": "button", "action": {"type": "uri", "label": "𝕏", "uri": x_url}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
     if fb_url: header_buttons_bottom.append({"type": "button", "action": {"type": "uri", "label": "📘 FB", "uri": fb_url}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
     if insta_url: header_buttons_bottom.append({"type": "button", "action": {"type": "uri", "label": "📷 Insta", "uri": insta_url}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
@@ -2130,7 +2141,7 @@ def handle_postback(event):
             return
 
         elif action == "show_weather":
-            target_spot_name, target_url, hp_url, map_url, tel, x_url, fb_url, insta_url, blog_url = get_spot_details(spot_name)
+            target_spot_name, target_url, hp_url, hp2_url, map_url, tel, x_url, fb_url, insta_url, blog_url = get_spot_details(spot_name)
             
             if not target_url:
                 line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"⚠️ 【{spot_name}】のデータが見つかりません。"))
@@ -2149,7 +2160,7 @@ def handle_postback(event):
                     save_cached_weather(target_spot_name, weather_by_date)
 
             if weather_by_date:
-                flex_msg = build_grid_flex_message(target_spot_name, weather_by_date, hp_url, map_url, tel, x_url, fb_url, insta_url, blog_url, is_favorite=is_fav)
+                flex_msg = build_grid_flex_message(target_spot_name, weather_by_date, hp_url, hp2_url, map_url, tel, x_url, fb_url, insta_url, blog_url, is_favorite=is_fav)
                 line_bot_api.reply_message(event.reply_token, flex_msg)
             else:
                 line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"⚠️ 【{target_spot_name}】の天気データの取得に失敗しました。少し時間をおいてから再度お試しください。"))
