@@ -1167,7 +1167,7 @@ COLOR_GROUPS = [
         "title": "📍 甲信・東北・東海・関西",
         "header_bg": "#6a1b9a",
         "sub_groups": [
-            {"bg": "#f3e5f5", "spots": ["鹿留", "小菅", "奈良子", "シルフ", "JF in Tsugane", "竜華池", "平谷湖", "ハーブの里", "ニレ池", "鹿島槍", "つきの池", "あずみ野"]},
+            {"bg": "#f3e5f5", "spots": ["鹿留", "小菅", "奈良子", "シルフ", "JF in Tsugane", "竜华池", "平谷湖", "ハーブの里", "ニレ池", "鹿島槍", "つきの池", "あずみ野"]},
             {"bg": "#e1bee7", "spots": ["GP不忘", "白河", "ほのぼの", "WaDoNa", "鶴沼川", "オーパ", "あいづ", "上浜", "GOZU"]},
             {"bg": "#d1c4e9", "spots": ["FCE瑞浪", "３９", "醒井", "高島の泉", "千早川"]}
         ]
@@ -1194,10 +1194,10 @@ def get_spot_details(spot_key):
         hp_url, 
         map_url, 
         data.get("tel", ""),
-        data.get("x_url", ""),
-        data.get("fb_url", ""),
-        data.get("insta_url", ""),
-        data.get("blog_url", "")
+        clean_url(data.get("x_url", "")),
+        clean_url(data.get("fb_url", "")),
+        clean_url(data.get("insta_url", "")),
+        clean_url(data.get("blog_url", ""))
     )
 
 def build_delete_confirm_message(spot_name, source):
@@ -1429,7 +1429,7 @@ def build_spot_list_carousel_horizontal(user_id=None):
                     "flex": 1,
                     "backgroundColor": "#f8f9fa",
                     "borderWidth": "normal",
-                    "borderColor": "#f8f9fa",
+                    "borderColor": "#e0e0e0",
                     "cornerRadius": "md",
                     "paddingAll": "none",
                     "contents": [
@@ -1740,7 +1740,8 @@ def move_favorite_spot(user_id, spot_name, direction):
 def fetch_spot_1hour_data(url):
     try:
         headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}
-        response = requests.get(url, headers=headers, timeout=8)
+        # ▼ 【重要】タイムアウトを短縮し、LINE側の無反応制限エラーを回避します
+        response = requests.get(url, headers=headers, timeout=3.5)
         response.raise_for_status()
         soup = BeautifulSoup(response.text, 'html.parser')
         
@@ -1875,13 +1876,14 @@ def build_grid_flex_message(spot_name, weather_by_date, hp_url="", map_url="", t
     bottom_buttons = []
     if tel:
         clean_tel = tel.replace('-', '').strip()
+        # ▼ 高さを完全に揃え、隙間をなくした電話ボタン
         bottom_buttons.append({
             "type": "box",
             "layout": "vertical",
             "flex": 2,
             "backgroundColor": "#f8f9fa",
             "borderWidth": "normal",
-            "borderColor": "#f8f9fa",
+            "borderColor": "#e0e0e0",
             "cornerRadius": "md",
             "paddingAll": "none",
             "contents": [
@@ -1896,6 +1898,7 @@ def build_grid_flex_message(spot_name, weather_by_date, hp_url="", map_url="", t
             ]
         })
     
+    # ▼ 高さを完全に揃え、隙間をなくした天気カード下部の一覧ボタン
     bottom_buttons.append({
         "type": "box",
         "layout": "vertical",
@@ -1923,6 +1926,7 @@ def build_grid_flex_message(spot_name, weather_by_date, hp_url="", map_url="", t
         "contents": bottom_buttons
     })
 
+    # --- ヘッダーボタン上段（登録・HP・地図） ---
     header_buttons_top = []
     if is_favorite:
         header_buttons_top.append({"type": "button", "action": {"type": "postback", "label": "🗑️ 解除", "data": f"action=fav_del_confirm_and_list&spot={spot_name}"}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs", "color": "#ffcccc"})
@@ -1931,27 +1935,22 @@ def build_grid_flex_message(spot_name, weather_by_date, hp_url="", map_url="", t
 
     clean_hp = clean_url(hp_url)
     clean_map = clean_url(map_url)
-    
-    # URLに不正な空白が入らないよう、確実に変数をチェックしてクリーンなURLをセット
-    clean_x = clean_url(x_url)
-    clean_fb = clean_url(fb_url)
-    clean_insta = clean_url(insta_url)
-    clean_blog = clean_url(blog_url)
-
     if clean_hp: header_buttons_top.append({"type": "button", "action": {"type": "uri", "label": "🌐 HP", "uri": clean_hp}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
     if clean_map: header_buttons_top.append({"type": "button", "action": {"type": "uri", "label": "🗺️ 地図", "uri": clean_map}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
 
+    # --- ヘッダーボタン下段（SNS等）※入力されているものだけ表示 ---
     header_buttons_bottom = []
-    # 特殊な絵文字（𝕏など）によるエラーを防ぐため、シンプルなテキストに変更
-    if clean_x: header_buttons_bottom.append({"type": "button", "action": {"type": "uri", "label": "X", "uri": clean_x}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
-    if clean_fb: header_buttons_bottom.append({"type": "button", "action": {"type": "uri", "label": "FB", "uri": clean_fb}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
-    if clean_insta: header_buttons_bottom.append({"type": "button", "action": {"type": "uri", "label": "Insta", "uri": clean_insta}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
-    if clean_blog: header_buttons_bottom.append({"type": "button", "action": {"type": "uri", "label": "Blog", "uri": clean_blog}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
+    if clean_url(x_url): header_buttons_bottom.append({"type": "button", "action": {"type": "uri", "label": "𝕏", "uri": x_url}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
+    if clean_url(fb_url): header_buttons_bottom.append({"type": "button", "action": {"type": "uri", "label": "📘 FB", "uri": fb_url}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
+    if clean_url(insta_url): header_buttons_bottom.append({"type": "button", "action": {"type": "uri", "label": "📷 Insta", "uri": insta_url}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
+    if clean_url(blog_url): header_buttons_bottom.append({"type": "button", "action": {"type": "uri", "label": "📝 Blog", "uri": blog_url}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
 
     header_contents = [{"type": "text", "text": f"📍 {spot_name}", "color": "#ffffff", "weight": "bold", "size": "lg"}]
     
+    # 上段を追加
     if header_buttons_top: 
         header_contents.append({"type": "box", "layout": "horizontal", "margin": "sm", "spacing": "xs", "contents": header_buttons_top})
+    # 下段を追加
     if header_buttons_bottom: 
         header_contents.append({"type": "box", "layout": "horizontal", "margin": "sm", "spacing": "xs", "contents": header_buttons_bottom})
 
@@ -2094,7 +2093,8 @@ def handle_postback(event):
                 flex_msg = build_grid_flex_message(target_spot_name, weather_by_date, hp_url, map_url, tel, x_url, fb_url, insta_url, blog_url, is_favorite=is_fav)
                 line_bot_api.reply_message(event.reply_token, flex_msg)
             else:
-                line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"⚠️ 【{target_spot_name}】の天気データの取得に失敗しました。"))
+                # ▼ 【重要】タイムアウトで無反応になるのを防ぐためのメッセージ
+                line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"⚠️ 【{target_spot_name}】の天気データの取得に時間がかかっています。少し時間をおいてから再度お試しください。"))
             return
 
         elif action == "fav_add_and_list":
