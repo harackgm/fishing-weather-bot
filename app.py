@@ -1526,6 +1526,7 @@ def build_spot_list_carousel_horizontal(user_id=None):
         }
         bubbles.append(bubble)
 
+    # ▼ 使い方ガイド画面に「配信停止（ブロック）」の案内を追記 ▼
     guide_bubble = {
         "type": "bubble",
         "size": "giga",
@@ -1556,6 +1557,14 @@ def build_spot_list_carousel_horizontal(user_id=None):
                         {"type": "text", "text": "「設定」と送信すると、並び替え・全削除パネルが出ます。", "wrap": True, "size": "xs", "color": "#666666"},
                         {"type": "text", "text": "【一覧（メニュー）の出し方】", "weight": "bold", "size": "xs", "color": "#333333", "margin": "sm"},
                         {"type": "text", "text": "「一覧」という言葉や、それ以外の適当な文字（「あ」「1」「a」など）を送信すると、この一覧表が表示されます。", "wrap": True, "size": "xs", "color": "#666666"}
+                    ]
+                },
+                {"type": "separator", "margin": "md"},
+                {
+                    "type": "box", "layout": "vertical", "spacing": "sm",
+                    "contents": [
+                        {"type": "text", "text": "🛑 配信停止・解除", "weight": "bold", "size": "sm", "color": "#333333"},
+                        {"type": "text", "text": "このBotの利用を停止したい場合は、トーク画面右上のメニュー「≡」から「ブロック」を行ってください。", "wrap": True, "size": "xs", "color": "#666666"}
                     ]
                 }
             ]
@@ -1946,7 +1955,6 @@ def build_grid_flex_message(spot_name, weather_by_date, hp_url="", map_url="", t
         ]
     })
 
-    # ▼ 【差し替え】新しいバナー画像（tenkiharackbana.jpg）のRaw URLを適用 ▼
     banner_img_url = "https://raw.githubusercontent.com/harackgm/fishing-weather-bot/main/tenkiharackbana.jpg"
     body_contents.append({"type": "separator", "margin": "md"})
     body_contents.append({
