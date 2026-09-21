@@ -304,7 +304,7 @@ SPOT_WEATHER_DATA = {
         "blog_url": "https://www.arcus-pond.com/wp/category/blog/",
         "search_name": "アルクスポンド宇都宮",
         "tel": "028-652-3210",
-        "aliases": ["アルクス宇歩宮", "アルクスポンド宇都宮", "あるくすうつのみや", "あるくす", "アルクスポンド", "うつのみや"]
+        "aliases": ["アルクス宇都宮", "アルクスポンド宇都宮", "あるくすうつのみや", "あるくす", "アルクスポンド", "うつのみや"]
     },
     "エリア21": {
         "url": "https://weathernews.jp/onebox/36.496150/139.899522/",
@@ -1312,14 +1312,15 @@ def build_settings_flex_message(fav_list):
                     "borderWidth": "normal",
                     "borderColor": "#e53935",
                     "cornerRadius": "md",
-                    "paddingAll": "0px",
+                    "paddingAll": "none",
                     "contents": [
                         {
                             "type": "button",
                             "action": {"type": "postback", "label": "🗑️ 全て削除", "data": "action=fav_del_all_confirm"},
                             "style": "link",
                             "color": "#ffffff",
-                            "height": "sm"
+                            "height": "sm",
+                            "margin": "none"
                         }
                     ]
                 },
@@ -1331,14 +1332,15 @@ def build_settings_flex_message(fav_list):
                     "borderWidth": "normal",
                     "borderColor": "#d4af37",
                     "cornerRadius": "md",
-                    "paddingAll": "0px",
+                    "paddingAll": "none",
                     "contents": [
                         {
                             "type": "button",
                             "action": {"type": "postback", "label": "📋 一覧", "data": "action=show_list", "displayText": "📋 一覧"},
                             "style": "link",
                             "color": "#555555",
-                            "height": "sm"
+                            "height": "sm",
+                            "margin": "none"
                         }
                     ]
                 }
@@ -1429,14 +1431,15 @@ def build_spot_list_carousel_horizontal(user_id=None):
                     "borderWidth": "normal",
                     "borderColor": "#f8f9fa",
                     "cornerRadius": "md",
-                    "paddingAll": "0px",
+                    "paddingAll": "none",
                     "contents": [
                         {
                             "type": "button",
                             "action": {"type": "postback", "label": "⚙️ 設定", "data": "action=show_settings", "displayText": "⚙️ 設定"},
                             "style": "link",
                             "color": "#555555",
-                            "height": "sm"
+                            "height": "sm",
+                            "margin": "none"
                         }
                     ]
                 },
@@ -1448,14 +1451,15 @@ def build_spot_list_carousel_horizontal(user_id=None):
                     "borderWidth": "normal",
                     "borderColor": "#d4af37",
                     "cornerRadius": "md",
-                    "paddingAll": "0px",
+                    "paddingAll": "none",
                     "contents": [
                         {
                             "type": "button",
                             "action": {"type": "postback", "label": "📋 一覧", "data": "action=show_list", "displayText": "📋 一覧"},
                             "style": "link",
                             "color": "#555555",
-                            "height": "sm"
+                            "height": "sm",
+                            "margin": "none"
                         }
                     ]
                 }
@@ -1887,7 +1891,8 @@ def build_grid_flex_message(spot_name, weather_by_date, hp_url="", map_url="", t
                     "action": {"type": "uri", "label": "📞 電話", "uri": f"tel:{clean_tel}"},
                     "style": "link",
                     "color": "#555555",
-                    "height": "sm"
+                    "height": "sm",
+                    "margin": "none"
                 }
             ]
         })
@@ -1908,7 +1913,8 @@ def build_grid_flex_message(spot_name, weather_by_date, hp_url="", map_url="", t
                 "action": {"type": "postback", "label": "📋 一覧", "data": "action=show_list", "displayText": "📋 一覧"},
                 "style": "link",
                 "color": "#555555",
-                "height": "sm"
+                "height": "sm",
+                "margin": "none"
             }
         ]
     })
