@@ -1167,7 +1167,7 @@ COLOR_GROUPS = [
         "title": "📍 甲信・東北・東海・関西",
         "header_bg": "#6a1b9a",
         "sub_groups": [
-            {"bg": "#f3e5f5", "spots": ["鹿留", "小菅", "奈良子", "シルフ", "JF in Tsugane", "竜华池", "平谷湖", "ハーブの里", "ニレ池", "鹿島槍", "つきの池", "あずみ野"]},
+            {"bg": "#f3e5f5", "spots": ["鹿留", "小菅", "奈良子", "シルフ", "JF in Tsugane", "竜華池", "平谷湖", "ハーブの里", "ニレ池", "鹿島槍", "つきの池", "あずみ野"]},
             {"bg": "#e1bee7", "spots": ["GP不忘", "白河", "ほのぼの", "WaDoNa", "鶴沼川", "オーパ", "あいづ", "上浜", "GOZU"]},
             {"bg": "#d1c4e9", "spots": ["FCE瑞浪", "３９", "醒井", "高島の泉", "千早川"]}
         ]
@@ -1740,8 +1740,8 @@ def move_favorite_spot(user_id, spot_name, direction):
 def fetch_spot_1hour_data(url):
     try:
         headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}
-        # ▼ 【重要】タイムアウトを短縮し、LINE側の無反応制限エラーを回避します
-        response = requests.get(url, headers=headers, timeout=3.5)
+        # ▼ タイムアウトは安全な8秒に戻します（スレッド処理のためLINEがエラーになりません）
+        response = requests.get(url, headers=headers, timeout=8)
         response.raise_for_status()
         soup = BeautifulSoup(response.text, 'html.parser')
         
@@ -1940,10 +1940,10 @@ def build_grid_flex_message(spot_name, weather_by_date, hp_url="", map_url="", t
 
     # --- ヘッダーボタン下段（SNS等）※入力されているものだけ表示 ---
     header_buttons_bottom = []
-    if clean_url(x_url): header_buttons_bottom.append({"type": "button", "action": {"type": "uri", "label": "𝕏", "uri": x_url}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
-    if clean_url(fb_url): header_buttons_bottom.append({"type": "button", "action": {"type": "uri", "label": "📘 FB", "uri": fb_url}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
-    if clean_url(insta_url): header_buttons_bottom.append({"type": "button", "action": {"type": "uri", "label": "📷 Insta", "uri": insta_url}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
-    if clean_url(blog_url): header_buttons_bottom.append({"type": "button", "action": {"type": "uri", "label": "📝 Blog", "uri": blog_url}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
+    if clean_url(x_url): header_buttons_bottom.append({"type": "button", "action": {"type": "uri", "label": "X", "uri": clean_url(x_url)}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
+    if clean_url(fb_url): header_buttons_bottom.append({"type": "button", "action": {"type": "uri", "label": "FB", "uri": clean_url(fb_url)}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
+    if clean_url(insta_url): header_buttons_bottom.append({"type": "button", "action": {"type": "uri", "label": "Insta", "uri": clean_url(insta_url)}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
+    if clean_url(blog_url): header_buttons_bottom.append({"type": "button", "action": {"type": "uri", "label": "Blog", "uri": clean_url(blog_url)}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
 
     header_contents = [{"type": "text", "text": f"📍 {spot_name}", "color": "#ffffff", "weight": "bold", "size": "lg"}]
     
@@ -2076,25 +2076,32 @@ def handle_postback(event):
             return
 
         elif action == "show_weather":
-            target_spot_name, target_url, hp_url, map_url, tel, x_url, fb_url, insta_url, blog_url = get_spot_details(spot_name)
-            _, favorites = get_user_setting(user_id)
-            fav_list = [s.strip() for s in favorites.split(',')]
-            fav_list = [s for s in fav_list if s]
-            is_fav = target_spot_name in fav_list
+            # ▼ 【重要】LINEの通信タイムアウトを回避するため、天気取得を別スレッドで処理します
+            def fetch_and_reply(reply_token, s_name, u_id):
+                try:
+                    target_spot_name, target_url, hp_url, map_url, tel, x_url, fb_url, insta_url, blog_url = get_spot_details(s_name)
+                    _, favorites = get_user_setting(u_id)
+                    fav_list = [s.strip() for s in favorites.split(',')]
+                    fav_list = [s for s in fav_list if s]
+                    is_fav = target_spot_name in fav_list
 
-            weather_by_date = get_cached_weather(target_spot_name)
+                    weather_by_date = get_cached_weather(target_spot_name)
+                    
+                    if not weather_by_date:
+                        weather_by_date = fetch_spot_1hour_data(target_url)
+                        if weather_by_date:
+                            save_cached_weather(target_spot_name, weather_by_date)
+
+                    if weather_by_date:
+                        flex_msg = build_grid_flex_message(target_spot_name, weather_by_date, hp_url, map_url, tel, x_url, fb_url, insta_url, blog_url, is_favorite=is_fav)
+                        line_bot_api.reply_message(reply_token, flex_msg)
+                    else:
+                        line_bot_api.reply_message(reply_token, TextSendMessage(text=f"⚠️ 【{target_spot_name}】の天気データの取得に失敗しました。少し時間をおいてから再度お試しください。"))
+                except Exception as e:
+                    print(f"Weather Thread Error: {e}")
             
-            if not weather_by_date:
-                weather_by_date = fetch_spot_1hour_data(target_url)
-                if weather_by_date:
-                    save_cached_weather(target_spot_name, weather_by_date)
-
-            if weather_by_date:
-                flex_msg = build_grid_flex_message(target_spot_name, weather_by_date, hp_url, map_url, tel, x_url, fb_url, insta_url, blog_url, is_favorite=is_fav)
-                line_bot_api.reply_message(event.reply_token, flex_msg)
-            else:
-                # ▼ 【重要】タイムアウトで無反応になるのを防ぐためのメッセージ
-                line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"⚠️ 【{target_spot_name}】の天気データの取得に時間がかかっています。少し時間をおいてから再度お試しください。"))
+            # 取得処理を裏側に回し、LINEシステムには即座に応答を返す（エラー回避）
+            threading.Thread(target=fetch_and_reply, args=(event.reply_token, spot_name, user_id)).start()
             return
 
         elif action == "fav_add_and_list":
