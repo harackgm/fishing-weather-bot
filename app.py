@@ -46,6 +46,9 @@ if SUPABASE_URL and SUPABASE_KEY:
     except Exception as e:
         print(f"[Supabase初期化エラー] {e}")
 
+# ▼ 【新規追加】DB通信を省略して0.1秒で返すための超高速メモリキャッシュ ▼
+MEMORY_CACHE = {}
+
 # ==========================================
 # 3. 釣り場URL・HP・Googleマップ・電話番号・SNS・表記揺れ辞書
 # ==========================================
@@ -299,7 +302,6 @@ SPOT_WEATHER_DATA = {
         "url": "https://weathernews.jp/onebox/36.566488/139.960060/",
         "hp_url": "http://www.arcus-pond.com/",
         "x_url": "",
-        # ▼ 指定された正しいURLに差し替えました ▼
         "fb_url": "https://www.facebook.com/p/Arcus-Pond%E3%82%A2%E3%83%AB%E3%82%AF%E3%82%B9%E3%83%9D%E3%83%B3%E3%83%89-100041638634155/",
         "insta_url": "",
         "blog_url": "https://www.arcus-pond.com/wp/category/blog/",
@@ -1153,7 +1155,7 @@ COLOR_GROUPS = [
         "header_bg": "#2e7d32",
         "sub_groups": [
             {"bg": "#e8f5e9", "spots": ["長瀞", "彩の国", "朝霞Ｇ", "しらこばと", "川越パーク", "加須はなさき", "中里", "伊古の里"]},
-            {"bg": "#c8e6c9", "spots": ["川場", "川場キングダム", "おくとね", "イワナセンター", "黒保根", "迦葉山", "片品", "中之沢", "ＭＡＶ", "大崎・赤城", "けん太", "フック", "赤久縄", "太田", "東山道", "榛名"]}
+            {"bg": "#c8e6c9", "spots": ["川場", "川場キングダム", "おくとね", "イワナセンター", "黒保根", "迦葉山", "片品", "中之沢", "ＭＡＶ", "大崎", "けん太", "フック", "赤久縄", "太田", "東山道", "榛名"]}
         ]
     },
     {
@@ -1316,7 +1318,7 @@ def build_settings_flex_message(fav_list):
                     "borderWidth": "normal",
                     "borderColor": "#e53935",
                     "cornerRadius": "md",
-                    "paddingAll": "0px",
+                    "paddingAll": "none",
                     "contents": [
                         {
                             "type": "button",
@@ -1336,7 +1338,7 @@ def build_settings_flex_message(fav_list):
                     "borderWidth": "normal",
                     "borderColor": "#d4af37",
                     "cornerRadius": "md",
-                    "paddingAll": "0px",
+                    "paddingAll": "none",
                     "contents": [
                         {
                             "type": "button",
@@ -1434,7 +1436,7 @@ def build_spot_list_carousel_horizontal(user_id=None):
                     "borderWidth": "normal",
                     "borderColor": "#e0e0e0",
                     "cornerRadius": "md",
-                    "paddingAll": "0px",
+                    "paddingAll": "none",
                     "contents": [
                         {
                             "type": "button",
@@ -1454,7 +1456,7 @@ def build_spot_list_carousel_horizontal(user_id=None):
                     "borderWidth": "normal",
                     "borderColor": "#d4af37",
                     "cornerRadius": "md",
-                    "paddingAll": "0px",
+                    "paddingAll": "none",
                     "contents": [
                         {
                             "type": "button",
@@ -1560,7 +1562,17 @@ def build_spot_list_carousel_horizontal(user_id=None):
     return FlexSendMessage(alt_text="釣り場一覧", contents={"type": "carousel", "contents": bubbles})
 
 
+# ▼ 【変更点】DB通信を省略する「超高速メモリキャッシュ」の確認 ▼
 def get_cached_weather(spot_name):
+    now = datetime.now(timezone.utc)
+    
+    # 1. 爆速メモリキャッシュを確認（あれば0.01秒で返す）
+    if spot_name in MEMORY_CACHE:
+        data, updated_time = MEMORY_CACHE[spot_name]
+        if now - updated_time <= timedelta(hours=1):
+            return data
+            
+    # 2. メモリになければSupabase（DB）を確認
     if not supabase: return None
     try:
         res = supabase.table('weather_cache').select('*').eq('spot_name', spot_name).execute()
@@ -1570,24 +1582,31 @@ def get_cached_weather(spot_name):
             if updated_at_str:
                 try:
                     updated_time = datetime.fromisoformat(updated_at_str.replace('Z', '+00:00'))
-                    now = datetime.now(timezone.utc)
-                    if now - updated_time > timedelta(hours=1):
-                        return None 
+                    if now - updated_time <= timedelta(hours=1):
+                        weather_data = row.get('weather_data')
+                        # DBで見つけたらメモリにも保存して次回から爆速にする
+                        MEMORY_CACHE[spot_name] = (weather_data, updated_time)
+                        return weather_data
                 except:
                     pass
-            return row.get('weather_data')
         return None
     except Exception as e:
         print(f"[Cache GET Error] {e}")
         return None
 
+# ▼ 【変更点】取得したデータを「超高速メモリキャッシュ」にも同時に記憶させる ▼
 def save_cached_weather(spot_name, weather_data):
+    now = datetime.now(timezone.utc)
+    # 1. 爆速メモリキャッシュに保存
+    MEMORY_CACHE[spot_name] = (weather_data, now)
+    
+    # 2. DB（Supabase）にもバックアップとして保存
     if not supabase: return
     try:
         supabase.table('weather_cache').upsert({
             'spot_name': spot_name,
             'weather_data': weather_data,
-            'updated_at': datetime.now(timezone.utc).isoformat()
+            'updated_at': now.isoformat()
         }).execute()
     except Exception as e:
         print(f"[Cache SAVE Error] {e}")
@@ -1741,7 +1760,6 @@ def move_favorite_spot(user_id, spot_name, direction):
 def fetch_spot_1hour_data(url):
     try:
         headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}
-        # ▼ 【安全対策②】強制切断を防ぐため待機時間を3.8秒に設定
         response = requests.get(url, headers=headers, timeout=3.8)
         response.raise_for_status()
         soup = BeautifulSoup(response.text, 'html.parser')
@@ -1793,7 +1811,6 @@ def fetch_spot_1hour_data(url):
             if len(weather_by_date) >= 4: break
         return weather_by_date
     except requests.exceptions.Timeout:
-        # タイムアウト時はNoneを返すことで、無反応にさせず「取得失敗メッセージ」を発生させる
         return None
     except Exception as e:
         print(f"[スクレイピングエラー] {e}")
@@ -2095,7 +2112,6 @@ def handle_postback(event):
                 flex_msg = build_grid_flex_message(target_spot_name, weather_by_date, hp_url, map_url, tel, x_url, fb_url, insta_url, blog_url, is_favorite=is_fav)
                 line_bot_api.reply_message(event.reply_token, flex_msg)
             else:
-                # タイムアウト等で失敗した場合、無反応にせずメッセージを返す
                 line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"⚠️ 【{target_spot_name}】の天気データの取得に失敗しました。少し時間をおいてから再度お試しください。"))
             return
 
