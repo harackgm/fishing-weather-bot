@@ -1304,6 +1304,7 @@ def build_settings_flex_message(fav_list):
 
         rows.append({"type": "separator", "margin": "md"})
         
+        # ▼ 高さを完全に揃え、隙間をなくした設定画面の下部ボタン群
         rows.append({
             "type": "box",
             "layout": "horizontal",
@@ -1422,6 +1423,7 @@ def build_spot_list_carousel_horizontal(user_id=None):
 
         fav_rows.append({"type": "separator", "margin": "md", "color": "#cccccc"})
         
+        # ▼ 高さを完全に揃え、隙間をなくした一覧パネルの下部ボタン群
         fav_rows.append({
             "type": "box",
             "layout": "horizontal",
@@ -1627,6 +1629,7 @@ def get_user_setting(user_id):
             for s in raw_favs:
                 if s in rename_map:
                     s = rename_map[s]
+                # 削除された釣り場は除外する
                 if s not in ["多摩湖", "いなプー"] and s:
                     favs_list.append(s)
                     
@@ -1928,31 +1931,42 @@ def build_grid_flex_message(spot_name, weather_by_date, hp_url="", hp2_url="", m
         "contents": bottom_buttons
     })
 
-    # --- ヘッダーボタン上段（登録・HP・地図） ---
+    # ========================================================
+    # ▼【変更】ご要望の2段レイアウト（上段：登録・地図、下段：HP・大崎等） ▼
+    # ========================================================
     header_buttons_top = []
+    
     if is_favorite:
         header_buttons_top.append({"type": "button", "action": {"type": "postback", "label": "🗑️ 解除", "data": f"action=fav_del_confirm_and_list&spot={spot_name}"}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs", "color": "#ffcccc"})
     else:
         header_buttons_top.append({"type": "button", "action": {"type": "postback", "label": "⭐️ 登録", "data": f"action=fav_add_and_list&spot={spot_name}"}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs", "color": "#fff59d"})
 
+    clean_map = clean_url(map_url)
+    if clean_map: 
+        header_buttons_top.append({"type": "button", "action": {"type": "uri", "label": "🗺️ 地図", "uri": clean_map}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
+
+
+    header_buttons_bottom = []
     clean_hp = clean_url(hp_url)
     clean_hp2 = clean_url(hp2_url)
-    clean_map = clean_url(map_url)
-    
-    if clean_hp: 
-        lbl = "🌐 大崎" if spot_name == "大崎・赤城" else "🌐 HP"
-        header_buttons_top.append({"type": "button", "action": {"type": "uri", "label": lbl, "uri": clean_hp}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
-    
-    if clean_hp2:
-        lbl2 = "🌐 赤城" if spot_name == "大崎・赤城" else "🌐 HP2"
-        header_buttons_top.append({"type": "button", "action": {"type": "uri", "label": lbl2, "uri": clean_hp2}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
 
-    if clean_map: header_buttons_top.append({"type": "button", "action": {"type": "uri", "label": "🗺️ 地図", "uri": clean_map}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
+    if spot_name == "大崎・赤城":
+        if clean_hp: 
+            header_buttons_bottom.append({"type": "button", "action": {"type": "uri", "label": "🌐 大崎", "uri": clean_hp}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
+        if clean_hp2:
+            header_buttons_bottom.append({"type": "button", "action": {"type": "uri", "label": "🌐 赤城", "uri": clean_hp2}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
+    else:
+        if clean_hp: 
+            header_buttons_bottom.append({"type": "button", "action": {"type": "uri", "label": "🌐 HP", "uri": clean_hp}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
+        # ▼ SNSボタンは原因切り分けのため現在コメントアウト ▼
+        # if clean_url(x_url): header_buttons_bottom.append(...)
 
     header_contents = [{"type": "text", "text": f"📍 {spot_name}", "color": "#ffffff", "weight": "bold", "size": "lg"}]
     
     if header_buttons_top: 
         header_contents.append({"type": "box", "layout": "horizontal", "margin": "sm", "spacing": "xs", "contents": header_buttons_top})
+    if header_buttons_bottom: 
+        header_contents.append({"type": "box", "layout": "horizontal", "margin": "sm", "spacing": "xs", "contents": header_buttons_bottom})
 
     bubble = {
         "type": "bubble", "size": "giga",
@@ -2093,7 +2107,7 @@ def handle_postback(event):
                 flex_msg = build_grid_flex_message(target_spot_name, weather_by_date, hp_url, hp2_url, map_url, tel, x_url, fb_url, insta_url, blog_url, is_favorite=is_fav)
                 line_bot_api.reply_message(event.reply_token, flex_msg)
             else:
-                line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"⚠️ 【{target_spot_name}】の天気データの取得に失敗しました。少し時間をおいてから再度お試しください。"))
+                line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"⚠️ 【{target_spot_name}】の天気データの取得に失敗しました。"))
             return
 
         elif action == "fav_add_and_list":
