@@ -1946,8 +1946,8 @@ def build_grid_flex_message(spot_name, weather_by_date, hp_url="", map_url="", t
         ]
     })
 
-    # ▼ 【新規】予報の表とボタンの間にバナー画像を挟み込む処理 ▼
-    banner_img_url = "https://raw.githubusercontent.com/harackgm/fishing-weather-bot/main/tenkibana-900300.jpg"
+    # ▼ 【差し替え】新しいバナー画像（tenkiharackbana.jpg）のRaw URLを適用 ▼
+    banner_img_url = "https://raw.githubusercontent.com/harackgm/fishing-weather-bot/main/tenkiharackbana.jpg"
     body_contents.append({"type": "separator", "margin": "md"})
     body_contents.append({
         "type": "image",
