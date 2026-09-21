@@ -46,7 +46,7 @@ if SUPABASE_URL and SUPABASE_KEY:
     except Exception as e:
         print(f"[Supabase初期化エラー] {e}")
 
-# ▼ 【新規追加】DB通信を省略して0.1秒で返すための超高速メモリキャッシュ ▼
+# 超高速メモリキャッシュ
 MEMORY_CACHE = {}
 
 # ==========================================
@@ -1170,7 +1170,7 @@ COLOR_GROUPS = [
         "title": "📍 甲信・東北・東海・関西",
         "header_bg": "#6a1b9a",
         "sub_groups": [
-            {"bg": "#f3e5f5", "spots": ["鹿留", "小菅", "奈良子", "シルフ", "JF in Tsugane", "竜華池", "平谷湖", "ハーブの里", "ニレ池", "鹿島槍", "つきの池", "あずみ野"]},
+            {"bg": "#f3e5f5", "spots": ["鹿留", "小菅", "奈良子", "シルフ", "JF in Tsugane", "竜华池", "平谷湖", "ハーブの里", "ニレ池", "鹿島槍", "つきの池", "あずみ野"]},
             {"bg": "#e1bee7", "spots": ["GP不忘", "白河", "ほのぼの", "WaDoNa", "鶴沼川", "オーパ", "あいづ", "上浜", "GOZU"]},
             {"bg": "#d1c4e9", "spots": ["FCE瑞浪", "３９", "醒井", "高島の泉", "千早川"]}
         ]
@@ -1183,10 +1183,8 @@ def clean_url(url_str):
     cleaned = url_str.strip().replace(" ", "").replace("\t", "")
     if not (cleaned.startswith("http://") or cleaned.startswith("https://")):
         return ""
-    if cleaned.endswith("/#"):
-        cleaned = cleaned[:-2]
-    elif cleaned.endswith("#"):
-        cleaned = cleaned[:-1]
+    if "#" in cleaned:
+        cleaned = cleaned.split("#")[0]
     return cleaned
 
 def get_spot_details(spot_key):
@@ -1194,11 +1192,11 @@ def get_spot_details(spot_key):
     if not data:
         return spot_key, None, "", "", "", "", "", "", ""
     map_url = f"https://www.google.com/maps/search/?api=1&query={quote(data.get('search_name', spot_key))}"
-    hp_url = clean_url(data.get("hp_url", ""))
+    
     return (
         spot_key, 
         data["url"], 
-        hp_url, 
+        clean_url(data.get("hp_url", "")), 
         map_url, 
         data.get("tel", ""),
         clean_url(data.get("x_url", "")),
@@ -1561,18 +1559,14 @@ def build_spot_list_carousel_horizontal(user_id=None):
 
     return FlexSendMessage(alt_text="釣り場一覧", contents={"type": "carousel", "contents": bubbles})
 
-
-# ▼ 【変更点】DB通信を省略する「超高速メモリキャッシュ」の確認 ▼
 def get_cached_weather(spot_name):
     now = datetime.now(timezone.utc)
     
-    # 1. 爆速メモリキャッシュを確認（あれば0.01秒で返す）
     if spot_name in MEMORY_CACHE:
         data, updated_time = MEMORY_CACHE[spot_name]
         if now - updated_time <= timedelta(hours=1):
             return data
             
-    # 2. メモリになければSupabase（DB）を確認
     if not supabase: return None
     try:
         res = supabase.table('weather_cache').select('*').eq('spot_name', spot_name).execute()
@@ -1584,7 +1578,6 @@ def get_cached_weather(spot_name):
                     updated_time = datetime.fromisoformat(updated_at_str.replace('Z', '+00:00'))
                     if now - updated_time <= timedelta(hours=1):
                         weather_data = row.get('weather_data')
-                        # DBで見つけたらメモリにも保存して次回から爆速にする
                         MEMORY_CACHE[spot_name] = (weather_data, updated_time)
                         return weather_data
                 except:
@@ -1594,13 +1587,10 @@ def get_cached_weather(spot_name):
         print(f"[Cache GET Error] {e}")
         return None
 
-# ▼ 【変更点】取得したデータを「超高速メモリキャッシュ」にも同時に記憶させる ▼
 def save_cached_weather(spot_name, weather_data):
     now = datetime.now(timezone.utc)
-    # 1. 爆速メモリキャッシュに保存
     MEMORY_CACHE[spot_name] = (weather_data, now)
     
-    # 2. DB（Supabase）にもバックアップとして保存
     if not supabase: return
     try:
         supabase.table('weather_cache').upsert({
@@ -1905,7 +1895,7 @@ def build_grid_flex_message(spot_name, weather_by_date, hp_url="", map_url="", t
             "borderWidth": "normal",
             "borderColor": "#e0e0e0",
             "cornerRadius": "md",
-            "paddingAll": "0px",
+            "paddingAll": "none",
             "contents": [
                 {
                     "type": "button",
@@ -1926,7 +1916,7 @@ def build_grid_flex_message(spot_name, weather_by_date, hp_url="", map_url="", t
         "borderWidth": "normal",
         "borderColor": "#d4af37",
         "cornerRadius": "md",
-        "paddingAll": "0px",
+        "paddingAll": "none",
         "contents": [
             {
                 "type": "button",
@@ -1998,36 +1988,50 @@ def handle_message(event):
         raw_msg = event.message.text.strip()
         user_id = event.source.user_id
 
+        # ▼ テキストによる追加時の件数表示対応
         add_match = re.match(r'^追加[\s:：]+(.+)$', raw_msg, re.DOTALL)
         if add_match:
             spots_str = add_match.group(1).strip()
             spot_names = [s for s in re.split(r'[\s,、\n]+', spots_str) if s]
             
             success, added, errors = add_favorite_spots(user_id, spot_names)
+            
+            _, favorites = get_user_setting(user_id)
+            total_count = len([s for s in favorites.split(',') if s])
+            
             reply_lines = []
             if added:
-                reply_lines.append(f"✅ 追加しました: {', '.join(added)}")
+                reply_lines.append(f"✅ {len(added)}件追加しました: {', '.join(added)}")
             if errors:
                 reply_lines.append(f"⚠️ スキップ・失敗: {', '.join(errors)}")
-            if not reply_lines:
+            if added or errors:
+                reply_lines.append(f"📊 現在の登録数: {total_count}/{MAX_FAVORITES}箇所")
+            else:
                 reply_lines.append("⚠️ 釣り場名が認識できませんでした。")
                 
             flex_msg = build_spot_list_carousel_horizontal(user_id=user_id)
             line_bot_api.reply_message(event.reply_token, [TextSendMessage(text="\n".join(reply_lines)), flex_msg])
             return
 
+        # ▼ テキストによる削除時の件数表示対応
         del_match = re.match(r'^削除[\s:：]+(.+)$', raw_msg, re.DOTALL)
         if del_match:
             spots_str = del_match.group(1).strip()
             spot_names = [s for s in re.split(r'[\s,、\n]+', spots_str) if s]
             
             success, removed, errors = remove_favorite_spots(user_id, spot_names)
+            
+            _, favorites = get_user_setting(user_id)
+            total_count = len([s for s in favorites.split(',') if s])
+            
             reply_lines = []
             if removed:
-                reply_lines.append(f"✅ 削除しました: {', '.join(removed)}")
+                reply_lines.append(f"✅ {len(removed)}件削除しました: {', '.join(removed)}")
             if errors:
                 reply_lines.append(f"⚠️ スキップ・失敗: {', '.join(errors)}")
-            if not reply_lines:
+            if removed or errors:
+                reply_lines.append(f"📊 現在の登録数: {total_count}/{MAX_FAVORITES}箇所")
+            else:
                 reply_lines.append("⚠️ 釣り場名が認識できませんでした。")
                 
             flex_msg = build_spot_list_carousel_horizontal(user_id=user_id)
@@ -2115,9 +2119,13 @@ def handle_postback(event):
                 line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"⚠️ 【{target_spot_name}】の天気データの取得に失敗しました。少し時間をおいてから再度お試しください。"))
             return
 
+        # ▼ ボタンタップでの追加時の件数表示対応
         elif action == "fav_add_and_list":
             success, added, errors = add_favorite_spots(user_id, [spot_name])
-            msg = f"✅ 追加しました: {added[0]}" if added else f"⚠️ {errors[0]}"
+            _, favorites = get_user_setting(user_id)
+            total_count = len([s for s in favorites.split(',') if s])
+            
+            msg = f"✅ 追加しました: {added[0]}\n📊 現在の登録数: {total_count}/{MAX_FAVORITES}箇所" if added else f"⚠️ {errors[0]}\n📊 現在の登録数: {total_count}/{MAX_FAVORITES}箇所"
             flex_msg = build_spot_list_carousel_horizontal(user_id=user_id)
             line_bot_api.reply_message(event.reply_token, [TextSendMessage(text=msg), flex_msg])
 
@@ -2129,18 +2137,25 @@ def handle_postback(event):
             flex_msg = build_delete_confirm_message(spot_name, "settings")
             line_bot_api.reply_message(event.reply_token, flex_msg)
 
+        # ▼ ボタンタップでの削除時の件数表示対応
         elif action == "fav_del_execute_and_list":
             success, removed, errors = remove_favorite_spots(user_id, [spot_name])
-            msg = f"✅ 削除しました: {removed[0]}" if removed else f"⚠️ {errors[0]}"
+            _, favorites = get_user_setting(user_id)
+            total_count = len([s for s in favorites.split(',') if s])
+            
+            msg = f"✅ 削除しました: {removed[0]}\n📊 現在の登録数: {total_count}/{MAX_FAVORITES}箇所" if removed else f"⚠️ {errors[0]}\n📊 現在の登録数: {total_count}/{MAX_FAVORITES}箇所"
             flex_msg = build_spot_list_carousel_horizontal(user_id=user_id)
             line_bot_api.reply_message(event.reply_token, [TextSendMessage(text=msg), flex_msg])
 
+        # ▼ 設定画面での削除時の件数表示対応
         elif action == "fav_del_execute_and_settings":
             success, removed, errors = remove_favorite_spots(user_id, [spot_name])
-            msg = f"✅ 削除しました: {removed[0]}" if removed else f"⚠️ {errors[0]}"
             _, favorites = get_user_setting(user_id)
             fav_list = [s.strip() for s in favorites.split(',')]
             fav_list = [s for s in fav_list if s]
+            total_count = len(fav_list)
+            
+            msg = f"✅ 削除しました: {removed[0]}\n📊 現在の登録数: {total_count}/{MAX_FAVORITES}箇所" if removed else f"⚠️ {errors[0]}\n📊 現在の登録数: {total_count}/{MAX_FAVORITES}箇所"
             flex_msg = build_settings_flex_message(fav_list)
             line_bot_api.reply_message(event.reply_token, [TextSendMessage(text=msg), flex_msg])
 
