@@ -484,7 +484,7 @@ SPOT_WEATHER_DATA = {
         "blog_url": "",
         "search_name": "中里フィッシングクラブ",
         "tel": "0495-76-1120",
-        "aliases": ["中里", "中里FC", "なかざと"]
+        "aliases": ["中里", "中里FC", "なかざato"]
     },
     "伊古の里": {
         "url": "https://weathernews.jp/onebox/36.071547/139.339037/",
@@ -1304,7 +1304,7 @@ def build_settings_flex_message(fav_list):
 
         rows.append({"type": "separator", "margin": "md"})
         
-        # ▼ 高さを完全に揃えた設定画面の下部ボタン群（Boxのボタン化）
+        # ▼ 高さを完全に揃え、隙間をなくした設定画面の下部ボタン群
         rows.append({
             "type": "box",
             "layout": "horizontal",
@@ -1316,13 +1316,19 @@ def build_settings_flex_message(fav_list):
                     "layout": "vertical",
                     "flex": 1,
                     "backgroundColor": "#e53935",
+                    "borderWidth": "normal",
+                    "borderColor": "#e53935",
                     "cornerRadius": "md",
-                    "justifyContent": "center",
-                    "alignItems": "center",
-                    "paddingAll": "10px",
-                    "action": {"type": "postback", "label": "🗑️ 全て削除", "data": "action=fav_del_all_confirm"},
+                    "paddingAll": "0px",
                     "contents": [
-                        {"type": "text", "text": "🗑️ 全て削除", "weight": "bold", "size": "sm", "color": "#ffffff", "align": "center"}
+                        {
+                            "type": "button",
+                            "action": {"type": "postback", "label": "🗑️ 全て削除", "data": "action=fav_del_all_confirm"},
+                            "style": "link",
+                            "color": "#ffffff",
+                            "height": "sm",
+                            "margin": "none"
+                        }
                     ]
                 },
                 {
@@ -1330,15 +1336,19 @@ def build_settings_flex_message(fav_list):
                     "layout": "vertical",
                     "flex": 1,
                     "backgroundColor": "#fff59d",
-                    "borderWidth": "semi-bold",
+                    "borderWidth": "normal",
                     "borderColor": "#d4af37",
                     "cornerRadius": "md",
-                    "justifyContent": "center",
-                    "alignItems": "center",
-                    "paddingAll": "10px",
-                    "action": {"type": "postback", "label": "📋 一覧", "data": "action=show_list", "displayText": "📋 一覧"},
+                    "paddingAll": "0px",
                     "contents": [
-                        {"type": "text", "text": "📋 一覧", "weight": "bold", "size": "sm", "color": "#555555", "align": "center"}
+                        {
+                            "type": "button",
+                            "action": {"type": "postback", "label": "📋 一覧", "data": "action=show_list", "displayText": "📋 一覧"},
+                            "style": "link",
+                            "color": "#555555",
+                            "height": "sm",
+                            "margin": "none"
+                        }
                     ]
                 }
             ]
@@ -1413,7 +1423,7 @@ def build_spot_list_carousel_horizontal(user_id=None):
 
         fav_rows.append({"type": "separator", "margin": "md", "color": "#cccccc"})
         
-        # ▼ 高さを完全に揃えた一覧パネルの下部ボタン群（Boxのボタン化）
+        # ▼ 高さを完全に揃え、隙間をなくした一覧パネルの下部ボタン群
         fav_rows.append({
             "type": "box",
             "layout": "horizontal",
@@ -1425,13 +1435,19 @@ def build_spot_list_carousel_horizontal(user_id=None):
                     "layout": "vertical",
                     "flex": 1,
                     "backgroundColor": "#f8f9fa",
+                    "borderWidth": "normal",
+                    "borderColor": "#e0e0e0",
                     "cornerRadius": "md",
-                    "justifyContent": "center",
-                    "alignItems": "center",
-                    "paddingAll": "10px",
-                    "action": {"type": "postback", "label": "⚙️ 設定", "data": "action=show_settings", "displayText": "⚙️ 設定"},
+                    "paddingAll": "0px",
                     "contents": [
-                        {"type": "text", "text": "⚙️ 設定", "weight": "bold", "size": "sm", "color": "#555555", "align": "center"}
+                        {
+                            "type": "button",
+                            "action": {"type": "postback", "label": "⚙️ 設定", "data": "action=show_settings", "displayText": "⚙️ 設定"},
+                            "style": "link",
+                            "color": "#555555",
+                            "height": "sm",
+                            "margin": "none"
+                        }
                     ]
                 },
                 {
@@ -1439,15 +1455,19 @@ def build_spot_list_carousel_horizontal(user_id=None):
                     "layout": "vertical",
                     "flex": 1,
                     "backgroundColor": "#fff59d",
-                    "borderWidth": "semi-bold",
+                    "borderWidth": "normal",
                     "borderColor": "#d4af37",
                     "cornerRadius": "md",
-                    "justifyContent": "center",
-                    "alignItems": "center",
-                    "paddingAll": "10px",
-                    "action": {"type": "postback", "label": "📋 一覧", "data": "action=show_list", "displayText": "📋 一覧"},
+                    "paddingAll": "0px",
                     "contents": [
-                        {"type": "text", "text": "📋 一覧", "weight": "bold", "size": "sm", "color": "#555555", "align": "center"}
+                        {
+                            "type": "button",
+                            "action": {"type": "postback", "label": "📋 一覧", "data": "action=show_list", "displayText": "📋 一覧"},
+                            "style": "link",
+                            "color": "#555555",
+                            "height": "sm",
+                            "margin": "none"
+                        }
                     ]
                 }
             ]
@@ -1609,6 +1629,7 @@ def get_user_setting(user_id):
             for s in raw_favs:
                 if s in rename_map:
                     s = rename_map[s]
+                # 削除された釣り場は除外する
                 if s not in ["多摩湖", "いなプー"] and s:
                     favs_list.append(s)
                     
@@ -1727,7 +1748,8 @@ def move_favorite_spot(user_id, spot_name, direction):
 def fetch_spot_1hour_data(url):
     try:
         headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}
-        response = requests.get(url, headers=headers, timeout=8)
+        # ▼ 【重要】LINEのタイムアウト（無反応）を避けるため 3.5 秒で打ち切る
+        response = requests.get(url, headers=headers, timeout=3.5)
         response.raise_for_status()
         soup = BeautifulSoup(response.text, 'html.parser')
         
@@ -1868,13 +1890,19 @@ def build_grid_flex_message(spot_name, weather_by_date, hp_url="", hp2_url="", m
             "layout": "vertical",
             "flex": 2,
             "backgroundColor": "#f8f9fa",
+            "borderWidth": "normal",
+            "borderColor": "#e0e0e0",
             "cornerRadius": "md",
-            "justifyContent": "center",
-            "alignItems": "center",
-            "paddingAll": "10px",
-            "action": {"type": "uri", "label": "📞 電話", "uri": f"tel:{clean_tel}"},
+            "paddingAll": "0px",
             "contents": [
-                {"type": "text", "text": "📞 電話", "weight": "bold", "size": "sm", "color": "#555555", "align": "center"}
+                {
+                    "type": "button",
+                    "action": {"type": "uri", "label": "📞 電話", "uri": f"tel:{clean_tel}"},
+                    "style": "link",
+                    "color": "#555555",
+                    "height": "sm",
+                    "margin": "none"
+                }
             ]
         })
     
@@ -1884,15 +1912,19 @@ def build_grid_flex_message(spot_name, weather_by_date, hp_url="", hp2_url="", m
         "layout": "vertical",
         "flex": 3,
         "backgroundColor": "#fff59d",
-        "borderWidth": "semi-bold",
+        "borderWidth": "normal",
         "borderColor": "#d4af37",
         "cornerRadius": "md",
-        "justifyContent": "center",
-        "alignItems": "center",
-        "paddingAll": "10px",
-        "action": {"type": "postback", "label": "📋 一覧", "data": "action=show_list", "displayText": "📋 一覧"},
+        "paddingAll": "0px",
         "contents": [
-            {"type": "text", "text": "📋 一覧", "weight": "bold", "size": "sm", "color": "#555555", "align": "center"}
+            {
+                "type": "button",
+                "action": {"type": "postback", "label": "📋 一覧", "data": "action=show_list", "displayText": "📋 一覧"},
+                "style": "link",
+                "color": "#555555",
+                "height": "sm",
+                "margin": "none"
+            }
         ]
     })
 
@@ -1903,7 +1935,7 @@ def build_grid_flex_message(spot_name, weather_by_date, hp_url="", hp2_url="", m
     })
 
     # ========================================================
-    # ▼ 安定した2段レイアウト（上段：登録・地図、下段：HP・大崎等） ▼
+    # ▼ 安全な2段レイアウト（上段：登録・地図、下段：HP・大崎等） ▼
     # ========================================================
     header_buttons_top = []
     
@@ -1915,7 +1947,6 @@ def build_grid_flex_message(spot_name, weather_by_date, hp_url="", hp2_url="", m
     clean_map = clean_url(map_url)
     if clean_map: 
         header_buttons_top.append({"type": "button", "action": {"type": "uri", "label": "🗺️ 地図", "uri": clean_map}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
-
 
     header_buttons_bottom = []
     clean_hp = clean_url(hp_url)
@@ -2072,7 +2103,6 @@ def handle_postback(event):
             return
 
         elif action == "show_weather":
-            # ▼ 【重要】スレッドを削除し、完全に安定した元の同期処理に戻しました ▼
             target_spot_name, target_url, hp_url, hp2_url, map_url, tel, x_url, fb_url, insta_url, blog_url = get_spot_details(spot_name)
             _, favorites = get_user_setting(user_id)
             fav_list = [s.strip() for s in favorites.split(',')]
@@ -2090,7 +2120,7 @@ def handle_postback(event):
                 flex_msg = build_grid_flex_message(target_spot_name, weather_by_date, hp_url, hp2_url, map_url, tel, x_url, fb_url, insta_url, blog_url, is_favorite=is_fav)
                 line_bot_api.reply_message(event.reply_token, flex_msg)
             else:
-                line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"⚠️ 【{target_spot_name}】の天気データの取得に失敗しました。少し時間をおいてから再度お試しください。"))
+                line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"⚠️ 【{target_spot_name}】の天気データの取得に時間がかかっています。少し時間をおいてから再度お試しください。"))
             return
 
         elif action == "fav_add_and_list":
