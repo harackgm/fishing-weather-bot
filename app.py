@@ -800,6 +800,7 @@ SPOT_WEATHER_DATA = {
         "tel": "027-283-0035",
         "aliases": ["ＭＡＶ", "宮城", "宮城AV", "みやぎあんぐらーず", "まぶ", "マブ", "あんびれ", "アンビレ", "MAV", "mav"]
     },
+    # ▼ 大崎・赤城 の完全統合データ ▼
     "大崎・赤城": {
         "url": "https://weathernews.jp/onebox/36.463209/139.164867/",
         "hp_url": "https://nijimasu.com/",
@@ -1187,7 +1188,7 @@ def clean_url(url_str):
         return ""
     return cleaned
 
-# ▼【重要修正1】JやMAVなど、ボタン名と辞書キーが違う場合でも確実にデータを引き当てる安全処理
+# ▼【安全対策1】「J」や「MAV」等の検索迷子を完全に防ぐエイリアス検索 ▼
 def get_spot_details(spot_key):
     actual_key = spot_key
     if spot_key not in SPOT_WEATHER_DATA:
@@ -1199,11 +1200,13 @@ def get_spot_details(spot_key):
 
     data = SPOT_WEATHER_DATA.get(actual_key)
     if not data:
+        # 見つからない場合は空を返す（10個の変数を確実に返す）
         return spot_key, None, "", "", "", "", "", "", "", ""
-    
+        
     map_url = f"https://www.google.com/maps/search/?api=1&query={quote(data.get('search_name', actual_key))}"
     hp_url = clean_url(data.get("hp_url", ""))
     hp2_url = clean_url(data.get("hp2_url", ""))
+    
     return (
         actual_key, 
         data["url"], 
@@ -1614,6 +1617,7 @@ def get_user_setting(user_id):
             row = res.data[0]
             favs = row.get('favorite_spots') or ''
             
+            # ▼「大崎」を「大崎・赤城」に自動で読み替える安全処理 ▼
             rename_map = {
                 "五頭": "GOZU",
                 "竜华池": "竜華池",
@@ -1638,6 +1642,7 @@ def get_user_setting(user_id):
             for s in raw_favs:
                 if s in rename_map:
                     s = rename_map[s]
+                # 削除された釣り場は除外する
                 if s not in ["多摩湖", "いなプー"] and s:
                     favs_list.append(s)
                     
@@ -1753,7 +1758,7 @@ def move_favorite_spot(user_id, spot_name, direction):
     except Exception as e:
         return False, f"移動失敗: {e}"
 
-# ▼【重要修正2】LINEの5秒ルールに引っかからないよう、2.5秒で打ち切る ▼
+# ▼【安全対策2】LINEの5秒ルールによる強制無反応を完全に防ぐため、2.5秒で打ち切る ▼
 def fetch_spot_1hour_data(url, custom_timeout=2.5):
     try:
         headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}
@@ -1807,13 +1812,13 @@ def fetch_spot_1hour_data(url, custom_timeout=2.5):
             
             if daily_list: weather_by_date[date_str] = daily_list
             if len(weather_by_date) >= 4: break
-            
+        
         if not weather_by_date:
-             raise Exception("パースエラー")
-             
+            raise Exception("データ解析エラー")
+            
         return weather_by_date
     except requests.exceptions.Timeout:
-        # 呼び出し元で「もう一度押して」を出すためにそのまま投げる
+        # 無反応を防ぐため、わざとタイムアウトエラーを呼び出し元に投げる
         raise
     except Exception as e:
         print(f"[スクレイピングエラー] {e}")
@@ -1975,7 +1980,7 @@ def build_grid_flex_message(spot_name, weather_by_date, hp_url="", hp2_url="", m
         if clean_hp: 
             header_buttons_bottom.append({"type": "button", "action": {"type": "uri", "label": "🌐 HP", "uri": clean_hp}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
         
-        # ▼ SNSボタン（安全に復活） ▼
+        # ▼ SNSボタン復活（安全な文字列で表示） ▼
         clean_x = clean_url(x_url)
         clean_fb = clean_url(fb_url)
         clean_insta = clean_url(insta_url)
@@ -1988,10 +1993,8 @@ def build_grid_flex_message(spot_name, weather_by_date, hp_url="", hp2_url="", m
 
     header_contents = [{"type": "text", "text": f"📍 {spot_name}", "color": "#ffffff", "weight": "bold", "size": "lg"}]
     
-    # 上段を追加
     if header_buttons_top: 
         header_contents.append({"type": "box", "layout": "horizontal", "margin": "sm", "spacing": "xs", "contents": header_buttons_top})
-    # 下段を追加
     if header_buttons_bottom: 
         header_contents.append({"type": "box", "layout": "horizontal", "margin": "sm", "spacing": "xs", "contents": header_buttons_bottom})
 
@@ -2117,7 +2120,6 @@ def handle_postback(event):
             return
 
         elif action == "show_weather":
-            # ▼【完全解決】半角/全角エラーを防ぐため、安全に正規化された名前を受け取る ▼
             target_spot_name, target_url, hp_url, hp2_url, map_url, tel, x_url, fb_url, insta_url, blog_url = get_spot_details(spot_name)
             
             if not target_url:
@@ -2138,10 +2140,10 @@ def handle_postback(event):
                     if weather_by_date:
                         save_cached_weather(target_spot_name, weather_by_date)
                 except requests.exceptions.Timeout:
-                    # 時間切れの際は、無反応にさせず PushAPI も消費しない「究極の解決策」
+                    # 時間切れの際は、無反応にさせず「準備中」の親切なメッセージを返す
                     line_bot_api.reply_message(
                         event.reply_token, 
-                        TextSendMessage(text=f"🔄 【{target_spot_name}】の最新データを準備しています...\n\n取得に少し時間がかかっているため、数秒待ってからもう一度ボタンを押してください！")
+                        TextSendMessage(text=f"🔄 【{target_spot_name}】の最新データを準備中です...\n\n取得に少し時間がかかっているため、数秒待ってからもう一度ボタンを押してください！")
                     )
                     # メッセージを返した直後に、裏側でゆっくり（15秒かけて）キャッシュを作っておく
                     def background_fetch():
@@ -2154,10 +2156,11 @@ def handle_postback(event):
                     threading.Thread(target=background_fetch).start()
                     return
                 except Exception as e:
-                    # その他のサイト構成エラー等の場合
+                    # 万が一の予期せぬエラー（サイト構造変更など）の場合は原因を表示する
+                    error_str = str(e)
                     line_bot_api.reply_message(
                         event.reply_token, 
-                        TextSendMessage(text=f"⚠️ 【{target_spot_name}】の天気データの取得に失敗しました。\n\n詳細: {str(e)[:100]}\n(サイト構成の変更等の可能性があります)")
+                        TextSendMessage(text=f"⚠️ 【{target_spot_name}】の天気データの取得に失敗しました。\n\n詳細: {error_str[:100]}\n(URLやサイトの構成が変わった可能性があります)")
                     )
                     return
 
@@ -2232,9 +2235,9 @@ def handle_postback(event):
         try: line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ LINE通信エラーが発生しました。（データ容量オーバー等の可能性があります）"))
         except Exception: pass
     except Exception as e:
-        # 万が一のエラー時に画面にログを出して完全特定するためのガードレール
+        # 万が一の予期せぬエラー時にログを出して特定するための最終安全装置
         error_msg = traceback.format_exc()
-        try: line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"⚠️ システムエラーが発生しました。開発者用ログ:\n\n{error_msg[:1000]}"))
+        try: line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"⚠️ システムエラーが発生しました。\n\n【開発者用ログ】\n{error_msg[:800]}"))
         except Exception: pass
 
 def get_top_favorite_spots(limit=24):
