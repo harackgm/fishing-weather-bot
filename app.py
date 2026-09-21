@@ -1177,14 +1177,9 @@ COLOR_GROUPS = [
 def clean_url(url_str):
     if not url_str:
         return ""
-    # 不正な見えない文字が混入しないよう安全な処理にしました
     cleaned = url_str.strip().replace(" ", "").replace("\t", "")
     if not (cleaned.startswith("http://") or cleaned.startswith("https://")):
         return ""
-    if cleaned.endswith("/#"):
-        cleaned = cleaned[:-2]
-    elif cleaned.endswith("#"):
-        cleaned = cleaned[:-1]
     return cleaned
 
 def get_spot_details(spot_key):
@@ -1302,7 +1297,7 @@ def build_settings_flex_message(fav_list):
 
         rows.append({"type": "separator", "margin": "md"})
         
-        # ▼ 高さを完璧に揃え、隙間をなくした下部ボタン群
+        # ▼ 【デザイン修正】 箱を使わず、ボタンを直接並べて高さを完全に揃えました ▼
         rows.append({
             "type": "box",
             "layout": "horizontal",
@@ -1310,34 +1305,16 @@ def build_settings_flex_message(fav_list):
             "spacing": "sm",
             "contents": [
                 {
-                    "type": "box",
-                    "layout": "vertical",
-                    "flex": 1,
-                    "backgroundColor": "#e53935",
-                    "cornerRadius": "md",
-                    "justifyContent": "center",
-                    "alignItems": "center",
-                    "paddingAll": "10px",
+                    "type": "button",
                     "action": {"type": "postback", "label": "🗑️ 全て削除", "data": "action=fav_del_all_confirm"},
-                    "contents": [
-                        {"type": "text", "text": "🗑️ 全て削除", "weight": "bold", "size": "sm", "color": "#ffffff", "align": "center"}
-                    ]
+                    "style": "primary",
+                    "color": "#e53935"
                 },
                 {
-                    "type": "box",
-                    "layout": "vertical",
-                    "flex": 1,
-                    "backgroundColor": "#fff59d",
-                    "borderWidth": "semi-bold",
-                    "borderColor": "#d4af37",
-                    "cornerRadius": "md",
-                    "justifyContent": "center",
-                    "alignItems": "center",
-                    "paddingAll": "10px",
+                    "type": "button",
                     "action": {"type": "postback", "label": "📋 一覧", "data": "action=show_list", "displayText": "📋 一覧"},
-                    "contents": [
-                        {"type": "text", "text": "📋 一覧", "weight": "bold", "size": "sm", "color": "#555555", "align": "center"}
-                    ]
+                    "style": "primary",
+                    "color": "#d4af37"
                 }
             ]
         })
@@ -1411,7 +1388,7 @@ def build_spot_list_carousel_horizontal(user_id=None):
 
         fav_rows.append({"type": "separator", "margin": "md", "color": "#cccccc"})
         
-        # ▼ 高さを完璧に揃え、隙間をなくした下部ボタン群
+        # ▼ 【デザイン修正】 箱を使わず、ボタンを直接並べて高さを完全に揃えました ▼
         fav_rows.append({
             "type": "box",
             "layout": "horizontal",
@@ -1419,36 +1396,16 @@ def build_spot_list_carousel_horizontal(user_id=None):
             "spacing": "sm",
             "contents": [
                 {
-                    "type": "box",
-                    "layout": "vertical",
-                    "flex": 1,
-                    "backgroundColor": "#f8f9fa",
-                    "borderWidth": "normal",
-                    "borderColor": "#e0e0e0",
-                    "cornerRadius": "md",
-                    "justifyContent": "center",
-                    "alignItems": "center",
-                    "paddingAll": "10px",
+                    "type": "button",
                     "action": {"type": "postback", "label": "⚙️ 設定", "data": "action=show_settings", "displayText": "⚙️ 設定"},
-                    "contents": [
-                        {"type": "text", "text": "⚙️ 設定", "weight": "bold", "size": "sm", "color": "#555555", "align": "center"}
-                    ]
+                    "style": "secondary",
+                    "color": "#e0e0e0"
                 },
                 {
-                    "type": "box",
-                    "layout": "vertical",
-                    "flex": 1,
-                    "backgroundColor": "#fff59d",
-                    "borderWidth": "semi-bold",
-                    "borderColor": "#d4af37",
-                    "cornerRadius": "md",
-                    "justifyContent": "center",
-                    "alignItems": "center",
-                    "paddingAll": "10px",
+                    "type": "button",
                     "action": {"type": "postback", "label": "📋 一覧", "data": "action=show_list", "displayText": "📋 一覧"},
-                    "contents": [
-                        {"type": "text", "text": "📋 一覧", "weight": "bold", "size": "sm", "color": "#555555", "align": "center"}
-                    ]
+                    "style": "primary",
+                    "color": "#d4af37"
                 }
             ]
         })
@@ -1584,6 +1541,7 @@ def get_user_setting(user_id):
             row = res.data[0]
             favs = row.get('favorite_spots') or ''
             
+            # 名称変更対応マップ（過去登録された古い名前を自動で新しい名前に変換）
             rename_map = {
                 "五頭": "GOZU",
                 "竜华池": "竜華池",
@@ -1726,8 +1684,7 @@ def move_favorite_spot(user_id, spot_name, direction):
 def fetch_spot_1hour_data(url):
     try:
         headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}
-        # ▼ 「良かったコード」の確実な同期処理（4.0秒に短縮し無反応を防止）
-        response = requests.get(url, headers=headers, timeout=4.0)
+        response = requests.get(url, headers=headers, timeout=8)
         response.raise_for_status()
         soup = BeautifulSoup(response.text, 'html.parser')
         
@@ -1777,9 +1734,6 @@ def fetch_spot_1hour_data(url):
             if daily_list: weather_by_date[date_str] = daily_list
             if len(weather_by_date) >= 4: break
         return weather_by_date
-    except requests.exceptions.Timeout:
-        # タイムアウト時はあえてエラーにせず None を返し、「取得失敗」メッセージを出力させる
-        return None
     except Exception as e:
         print(f"[スクレイピングエラー] {e}")
         return None
@@ -1862,41 +1816,24 @@ def build_grid_flex_message(spot_name, weather_by_date, hp_url="", map_url="", t
         row2 = {"type": "box", "layout": "horizontal", "spacing": "sm", "contents": [create_day_column(dates[2] if len(dates) > 2 else None), {"type": "separator"}, create_day_column(dates[3] if len(dates) > 3 else None)]}
         body_contents.append(row2)
 
+    # ▼ 【デザイン修正】 箱を使わず、ボタンを直接並べて高さを完全に揃えました ▼
     bottom_buttons = []
     if tel:
         clean_tel = tel.replace('-', '').strip()
-        # ▼ 高さを完全に揃え、隙間をなくした電話ボタン（Boxタップ化）
         bottom_buttons.append({
-            "type": "box",
-            "layout": "vertical",
-            "flex": 2,
-            "backgroundColor": "#f8f9fa",
-            "cornerRadius": "md",
-            "justifyContent": "center",
-            "alignItems": "center",
-            "paddingAll": "10px",
+            "type": "button",
             "action": {"type": "uri", "label": "📞 電話", "uri": f"tel:{clean_tel}"},
-            "contents": [
-                {"type": "text", "text": "📞 電話", "weight": "bold", "size": "sm", "color": "#555555", "align": "center"}
-            ]
+            "style": "secondary",
+            "color": "#e0e0e0",
+            "height": "sm"
         })
     
-    # ▼ 高さを完全に揃え、隙間をなくした一覧ボタン（Boxタップ化）
     bottom_buttons.append({
-        "type": "box",
-        "layout": "vertical",
-        "flex": 3,
-        "backgroundColor": "#fff59d",
-        "borderWidth": "semi-bold",
-        "borderColor": "#d4af37",
-        "cornerRadius": "md",
-        "justifyContent": "center",
-        "alignItems": "center",
-        "paddingAll": "10px",
+        "type": "button",
         "action": {"type": "postback", "label": "📋 一覧", "data": "action=show_list", "displayText": "📋 一覧"},
-        "contents": [
-            {"type": "text", "text": "📋 一覧", "weight": "bold", "size": "sm", "color": "#555555", "align": "center"}
-        ]
+        "style": "primary",
+        "color": "#d4af37",
+        "height": "sm"
     })
 
     body_contents.append({"type": "separator", "margin": "md"})
@@ -2056,11 +1993,6 @@ def handle_postback(event):
 
         elif action == "show_weather":
             target_spot_name, target_url, hp_url, map_url, tel, x_url, fb_url, insta_url, blog_url = get_spot_details(spot_name)
-            
-            if not target_url:
-                line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"⚠️ 【{spot_name}】のデータが見つかりません。"))
-                return
-
             _, favorites = get_user_setting(user_id)
             fav_list = [s.strip() for s in favorites.split(',')]
             fav_list = [s for s in fav_list if s]
@@ -2077,7 +2009,7 @@ def handle_postback(event):
                 flex_msg = build_grid_flex_message(target_spot_name, weather_by_date, hp_url, map_url, tel, x_url, fb_url, insta_url, blog_url, is_favorite=is_fav)
                 line_bot_api.reply_message(event.reply_token, flex_msg)
             else:
-                line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"⚠️ 【{target_spot_name}】の天気データの取得に失敗しました。少し時間をおいてから再度お試しください。"))
+                line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"⚠️ 【{target_spot_name}】の天気データの取得に失敗しました。"))
             return
 
         elif action == "fav_add_and_list":
@@ -2146,13 +2078,10 @@ def handle_postback(event):
         try: line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ LINE通信エラーが発生しました。（データ容量オーバー等の可能性があります）"))
         except Exception: pass
     except Exception as e:
-        # ▼ 【重要・安全ガード】万が一のエラー時に画面にログを出力する機能 ▼
-        error_msg = traceback.format_exc()
+        print(f"Postback Error: {e}")
+        traceback.print_exc()
         try:
-            line_bot_api.reply_message(
-                event.reply_token, 
-                TextSendMessage(text=f"⚠️ 処理中にシステムエラーが発生しました。\n\n【開発者用ログ】\n{error_msg[:800]}")
-            )
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ 処理中にシステムエラーが発生しました。"))
         except Exception:
             pass
 
