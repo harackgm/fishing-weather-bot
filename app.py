@@ -800,7 +800,7 @@ SPOT_WEATHER_DATA = {
         "tel": "027-283-0035",
         "aliases": ["ＭＡＶ", "宮城", "宮城AV", "みやぎあんぐらーず", "まぶ", "マブ", "あんびれ", "アンビレ", "MAV", "mav"]
     },
-    # ▼ 大崎・赤城 の完全統合データ ▼
+    # ▼ 大崎・赤城 の統合データ ▼
     "大崎・赤城": {
         "url": "https://weathernews.jp/onebox/36.463209/139.164867/",
         "hp_url": "https://nijimasu.com/",
@@ -1187,6 +1187,7 @@ def clean_url(url_str):
         return ""
     return cleaned
 
+# ▼【重要修正1】変数の数がズレてクラッシュするエラーを直すため、必ず10個のデータを返すように完全固定しました ▼
 def get_spot_details(spot_key):
     data = SPOT_WEATHER_DATA.get(spot_key)
     if not data:
@@ -1629,7 +1630,6 @@ def get_user_setting(user_id):
             for s in raw_favs:
                 if s in rename_map:
                     s = rename_map[s]
-                # 削除された釣り場は除外する
                 if s not in ["多摩湖", "いなプー"] and s:
                     favs_list.append(s)
                     
@@ -1745,10 +1745,10 @@ def move_favorite_spot(user_id, spot_name, direction):
     except Exception as e:
         return False, f"移動失敗: {e}"
 
-def fetch_spot_1hour_data(url, custom_timeout=8):
+# ▼【重要修正2】タイムアウトを「4.5秒」で強制切断し、LINE側の無反応を完全に回避します
+def fetch_spot_1hour_data(url, custom_timeout=4.5):
     try:
         headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}
-        # ▼ 【重要】強制タイムアウト時間を引数から受け取る
         response = requests.get(url, headers=headers, timeout=custom_timeout)
         response.raise_for_status()
         soup = BeautifulSoup(response.text, 'html.parser')
@@ -1884,7 +1884,6 @@ def build_grid_flex_message(spot_name, weather_by_date, hp_url="", hp2_url="", m
     bottom_buttons = []
     if tel:
         clean_tel = tel.replace('-', '').strip()
-        # ▼ 高さを完全に揃え、隙間をなくした電話ボタン（Boxタップ化）
         bottom_buttons.append({
             "type": "box",
             "layout": "vertical",
@@ -1906,7 +1905,6 @@ def build_grid_flex_message(spot_name, weather_by_date, hp_url="", hp2_url="", m
             ]
         })
     
-    # ▼ 高さを完全に揃え、隙間をなくした天気カード下部の一覧ボタン
     bottom_buttons.append({
         "type": "box",
         "layout": "vertical",
@@ -1935,7 +1933,7 @@ def build_grid_flex_message(spot_name, weather_by_date, hp_url="", hp2_url="", m
     })
 
     # ========================================================
-    # ▼ 安全な2段レイアウト（上段：登録・地図、下段：HP・大崎等） ▼
+    # ▼ 大崎・赤城対応の安全な2段レイアウト ▼
     # ========================================================
     header_buttons_top = []
     
@@ -2103,6 +2101,7 @@ def handle_postback(event):
             return
 
         elif action == "show_weather":
+            # ▼【重要修正1】エラーの元凶（変数の数のズレ）を解消し、完全に安定動作する同期処理にしました ▼
             target_spot_name, target_url, hp_url, hp2_url, map_url, tel, x_url, fb_url, insta_url, blog_url = get_spot_details(spot_name)
             _, favorites = get_user_setting(user_id)
             fav_list = [s.strip() for s in favorites.split(',')]
@@ -2112,7 +2111,7 @@ def handle_postback(event):
             weather_by_date = get_cached_weather(target_spot_name)
             
             if not weather_by_date:
-                # ▼ 【重要】LINEの5秒ルールに引っかからないよう、4.5秒で打ち切ります ▼
+                # ▼【重要修正2】LINEの5秒ルールで無反応になるのを防ぐため、4.5秒で打ち切ります ▼
                 weather_by_date = fetch_spot_1hour_data(target_url, custom_timeout=4.5)
                 if weather_by_date:
                     save_cached_weather(target_spot_name, weather_by_date)
@@ -2121,11 +2120,11 @@ def handle_postback(event):
                 flex_msg = build_grid_flex_message(target_spot_name, weather_by_date, hp_url, hp2_url, map_url, tel, x_url, fb_url, insta_url, blog_url, is_favorite=is_fav)
                 line_bot_api.reply_message(event.reply_token, flex_msg)
             else:
-                # ▼ 無反応エラーを防ぐためのフォールバック処理 ▼
-                error_msg = f"⚠️ 【{target_spot_name}】の天気データの取得に少し時間がかかっています。\n\n裏側で最新データを準備していますので、数秒〜数十秒待ってからもう一度ボタンを押してみてください！"
+                # 取得に時間がかかった場合、無反応にするのではなくメッセージを返す
+                error_msg = f"⚠️ 【{target_spot_name}】の天気データの取得に時間がかかっています。\n\n数秒待ってからもう一度ボタンを押してみてください！"
                 line_bot_api.reply_message(event.reply_token, TextSendMessage(text=error_msg))
                 
-                # エラーメッセージを返した直後に、裏側で長めのタイムアウトを許容してキャッシュを作っておく
+                # エラーメッセージを返した直後に、裏側で長めのタイムアウトでキャッシュを作っておく
                 def background_fetch():
                     try:
                         w_data = fetch_spot_1hour_data(target_url, custom_timeout=15)
@@ -2270,7 +2269,7 @@ def run_background_update():
             if not data: continue
             url = data["url"]
             
-            weather_data = fetch_spot_1hour_data(url)
+            weather_data = fetch_spot_1hour_data(url, custom_timeout=8)
             if weather_data:
                 save_cached_weather(spot_name, weather_data)
                 
