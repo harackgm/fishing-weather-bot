@@ -925,7 +925,8 @@ SPOT_WEATHER_DATA = {
         "blog_url": "",
         "search_name": "フィッシングエリアJ",
         "tel": "029-842-1698",
-        "aliases": ["Ｊ", "J", "FAJ", "フィッシングエリアJ", "ふぃっしんぐえりあじぇい", "じぇー", "じぇい", "ジェー"]
+        # ▼ Jの検索漏れを防ぐ完全なエイリアス
+        "aliases": ["Ｊ", "J", "FAJ", "フィッシングエリアJ", "ふぃっしんぐえりあじぇい", "じぇー", "じぇい", "ジェー", "j"]
     },
     "ユザキ": {
         "url": "https://weathernews.jp/onebox/36.314550/140.335285/",
@@ -1186,19 +1187,28 @@ def clean_url(url_str):
         return ""
     return cleaned
 
-# ▼ 10個の変数を確実に返すように完全修正
+# ▼【重要修正1】JやMAVなど、ボタン名と辞書キーが違う場合でも確実にデータを引き当てる安全処理
 def get_spot_details(spot_key):
-    data = SPOT_WEATHER_DATA.get(spot_key)
+    actual_key = spot_key
+    if spot_key not in SPOT_WEATHER_DATA:
+        # 半角・全角の違いなどをゆらぎ（aliases）から確実に検索する
+        for k, v in SPOT_WEATHER_DATA.items():
+            if spot_key.lower() in [a.lower() for a in v.get("aliases", [])]:
+                actual_key = k
+                break
+
+    data = SPOT_WEATHER_DATA.get(actual_key)
     if not data:
         return spot_key, None, "", "", "", "", "", "", "", ""
-    map_url = f"https://www.google.com/maps/search/?api=1&query={quote(data.get('search_name', spot_key))}"
+    
+    map_url = f"https://www.google.com/maps/search/?api=1&query={quote(data.get('search_name', actual_key))}"
     hp_url = clean_url(data.get("hp_url", ""))
     hp2_url = clean_url(data.get("hp2_url", ""))
     return (
-        spot_key, 
+        actual_key, 
         data["url"], 
-        hp_url,
-        hp2_url, 
+        hp_url, 
+        hp2_url,
         map_url, 
         data.get("tel", ""),
         clean_url(data.get("x_url", "")),
@@ -1604,7 +1614,6 @@ def get_user_setting(user_id):
             row = res.data[0]
             favs = row.get('favorite_spots') or ''
             
-            # ▼「大崎」を「大崎・赤城」に読み替える安全処理 ▼
             rename_map = {
                 "五頭": "GOZU",
                 "竜华池": "竜華池",
@@ -1629,7 +1638,6 @@ def get_user_setting(user_id):
             for s in raw_favs:
                 if s in rename_map:
                     s = rename_map[s]
-                # 削除された釣り場は除外する
                 if s not in ["多摩湖", "いなプー"] and s:
                     favs_list.append(s)
                     
@@ -1745,11 +1753,11 @@ def move_favorite_spot(user_id, spot_name, direction):
     except Exception as e:
         return False, f"移動失敗: {e}"
 
-def fetch_spot_1hour_data(url):
+# ▼【重要修正2】LINEの5秒ルールに引っかからないよう、2.5秒で打ち切る ▼
+def fetch_spot_1hour_data(url, custom_timeout=2.5):
     try:
         headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}
-        # ▼【安定稼働の要】元の一番安定していた同期処理（8秒待機）に戻しました
-        response = requests.get(url, headers=headers, timeout=8)
+        response = requests.get(url, headers=headers, timeout=custom_timeout)
         response.raise_for_status()
         soup = BeautifulSoup(response.text, 'html.parser')
         
@@ -1757,7 +1765,8 @@ def fetch_spot_1hour_data(url):
         if not flick_list:
             flick_list = soup.find('div', id='flick_list_3hour')
             
-        if not flick_list: return None
+        if not flick_list: 
+            raise Exception("天気データが見つかりません。")
 
         weather_by_date = {}
         groups = flick_list.find_all('div', class_='group')
@@ -1798,10 +1807,17 @@ def fetch_spot_1hour_data(url):
             
             if daily_list: weather_by_date[date_str] = daily_list
             if len(weather_by_date) >= 4: break
+            
+        if not weather_by_date:
+             raise Exception("パースエラー")
+             
         return weather_by_date
+    except requests.exceptions.Timeout:
+        # 呼び出し元で「もう一度押して」を出すためにそのまま投げる
+        raise
     except Exception as e:
         print(f"[スクレイピングエラー] {e}")
-        return None
+        raise e
 
 def build_grid_flex_message(spot_name, weather_by_date, hp_url="", hp2_url="", map_url="", tel="", x_url="", fb_url="", insta_url="", blog_url="", is_favorite=False):
     dates = list(weather_by_date.keys())
@@ -1933,7 +1949,7 @@ def build_grid_flex_message(spot_name, weather_by_date, hp_url="", hp2_url="", m
     })
 
     # ========================================================
-    # ▼ 大崎・赤城対応の安全な2段レイアウト（上段：登録・地図、下段：HP・大崎等・SNS） ▼
+    # ▼ 大崎・赤城対応の安全な2段レイアウト ▼
     # ========================================================
     header_buttons_top = []
     
@@ -1959,6 +1975,7 @@ def build_grid_flex_message(spot_name, weather_by_date, hp_url="", hp2_url="", m
         if clean_hp: 
             header_buttons_bottom.append({"type": "button", "action": {"type": "uri", "label": "🌐 HP", "uri": clean_hp}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
         
+        # ▼ SNSボタン（安全に復活） ▼
         clean_x = clean_url(x_url)
         clean_fb = clean_url(fb_url)
         clean_insta = clean_url(insta_url)
@@ -1971,8 +1988,10 @@ def build_grid_flex_message(spot_name, weather_by_date, hp_url="", hp2_url="", m
 
     header_contents = [{"type": "text", "text": f"📍 {spot_name}", "color": "#ffffff", "weight": "bold", "size": "lg"}]
     
+    # 上段を追加
     if header_buttons_top: 
         header_contents.append({"type": "box", "layout": "horizontal", "margin": "sm", "spacing": "xs", "contents": header_buttons_top})
+    # 下段を追加
     if header_buttons_bottom: 
         header_contents.append({"type": "box", "layout": "horizontal", "margin": "sm", "spacing": "xs", "contents": header_buttons_bottom})
 
@@ -2098,8 +2117,13 @@ def handle_postback(event):
             return
 
         elif action == "show_weather":
-            # ▼【重要】変数の数を10個に完全に一致させ、元の安定したコード構造に戻しました ▼
+            # ▼【完全解決】半角/全角エラーを防ぐため、安全に正規化された名前を受け取る ▼
             target_spot_name, target_url, hp_url, hp2_url, map_url, tel, x_url, fb_url, insta_url, blog_url = get_spot_details(spot_name)
+            
+            if not target_url:
+                line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"⚠️ 【{spot_name}】のデータが見つかりません。"))
+                return
+
             _, favorites = get_user_setting(user_id)
             fav_list = [s.strip() for s in favorites.split(',')]
             fav_list = [s for s in fav_list if s]
@@ -2108,19 +2132,38 @@ def handle_postback(event):
             weather_by_date = get_cached_weather(target_spot_name)
             
             if not weather_by_date:
-                weather_by_date = fetch_spot_1hour_data(target_url)
-                if weather_by_date:
-                    save_cached_weather(target_spot_name, weather_by_date)
+                try:
+                    # ▼【無反応エラーの完全撲滅】LINEの5秒ルールを絶対に回避するため 2.5秒 で切断 ▼
+                    weather_by_date = fetch_spot_1hour_data(target_url, custom_timeout=2.5)
+                    if weather_by_date:
+                        save_cached_weather(target_spot_name, weather_by_date)
+                except requests.exceptions.Timeout:
+                    # 時間切れの際は、無反応にさせず PushAPI も消費しない「究極の解決策」
+                    line_bot_api.reply_message(
+                        event.reply_token, 
+                        TextSendMessage(text=f"🔄 【{target_spot_name}】の最新データを準備しています...\n\n取得に少し時間がかかっているため、数秒待ってからもう一度ボタンを押してください！")
+                    )
+                    # メッセージを返した直後に、裏側でゆっくり（15秒かけて）キャッシュを作っておく
+                    def background_fetch():
+                        try:
+                            w_data = fetch_spot_1hour_data(target_url, custom_timeout=15.0)
+                            if w_data:
+                                save_cached_weather(target_spot_name, w_data)
+                        except:
+                            pass
+                    threading.Thread(target=background_fetch).start()
+                    return
+                except Exception as e:
+                    # その他のサイト構成エラー等の場合
+                    line_bot_api.reply_message(
+                        event.reply_token, 
+                        TextSendMessage(text=f"⚠️ 【{target_spot_name}】の天気データの取得に失敗しました。\n\n詳細: {str(e)[:100]}\n(サイト構成の変更等の可能性があります)")
+                    )
+                    return
 
             if weather_by_date:
-                flex_msg = build_grid_flex_message(
-                    target_spot_name, weather_by_date, 
-                    hp_url, hp2_url, map_url, tel, 
-                    x_url, fb_url, insta_url, blog_url, is_favorite=is_fav
-                )
+                flex_msg = build_grid_flex_message(target_spot_name, weather_by_date, hp_url, hp2_url, map_url, tel, x_url, fb_url, insta_url, blog_url, is_favorite=is_fav)
                 line_bot_api.reply_message(event.reply_token, flex_msg)
-            else:
-                line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"⚠️ 【{target_spot_name}】の天気データの取得に失敗しました。"))
             return
 
         elif action == "fav_add_and_list":
@@ -2189,16 +2232,10 @@ def handle_postback(event):
         try: line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ LINE通信エラーが発生しました。（データ容量オーバー等の可能性があります）"))
         except Exception: pass
     except Exception as e:
-        # ▼ 【重要】エラー発生時にLINEのトーク画面へ原因を出力する機能 ▼
+        # 万が一のエラー時に画面にログを出して完全特定するためのガードレール
         error_msg = traceback.format_exc()
-        print(f"Postback Error: {error_msg}")
-        try:
-            line_bot_api.reply_message(
-                event.reply_token, 
-                TextSendMessage(text=f"⚠️ 処理中にシステムエラーが発生しました。\n\n【開発者用ログ】\n{error_msg[:800]}")
-            )
-        except Exception:
-            pass
+        try: line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"⚠️ システムエラーが発生しました。開発者用ログ:\n\n{error_msg[:1000]}"))
+        except Exception: pass
 
 def get_top_favorite_spots(limit=24):
     """
@@ -2261,7 +2298,7 @@ def run_background_update():
             if not data: continue
             url = data["url"]
             
-            weather_data = fetch_spot_1hour_data(url)
+            weather_data = fetch_spot_1hour_data(url, custom_timeout=8.0)
             if weather_data:
                 save_cached_weather(spot_name, weather_data)
                 
