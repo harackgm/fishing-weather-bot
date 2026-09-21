@@ -299,7 +299,8 @@ SPOT_WEATHER_DATA = {
         "url": "https://weathernews.jp/onebox/36.566488/139.960060/",
         "hp_url": "http://www.arcus-pond.com/",
         "x_url": "",
-        "fb_url": "",  # ← ★ユーザーの指示通りFBリンクを空にしました
+        # ▼ 指定された正しいURLに差し替えました ▼
+        "fb_url": "https://www.facebook.com/p/Arcus-Pond%E3%82%A2%E3%83%AB%E3%82%AF%E3%82%B9%E3%83%9D%E3%83%B3%E3%83%89-100041638634155/",
         "insta_url": "",
         "blog_url": "https://www.arcus-pond.com/wp/category/blog/",
         "search_name": "アルクスポンド宇都宮",
@@ -1152,7 +1153,7 @@ COLOR_GROUPS = [
         "header_bg": "#2e7d32",
         "sub_groups": [
             {"bg": "#e8f5e9", "spots": ["長瀞", "彩の国", "朝霞Ｇ", "しらこばと", "川越パーク", "加須はなさき", "中里", "伊古の里"]},
-            {"bg": "#c8e6c9", "spots": ["川場", "川場キングダム", "おくとね", "イワナセンター", "黒保根", "迦葉山", "片品", "中之沢", "ＭＡＶ", "大崎", "けん太", "フック", "赤久縄", "太田", "東山道", "榛名"]}
+            {"bg": "#c8e6c9", "spots": ["川場", "川場キングダム", "おくとね", "イワナセンター", "黒保根", "迦葉山", "片品", "中之沢", "ＭＡＶ", "大崎・赤城", "けん太", "フック", "赤久縄", "太田", "東山道", "榛名"]}
         ]
     },
     {
@@ -1180,6 +1181,10 @@ def clean_url(url_str):
     cleaned = url_str.strip().replace(" ", "").replace("\t", "")
     if not (cleaned.startswith("http://") or cleaned.startswith("https://")):
         return ""
+    if cleaned.endswith("/#"):
+        cleaned = cleaned[:-2]
+    elif cleaned.endswith("#"):
+        cleaned = cleaned[:-1]
     return cleaned
 
 def get_spot_details(spot_key):
@@ -1304,25 +1309,42 @@ def build_settings_flex_message(fav_list):
             "spacing": "sm",
             "contents": [
                 {
-                    "type": "button",
-                    "action": {"type": "postback", "label": "🗑️ 全て削除", "data": "action=fav_del_all_confirm"},
-                    "style": "primary",
-                    "color": "#e53935",
-                    "flex": 1
+                    "type": "box",
+                    "layout": "vertical",
+                    "flex": 1,
+                    "backgroundColor": "#e53935",
+                    "borderWidth": "normal",
+                    "borderColor": "#e53935",
+                    "cornerRadius": "md",
+                    "paddingAll": "0px",
+                    "contents": [
+                        {
+                            "type": "button",
+                            "action": {"type": "postback", "label": "🗑️ 全て削除", "data": "action=fav_del_all_confirm"},
+                            "style": "link",
+                            "color": "#ffffff",
+                            "height": "sm",
+                            "margin": "none"
+                        }
+                    ]
                 },
                 {
                     "type": "box",
                     "layout": "vertical",
                     "flex": 1,
-                    "borderWidth": "semi-bold",
+                    "backgroundColor": "#fff59d",
+                    "borderWidth": "normal",
                     "borderColor": "#d4af37",
                     "cornerRadius": "md",
+                    "paddingAll": "0px",
                     "contents": [
                         {
                             "type": "button",
                             "action": {"type": "postback", "label": "📋 一覧", "data": "action=show_list", "displayText": "📋 一覧"},
-                            "style": "secondary",
-                            "color": "#fff59d"
+                            "style": "link",
+                            "color": "#555555",
+                            "height": "sm",
+                            "margin": "none"
                         }
                     ]
                 }
@@ -1405,25 +1427,42 @@ def build_spot_list_carousel_horizontal(user_id=None):
             "spacing": "sm",
             "contents": [
                 {
-                    "type": "button",
-                    "action": {"type": "postback", "label": "⚙️ 設定", "data": "action=show_settings", "displayText": "⚙️ 設定"},
-                    "style": "secondary",
-                    "color": "#f8f9fa",
-                    "flex": 1
+                    "type": "box",
+                    "layout": "vertical",
+                    "flex": 1,
+                    "backgroundColor": "#f8f9fa",
+                    "borderWidth": "normal",
+                    "borderColor": "#e0e0e0",
+                    "cornerRadius": "md",
+                    "paddingAll": "0px",
+                    "contents": [
+                        {
+                            "type": "button",
+                            "action": {"type": "postback", "label": "⚙️ 設定", "data": "action=show_settings", "displayText": "⚙️ 設定"},
+                            "style": "link",
+                            "color": "#555555",
+                            "height": "sm",
+                            "margin": "none"
+                        }
+                    ]
                 },
                 {
                     "type": "box",
                     "layout": "vertical",
                     "flex": 1,
-                    "borderWidth": "semi-bold",
+                    "backgroundColor": "#fff59d",
+                    "borderWidth": "normal",
                     "borderColor": "#d4af37",
                     "cornerRadius": "md",
+                    "paddingAll": "0px",
                     "contents": [
                         {
                             "type": "button",
                             "action": {"type": "postback", "label": "📋 一覧", "data": "action=show_list", "displayText": "📋 一覧"},
-                            "style": "secondary",
-                            "color": "#fff59d"
+                            "style": "link",
+                            "color": "#555555",
+                            "height": "sm",
+                            "margin": "none"
                         }
                     ]
                 }
@@ -1561,7 +1600,6 @@ def get_user_setting(user_id):
             row = res.data[0]
             favs = row.get('favorite_spots') or ''
             
-            # 名称変更対応マップ（過去登録された古い名前を自動で新しい名前に変換）
             rename_map = {
                 "五頭": "GOZU",
                 "竜华池": "竜華池",
@@ -1585,7 +1623,6 @@ def get_user_setting(user_id):
             for s in raw_favs:
                 if s in rename_map:
                     s = rename_map[s]
-                # 削除された釣り場は除外する
                 if s not in ["多摩湖", "いなプー"] and s:
                     favs_list.append(s)
                     
@@ -1704,7 +1741,8 @@ def move_favorite_spot(user_id, spot_name, direction):
 def fetch_spot_1hour_data(url):
     try:
         headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}
-        response = requests.get(url, headers=headers, timeout=8)
+        # ▼ 【安全対策②】強制切断を防ぐため待機時間を3.8秒に設定
+        response = requests.get(url, headers=headers, timeout=3.8)
         response.raise_for_status()
         soup = BeautifulSoup(response.text, 'html.parser')
         
@@ -1754,6 +1792,9 @@ def fetch_spot_1hour_data(url):
             if daily_list: weather_by_date[date_str] = daily_list
             if len(weather_by_date) >= 4: break
         return weather_by_date
+    except requests.exceptions.Timeout:
+        # タイムアウト時はNoneを返すことで、無反応にさせず「取得失敗メッセージ」を発生させる
+        return None
     except Exception as e:
         print(f"[スクレイピングエラー] {e}")
         return None
@@ -1839,22 +1880,44 @@ def build_grid_flex_message(spot_name, weather_by_date, hp_url="", map_url="", t
     bottom_buttons = []
     if tel:
         clean_tel = tel.replace('-', '').strip()
-        bottom_buttons.append({"type": "button", "action": {"type": "uri", "label": "📞 電話", "uri": f"tel:{clean_tel}"}, "style": "secondary", "height": "sm", "flex": 2})
+        bottom_buttons.append({
+            "type": "box",
+            "layout": "vertical",
+            "flex": 2,
+            "backgroundColor": "#f8f9fa",
+            "borderWidth": "normal",
+            "borderColor": "#e0e0e0",
+            "cornerRadius": "md",
+            "paddingAll": "0px",
+            "contents": [
+                {
+                    "type": "button",
+                    "action": {"type": "uri", "label": "📞 電話", "uri": f"tel:{clean_tel}"},
+                    "style": "link",
+                    "color": "#555555",
+                    "height": "sm",
+                    "margin": "none"
+                }
+            ]
+        })
     
     bottom_buttons.append({
         "type": "box",
         "layout": "vertical",
         "flex": 3,
-        "borderWidth": "semi-bold",
+        "backgroundColor": "#fff59d",
+        "borderWidth": "normal",
         "borderColor": "#d4af37",
         "cornerRadius": "md",
+        "paddingAll": "0px",
         "contents": [
             {
                 "type": "button",
                 "action": {"type": "postback", "label": "📋 一覧", "data": "action=show_list", "displayText": "📋 一覧"},
-                "style": "secondary",
-                "color": "#fff59d",
-                "height": "sm"
+                "style": "link",
+                "color": "#555555",
+                "height": "sm",
+                "margin": "none"
             }
         ]
     })
@@ -1871,16 +1934,15 @@ def build_grid_flex_message(spot_name, weather_by_date, hp_url="", map_url="", t
     else:
         header_buttons_top.append({"type": "button", "action": {"type": "postback", "label": "⭐️ 登録", "data": f"action=fav_add_and_list&spot={spot_name}"}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs", "color": "#fff59d"})
 
-    clean_hp = clean_url(hp_url)
-    clean_map = clean_url(map_url)
-    if clean_hp: header_buttons_top.append({"type": "button", "action": {"type": "uri", "label": "🌐 HP", "uri": clean_hp}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
-    if clean_map: header_buttons_top.append({"type": "button", "action": {"type": "uri", "label": "🗺️ 地図", "uri": clean_map}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
+    if map_url: 
+        header_buttons_top.append({"type": "button", "action": {"type": "uri", "label": "🗺️ 地図", "uri": map_url}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
 
     header_buttons_bottom = []
-    if clean_url(x_url): header_buttons_bottom.append({"type": "button", "action": {"type": "uri", "label": "𝕏", "uri": x_url}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
-    if clean_url(fb_url): header_buttons_bottom.append({"type": "button", "action": {"type": "uri", "label": "📘 FB", "uri": fb_url}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
-    if clean_url(insta_url): header_buttons_bottom.append({"type": "button", "action": {"type": "uri", "label": "📷 Insta", "uri": insta_url}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
-    if clean_url(blog_url): header_buttons_bottom.append({"type": "button", "action": {"type": "uri", "label": "📝 Blog", "uri": blog_url}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
+    if hp_url: header_buttons_bottom.append({"type": "button", "action": {"type": "uri", "label": "🌐 HP", "uri": hp_url}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
+    if x_url: header_buttons_bottom.append({"type": "button", "action": {"type": "uri", "label": "𝕏", "uri": x_url}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
+    if fb_url: header_buttons_bottom.append({"type": "button", "action": {"type": "uri", "label": "📘 FB", "uri": fb_url}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
+    if insta_url: header_buttons_bottom.append({"type": "button", "action": {"type": "uri", "label": "📷 Insta", "uri": insta_url}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
+    if blog_url: header_buttons_bottom.append({"type": "button", "action": {"type": "uri", "label": "📝 Blog", "uri": blog_url}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
 
     header_contents = [{"type": "text", "text": f"📍 {spot_name}", "color": "#ffffff", "weight": "bold", "size": "lg"}]
     
@@ -2012,6 +2074,11 @@ def handle_postback(event):
 
         elif action == "show_weather":
             target_spot_name, target_url, hp_url, map_url, tel, x_url, fb_url, insta_url, blog_url = get_spot_details(spot_name)
+            
+            if not target_url:
+                line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"⚠️ 【{spot_name}】のデータが見つかりません。"))
+                return
+
             _, favorites = get_user_setting(user_id)
             fav_list = [s.strip() for s in favorites.split(',')]
             fav_list = [s for s in fav_list if s]
@@ -2028,7 +2095,8 @@ def handle_postback(event):
                 flex_msg = build_grid_flex_message(target_spot_name, weather_by_date, hp_url, map_url, tel, x_url, fb_url, insta_url, blog_url, is_favorite=is_fav)
                 line_bot_api.reply_message(event.reply_token, flex_msg)
             else:
-                line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"⚠️ 【{target_spot_name}】の天気データの取得に失敗しました。"))
+                # タイムアウト等で失敗した場合、無反応にせずメッセージを返す
+                line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"⚠️ 【{target_spot_name}】の天気データの取得に失敗しました。少し時間をおいてから再度お試しください。"))
             return
 
         elif action == "fav_add_and_list":
