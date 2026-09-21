@@ -6,6 +6,7 @@ import traceback
 import difflib
 import re
 import threading
+import unicodedata
 from urllib.parse import quote, urlparse, parse_qsl
 from bs4 import BeautifulSoup
 from flask import Flask, request, abort, jsonify
@@ -399,7 +400,6 @@ SPOT_WEATHER_DATA = {
         "tel": "043-228-8283",
         "aliases": ["NOIKE", "ノイケ", "のいけ"]
     },
-    # ▼ パラダイス を 釣パラダイス に変更し、HP_URLを更新しました ▼
     "釣パラダイス": {
         "url": "https://weathernews.jp/onebox/35.653330/140.338663/",
         "hp_url": "https://www.tsuripara.com/",
@@ -1178,6 +1178,13 @@ COLOR_GROUPS = [
     }
 ]
 
+# ▼ 【ゆらぎ対応】全角・半角・大文字・小文字を統一して比較するための安全な変換機能 ▼
+def normalize_name(name_str):
+    if not name_str:
+        return ""
+    # NFKC正規化で全角英数字(４０８など)を半角(408)に変換し、小文字に揃えます
+    return unicodedata.normalize('NFKC', name_str).lower()
+
 def clean_url(url_str):
     if not url_str:
         return ""
@@ -1560,7 +1567,6 @@ def build_spot_list_carousel_horizontal(user_id=None):
 
     return FlexSendMessage(alt_text="釣り場一覧", contents={"type": "carousel", "contents": bubbles})
 
-
 def get_cached_weather(spot_name):
     now = datetime.now(timezone.utc)
     
@@ -1644,6 +1650,7 @@ def get_user_setting(user_id):
         print(f"[Supabase取得エラー] {e}")
         return ('ウェザーニュース', '')
 
+# ▼ 【新規】全角/半角ゆらぎ対応を追加し、入力文字と辞書の文字を確実に一致させます ▼
 def add_favorite_spots(user_id, spot_names):
     if not supabase: return False, [], ["DB接続未完了です。"]
     source, favorites = get_user_setting(user_id)
@@ -1653,8 +1660,15 @@ def add_favorite_spots(user_id, spot_names):
     errors = []
     for spot_name in spot_names:
         target_name = None
+        # 入力を正規化（全角英数字を半角に、大文字を小文字に統一）
+        norm_input = normalize_name(spot_name)
+        
         for spot_key, data in SPOT_WEATHER_DATA.items():
-            if spot_name.lower() == spot_key.lower() or spot_name.lower() in [a.lower() for a in data["aliases"]]:
+            # 辞書のキーと別名も同じように正規化して比較する
+            norm_key = normalize_name(spot_key)
+            norm_aliases = [normalize_name(a) for a in data["aliases"]]
+            
+            if norm_input == norm_key or norm_input in norm_aliases:
                 target_name = spot_key
                 break
         
@@ -1681,6 +1695,7 @@ def add_favorite_spots(user_id, spot_names):
             return False, [], [f"DB保存エラー"]
     return True, added, errors
 
+# ▼ 【新規】全角/半角ゆらぎ対応を追加 ▼
 def remove_favorite_spots(user_id, spot_names):
     if not supabase: return False, [], ["DB接続未完了です。"]
     source, favorites = get_user_setting(user_id)
@@ -1690,8 +1705,13 @@ def remove_favorite_spots(user_id, spot_names):
     errors = []
     for spot_name in spot_names:
         target_name = None
+        norm_input = normalize_name(spot_name)
+        
         for spot_key, data in SPOT_WEATHER_DATA.items():
-            if spot_name.lower() == spot_key.lower() or spot_name.lower() in [a.lower() for a in data["aliases"]]:
+            norm_key = normalize_name(spot_key)
+            norm_aliases = [normalize_name(a) for a in data["aliases"]]
+            
+            if norm_input == norm_key or norm_input in norm_aliases:
                 target_name = spot_key
                 break
         
