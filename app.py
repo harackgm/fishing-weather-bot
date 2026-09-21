@@ -399,16 +399,17 @@ SPOT_WEATHER_DATA = {
         "tel": "043-228-8283",
         "aliases": ["NOIKE", "ノイケ", "のいけ"]
     },
-    "パラダイス": {
+    # ▼ パラダイス を 釣パラダイス に変更し、HP_URLを更新しました ▼
+    "釣パラダイス": {
         "url": "https://weathernews.jp/onebox/35.653330/140.338663/",
-        "hp_url": "http://tsuripara.planet.bindcloud.jp/",
+        "hp_url": "https://www.tsuripara.com/",
         "x_url": "",
         "fb_url": "",
         "insta_url": "",
         "blog_url": "",
         "search_name": "釣りパラダイス 山武",
         "tel": "043-445-1216",
-        "aliases": ["パラダイス", "釣りパラダイス", "つりぱら"]
+        "aliases": ["釣パラダイス", "パラダイス", "釣りパラダイス", "つりぱら"]
     },
 
     # --- 埼玉県 ---
@@ -1147,7 +1148,7 @@ COLOR_GROUPS = [
         "sub_groups": [
             {"bg": "#e6f0fa", "spots": ["東山湖", "すその", "須川", "アルクス焼津", "浜名湖"]},
             {"bg": "#d4e6f1", "spots": ["足柄", "中津川", "早戸川", "王禅寺", "開成", "浅川国際"]},
-            {"bg": "#cce5ff", "spots": ["座間・amaz", "ジョイバレー", "ウォルトン", "NOIKE", "パラダイス"]}
+            {"bg": "#cce5ff", "spots": ["座間・amaz", "ジョイバレー", "ウォルトン", "NOIKE", "釣パラダイス"]}
         ]
     },
     {
@@ -1170,7 +1171,7 @@ COLOR_GROUPS = [
         "title": "📍 甲信・東北・東海・関西",
         "header_bg": "#6a1b9a",
         "sub_groups": [
-            {"bg": "#f3e5f5", "spots": ["鹿留", "小菅", "奈良子", "シルフ", "JF in Tsugane", "竜华池", "平谷湖", "ハーブの里", "ニレ池", "鹿島槍", "つきの池", "あずみ野"]},
+            {"bg": "#f3e5f5", "spots": ["鹿留", "小菅", "奈良子", "シルフ", "JF in Tsugane", "竜華池", "平谷湖", "ハーブの里", "ニレ池", "鹿島槍", "つきの池", "あずみ野"]},
             {"bg": "#e1bee7", "spots": ["GP不忘", "白河", "ほのぼの", "WaDoNa", "鶴沼川", "オーパ", "あいづ", "上浜", "GOZU"]},
             {"bg": "#d1c4e9", "spots": ["FCE瑞浪", "３９", "醒井", "高島の泉", "千早川"]}
         ]
@@ -1476,7 +1477,7 @@ def build_spot_list_carousel_horizontal(user_id=None):
                 "type": "box", "layout": "horizontal", "backgroundColor": "#d4af37", "paddingAll": "10px", "alignItems": "center",
                 "contents": [
                     {"type": "text", "text": "⭐ お気に入り釣り場", "color": "#ffffff", "weight": "bold", "size": "md", "flex": 1},
-                    {"type": "text", "text": "(最大30箇所)", "color": "#eeeeee", "size": "xs", "align": "end", "flex": 0}
+                    {"type": "text", "text": f"({len(fav_list)}/{MAX_FAVORITES})", "color": "#eeeeee", "size": "xs", "align": "end", "flex": 0}
                 ]
             },
             "body": {"type": "box", "layout": "vertical", "paddingAll": "6px", "contents": fav_rows}
@@ -1559,6 +1560,7 @@ def build_spot_list_carousel_horizontal(user_id=None):
 
     return FlexSendMessage(alt_text="釣り場一覧", contents={"type": "carousel", "contents": bubbles})
 
+
 def get_cached_weather(spot_name):
     now = datetime.now(timezone.utc)
     
@@ -1624,7 +1626,8 @@ def get_user_setting(user_id):
                 "FAJ": "Ｊ",
                 "朝霞": "朝霞Ｇ",
                 "不忘": "GP不忘",
-                "座間": "座間・amaz"
+                "座間": "座間・amaz",
+                "パラダイス": "釣パラダイス"
             }
             
             raw_favs = [s.strip() for s in favs.split(',')]
@@ -1895,7 +1898,7 @@ def build_grid_flex_message(spot_name, weather_by_date, hp_url="", map_url="", t
             "borderWidth": "normal",
             "borderColor": "#e0e0e0",
             "cornerRadius": "md",
-            "paddingAll": "none",
+            "paddingAll": "0px",
             "contents": [
                 {
                     "type": "button",
@@ -1916,7 +1919,7 @@ def build_grid_flex_message(spot_name, weather_by_date, hp_url="", map_url="", t
         "borderWidth": "normal",
         "borderColor": "#d4af37",
         "cornerRadius": "md",
-        "paddingAll": "none",
+        "paddingAll": "0px",
         "contents": [
             {
                 "type": "button",
@@ -1988,7 +1991,6 @@ def handle_message(event):
         raw_msg = event.message.text.strip()
         user_id = event.source.user_id
 
-        # ▼ テキストによる追加時の件数表示対応
         add_match = re.match(r'^追加[\s:：]+(.+)$', raw_msg, re.DOTALL)
         if add_match:
             spots_str = add_match.group(1).strip()
@@ -2013,7 +2015,6 @@ def handle_message(event):
             line_bot_api.reply_message(event.reply_token, [TextSendMessage(text="\n".join(reply_lines)), flex_msg])
             return
 
-        # ▼ テキストによる削除時の件数表示対応
         del_match = re.match(r'^削除[\s:：]+(.+)$', raw_msg, re.DOTALL)
         if del_match:
             spots_str = del_match.group(1).strip()
@@ -2119,7 +2120,6 @@ def handle_postback(event):
                 line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"⚠️ 【{target_spot_name}】の天気データの取得に失敗しました。少し時間をおいてから再度お試しください。"))
             return
 
-        # ▼ ボタンタップでの追加時の件数表示対応
         elif action == "fav_add_and_list":
             success, added, errors = add_favorite_spots(user_id, [spot_name])
             _, favorites = get_user_setting(user_id)
@@ -2137,7 +2137,6 @@ def handle_postback(event):
             flex_msg = build_delete_confirm_message(spot_name, "settings")
             line_bot_api.reply_message(event.reply_token, flex_msg)
 
-        # ▼ ボタンタップでの削除時の件数表示対応
         elif action == "fav_del_execute_and_list":
             success, removed, errors = remove_favorite_spots(user_id, [spot_name])
             _, favorites = get_user_setting(user_id)
@@ -2147,7 +2146,6 @@ def handle_postback(event):
             flex_msg = build_spot_list_carousel_horizontal(user_id=user_id)
             line_bot_api.reply_message(event.reply_token, [TextSendMessage(text=msg), flex_msg])
 
-        # ▼ 設定画面での削除時の件数表示対応
         elif action == "fav_del_execute_and_settings":
             success, removed, errors = remove_favorite_spots(user_id, [spot_name])
             _, favorites = get_user_setting(user_id)
