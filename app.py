@@ -53,7 +53,6 @@ MEMORY_CACHE = {}
 
 # プッシュ通知安全装置設定 (将来用)
 MAX_PUSH_LIMIT = 10  # 一度に通知する最大人数
-# ★テスト用ID（本番運用時は空にする）
 TEST_MODE_USER_ID = "" 
 
 # ==========================================
@@ -1588,7 +1587,8 @@ def build_spot_list_carousel_horizontal(user_id=None):
                             "margin": "none"
                         }
                     ]
-                },
+                }
+                ,
                 {
                     "type": "box",
                     "layout": "vertical",
@@ -1928,17 +1928,20 @@ def fetch_spot_1hour_data(url):
                 if daily_list: weather_by_date[date_str] = daily_list
                 if len(weather_by_date) >= 4: break
 
-        # 週間天気（2週間天気）の取得ロジック（スマホ版）
+        # 週間天気（2週間天気）の取得ロジック強化版（スマホリスト抽出＋PCテーブル抽出両対応）
         try:
-            w10days = soup.find('div', id='flick_list_10days') or soup.find('div', class_=re.compile(r'flick_list_\d+days'))
-            if w10days:
-                lists = w10days.find_all('ul', class_='list')
+            weekly_extracted = False
+            
+            # --- スマホリスト構造からの抽出 ---
+            w_list_container = soup.find('div', id=re.compile(r'flick_list_\d+days')) or soup.find('div', class_=re.compile(r'flick_list_\d+days'))
+            if w_list_container:
+                lists = w_list_container.find_all('ul', class_='list')
                 for item in lists:
                     if 'past' in item.get('class', []): continue
                     
                     date_tag = item.find('li', class_='day')
                     if not date_tag: continue
-                    date_text = date_tag.get_text(separator="\n").strip().split('\n')[0] 
+                    date_text = date_tag.get_text(separator="").strip().replace("\n", "") 
                     
                     img_url = "https://gvs.weathernews.jp/onebox/img/wxicon/200.png"
                     weather_tag = item.find('li', class_='weather')
@@ -1960,31 +1963,58 @@ def fetch_spot_1hour_data(url):
                     rain_prob = rain_tag.text.strip() if rain_tag else "-"
                     
                     weekly_data.append({
-                        "date": str(date_text),
-                        "img_url": str(img_url),
-                        "temp_max": str(t_max),
-                        "temp_min": str(t_min),
-                        "rain_prob": str(rain_prob)
+                        "date": date_text,
+                        "img_url": img_url,
+                        "temp_max": t_max,
+                        "temp_min": t_min,
+                        "rain_prob": rain_prob
                     })
+                if weekly_data:
+                    weekly_extracted = True
+
+            # --- PCテーブル構造からの抽出（スマホで取れなかった場合の保険） ---
+            if not weekly_extracted:
+                for table in soup.find_all('table'):
+                    dates_list, weathers, max_temps, min_temps, rains = [], [], [], [], []
+                    for tr in table.find_all('tr'):
+                        cells = tr.find_all(['th', 'td'])
+                        if not cells or len(cells) < 2: continue
+                        
+                        header_text = cells[0].get_text().strip()
+                        data_cells = cells[1:]
+                        
+                        if '日' in header_text and not dates_list:
+                            dates_list = [td.get_text(separator="").replace('\n', '').replace(' ', '').replace('\r', '') for td in data_cells]
+                        elif '天気' in header_text and not weathers:
+                            for td in data_cells:
+                                img = td.find('img')
+                                img_src = img['src'] if img and 'src' in img.attrs else "https://gvs.weathernews.jp/onebox/img/wxicon/200.png"
+                                if img_src.startswith('//'): img_src = 'https:' + img_src
+                                elif img_src.startswith('/'): img_src = 'https://weathernews.jp' + img_src
+                                weathers.append(img_src)
+                        elif '最高' in header_text and not max_temps:
+                            max_temps = [re.sub(r'[^\d\-]', '', td.get_text()) for td in data_cells]
+                        elif '最低' in header_text and not min_temps:
+                            min_temps = [re.sub(r'[^\d\-]', '', td.get_text()) for td in data_cells]
+                        elif '降水' in header_text and not rains:
+                            rains = [re.sub(r'[^\d]', '', td.get_text()) + '%' if re.sub(r'[^\d]', '', td.get_text()) else '-' for td in data_cells]
+
+                    if dates_list and weathers and max_temps and min_temps and rains:
+                        max_len = min(len(dates_list), len(weathers), len(max_temps), len(min_temps), len(rains))
+                        for i in range(max_len):
+                            if dates_list[i]:
+                                weekly_data.append({
+                                    "date": str(dates_list[i]),
+                                    "img_url": str(weathers[i]),
+                                    "temp_max": str(max_temps[i]) if max_temps[i] else "-",
+                                    "temp_min": str(min_temps[i]) if min_temps[i] else "-",
+                                    "rain_prob": str(rains[i])
+                                })
+                        break
         except Exception as e:
-            print(f"[Weekly Data Extract Error] {e}")
+            print(f"[Weekly Extract Error] {e}")
 
-        # エラーを出さないための特殊キー "__weekly__" に保存（失敗時はダミー）
-        if not weekly_data or len(weekly_data) < 8:
-            now_dt = datetime.now(timezone(timedelta(hours=9)))
-            weekly_data = []
-            for i in range(8):
-                day_dt = now_dt + timedelta(days=i)
-                w_str = ["(月)", "(火)", "(水)", "(木)", "(金)", "(土)", "(日)"][day_dt.weekday()]
-                date_label = f"{day_dt.day}{w_str}"
-                weekly_data.append({
-                    "date": date_label,
-                    "img_url": "https://gvs.weathernews.jp/onebox/img/wxicon/200.png",
-                    "temp_max": "-",
-                    "temp_min": "-",
-                    "rain_prob": "-"
-                })
-
+        # エラーを出さないための特殊キー "__weekly__" に保存
         weather_by_date["__weekly__"] = weekly_data
             
         return weather_by_date
@@ -2000,11 +2030,10 @@ def get_cached_weather(spot_name):
     if spot_name in MEMORY_CACHE:
         data, updated_time = MEMORY_CACHE[spot_name]
         if now - updated_time <= timedelta(hours=1):
-            if isinstance(data, dict):
-                weekly = data.get("__weekly__", [])
-                # ★ 古いデータや空データの時は強制的にリフレッシュ
-                if not weekly or len(weekly) < 8 or weekly[0].get("temp_max") == "-":
-                    return None
+            # ★ ダミーデータしか入っていないキャッシュの場合は強制リフレッシュ
+            weekly = data.get("__weekly__", []) if isinstance(data, dict) else []
+            if not weekly or len(weekly) < 8 or weekly[0].get("temp_max") == "-":
+                return None
             return data
             
     if not supabase: return None
@@ -2018,9 +2047,9 @@ def get_cached_weather(spot_name):
                     updated_time = datetime.fromisoformat(updated_at_str.replace('Z', '+00:00'))
                     if now - updated_time <= timedelta(hours=1):
                         weather_data = row.get('weather_data')
+                        # ★ ダミーデータしか入っていないキャッシュの場合は強制リフレッシュ
                         if isinstance(weather_data, dict):
                             weekly = weather_data.get("__weekly__", [])
-                            # ★ 古いデータや空データの時は強制的にリフレッシュ
                             if not weekly or len(weekly) < 8 or weekly[0].get("temp_max") == "-":
                                 return None
                         MEMORY_CACHE[spot_name] = (weather_data, updated_time)
@@ -2084,7 +2113,7 @@ def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_
         if is_holiday_flag or "(日)" in date_str:
             header_bg_color = "#ffe6e6"
             header_text_color = "#cc0000"
-            if is_holiday_flag and "🇯🇵" not in display_date_str:
+            if is_holiday_flag and "🇯 ঐতি {date_str}" not in display_date_str:
                 display_date_str = f"🇯🇵 {date_str}"
         elif "(土)" in date_str:
             header_bg_color = "#e6f2ff"
@@ -2152,7 +2181,7 @@ def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_
             })
         return {
             "type": "box", "layout": "horizontal", "margin": "md", "spacing": "xs",
-            "backgroundColor": "#f0f0f0", "paddingAll": "sm", "cornerRadius": "sm",
+            "backgroundColor": "#f4f4f4", "paddingAll": "8px", "cornerRadius": "sm",
             "contents": cols
         }
 
@@ -2356,7 +2385,7 @@ def handle_message(event):
                     print(f" - {d.property}: {d.message}")
         except:
             pass
-        try: line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ LINE通信エラーが発生しました。（データ容量制限エラー等の可能性があります）"))
+        try: line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ LINE通信エラーが発生しました。（カード形式エラー等の可能性があります）"))
         except Exception: pass
     except Exception as e:
         print("\n=== システムエラー詳細 ===")
