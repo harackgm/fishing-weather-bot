@@ -633,7 +633,7 @@ SPOT_WEATHER_DATA = {
         "tel": "0551-20-7888",
         "aliases": ["JF in Tsugane", "Tsugane", "ジョイフィールド", "つがね", "ツガネ", "じょいふぃーるど"]
     },
-    "竜华池": {
+    "竜華池": {
         "url": "https://weathernews.jp/onebox/35.681978/138.576164/",
         "hp_url": "https://fishingmarketbear.wixsite.com/ryugaike",
         "x_url": "",
@@ -988,6 +988,18 @@ SPOT_WEATHER_DATA = {
     },
 
     # --- 東北・東海・関西 ---
+    # ★ 表記を「Lost Lures」に変更し、ゆらぎ辞書を強化
+    "Lost Lures": {
+        "url": "https://weathernews.jp/onebox/37.081688/139.680305/",
+        "hp_url": "https://www.lost-lures.com/",
+        "x_url": "https://x.com/lostlures",
+        "fb_url": "",
+        "insta_url": "",
+        "blog_url": "https://www.youtube.com/@lostlures/videos",
+        "search_name": "ロストルアーズ",
+        "tel": "0241-66-3266",
+        "aliases": ["Lost Lures", "lost lures", "ロストルアーズ", "ろすとるあーず", "ろすとるあー", "ロストルアー", "ろすと", "ロスト"]
+    },
     "GP不忘": {
         "url": "https://weathernews.jp/onebox/38.042491/140.554478/",
         "hp_url": "http://www.fubou.jp/",
@@ -1176,7 +1188,8 @@ COLOR_GROUPS = [
         "header_bg": "#6a1b9a",
         "sub_groups": [
             {"bg": "#f3e5f5", "spots": ["鹿留", "小菅", "奈良子", "シルフ", "JF in Tsugane", "竜華池", "平谷湖", "ハーブの里", "ニレ池", "鹿島槍", "つきの池", "あずみ野"]},
-            {"bg": "#e1bee7", "spots": ["GP不忘", "白河", "ほのぼの", "WaDoNa", "鶴沼川", "オーパ", "あいづ", "上浜", "GOZU"]},
+            # ★ 一覧ボタンの表示名を「Lost Lures」に変更
+            {"bg": "#e1bee7", "spots": ["Lost Lures", "GP不忘", "白河", "ほのぼの", "WaDoNa", "鶴沼川", "オーパ", "あいづ", "上浜", "GOZU"]},
             {"bg": "#d1c4e9", "spots": ["FCE瑞浪", "３９", "醒井", "高島の泉", "千早川"]}
         ]
     }
@@ -1594,7 +1607,6 @@ def build_spot_list_carousel_horizontal(user_id=None):
                     "contents": [
                         {"type": "text", "text": "🛑 配信停止・解除", "weight": "bold", "size": "sm", "color": "#333333"},
                         {"type": "text", "text": "このBotの利用を停止したい場合は、トーク画面右上のメニュー「≡」から「ブロック」を行ってください。", "wrap": True, "size": "xs", "color": "#666666"},
-                        # ★ 視認性向上のための分割と太字化
                         {"type": "text", "text": "完全に消去する場合", "weight": "bold", "size": "xs", "color": "#333333", "margin": "md"},
                         {"type": "text", "text": "「トーク一覧」画面に戻り、このBotのトークを長押し（iPhoneは左スワイプ）して「削除」してください。", "wrap": True, "size": "xs", "color": "#666666"}
                     ]
@@ -1674,7 +1686,8 @@ def get_user_setting(user_id):
                 "座間": "座間・amaz",
                 "パラダイス": "釣パラダイス",
                 "蛇尾川": "蛇尾（さび）川",
-                "大崎": "大崎・赤城"
+                "大崎": "大崎・赤城",
+                "ロストルアーズ": "Lost Lures"
             }
             
             raw_favs = [s.strip() for s in favs.split(',')]
@@ -2120,7 +2133,7 @@ def handle_message(event):
         print(e.error.message)
         for d in e.error.details:
             print(f" - {d.property}: {d.message}")
-        try: line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ LINE通信エラーが発生しました。（データ容量制限エラー等の可能性があります）"))
+        try: line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ LINE通信エラーが発生しました。（データ容量オーバー等の可能性があります）"))
         except Exception: pass
     except Exception as e:
         print("\n=== システムエラー詳細 ===")
