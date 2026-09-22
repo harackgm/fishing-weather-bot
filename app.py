@@ -1723,7 +1723,7 @@ def get_user_setting(user_id):
             
             rename_map = {
                 "五頭": "GOZU",
-                "竜华池": "竜華池",
+                "竜华池": "竜华池",
                 "ハーブ": "ハーブの里",
                 "サンクチュアリ": "３９",
                 "高島": "高島の泉",
@@ -1947,7 +1947,6 @@ def fetch_spot_1hour_data(url):
                 # JSONの中から14日間天気の配列を探し出す再帰関数
                 def find_14days_forecast(obj):
                     if isinstance(obj, dict):
-                        # Weathernewsの14日間予報が含まれる特徴的なキーを探す
                         for key in ['week', 'daily', 'forecast14Days', 'days']:
                             if key in obj and isinstance(obj[key], list) and len(obj[key]) >= 7:
                                 return obj[key]
@@ -1964,7 +1963,6 @@ def fetch_spot_1hour_data(url):
                 
                 if forecast_list:
                     for w in forecast_list[:14]:
-                        # JSON内の構造に合わせて取得
                         date_str_raw = str(w.get('date', w.get('targetDate', '')))
                         
                         date_label = "-"
@@ -1976,15 +1974,12 @@ def fetch_spot_1hour_data(url):
                             except:
                                 date_label = date_str_raw[-5:]
                                 
-                        # アイコン
                         icon_num = str(w.get('icon', w.get('weatherCode', '200')))
                         img_url = f"https://gvs.weathernews.jp/onebox/img/wxicon/{icon_num}.png"
                         
-                        # 気温
                         t_max = str(w.get('tmax', w.get('tempMax', '-')))
                         t_min = str(w.get('tmin', w.get('tempMin', '-')))
                         
-                        # 降水確率
                         r_prob = str(w.get('pop', w.get('rainProb', '-')))
                         if r_prob != "-" and r_prob != "null" and not r_prob.endswith('%'):
                             r_prob += "%"
@@ -2001,10 +1996,9 @@ def fetch_spot_1hour_data(url):
             except Exception as e:
                 print(f"[JSON Extract Error] {e}")
 
-        # JSON抽出に失敗した場合の保険（正規表現の荒業で強制的に引っこ抜く）
+        # JSON抽出に失敗した場合の保険（正規表現で強制的に引っこ抜く）
         if not weekly_data or len(weekly_data) < 4:
             try:
-                # ページソースから最高気温、最低気温、降水確率の配列を無理やり見つける
                 tmax_match = re.search(r'"tmax":\[([\d\,\-\s]+)\]', html_text)
                 tmin_match = re.search(r'"tmin":\[([\d\,\-\s]+)\]', html_text)
                 pop_match = re.search(r'"pop":\[([\d\,\-\s]+)\]', html_text)
@@ -2019,14 +2013,14 @@ def fetch_spot_1hour_data(url):
                     if icon_match:
                         icon_list = [i.strip(' "') for i in icon_match.group(1).split(',')]
                     
-                    # 日付の生成（今日から14日間）
                     now_dt = datetime.now(timezone(timedelta(hours=9)))
                     for i in range(min(len(tmax_list), 14)):
                         if not tmax_list[i].strip() or tmax_list[i].strip() == 'null': continue
                         
                         day_dt = now_dt + timedelta(days=i)
                         w_str = ["(月)", "(火)", "(水)", "(木)", "(金)", "(土)", "(日)"][day_dt.weekday()]
-                        date_label = f"{dt.day}{w_str}"
+                        # ★ 前回のタイポ修正箇所 ★
+                        date_label = f"{day_dt.day}{w_str}"
                         
                         r_val = pop_list[i].strip() if i < len(pop_list) else "-"
                         if r_val != "-" and r_val != 'null': r_val += "%"
@@ -2134,7 +2128,10 @@ def get_cached_weather(spot_name):
         if now - updated_time <= timedelta(hours=1):
             if isinstance(data, dict):
                 weekly = data.get("__weekly__", [])
-                # ★ キャッシュが空、またはハイフン（ダミーデータ）の時は強制的に破棄して取り直す安全装置
+                # ★ キャッシュのバージョンチェック（今回から "wn_direct" を追加）
+                # これにより、前回のAPIデータ等の古い形式は強制的に破棄されます。
+                if data.get("_version") != "wn_direct":
+                    return None
                 if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-":
                     return None
             return data
@@ -2152,7 +2149,9 @@ def get_cached_weather(spot_name):
                         weather_data = row.get('weather_data')
                         if isinstance(weather_data, dict):
                             weekly = weather_data.get("__weekly__", [])
-                            # ★ Supabaseのデータがハイフン（ダミー）の時も強制的に破棄して取り直す
+                            # ★ Supabaseの古いキャッシュデータも強制破棄
+                            if weather_data.get("_version") != "wn_direct":
+                                return None
                             if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-":
                                 return None
                         MEMORY_CACHE[spot_name] = (weather_data, updated_time)
@@ -2166,6 +2165,8 @@ def get_cached_weather(spot_name):
 
 def save_cached_weather(spot_name, weather_data):
     now = datetime.now(timezone.utc)
+    # ★ バージョン情報を追加し、正しいデータであることを証明する
+    weather_data["_version"] = "wn_direct"
     MEMORY_CACHE[spot_name] = (weather_data, now)
     
     if not supabase: return
@@ -2181,7 +2182,7 @@ def save_cached_weather(spot_name, weather_data):
 def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_url="", tel="", x_url="", fb_url="", insta_url="", blog_url="", yt_url="", is_favorite=False):
     # 週間天気データを分離し、既存の描画ロジックが壊れないようにする
     weekly_data = weather_data.get("__weekly__", []) if isinstance(weather_data, dict) else []
-    dates = [d for d in weather_data.keys() if d != "__weekly__"]
+    dates = [d for d in weather_data.keys() if d != "__weekly__" and d != "_version"]
     
     weather_by_date = weather_data
 
