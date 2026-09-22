@@ -1853,15 +1853,15 @@ def build_grid_flex_message(spot_name, weather_by_date, hp_url="", hp2_url="", m
         if found:
             break
 
-    # ★ 3日目以降を2時間おきに間引く処理を追加
+    # ★ 4日目のみ2時間おきに間引く処理
     def create_day_column(date_str, day_index):
         if not date_str:
             return {"type": "box", "layout": "vertical", "flex": 1, "contents": [{"type": "text", "text": "-", "color": "#cccccc", "align": "center", "size": "xs"}]}
         
         daily_data = weather_by_date[date_str]
 
-        # ★ ここでday_index（0=1日目, 1=2日目, 2=3日目...）を判定し、3日目以降なら偶数時間に間引く
-        if day_index >= 2:
+        # ★ day_indexが3（4日目）の場合のみ偶数時間に間引く
+        if day_index >= 3:
             filtered_data = []
             for d in daily_data:
                 time_val = d.get('time', '').replace("時", "").strip()
