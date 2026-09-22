@@ -1932,67 +1932,59 @@ def fetch_spot_1hour_data(url):
         try:
             dates_list, weathers, max_temps, min_temps, rains = [], [], [], [], []
             
-            # ウェザーニュースの画面上のあらゆる要素群を探索
-            for container in soup.find_all(['div', 'ul', 'table']):
-                text_content = container.get_text(separator="", strip=True)
-                
-                # 週間天気の表であることを文字キーワードで判定
-                if '日' in text_content and '最高' in text_content and '最低' in text_content and '降水' in text_content and len(text_content) < 1500:
+            # ウェザーニュースの画面上にある表（table）を片っ端から調べる
+            for table in soup.find_all('table'):
+                for tr in table.find_all('tr'):
+                    cells = tr.find_all(['th', 'td'])
+                    if not cells or len(cells) < 2: continue
                     
-                    # 見つけたブロック（表の行）を一行ずつ調べる
-                    for child in container.find_all(['div', 'tr', 'ul', 'li']):
-                        row_text = child.get_text(separator="", strip=True)
-                        if not row_text: continue
-                        
-                        # 改行区切りでテキストをばらして配列にする
-                        raw_list = child.get_text(separator="\n", strip=True).split('\n')
-                        
-                        # 抽出：日付
-                        if row_text.startswith('日') and len(raw_list) > 1:
-                            if not dates_list:
-                                joined = "".join(raw_list[1:])
-                                dates_list = re.findall(r'\d{1,2}\([月火水木金土日]\)', joined)
-                        
-                        # 抽出：最高気温（数字とマイナス記号以外を消す）
-                        elif row_text.startswith('最高') and len(raw_list) > 1:
-                            if not max_temps:
-                                max_temps = [re.sub(r'[^\d\-]', '', t) for t in raw_list[1:] if re.search(r'\d', t)]
-                                
-                        # 抽出：最低気温（数字とマイナス記号以外を消す）
-                        elif row_text.startswith('最低') and len(raw_list) > 1:
-                            if not min_temps:
-                                min_temps = [re.sub(r'[^\d\-]', '', t) for t in raw_list[1:] if re.search(r'\d', t)]
-                                
-                        # 抽出：降水確率（数字だけを取り出して％をつける）
-                        elif row_text.startswith('降水') and len(raw_list) > 1:
-                            if not rains:
-                                rains = [re.sub(r'[^\d]', '', t) + '%' for t in raw_list[1:] if re.search(r'\d', t)]
-                                
-                        # 抽出：天気アイコン（行内に画像タグがある場合）
-                        elif '天気' in row_text and child.find('img'):
-                            if not weathers:
-                                for img in child.find_all('img'):
-                                    src = img.get('src', '')
-                                    if 'wxicon' in src:
-                                        if src.startswith('//'): src = 'https:' + src
-                                        elif src.startswith('/'): src = 'https://weathernews.jp' + src
-                                        weathers.append(src)
-                                        
-                    # 全部揃ったら探索終了
-                    if dates_list and max_temps and min_temps and rains:
-                        break
+                    header_text = cells[0].get_text(strip=True)
+                    data_cells = cells[1:]
+                    
+                    # 最初のセルが「日」だったら日付データ
+                    if header_text in ['日', '日付'] and not dates_list:
+                        dates_list = [td.get_text(separator="").replace('\n', '').replace(' ', '').replace('\r', '') for td in data_cells]
+                    # 最初のセルが「天気」だったらアイコンデータ
+                    elif '天気' in header_text and not weathers:
+                        for td in data_cells:
+                            img = td.find('img')
+                            if img and 'src' in img.attrs:
+                                src = img['src']
+                                if src.startswith('//'): src = 'https:' + src
+                                elif src.startswith('/'): src = 'https://weathernews.jp' + src
+                                weathers.append(src)
+                            else:
+                                weathers.append("https://gvs.weathernews.jp/onebox/img/wxicon/200.png")
+                    # 最初のセルが「最高」だったら最高気温
+                    elif '最高' in header_text and not max_temps:
+                        max_temps = [re.sub(r'[^\d\-]', '', td.get_text(strip=True)) for td in data_cells]
+                    # 最初のセルが「最低」だったら最低気温
+                    elif '最低' in header_text and not min_temps:
+                        min_temps = [re.sub(r'[^\d\-]', '', td.get_text(strip=True)) for td in data_cells]
+                    # 最初のセルが「降水」だったら降水確率
+                    elif '降水' in header_text and not rains:
+                        rains = [re.sub(r'[^\d]', '', td.get_text(strip=True)) + '%' if re.sub(r'[^\d]', '', td.get_text(strip=True)) else '-' for td in data_cells]
+                
+                # すべてのデータが見つかれば探索終了
+                if dates_list and max_temps and min_temps and rains:
+                    break
 
             # 抽出したリストを整形して1つのデータセットにまとめる
             max_len = min(len(dates_list), len(max_temps), len(min_temps), len(rains))
             if max_len > 0:
                 for i in range(max_len):
+                    if not dates_list[i]: continue
                     w_img = weathers[i] if i < len(weathers) else "https://gvs.weathernews.jp/onebox/img/wxicon/200.png"
+                    t_max = max_temps[i] if max_temps[i] else "-"
+                    t_min = min_temps[i] if min_temps[i] else "-"
+                    r_prob = rains[i] if rains[i] else "-"
+                    
                     weekly_data.append({
                         "date": str(dates_list[i]),
                         "img_url": str(w_img),
-                        "temp_max": str(max_temps[i]),
-                        "temp_min": str(min_temps[i]),
-                        "rain_prob": str(rains[i])
+                        "temp_max": str(t_max),
+                        "temp_min": str(t_min),
+                        "rain_prob": str(r_prob)
                     })
         except Exception as e:
             print(f"[Weekly Extract Error] {e}")
@@ -2384,7 +2376,7 @@ def handle_message(event):
                     print(f" - {d.property}: {d.message}")
         except:
             pass
-        try: line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ LINE通信エラーが発生しました。（データ容量制限エラー等の可能性があります）"))
+        try: line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ LINE通信エラーが発生しました。（カード形式エラー等の可能性があります）"))
         except Exception: pass
     except Exception as e:
         print("\n=== システムエラー詳細 ===")
