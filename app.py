@@ -124,6 +124,8 @@ SPOT_WEATHER_DATA = {
     # --- 栃木県 ---
     "キングフィッシャー": {
         "url": "https://weathernews.jp/onebox/36.907054/140.078650/",
+        # ★ キングフィッシャーのみ tenki.jp のURLを追加
+        "tenki_url": "https://tenki.jp/forecast/3/12/4120/9210/10days.html",
         "hp_url": "https://kingfisher-tochigi.com/",
         "x_url": "",
         "fb_url": "",
@@ -1306,7 +1308,8 @@ def clean_url(url_str):
 def get_spot_details(spot_key):
     data = SPOT_WEATHER_DATA.get(spot_key)
     if not data:
-        return spot_key, None, "", "", "", "", "", "", "", "", ""
+        # ★ tenki_url の枠を含めるため、戻り値を 12個 に増やす
+        return spot_key, None, "", "", "", "", "", "", "", "", "", None
     map_url = f"https://www.google.com/maps/search/?api=1&query={quote(data.get('search_name', spot_key))}"
     
     return (
@@ -1320,7 +1323,8 @@ def get_spot_details(spot_key):
         clean_url(data.get("fb_url", "")),
         clean_url(data.get("insta_url", "")),
         clean_url(data.get("blog_url", "")),
-        clean_url(data.get("yt_url", ""))
+        clean_url(data.get("yt_url", "")),
+        clean_url(data.get("tenki_url", "")) # ★ tenki.jpのURLを返す
     )
 
 def guess_date_from_string(date_str, now_date):
@@ -1873,7 +1877,7 @@ def move_favorite_spot(user_id, spot_name, direction):
         return False, f"移動失敗: {e}"
 
 # ==========================================
-# ★ 週間天気データを取得する高精度APIロジック ★
+# ★ 週間天気データを取得する高精度API & tenki.jpロジック ★
 # ==========================================
 def extract_lat_lon(url):
     m = re.search(r'onebox/([0-9.]+)/([0-9.]+)', url)
@@ -1883,8 +1887,8 @@ def extract_lat_lon(url):
 
 def fetch_weekly_data_from_api(lat, lon, exclude_dates):
     try:
-        # ★ 日本の気象庁（JMA）を含む最適な高精度モデルを自動選択する引数 &models=best_match を追加
-        api_url = f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&daily=weathercode,temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=Asia%2FTokyo&forecast_days=14&models=best_match"
+        # APIの場合は従来通り、WNと日付が被らないように抽出（他釣り場用）
+        api_url = f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&daily=weathercode,temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=Asia%2FTokyo"
         res = requests.get(api_url, timeout=5.0)
         res.raise_for_status()
         data = res.json()
@@ -1896,7 +1900,6 @@ def fetch_weekly_data_from_api(lat, lon, exclude_dates):
         temp_min = daily.get("temperature_2m_min", [])
         rain_prob = daily.get("precipitation_probability_max", [])
         
-        # もし best_match モデルで降水確率が取れなかった場合の保険
         if not rain_prob:
             rain_prob = [0] * len(times)
         
@@ -1906,11 +1909,10 @@ def fetch_weekly_data_from_api(lat, lon, exclude_dates):
             w_str = ["(月)", "(火)", "(水)", "(木)", "(金)", "(土)", "(日)"][dt.weekday()]
             date_label = f"{dt.day}{w_str}"
             
-            # ★ 1時間予報と日付が被っているものはスキップして次に進む
+            # exclude_dates には "25(金)" のように「日」を抜いた形式が入っている想定
             if date_label in exclude_dates:
                 continue
                 
-            # WMO天気コードをWeathernews風のアイコンに変換
             code = weathercodes[i] if i < len(weathercodes) and weathercodes[i] is not None else 0
             if code in [0, 1]: img_url = "https://gvs.weathernews.jp/onebox/img/wxicon/100.png"
             elif code in [2, 3, 45, 48]: img_url = "https://gvs.weathernews.jp/onebox/img/wxicon/200.png"
@@ -1929,7 +1931,6 @@ def fetch_weekly_data_from_api(lat, lon, exclude_dates):
                 "rain_prob": r_prob
             })
             
-            # 8日分取得できたら終了
             if len(weekly_data) >= 8:
                 break
                 
@@ -1938,7 +1939,99 @@ def fetch_weekly_data_from_api(lat, lon, exclude_dates):
         print(f"[Open-Meteo API Error] {e}")
         return []
 
-def fetch_spot_1hour_data(url):
+# ★ 新規追加: tenki.jp から10日間予報をスクレイピングする関数 ★
+def fetch_weekly_data_from_tenki(tenki_url, exclude_dates):
+    try:
+        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
+        response = requests.get(tenki_url, headers=headers, timeout=5.0)
+        response.raise_for_status()
+        soup = BeautifulSoup(response.text, 'html.parser')
+        
+        dates_list, weathers, max_temps, min_temps, rains = [], [], [], [], []
+        
+        # tenki.jp の10日間予報テーブルを探す（class名が一致しない場合のフォールバックも考慮してtrで全探索）
+        for tr in soup.find_all('tr'):
+            text = tr.get_text(strip=True)
+            cells = tr.find_all(['td', 'th'])
+            if not cells: continue
+            
+            header = cells[0].get_text(strip=True)
+            
+            # 日付行の判定
+            if re.search(r'\d{1,2}\([月火水木金土日祝]\)', header) or '日' in header or '日付' in header:
+                if not dates_list:
+                    for cell in cells:
+                        txt = cell.get_text(strip=True)
+                        m = re.search(r'\d{1,2}\([月火水木金土日祝]\)', txt)
+                        if m: dates_list.append(m.group(0))
+            # 天気アイコン行の判定
+            elif tr.find('img') and not weathers:
+                for cell in cells:
+                    img = cell.find('img')
+                    if img and 'src' in img.attrs:
+                        weathers.append(img['src'])
+                    else:
+                        if cell.get_text(strip=True):
+                            weathers.append("https://gvs.weathernews.jp/onebox/img/wxicon/200.png")
+            # 最高気温の判定
+            elif '最高' in header or (cells[0].find('span', class_='high-temp')):
+                if not max_temps:
+                    for cell in cells:
+                        if '最高' in cell.get_text(): continue
+                        high = cell.find('span', class_='high-temp')
+                        if high: max_temps.append(high.get_text(strip=True))
+                        else: max_temps.append(re.sub(r'[^\d\-]', '', cell.get_text(strip=True)) or "-")
+            # 最低気温の判定
+            elif '最低' in header or (cells[0].find('span', class_='low-temp')):
+                if not min_temps:
+                    for cell in cells:
+                        if '最低' in cell.get_text(): continue
+                        low = cell.find('span', class_='low-temp')
+                        if low: min_temps.append(low.get_text(strip=True))
+                        else: min_temps.append(re.sub(r'[^\d\-]', '', cell.get_text(strip=True)) or "-")
+            # 降水確率の判定
+            elif '降水' in header and '%' in text:
+                if not rains:
+                    for cell in cells:
+                        if '降水' in cell.get_text(): continue
+                        rains.append(cell.get_text(strip=True))
+        
+        # 抽出したリストからデータを組み立てる
+        weekly_data = []
+        max_len = min(len(dates_list), len(weathers), len(max_temps), len(min_temps), len(rains))
+        
+        for i in range(max_len):
+            if not dates_list[i]: continue
+            
+            # WNで既に表示している日付はスキップ
+            if dates_list[i] in exclude_dates:
+                continue
+                
+            w_img = weathers[i]
+            # tenki.jpのアイコンからWN風のアイコンにざっくり変換（URLに晴や雨が含まれるかで判定）
+            if 'sun' in w_img or '100' in w_img: final_img = "https://gvs.weathernews.jp/onebox/img/wxicon/100.png"
+            elif 'rain' in w_img or '300' in w_img: final_img = "https://gvs.weathernews.jp/onebox/img/wxicon/300.png"
+            elif 'snow' in w_img or '400' in w_img: final_img = "https://gvs.weathernews.jp/onebox/img/wxicon/400.png"
+            else: final_img = "https://gvs.weathernews.jp/onebox/img/wxicon/200.png" # 曇りをデフォルト
+            
+            weekly_data.append({
+                "date": dates_list[i],
+                "img_url": final_img,
+                "temp_max": max_temps[i],
+                "temp_min": min_temps[i],
+                "rain_prob": rains[i]
+            })
+            
+            if len(weekly_data) >= 8:
+                break
+                
+        return weekly_data
+    except Exception as e:
+        print(f"[tenki.jp Extract Error] {e}")
+        return []
+
+# ★ 引数に tenki_url を追加 ★
+def fetch_spot_1hour_data(url, tenki_url=None):
     try:
         headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}
         response = requests.get(url, headers=headers, timeout=3.8)
@@ -1946,9 +2039,8 @@ def fetch_spot_1hour_data(url):
         soup = BeautifulSoup(response.text, 'html.parser')
         
         weather_by_date = {}
-        exclude_dates = [] # WNの1時間予報で取得できた日付リスト
+        exclude_dates = [] 
 
-        # 1時間ごとの天気を取得（既存・正常動作）
         flick_list = soup.find('div', id='flick_list_1hour')
         if not flick_list:
             flick_list = soup.find('div', id='flick_list_3hour')
@@ -1991,17 +2083,22 @@ def fetch_spot_1hour_data(url):
                 
                 if daily_list: 
                     weather_by_date[date_str] = daily_list
-                    exclude_dates.append(date_str)
+                    # 比較のために「日」の文字を消す
+                    exclude_dates.append(date_str.replace("日", ""))
                 if len(weather_by_date) >= 4: break
 
-        # --- 新・週間天気の取得ロジック（JMA連携・高精度API） ---
         weekly_data = []
-        lat, lon = extract_lat_lon(url)
-        if lat and lon:
-            # WNで取得した日付（exclude_dates）を渡し、それ以降の8日分を取得する
-            weekly_data = fetch_weekly_data_from_api(lat, lon, exclude_dates)
+        
+        # ★ tenki_url が設定されている場合（今回はキングフィッシャー）は tenki.jp をスクレイピング
+        if tenki_url:
+            weekly_data = fetch_weekly_data_from_tenki(tenki_url, exclude_dates)
+            
+        # tenki_url がない場合（他の釣り場）は従来通りAPIを使用
+        if not weekly_data:
+            lat, lon = extract_lat_lon(url)
+            if lat and lon:
+                weekly_data = fetch_weekly_data_from_api(lat, lon, exclude_dates)
 
-        # 万が一APIに失敗した場合は仮のダミーデータを用意する（エラー回避）
         if not weekly_data or len(weekly_data) < 4:
             now_dt = datetime.now(timezone(timedelta(hours=9)))
             weekly_data = []
@@ -2034,8 +2131,8 @@ def get_cached_weather(spot_name):
         if now - updated_time <= timedelta(hours=1):
             if isinstance(data, dict):
                 weekly = data.get("__weekly__", [])
-                # ★ キャッシュのバージョンを更新し、過去の被りデータを強制破棄
-                if data.get("_version") != "api_best_match_v2":
+                # ★ キャッシュバージョン更新。これより前のデータは強制破棄
+                if data.get("_version") != "tenki_test_v1":
                     return None
                 if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-":
                     return None
@@ -2055,7 +2152,7 @@ def get_cached_weather(spot_name):
                         if isinstance(weather_data, dict):
                             weekly = weather_data.get("__weekly__", [])
                             # ★ Supabaseの古いキャッシュデータも強制破棄
-                            if weather_data.get("_version") != "api_best_match_v2":
+                            if weather_data.get("_version") != "tenki_test_v1":
                                 return None
                             if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-":
                                 return None
@@ -2071,7 +2168,7 @@ def get_cached_weather(spot_name):
 def save_cached_weather(spot_name, weather_data):
     now = datetime.now(timezone.utc)
     # ★ 新しいバージョン名を付与
-    weather_data["_version"] = "api_best_match_v2"
+    weather_data["_version"] = "tenki_test_v1"
     MEMORY_CACHE[spot_name] = (weather_data, now)
     
     if not supabase: return
@@ -2429,7 +2526,8 @@ def handle_postback(event):
             return
 
         elif action == "show_weather":
-            target_spot_name, target_url, hp_url, hp2_url, map_url, tel, x_url, fb_url, insta_url, blog_url, yt_url = get_spot_details(spot_name)
+            # ★ 修正: get_spot_details の戻り値 12個 に合わせて受け取る
+            target_spot_name, target_url, hp_url, hp2_url, map_url, tel, x_url, fb_url, insta_url, blog_url, yt_url, tenki_url = get_spot_details(spot_name)
             
             if not target_url:
                 line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"⚠️ 【{spot_name}】のデータが見つかりません。"))
@@ -2443,7 +2541,8 @@ def handle_postback(event):
             weather_data = get_cached_weather(target_spot_name)
             
             if not weather_data:
-                weather_data = fetch_spot_1hour_data(target_url)
+                # ★ 修正: fetch_spot_1hour_data に tenki_url を渡す
+                weather_data = fetch_spot_1hour_data(target_url, tenki_url)
                 if weather_data:
                     save_cached_weather(target_spot_name, weather_data)
 
@@ -2585,9 +2684,12 @@ def run_background_update():
         for spot_name in target_spots:
             data = SPOT_WEATHER_DATA.get(spot_name)
             if not data: continue
-            url = data["url"]
             
-            weather_data = fetch_spot_1hour_data(url)
+            # ★ 修正: 背景更新でも tenki_url を渡す
+            url = data["url"]
+            tenki_url = data.get("tenki_url")
+            
+            weather_data = fetch_spot_1hour_data(url, tenki_url)
             if weather_data:
                 save_cached_weather(spot_name, weather_data)
                 
