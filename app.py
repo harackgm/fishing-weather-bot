@@ -1070,7 +1070,6 @@ SPOT_WEATHER_DATA = {
     },
 
     # --- 東北・東海・関西 ---
-    # ★ YouTube用キー(yt_url)へ割り当て変更
     "Lost Lures": {
         "url": "https://weathernews.jp/onebox/37.081688/139.680305/",
         "hp_url": "https://www.lost-lures.com/",
@@ -2082,7 +2081,6 @@ def build_grid_flex_message(spot_name, weather_by_date, hp_url="", hp2_url="", m
     if fb_url: header_buttons_bottom.append({"type": "button", "action": {"type": "uri", "label": "📘 FB", "uri": fb_url}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
     if insta_url: header_buttons_bottom.append({"type": "button", "action": {"type": "uri", "label": "📷 Insta", "uri": insta_url}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
     if blog_url: header_buttons_bottom.append({"type": "button", "action": {"type": "uri", "label": "📝 Blog", "uri": blog_url}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
-    # ★ YouTube用ボタンの切り替え判定
     if yt_url: header_buttons_bottom.append({"type": "button", "action": {"type": "uri", "label": "▶️ YouTube", "uri": yt_url}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
 
     header_contents = [{"type": "text", "text": f"📍 {spot_name}", "color": "#ffffff", "weight": "bold", "size": "lg"}]
@@ -2094,45 +2092,63 @@ def build_grid_flex_message(spot_name, weather_by_date, hp_url="", hp2_url="", m
 
     header_block = {"type": "box", "layout": "vertical", "backgroundColor": header_color, "paddingAll": "10px", "contents": header_contents}
 
-    bottom_buttons = []
+    banner_img_url = "https://raw.githubusercontent.com/harackgm/fishing-weather-bot/main/tenkiharackbana.jpg"
+
+    # ★ 1枚目（左側）の下部構成（電話ボタンなし、一覧ボタンを100%幅で配置）
+    bottom_buttons_1 = [
+        {
+            "type": "box", "layout": "vertical", "flex": 1, "backgroundColor": "#fff59d", "borderWidth": "normal", "borderColor": "#d4af37", "cornerRadius": "md", "paddingAll": "0px",
+            "contents": [{"type": "button", "action": {"type": "postback", "label": "📋 一覧", "data": "action=show_list", "displayText": "📋 一覧"}, "style": "link", "color": "#555555", "height": "sm", "margin": "none"}]
+        }
+    ]
+
+    bottom_block_contents_1 = [
+        {"type": "separator", "margin": "md"},
+        {"type": "image", "url": banner_img_url, "size": "full", "aspectRatio": "3:1", "aspectMode": "cover", "margin": "md"},
+        {"type": "separator", "margin": "md"},
+        {"type": "box", "layout": "horizontal", "margin": "sm", "spacing": "sm", "contents": bottom_buttons_1}
+    ]
+
+    # ★ 2枚目（右側）の下部構成（電話ボタンあり）
+    bottom_buttons_2 = []
     if tel:
         clean_tel = tel.replace('-', '').strip()
-        bottom_buttons.append({
+        bottom_buttons_2.append({
             "type": "box", "layout": "vertical", "flex": 2, "backgroundColor": "#f8f9fa", "borderWidth": "normal", "borderColor": "#e0e0e0", "cornerRadius": "md", "paddingAll": "0px",
             "contents": [{"type": "button", "action": {"type": "uri", "label": "📞 電話", "uri": f"tel:{clean_tel}"}, "style": "link", "color": "#555555", "height": "sm", "margin": "none"}]
         })
     
-    bottom_buttons.append({
+    bottom_buttons_2.append({
         "type": "box", "layout": "vertical", "flex": 3, "backgroundColor": "#fff59d", "borderWidth": "normal", "borderColor": "#d4af37", "cornerRadius": "md", "paddingAll": "0px",
         "contents": [{"type": "button", "action": {"type": "postback", "label": "📋 一覧", "data": "action=show_list", "displayText": "📋 一覧"}, "style": "link", "color": "#555555", "height": "sm", "margin": "none"}]
     })
 
-    banner_img_url = "https://raw.githubusercontent.com/harackgm/fishing-weather-bot/main/tenkiharackbana.jpg"
-    
-    bottom_block_contents = [
+    bottom_block_contents_2 = [
         {"type": "separator", "margin": "md"},
         {"type": "image", "url": banner_img_url, "size": "full", "aspectRatio": "3:1", "aspectMode": "cover", "margin": "md"},
         {"type": "separator", "margin": "md"},
-        {"type": "box", "layout": "horizontal", "margin": "sm", "spacing": "sm", "contents": bottom_buttons}
+        {"type": "box", "layout": "horizontal", "margin": "sm", "spacing": "sm", "contents": bottom_buttons_2}
     ]
 
     bubbles = []
 
+    # 1枚目生成
     if len(dates) > 0:
         day1 = dates[0]
         day2 = dates[1] if len(dates) > 1 else None
         body_contents_1 = [{"type": "box", "layout": "horizontal", "spacing": "sm", "contents": [create_day_column(day1), {"type": "separator"}, create_day_column(day2)]}]
-        body_contents_1.extend(bottom_block_contents) 
+        body_contents_1.extend(bottom_block_contents_1) 
         bubbles.append({
             "type": "bubble", "size": "giga", "header": header_block,
             "body": {"type": "box", "layout": "vertical", "spacing": "md", "paddingAll": "8px", "contents": body_contents_1}
         })
 
+    # 2枚目生成
     if len(dates) > 2:
         day3 = dates[2]
         day4 = dates[3] if len(dates) > 3 else None
         body_contents_2 = [{"type": "box", "layout": "horizontal", "spacing": "sm", "contents": [create_day_column(day3), {"type": "separator"}, create_day_column(day4)]}]
-        body_contents_2.extend(bottom_block_contents) 
+        body_contents_2.extend(bottom_block_contents_2) 
         bubbles.append({
             "type": "bubble", "size": "giga", "header": header_block,
             "body": {"type": "box", "layout": "vertical", "spacing": "md", "paddingAll": "8px", "contents": body_contents_2}
