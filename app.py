@@ -1838,7 +1838,7 @@ def fetch_spot_1hour_data(url):
         print(f"[スクレイピングエラー] {e}")
         return None
 
-# ★ デザイン維持（1枚カード）版
+# ★ カルーセル（2枚横並び）・全日程1時間おき・デザイン統一版
 def build_grid_flex_message(spot_name, weather_by_date, hp_url="", hp2_url="", map_url="", tel="", x_url="", fb_url="", insta_url="", blog_url="", is_favorite=False):
     dates = list(weather_by_date.keys())
     
@@ -1853,21 +1853,11 @@ def build_grid_flex_message(spot_name, weather_by_date, hp_url="", hp2_url="", m
         if found:
             break
 
-    # ★ 4日目のみ2時間おきに間引く処理
-    def create_day_column(date_str, day_index):
+    def create_day_column(date_str):
         if not date_str:
             return {"type": "box", "layout": "vertical", "flex": 1, "contents": [{"type": "text", "text": "-", "color": "#cccccc", "align": "center", "size": "xs"}]}
         
         daily_data = weather_by_date[date_str]
-
-        # ★ day_indexが3（4日目）の場合のみ偶数時間に間引く
-        if day_index >= 3:
-            filtered_data = []
-            for d in daily_data:
-                time_val = d.get('time', '').replace("時", "").strip()
-                if time_val.isdigit() and int(time_val) % 2 == 0:
-                    filtered_data.append(d)
-            daily_data = filtered_data
 
         rows = [
             {
@@ -1922,79 +1912,7 @@ def build_grid_flex_message(spot_name, weather_by_date, hp_url="", hp2_url="", m
             ] + [{"type": "box", "layout": "vertical", "spacing": "none", "margin": "sm", "contents": rows}]
         }
 
-    body_contents = []
-    # 1段目（今日・明日） day_index = 0, 1
-    row1 = {"type": "box", "layout": "horizontal", "spacing": "sm", "contents": [create_day_column(dates[0] if len(dates) > 0 else None, 0), {"type": "separator"}, create_day_column(dates[1] if len(dates) > 1 else None, 1)]}
-    body_contents.append(row1)
-    
-    # 2段目（明後日・明明後日） day_index = 2, 3
-    if len(dates) > 2:
-        body_contents.append({"type": "separator", "margin": "md"})
-        row2 = {"type": "box", "layout": "horizontal", "spacing": "sm", "contents": [create_day_column(dates[2] if len(dates) > 2 else None, 2), {"type": "separator"}, create_day_column(dates[3] if len(dates) > 3 else None, 3)]}
-        body_contents.append(row2)
-
-    bottom_buttons = []
-    if tel:
-        clean_tel = tel.replace('-', '').strip()
-        bottom_buttons.append({
-            "type": "box",
-            "layout": "vertical",
-            "flex": 2,
-            "backgroundColor": "#f8f9fa",
-            "borderWidth": "normal",
-            "borderColor": "#e0e0e0",
-            "cornerRadius": "md",
-            "paddingAll": "0px",
-            "contents": [
-                {
-                    "type": "button",
-                    "action": {"type": "uri", "label": "📞 電話", "uri": f"tel:{clean_tel}"},
-                    "style": "link",
-                    "color": "#555555",
-                    "height": "sm",
-                    "margin": "none"
-                }
-            ]
-        })
-    
-    bottom_buttons.append({
-        "type": "box",
-        "layout": "vertical",
-        "flex": 3,
-        "backgroundColor": "#fff59d",
-        "borderWidth": "normal",
-        "borderColor": "#d4af37",
-        "cornerRadius": "md",
-        "paddingAll": "0px",
-        "contents": [
-            {
-                "type": "button",
-                "action": {"type": "postback", "label": "📋 一覧", "data": "action=show_list", "displayText": "📋 一覧"},
-                "style": "link",
-                "color": "#555555",
-                "height": "sm",
-                "margin": "none"
-            }
-        ]
-    })
-
-    banner_img_url = "https://raw.githubusercontent.com/harackgm/fishing-weather-bot/main/tenkiharackbana.jpg"
-    body_contents.append({"type": "separator", "margin": "md"})
-    body_contents.append({
-        "type": "image",
-        "url": banner_img_url,
-        "size": "full",
-        "aspectRatio": "3:1",
-        "aspectMode": "cover",
-        "margin": "md"
-    })
-
-    body_contents.append({"type": "separator", "margin": "md"})
-    body_contents.append({
-        "type": "box", "layout": "horizontal", "margin": "sm", "spacing": "sm",
-        "contents": bottom_buttons
-    })
-
+    # ★ 共通ヘッダーパーツの作成
     header_buttons_top = []
     if is_favorite:
         header_buttons_top.append({"type": "button", "action": {"type": "postback", "label": "🗑️ 解除", "data": f"action=fav_del_confirm_and_list&spot={spot_name}"}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs", "color": "#ffcccc"})
@@ -2025,12 +1943,68 @@ def build_grid_flex_message(spot_name, weather_by_date, hp_url="", hp2_url="", m
     if header_buttons_bottom: 
         header_contents.append({"type": "box", "layout": "horizontal", "margin": "sm", "spacing": "xs", "contents": header_buttons_bottom})
 
-    bubble = {
-        "type": "bubble", "size": "giga",
-        "header": {"type": "box", "layout": "vertical", "backgroundColor": header_color, "paddingAll": "10px", "contents": header_contents},
-        "body": {"type": "box", "layout": "vertical", "spacing": "md", "paddingAll": "8px", "contents": body_contents}
-    }
-    return FlexSendMessage(alt_text=f"{spot_name}の天気予報", contents=bubble)
+    # ヘッダーを1つのブロックとして定義（両方のカードで使い回す）
+    header_block = {"type": "box", "layout": "vertical", "backgroundColor": header_color, "paddingAll": "10px", "contents": header_contents}
+
+    # ★ 共通下部（バナー・ボタン）パーツの作成
+    bottom_buttons = []
+    if tel:
+        clean_tel = tel.replace('-', '').strip()
+        bottom_buttons.append({
+            "type": "box", "layout": "vertical", "flex": 2, "backgroundColor": "#f8f9fa", "borderWidth": "normal", "borderColor": "#e0e0e0", "cornerRadius": "md", "paddingAll": "0px",
+            "contents": [{"type": "button", "action": {"type": "uri", "label": "📞 電話", "uri": f"tel:{clean_tel}"}, "style": "link", "color": "#555555", "height": "sm", "margin": "none"}]
+        })
+    
+    bottom_buttons.append({
+        "type": "box", "layout": "vertical", "flex": 3, "backgroundColor": "#fff59d", "borderWidth": "normal", "borderColor": "#d4af37", "cornerRadius": "md", "paddingAll": "0px",
+        "contents": [{"type": "button", "action": {"type": "postback", "label": "📋 一覧", "data": "action=show_list", "displayText": "📋 一覧"}, "style": "link", "color": "#555555", "height": "sm", "margin": "none"}]
+    })
+
+    banner_img_url = "https://raw.githubusercontent.com/harackgm/fishing-weather-bot/main/tenkiharackbana.jpg"
+    
+    # 下部をリストとして定義（両方のカードの末尾に足す）
+    bottom_block_contents = [
+        {"type": "separator", "margin": "md"},
+        {"type": "image", "url": banner_img_url, "size": "full", "aspectRatio": "3:1", "aspectMode": "cover", "margin": "md"},
+        {"type": "separator", "margin": "md"},
+        {"type": "box", "layout": "horizontal", "margin": "sm", "spacing": "sm", "contents": bottom_buttons}
+    ]
+
+    bubbles = []
+
+    # ★ 1枚目のカード（1日目・2日目）
+    if len(dates) > 0:
+        day1 = dates[0]
+        day2 = dates[1] if len(dates) > 1 else None
+        
+        body_contents_1 = [
+            {"type": "box", "layout": "horizontal", "spacing": "sm", "contents": [create_day_column(day1), {"type": "separator"}, create_day_column(day2)]}
+        ]
+        body_contents_1.extend(bottom_block_contents) # 共通下部を追加
+        
+        bubbles.append({
+            "type": "bubble", "size": "giga",
+            "header": header_block, # 共通ヘッダー
+            "body": {"type": "box", "layout": "vertical", "spacing": "md", "paddingAll": "8px", "contents": body_contents_1}
+        })
+
+    # ★ 2枚目のカード（3日目・4日目）
+    if len(dates) > 2:
+        day3 = dates[2]
+        day4 = dates[3] if len(dates) > 3 else None
+        
+        body_contents_2 = [
+            {"type": "box", "layout": "horizontal", "spacing": "sm", "contents": [create_day_column(day3), {"type": "separator"}, create_day_column(day4)]}
+        ]
+        body_contents_2.extend(bottom_block_contents) # 共通下部を追加
+        
+        bubbles.append({
+            "type": "bubble", "size": "giga",
+            "header": header_block, # 共通ヘッダー
+            "body": {"type": "box", "layout": "vertical", "spacing": "md", "paddingAll": "8px", "contents": body_contents_2}
+        })
+
+    return FlexSendMessage(alt_text=f"{spot_name}の天気予報", contents={"type": "carousel", "contents": bubbles})
 
 @app.route("/", methods=['GET'])
 def top_page():
