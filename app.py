@@ -54,7 +54,6 @@ MEMORY_CACHE = {}
 # プッシュ通知安全装置設定 (将来用)
 MAX_PUSH_LIMIT = 10  # 一度に通知する最大人数
 # ★テスト用ID（本番運用時は空にする）
-# TEST_MODE_USER_ID = "U123456789abcdef0123456789abcdef" 
 TEST_MODE_USER_ID = "" 
 
 # ==========================================
@@ -1714,48 +1713,6 @@ def build_spot_list_carousel_horizontal(user_id=None):
 
     return FlexSendMessage(alt_text="釣り場一覧", contents={"type": "carousel", "contents": bubbles})
 
-def get_cached_weather(spot_name):
-    now = datetime.now(timezone.utc)
-    
-    if spot_name in MEMORY_CACHE:
-        data, updated_time = MEMORY_CACHE[spot_name]
-        if now - updated_time <= timedelta(hours=1):
-            return data
-            
-    if not supabase: return None
-    try:
-        res = supabase.table('weather_cache').select('*').eq('spot_name', spot_name).execute()
-        if res.data and len(res.data) > 0:
-            row = res.data[0]
-            updated_at_str = row.get('updated_at')
-            if updated_at_str:
-                try:
-                    updated_time = datetime.fromisoformat(updated_at_str.replace('Z', '+00:00'))
-                    if now - updated_time <= timedelta(hours=1):
-                        weather_data = row.get('weather_data')
-                        MEMORY_CACHE[spot_name] = (weather_data, updated_time)
-                        return weather_data
-                except:
-                    pass
-        return None
-    except Exception as e:
-        print(f"[Cache GET Error] {e}")
-        return None
-
-def save_cached_weather(spot_name, weather_data):
-    now = datetime.now(timezone.utc)
-    MEMORY_CACHE[spot_name] = (weather_data, now)
-    
-    if not supabase: return
-    try:
-        supabase.table('weather_cache').upsert({
-            'spot_name': spot_name,
-            'weather_data': weather_data,
-            'updated_at': now.isoformat()
-        }).execute()
-    except Exception as e:
-        print(f"[Cache SAVE Error] {e}")
-
 def get_user_setting(user_id):
     if not supabase: return ('ウェザーニュース', '')
     try:
@@ -1916,6 +1873,8 @@ def move_favorite_spot(user_id, spot_name, direction):
     except Exception as e:
         return False, f"移動失敗: {e}"
 
+# ★ ここから下は週間天気を抽出・表示するための安全な追記部分です ★
+
 def fetch_spot_1hour_data(url):
     try:
         headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}
@@ -1923,13 +1882,16 @@ def fetch_spot_1hour_data(url):
         response.raise_for_status()
         soup = BeautifulSoup(response.text, 'html.parser')
         
+        weather_by_date = {}
+        weekly_data = []
+
+        # 1時間ごとの天気を取得
         flick_list = soup.find('div', id='flick_list_1hour')
         if not flick_list:
             flick_list = soup.find('div', id='flick_list_3hour')
             
         if not flick_list: return None
 
-        weather_by_date = {}
         groups = flick_list.find_all('div', class_='group')
 
         for group in groups:
@@ -1968,6 +1930,54 @@ def fetch_spot_1hour_data(url):
             
             if daily_list: weather_by_date[date_str] = daily_list
             if len(weather_by_date) >= 4: break
+
+        # 週間天気（2週間天気）の取得ロジックを安全に追加
+        try:
+            w14days = soup.find('div', id='w14days') or soup.find(class_=re.compile(r'w14days|weather-14days|week'))
+            if not w14days:
+                w14days = soup
+                
+            table = w14days.find('table')
+            if table:
+                dates_list, weathers, max_temps, min_temps, rains = [], [], [], [], []
+                for tr in table.find_all('tr'):
+                    th = tr.find(['th', 'td'])
+                    if not th: continue
+                    th_text = th.get_text().strip()
+                    tds = tr.find_all('td')
+                    
+                    if '日' in th_text and not dates_list:
+                        dates_list = [td.get_text().replace('\n', '').strip() for td in tds]
+                    elif '天気' in th_text:
+                        for td in tds:
+                            img = td.find('img')
+                            img_src = img['src'] if img and 'src' in img.attrs else "https://gvs.weathernews.jp/onebox/img/wxicon/200.png"
+                            if img_src.startswith('//'): img_src = 'https:' + img_src
+                            elif img_src.startswith('/'): img_src = 'https://weathernews.jp' + img_src
+                            weathers.append(img_src)
+                    elif '最高' in th_text:
+                        max_temps = [td.get_text().replace('℃', '').strip() for td in tds]
+                    elif '最低' in th_text:
+                        min_temps = [td.get_text().replace('℃', '').strip() for td in tds]
+                    elif '降水' in th_text:
+                        rains = [td.get_text().strip() for td in tds]
+                
+                max_len = min(len(dates_list), 14)
+                if max_len > 0:
+                    for i in range(max_len):
+                        weekly_data.append({
+                            "date": str(dates_list[i]) if i < len(dates_list) else "-",
+                            "img_url": str(weathers[i]) if i < len(weathers) else "https://gvs.weathernews.jp/onebox/img/wxicon/200.png",
+                            "temp_max": str(max_temps[i]) if i < len(max_temps) else "-",
+                            "temp_min": str(min_temps[i]) if i < len(min_temps) else "-",
+                            "rain_prob": str(rains[i]) if i < len(rains) else "-"
+                        })
+        except Exception as e:
+            print(f"[Weekly Data Extract Error] {e}")
+
+        # エラーを出さないための特殊キー "__weekly__" に保存
+        weather_by_date["__weekly__"] = weekly_data
+            
         return weather_by_date
     except requests.exceptions.Timeout:
         return None
@@ -1975,8 +1985,52 @@ def fetch_spot_1hour_data(url):
         print(f"[スクレイピングエラー] {e}")
         return None
 
+def get_cached_weather(spot_name):
+    now = datetime.now(timezone.utc)
+    
+    if spot_name in MEMORY_CACHE:
+        data, updated_time = MEMORY_CACHE[spot_name]
+        if now - updated_time <= timedelta(hours=1):
+            return data
+            
+    if not supabase: return None
+    try:
+        res = supabase.table('weather_cache').select('*').eq('spot_name', spot_name).execute()
+        if res.data and len(res.data) > 0:
+            row = res.data[0]
+            updated_at_str = row.get('updated_at')
+            if updated_at_str:
+                try:
+                    updated_time = datetime.fromisoformat(updated_at_str.replace('Z', '+00:00'))
+                    if now - updated_time <= timedelta(hours=1):
+                        weather_data = row.get('weather_data')
+                        MEMORY_CACHE[spot_name] = (weather_data, updated_time)
+                        return weather_data
+                except:
+                    pass
+        return None
+    except Exception as e:
+        print(f"[Cache GET Error] {e}")
+        return None
+
+def save_cached_weather(spot_name, weather_data):
+    now = datetime.now(timezone.utc)
+    MEMORY_CACHE[spot_name] = (weather_data, now)
+    
+    if not supabase: return
+    try:
+        supabase.table('weather_cache').upsert({
+            'spot_name': spot_name,
+            'weather_data': weather_data,
+            'updated_at': now.isoformat()
+        }).execute()
+    except Exception as e:
+        print(f"[Cache SAVE Error] {e}")
+
 def build_grid_flex_message(spot_name, weather_by_date, hp_url="", hp2_url="", map_url="", tel="", x_url="", fb_url="", insta_url="", blog_url="", yt_url="", is_favorite=False):
-    dates = list(weather_by_date.keys())
+    # 週間天気データを分離し、既存の描画ロジックが壊れないようにする
+    weekly_data = weather_by_date.get("__weekly__", []) if isinstance(weather_by_date, dict) else []
+    dates = [d for d in weather_by_date.keys() if d != "__weekly__"]
     
     jst = timezone(timedelta(hours=9))
     now_jst_date = datetime.now(jst).date()
@@ -2059,6 +2113,31 @@ def build_grid_flex_message(spot_name, weather_by_date, hp_url="", hp2_url="", m
             ] + [{"type": "box", "layout": "vertical", "spacing": "none", "margin": "sm", "contents": rows}]
         }
 
+    # ★ 週間天気レイアウトモジュール
+    def create_weekly_box(slice_data):
+        if not slice_data: return None
+        cols = []
+        for w in slice_data:
+            rain_val = str(w.get("rain_prob", "0")).replace("%", "").strip()
+            rain_color = "#0000ff" if rain_val.isdigit() and int(rain_val) > 0 else "#555555"
+            cols.append({
+                "type": "box", "layout": "vertical", "flex": 1, "alignItems": "center", "spacing": "xs",
+                "contents": [
+                    {"type": "text", "text": str(w.get("date", "-")), "size": "xxs", "weight": "bold", "color": "#333333"},
+                    {"type": "image", "url": str(w.get("img_url", "https://gvs.weathernews.jp/onebox/img/wxicon/200.png")), "size": "xs"},
+                    {"type": "text", "text": f"{w.get('temp_max', '-')}/{w.get('temp_min', '-')}℃", "size": "xxs", "color": "#333333", "weight": "bold"},
+                    {"type": "text", "text": f"{w.get('rain_prob', '-')}", "size": "xxs", "color": rain_color, "weight": "bold"}
+                ]
+            })
+        return {
+            "type": "box", "layout": "horizontal", "margin": "md", "spacing": "xs",
+            "backgroundColor": "#f0f0f0", "paddingAll": "sm", "cornerRadius": "sm",
+            "contents": cols
+        }
+
+    weekly_box_1 = create_weekly_box(weekly_data[0:4]) if len(weekly_data) > 0 else None
+    weekly_box_2 = create_weekly_box(weekly_data[4:8]) if len(weekly_data) > 4 else None
+
     header_buttons_top = []
     if is_favorite:
         header_buttons_top.append({"type": "button", "action": {"type": "postback", "label": "🗑️ 解除", "data": f"action=fav_del_confirm_and_list&spot={spot_name}"}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs", "color": "#ffcccc"})
@@ -2092,43 +2171,47 @@ def build_grid_flex_message(spot_name, weather_by_date, hp_url="", hp2_url="", m
 
     header_block = {"type": "box", "layout": "vertical", "backgroundColor": header_color, "paddingAll": "10px", "contents": header_contents}
 
-    banner_img_url = "https://raw.githubusercontent.com/harackgm/fishing-weather-bot/main/tenkiharackbana.jpg"
-
-    # ★ 1枚目（左側）の下部構成（電話ボタンなし、一覧ボタンを100%幅で配置）
-    bottom_buttons_1 = [
-        {
-            "type": "box", "layout": "vertical", "flex": 1, "backgroundColor": "#fff59d", "borderWidth": "normal", "borderColor": "#d4af37", "cornerRadius": "md", "paddingAll": "0px",
-            "contents": [{"type": "button", "action": {"type": "postback", "label": "📋 一覧", "data": "action=show_list", "displayText": "📋 一覧"}, "style": "link", "color": "#555555", "height": "sm", "margin": "none"}]
-        }
-    ]
-
-    bottom_block_contents_1 = [
-        {"type": "separator", "margin": "md"},
-        {"type": "image", "url": banner_img_url, "size": "full", "aspectRatio": "3:1", "aspectMode": "cover", "margin": "md"},
-        {"type": "separator", "margin": "md"},
-        {"type": "box", "layout": "horizontal", "margin": "sm", "spacing": "sm", "contents": bottom_buttons_1}
-    ]
-
-    # ★ 2枚目（右側）の下部構成（電話ボタンあり）
-    bottom_buttons_2 = []
+    # --- 共通のボトムボタン（電話と一覧）---
+    bottom_buttons = []
     if tel:
         clean_tel = tel.replace('-', '').strip()
-        bottom_buttons_2.append({
+        bottom_buttons.append({
             "type": "box", "layout": "vertical", "flex": 2, "backgroundColor": "#f8f9fa", "borderWidth": "normal", "borderColor": "#e0e0e0", "cornerRadius": "md", "paddingAll": "0px",
             "contents": [{"type": "button", "action": {"type": "uri", "label": "📞 電話", "uri": f"tel:{clean_tel}"}, "style": "link", "color": "#555555", "height": "sm", "margin": "none"}]
         })
     
-    bottom_buttons_2.append({
+    bottom_buttons.append({
         "type": "box", "layout": "vertical", "flex": 3, "backgroundColor": "#fff59d", "borderWidth": "normal", "borderColor": "#d4af37", "cornerRadius": "md", "paddingAll": "0px",
         "contents": [{"type": "button", "action": {"type": "postback", "label": "📋 一覧", "data": "action=show_list", "displayText": "📋 一覧"}, "style": "link", "color": "#555555", "height": "sm", "margin": "none"}]
     })
 
-    bottom_block_contents_2 = [
+    banner_img_url = "https://raw.githubusercontent.com/harackgm/fishing-weather-bot/main/tenkiharackbana.jpg"
+
+    # --- カード1枚目（左側）のボトムブロック ---
+    bottom_block_contents_1 = []
+    if weekly_box_1:
+        bottom_block_contents_1.append({"type": "separator", "margin": "md"})
+        bottom_block_contents_1.append(weekly_box_1)
+        
+    bottom_block_contents_1.extend([
         {"type": "separator", "margin": "md"},
         {"type": "image", "url": banner_img_url, "size": "full", "aspectRatio": "3:1", "aspectMode": "cover", "margin": "md"},
         {"type": "separator", "margin": "md"},
-        {"type": "box", "layout": "horizontal", "margin": "sm", "spacing": "sm", "contents": bottom_buttons_2}
-    ]
+        {"type": "box", "layout": "horizontal", "margin": "sm", "spacing": "sm", "contents": bottom_buttons}
+    ])
+
+    # --- カード2枚目（右側）のボトムブロック ---
+    bottom_block_contents_2 = []
+    if weekly_box_2:
+        bottom_block_contents_2.append({"type": "separator", "margin": "md"})
+        bottom_block_contents_2.append(weekly_box_2)
+        
+    bottom_block_contents_2.extend([
+        {"type": "separator", "margin": "md"},
+        {"type": "image", "url": banner_img_url, "size": "full", "aspectRatio": "3:1", "aspectMode": "cover", "margin": "md"},
+        {"type": "separator", "margin": "md"},
+        {"type": "box", "layout": "horizontal", "margin": "sm", "spacing": "sm", "contents": bottom_buttons}
+    ])
 
     bubbles = []
 
