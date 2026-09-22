@@ -56,7 +56,7 @@ MAX_PUSH_LIMIT = 10  # 一度に通知する最大人数
 TEST_MODE_USER_ID = "" 
 
 # ==========================================
-# 3. 釣り場URL・HP・Googleマップ・電話番号・SNS・表記揺れ辞書・tenki_url
+# 3. 釣り場URL・HP・Googleマップ・電話番号・SNS・表記揺れ辞書
 # ==========================================
 SPOT_WEATHER_DATA = {
     # --- 静岡県 ---
@@ -948,7 +948,6 @@ def get_spot_details(spot_key):
         tenki_10days_url
     )
 
-# ★ 修正: 「09月26日(土)」から「月」と「日」を正確に抽出する堅牢な日付判定 ★
 def guess_date_from_string(date_str, now_date):
     if not date_str:
         return now_date
@@ -1121,7 +1120,8 @@ def build_settings_flex_message(fav_list):
         })
 
         bubbles.append({
-            "type": "bubble", "size": "mega",
+            "type": "bubble",
+            "size": "mega",
             "header": {
                 "type": "box", "layout": "vertical", "backgroundColor": "#d4af37", "paddingAll": "10px",
                 "contents": [
@@ -1150,12 +1150,19 @@ def build_spot_list_carousel_horizontal(user_id=None):
         fav_rows = []
         if not fav_list:
             fav_rows.append({
-                "type": "box", "layout": "vertical", "backgroundColor": "#fffde7", "cornerRadius": "md", "paddingAll": "md", "margin": "md",
+                "type": "box",
+                "layout": "vertical",
+                "backgroundColor": "#fffde7",
+                "cornerRadius": "md",
+                "paddingAll": "md",
+                "margin": "md",
                 "contents": [
                     {
                         "type": "text",
                         "text": "現在お気に入りは登録されていません。\n右へスワイプして釣り場を探し、「⭐️ 登録」ボタンを押すか、テキストで「追加 東山湖」と送信して登録してください。",
-                        "wrap": True, "size": "sm", "color": "#555555"
+                        "wrap": True,
+                        "size": "sm",
+                        "color": "#555555"
                     }
                 ]
             })
@@ -1165,7 +1172,11 @@ def build_spot_list_carousel_horizontal(user_id=None):
                 row_buttons = []
                 for spot in pair:
                     row_buttons.append({
-                        "type": "button", "style": "secondary", "color": "#fff59d", "margin": "xs", "height": "sm",
+                        "type": "button",
+                        "style": "secondary",
+                        "color": "#fff59d",  
+                        "margin": "xs",
+                        "height": "sm",
                         "action": {"type": "postback", "label": spot, "data": f"w={spot}"}
                     })
                 if len(pair) == 1:
@@ -1178,25 +1189,48 @@ def build_spot_list_carousel_horizontal(user_id=None):
         fav_rows.append({"type": "separator", "margin": "md", "color": "#cccccc"})
         
         fav_rows.append({
-            "type": "box", "layout": "horizontal", "margin": "sm", "spacing": "sm",
+            "type": "box",
+            "layout": "horizontal",
+            "margin": "sm",
+            "spacing": "sm",
             "contents": [
                 {
-                    "type": "box", "layout": "vertical", "flex": 1, "backgroundColor": "#f8f9fa", "borderWidth": "normal", "borderColor": "#e0e0e0", "cornerRadius": "md", "paddingAll": "none",
+                    "type": "box",
+                    "layout": "vertical",
+                    "flex": 1,
+                    "backgroundColor": "#f8f9fa",
+                    "borderWidth": "normal",
+                    "borderColor": "#e0e0e0",
+                    "cornerRadius": "md",
+                    "paddingAll": "none",
                     "contents": [
                         {
                             "type": "button",
                             "action": {"type": "postback", "label": "⚙️ 設定", "data": "action=show_settings", "displayText": "⚙️ 設定"},
-                            "style": "link", "color": "#555555", "height": "sm", "margin": "none"
+                            "style": "link",
+                            "color": "#555555",
+                            "height": "sm",
+                            "margin": "none"
                         }
                     ]
                 },
                 {
-                    "type": "box", "layout": "vertical", "flex": 1, "backgroundColor": "#fff59d", "borderWidth": "normal", "borderColor": "#d4af37", "cornerRadius": "md", "paddingAll": "none",
+                    "type": "box",
+                    "layout": "vertical",
+                    "flex": 1,
+                    "backgroundColor": "#fff59d",
+                    "borderWidth": "normal",
+                    "borderColor": "#d4af37",
+                    "cornerRadius": "md",
+                    "paddingAll": "none",
                     "contents": [
                         {
                             "type": "button",
                             "action": {"type": "postback", "label": "📋 一覧", "data": "action=show_list", "displayText": "📋 一覧"},
-                            "style": "link", "color": "#555555", "height": "sm", "margin": "none"
+                            "style": "link",
+                            "color": "#555555",
+                            "height": "sm",
+                            "margin": "none"
                         }
                     ]
                 }
@@ -1204,7 +1238,8 @@ def build_spot_list_carousel_horizontal(user_id=None):
         })
 
         fav_bubble = {
-            "type": "bubble", "size": "giga",
+            "type": "bubble",
+            "size": "giga",
             "header": {
                 "type": "box", "layout": "horizontal", "backgroundColor": "#d4af37", "paddingAll": "10px", "alignItems": "center",
                 "contents": [
@@ -1228,7 +1263,11 @@ def build_spot_list_carousel_horizontal(user_id=None):
                 for spot in pair:
                     label_text = f"★ {spot}" if spot in fav_list else spot
                     row_buttons.append({
-                        "type": "button", "style": "secondary", "color": btn_bg, "margin": "xs", "height": "sm",
+                        "type": "button",
+                        "style": "secondary",
+                        "color": btn_bg,
+                        "margin": "xs",
+                        "height": "sm",
                         "action": {"type": "postback", "label": label_text, "data": f"w={spot}"}
                     })
                 if len(pair) == 1:
@@ -1239,7 +1278,8 @@ def build_spot_list_carousel_horizontal(user_id=None):
                 is_first_row = False
             
         bubble = {
-            "type": "bubble", "size": "giga",
+            "type": "bubble",
+            "size": "giga",
             "header": {
                 "type": "box", "layout": "vertical", "backgroundColor": group["header_bg"], "paddingAll": "10px",
                 "contents": [{"type": "text", "text": group["title"], "color": "#ffffff", "weight": "bold", "size": "md"}]
@@ -1250,7 +1290,8 @@ def build_spot_list_carousel_horizontal(user_id=None):
 
     # 使い方ガイド
     guide_bubble = {
-        "type": "bubble", "size": "giga",
+        "type": "bubble",
+        "size": "giga",
         "header": {
             "type": "box", "layout": "vertical", "backgroundColor": "#888888", "paddingAll": "10px",
             "contents": [{"type": "text", "text": "📖 使い方ガイド", "color": "#ffffff", "weight": "bold", "size": "md"}]
@@ -1549,14 +1590,12 @@ def fetch_weekly_data_from_tenki(tenki_url, raw_exclude_dates):
             if not (days_elem and temp_elem):
                 continue
                 
-            raw_days = days_elem.get_text(strip=True) # 例: "09月26日(土)"
+            raw_days = days_elem.get_text(strip=True) 
             
-            # 正確な日付比較（1時間予報の最終日以前はスキップ）
             tenki_date = guess_date_from_string(raw_days, now_jst_date)
             if last_wn_date and tenki_date <= last_wn_date:
                 continue
 
-            # 日付ラベルの作成（例: "26(土)"）
             m = re.search(r'(\d{1,2})月(\d{1,2})日\((.+?)\)', raw_days)
             if m:
                 day_num = int(m.group(2))
@@ -1705,7 +1744,7 @@ def get_cached_weather(spot_name):
             if isinstance(data, dict):
                 weekly = data.get("__weekly__", [])
                 # ★ キャッシュバージョン更新。旧データを強制破棄
-                if data.get("_version") != "tenki_date_regex_v1":
+                if data.get("_version") != "button_layout_fix_v1":
                     return None
                 if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-":
                     return None
@@ -1725,7 +1764,7 @@ def get_cached_weather(spot_name):
                         if isinstance(weather_data, dict):
                             weekly = weather_data.get("__weekly__", [])
                             # ★ Supabaseの古いキャッシュデータも強制破棄
-                            if weather_data.get("_version") != "tenki_date_regex_v1":
+                            if weather_data.get("_version") != "button_layout_fix_v1":
                                 return None
                             if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-":
                                 return None
@@ -1741,7 +1780,7 @@ def get_cached_weather(spot_name):
 def save_cached_weather(spot_name, weather_data):
     now = datetime.now(timezone.utc)
     # ★ 新しいバージョン名を付与
-    weather_data["_version"] = "tenki_date_regex_v1"
+    weather_data["_version"] = "button_layout_fix_v1"
     MEMORY_CACHE[spot_name] = (weather_data, now)
     
     if not supabase: return
@@ -1841,7 +1880,6 @@ def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_
             ] + [{"type": "box", "layout": "vertical", "spacing": "none", "margin": "sm", "contents": rows}]
         }
 
-    # ★ バナーの上に配置する週間予報ボックスの生成処理（曜日・祝日色分け対応）
     def create_weekly_box(slice_data):
         if not slice_data: return None
         cols = []
@@ -1856,7 +1894,6 @@ def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_
                 target_date = guess_date_from_string(date_str, now_jst_date)
                 is_hol = jpholiday.is_holiday(target_date)
                 
-                # 日曜または祝日なら赤、土曜なら青
                 if is_hol or "(日)" in date_str or "(祝)" in date_str:
                     date_color = "#cc0000"
                 elif "(土)" in date_str:
@@ -1913,23 +1950,31 @@ def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_
 
     header_block = {"type": "box", "layout": "vertical", "backgroundColor": header_color, "paddingAll": "10px", "contents": header_contents}
 
-    # 共通のボトムボタン（電話と一覧）
-    bottom_buttons = []
+    # ★ 修正: 左側（1枚目）のボトムボタンは「一覧」のみ
+    bottom_buttons_1 = [
+        {
+            "type": "box", "layout": "vertical", "flex": 1, "backgroundColor": "#fff59d", "borderWidth": "normal", "borderColor": "#d4af37", "cornerRadius": "md", "paddingAll": "0px",
+            "contents": [{"type": "button", "action": {"type": "postback", "label": "📋 一覧", "data": "action=show_list", "displayText": "📋 一覧"}, "style": "link", "color": "#555555", "height": "sm", "margin": "none"}]
+        }
+    ]
+
+    # ★ 修正: 右側（2枚目）のボトムボタンは「電話」と「一覧」
+    bottom_buttons_2 = []
     if tel:
         clean_tel = tel.replace('-', '').strip()
-        bottom_buttons.append({
+        bottom_buttons_2.append({
             "type": "box", "layout": "vertical", "flex": 2, "backgroundColor": "#f8f9fa", "borderWidth": "normal", "borderColor": "#e0e0e0", "cornerRadius": "md", "paddingAll": "0px",
             "contents": [{"type": "button", "action": {"type": "uri", "label": "📞 電話", "uri": f"tel:{clean_tel}"}, "style": "link", "color": "#555555", "height": "sm", "margin": "none"}]
         })
     
-    bottom_buttons.append({
-        "type": "box", "layout": "vertical", "flex": 3, "backgroundColor": "#fff59d", "borderWidth": "normal", "borderColor": "#d4af37", "cornerRadius": "md", "paddingAll": "0px",
+    bottom_buttons_2.append({
+        "type": "box", "layout": "vertical", "flex": 3 if tel else 1, "backgroundColor": "#fff59d", "borderWidth": "normal", "borderColor": "#d4af37", "cornerRadius": "md", "paddingAll": "0px",
         "contents": [{"type": "button", "action": {"type": "postback", "label": "📋 一覧", "data": "action=show_list", "displayText": "📋 一覧"}, "style": "link", "color": "#555555", "height": "sm", "margin": "none"}]
     })
 
     banner_img_url = "https://raw.githubusercontent.com/harackgm/fishing-weather-bot/main/tenkiharackbana.jpg"
 
-    # --- カード1枚目（左側）のボトムブロック：バナーの上に週間予報を追加 ---
+    # --- カード1枚目（左側）のボトムブロック ---
     bottom_block_contents_1 = []
     if weekly_box_1:
         bottom_block_contents_1.append({"type": "separator", "margin": "md"})
@@ -1939,10 +1984,10 @@ def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_
         {"type": "separator", "margin": "md"},
         {"type": "image", "url": banner_img_url, "size": "full", "aspectRatio": "3:1", "aspectMode": "cover", "margin": "md"},
         {"type": "separator", "margin": "md"},
-        {"type": "box", "layout": "horizontal", "margin": "sm", "spacing": "sm", "contents": bottom_buttons}
+        {"type": "box", "layout": "horizontal", "margin": "sm", "spacing": "sm", "contents": bottom_buttons_1}
     ])
 
-    # --- カード2枚目（右側）のボトムブロック：バナーの上に週間予報を追加 ---
+    # --- カード2枚目（右側）のボトムブロック ---
     bottom_block_contents_2 = []
     if weekly_box_2:
         bottom_block_contents_2.append({"type": "separator", "margin": "md"})
@@ -1952,7 +1997,7 @@ def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_
         {"type": "separator", "margin": "md"},
         {"type": "image", "url": banner_img_url, "size": "full", "aspectRatio": "3:1", "aspectMode": "cover", "margin": "md"},
         {"type": "separator", "margin": "md"},
-        {"type": "box", "layout": "horizontal", "margin": "sm", "spacing": "sm", "contents": bottom_buttons}
+        {"type": "box", "layout": "horizontal", "margin": "sm", "spacing": "sm", "contents": bottom_buttons_2}
     ])
 
     bubbles = []
@@ -2212,7 +2257,7 @@ def handle_postback(event):
                     print(f" - {d.property}: {d.message}")
         except:
             pass
-        try: line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ LINE通信エラーが発生しました。（データ容量制限エラー等の可能性があります）"))
+        try: line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ LINE通信エラーが発生しました。（カード形式エラー等の可能性があります）"))
         except Exception: pass
     except Exception as e:
         print(f"Postback Error: {e}")
