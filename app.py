@@ -5,7 +5,6 @@ import requests
 import traceback
 import difflib
 import re
-import json
 import threading
 import unicodedata
 import jpholiday
@@ -1723,7 +1722,7 @@ def get_user_setting(user_id):
             
             rename_map = {
                 "五頭": "GOZU",
-                "竜华池": "竜华池",
+                "竜华池": "竜華池",
                 "ハーブ": "ハーブの里",
                 "サンクチュアリ": "３９",
                 "高島": "高島の泉",
@@ -1874,26 +1873,72 @@ def move_favorite_spot(user_id, spot_name, direction):
         return False, f"移動失敗: {e}"
 
 # ==========================================
-# ★ 週間天気データを取得する最強の業（ウラワザ）ロジック ★
+# ★ 週間天気データを取得する高精度APIロジック ★
 # ==========================================
+def extract_lat_lon(url):
+    m = re.search(r'onebox/([0-9.]+)/([0-9.]+)', url)
+    if m:
+        return m.group(1), m.group(2)
+    return None, None
+
+def fetch_weekly_data_from_api(lat, lon, start_offset=4, days_to_get=8):
+    try:
+        # 14日分まとめて高精度モデル（JMA連携）から取得
+        api_url = f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&daily=weathercode,temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=Asia%2FTokyo&forecast_days=14&models=best_match"
+        res = requests.get(api_url, timeout=5.0)
+        res.raise_for_status()
+        data = res.json()
+        
+        daily = data.get("daily", {})
+        times = daily.get("time", [])
+        weathercodes = daily.get("weathercode", [])
+        temp_max = daily.get("temperature_2m_max", [])
+        temp_min = daily.get("temperature_2m_min", [])
+        rain_prob = daily.get("precipitation_probability_max", [])
+        
+        weekly_data = []
+        # ★ WNの1時間予報が終わった翌日（start_offset）から、指定日数分（days_to_get: 8日間）を正確に抽出
+        for i in range(start_offset, min(len(times), start_offset + days_to_get)):
+            dt = datetime.strptime(times[i], "%Y-%m-%d")
+            w_str = ["(月)", "(火)", "(水)", "(木)", "(金)", "(土)", "(日)"][dt.weekday()]
+            date_label = f"{dt.day}{w_str}"
+            
+            code = weathercodes[i] if i < len(weathercodes) and weathercodes[i] is not None else 0
+            if code in [0, 1]: img_url = "https://gvs.weathernews.jp/onebox/img/wxicon/100.png"
+            elif code in [2, 3, 45, 48]: img_url = "https://gvs.weathernews.jp/onebox/img/wxicon/200.png"
+            elif code in [71, 73, 75, 77, 85, 86]: img_url = "https://gvs.weathernews.jp/onebox/img/wxicon/400.png"
+            else: img_url = "https://gvs.weathernews.jp/onebox/img/wxicon/300.png"
+            
+            t_max = str(round(temp_max[i])) if i < len(temp_max) and temp_max[i] is not None else "-"
+            t_min = str(round(temp_min[i])) if i < len(temp_min) and temp_min[i] is not None else "-"
+            r_prob = f"{rain_prob[i]}%" if i < len(rain_prob) and rain_prob[i] is not None else "-"
+            
+            weekly_data.append({
+                "date": date_label,
+                "img_url": img_url,
+                "temp_max": t_max,
+                "temp_min": t_min,
+                "rain_prob": r_prob
+            })
+        return weekly_data
+    except Exception as e:
+        print(f"[Open-Meteo API Error] {e}")
+        return []
+
 def fetch_spot_1hour_data(url):
     try:
-        # PC版のユーザーエージェントで取得し、WeatherNewsの純正データにアクセス
-        headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            'Accept-Language': 'ja,en-US;q=0.9,en;q=0.8'
-        }
-        response = requests.get(url, headers=headers, timeout=5.0)
+        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}
+        response = requests.get(url, headers=headers, timeout=3.8)
         response.raise_for_status()
-        
-        html_text = response.text
-        soup = BeautifulSoup(html_text, 'html.parser')
+        soup = BeautifulSoup(response.text, 'html.parser')
         
         weather_by_date = {}
-        weekly_data = []
 
-        # --- 1時間ごとの天気を取得（既存・正常動作） ---
-        flick_list = soup.find('div', id='flick_list_1hour') or soup.find('div', id='flick_list_3hour')
+        # 1時間ごとの天気を取得（既存・正常動作）
+        flick_list = soup.find('div', id='flick_list_1hour')
+        if not flick_list:
+            flick_list = soup.find('div', id='flick_list_3hour')
+            
         if flick_list:
             groups = flick_list.find_all('div', class_='group')
             for group in groups:
@@ -1906,8 +1951,7 @@ def fetch_spot_1hour_data(url):
                 for item in lists:
                     if 'past' in item.get('class', []): continue
                     time_tag = item.find('li', class_='time')
-                    if not time_tag: continue
-                    hour_str = time_tag.text.strip()
+                    hour_str = time_tag.text.strip() if time_tag else ""
                     if not hour_str.isdigit(): continue
                     hour_int = int(hour_str)
                     if not (6 <= hour_int <= 21): continue
@@ -1924,12 +1968,8 @@ def fetch_spot_1hour_data(url):
                     img_url = img_url.replace("http://", "https://")
                     if not img_url.startswith("https://"): img_url = "https://gvs.weathernews.jp/onebox/img/wxicon/200.png"
 
-                    rain_tag = item.find('li', class_='rain')
-                    rain = rain_tag.text.strip().replace("ミリ", "mm") if rain_tag else "-"
-                    
-                    temp_tag = item.find('li', class_='temp')
-                    temp = temp_tag.text.strip() if temp_tag else "-"
-                    
+                    rain = item.find('li', class_='rain').text.strip().replace("ミリ", "mm") if item.find('li', class_='rain') else "-"
+                    temp = item.find('li', class_='temp').text.strip() if item.find('li', class_='temp') else "-"
                     wind_p = item.find('li', class_='wind').find('p') if item.find('li', class_='wind') else None
                     wind = wind_p.text.strip() if wind_p else "-"
 
@@ -1938,169 +1978,21 @@ def fetch_spot_1hour_data(url):
                 if daily_list: weather_by_date[date_str] = daily_list
                 if len(weather_by_date) >= 4: break
 
-        # --- 新・週間天気の取得ロジック（裏ルート：HTML内に隠されたJSONデータを直で抜き出す） ---
-        script_tag = soup.find('script', id='__NEXT_DATA__')
-        if script_tag:
-            try:
-                data = json.loads(script_tag.string)
-                
-                # JSONの中から14日間天気の配列を探し出す再帰関数
-                def find_14days_forecast(obj):
-                    if isinstance(obj, dict):
-                        for key in ['week', 'daily', 'forecast14Days', 'days']:
-                            if key in obj and isinstance(obj[key], list) and len(obj[key]) >= 7:
-                                return obj[key]
-                        for k, v in obj.items():
-                            res = find_14days_forecast(v)
-                            if res: return res
-                    elif isinstance(obj, list):
-                        for item in obj:
-                            res = find_14days_forecast(item)
-                            if res: return res
-                    return None
-                
-                forecast_list = find_14days_forecast(data)
-                
-                if forecast_list:
-                    for w in forecast_list[:14]:
-                        date_str_raw = str(w.get('date', w.get('targetDate', '')))
-                        
-                        date_label = "-"
-                        if date_str_raw:
-                            try:
-                                dt = datetime.strptime(date_str_raw[:10], "%Y-%m-%d")
-                                w_str = ["(月)", "(火)", "(水)", "(木)", "(金)", "(土)", "(日)"][dt.weekday()]
-                                date_label = f"{dt.day}{w_str}"
-                            except:
-                                date_label = date_str_raw[-5:]
-                                
-                        icon_num = str(w.get('icon', w.get('weatherCode', '200')))
-                        img_url = f"https://gvs.weathernews.jp/onebox/img/wxicon/{icon_num}.png"
-                        
-                        t_max = str(w.get('tmax', w.get('tempMax', '-')))
-                        t_min = str(w.get('tmin', w.get('tempMin', '-')))
-                        
-                        r_prob = str(w.get('pop', w.get('rainProb', '-')))
-                        if r_prob != "-" and r_prob != "null" and not r_prob.endswith('%'):
-                            r_prob += "%"
-                        elif r_prob == "null":
-                            r_prob = "-"
-                            
-                        weekly_data.append({
-                            "date": date_label,
-                            "img_url": img_url,
-                            "temp_max": t_max if t_max != "null" else "-",
-                            "temp_min": t_min if t_min != "null" else "-",
-                            "rain_prob": r_prob
-                        })
-            except Exception as e:
-                print(f"[JSON Extract Error] {e}")
+        # ★ WNで取得できた1時間予報の日数を自動計測（通常4日間）
+        wn_days_count = len(weather_by_date) if weather_by_date else 4
 
-        # JSON抽出に失敗した場合の保険（正規表現で強制的に引っこ抜く）
-        if not weekly_data or len(weekly_data) < 4:
-            try:
-                tmax_match = re.search(r'"tmax":\[([\d\,\-\s]+)\]', html_text)
-                tmin_match = re.search(r'"tmin":\[([\d\,\-\s]+)\]', html_text)
-                pop_match = re.search(r'"pop":\[([\d\,\-\s]+)\]', html_text)
-                icon_match = re.search(r'"icon":\[([\w\,\-\s]+)\]', html_text)
-                
-                if tmax_match and tmin_match and pop_match:
-                    tmax_list = tmax_match.group(1).split(',')
-                    tmin_list = tmin_match.group(1).split(',')
-                    pop_list = pop_match.group(1).split(',')
-                    
-                    icon_list = []
-                    if icon_match:
-                        icon_list = [i.strip(' "') for i in icon_match.group(1).split(',')]
-                    
-                    now_dt = datetime.now(timezone(timedelta(hours=9)))
-                    for i in range(min(len(tmax_list), 14)):
-                        if not tmax_list[i].strip() or tmax_list[i].strip() == 'null': continue
-                        
-                        day_dt = now_dt + timedelta(days=i)
-                        w_str = ["(月)", "(火)", "(水)", "(木)", "(金)", "(土)", "(日)"][day_dt.weekday()]
-                        # ★ 前回のタイポ修正箇所 ★
-                        date_label = f"{day_dt.day}{w_str}"
-                        
-                        r_val = pop_list[i].strip() if i < len(pop_list) else "-"
-                        if r_val != "-" and r_val != 'null': r_val += "%"
-                        elif r_val == 'null': r_val = "-"
-                        
-                        img_url = "https://gvs.weathernews.jp/onebox/img/wxicon/200.png"
-                        if i < len(icon_list) and icon_list[i] and icon_list[i] != 'null':
-                            img_url = f"https://gvs.weathernews.jp/onebox/img/wxicon/{icon_list[i]}.png"
-                        
-                        weekly_data.append({
-                            "date": date_label,
-                            "img_url": img_url,
-                            "temp_max": tmax_list[i].strip() if tmax_list[i].strip() != 'null' else "-",
-                            "temp_min": tmin_list[i].strip() if tmin_list[i].strip() != 'null' else "-",
-                            "rain_prob": r_val
-                        })
-            except Exception as e:
-                print(f"[JSON RegEx Extract Error] {e}")
+        # --- 新・週間天気の取得ロジック（WN直後の翌日から8日間をピンポイント抽出） ---
+        weekly_data = []
+        lat, lon = extract_lat_lon(url)
+        if lat and lon:
+            weekly_data = fetch_weekly_data_from_api(lat, lon, start_offset=wn_days_count, days_to_get=8)
 
-        # それでもダメなら従来のHTMLテーブルからの抽出
-        if not weekly_data or len(weekly_data) < 4:
-            dates_list, weathers, max_temps, min_temps, rains = [], [], [], [], []
-            for table in soup.find_all(['table', 'div']):
-                text = table.get_text()
-                if '最高' in text and '最低' in text and '降水' in text and '℃' in text:
-                    for tr in table.find_all(['tr', 'ul', 'div']):
-                        row_text = tr.get_text(strip=True)
-                        if not row_text: continue
-                        cells = tr.find_all(['td', 'th', 'li', 'div'])
-                        if len(cells) < 3: continue
-                        
-                        header = cells[0].get_text(strip=True)
-                        if header in ['日', '日付'] and not dates_list:
-                            for cell in cells[1:]:
-                                txt = cell.get_text(strip=True).replace('\n', '')
-                                m = re.search(r'\d{1,2}\([月火水木金土日祝]\)', txt)
-                                if m: dates_list.append(m.group(0))
-                                else: dates_list.append(txt)
-                        elif '最高' in header and not max_temps:
-                            for cell in cells[1:]:
-                                max_temps.append(re.sub(r'[^\d\-]', '', cell.get_text(strip=True)))
-                        elif '最低' in header and not min_temps:
-                            for cell in cells[1:]:
-                                min_temps.append(re.sub(r'[^\d\-]', '', cell.get_text(strip=True)))
-                        elif '降水' in header and not rains:
-                            for cell in cells[1:]:
-                                val = re.sub(r'[^\d]', '', cell.get_text(strip=True))
-                                rains.append(val + '%' if val else '-')
-                        elif '天気' in header and not weathers:
-                            for cell in cells[1:]:
-                                img = cell.find('img')
-                                if img and 'src' in img.attrs:
-                                    src = img['src']
-                                    if src.startswith('//'): src = 'https:' + src
-                                    elif src.startswith('/'): src = 'https://weathernews.jp' + src
-                                    weathers.append(src)
-                                else:
-                                    weathers.append("https://gvs.weathernews.jp/onebox/img/wxicon/200.png")
-                    if dates_list and max_temps and min_temps and rains:
-                        break
-
-            max_len = min(len(dates_list), len(max_temps), len(min_temps), len(rains))
-            if max_len > 0:
-                for i in range(max_len):
-                    if not dates_list[i]: continue
-                    w_img = weathers[i] if i < len(weathers) else "https://gvs.weathernews.jp/onebox/img/wxicon/200.png"
-                    weekly_data.append({
-                        "date": str(dates_list[i]),
-                        "img_url": str(w_img),
-                        "temp_max": str(max_temps[i]) if max_temps[i] else "-",
-                        "temp_min": str(min_temps[i]) if min_temps[i] else "-",
-                        "rain_prob": str(rains[i]) if rains[i] else "-"
-                    })
-
-        # 全ての手段でダメだった場合の完全フォールバック
+        # 万が一APIに失敗した場合は仮のダミーデータを用意する（エラー回避）
         if not weekly_data or len(weekly_data) < 4:
             now_dt = datetime.now(timezone(timedelta(hours=9)))
             weekly_data = []
             for i in range(8):
-                day_dt = now_dt + timedelta(days=i)
+                day_dt = now_dt + timedelta(days=wn_days_count + i)
                 w_str = ["(月)", "(火)", "(水)", "(木)", "(金)", "(土)", "(日)"][day_dt.weekday()]
                 date_label = f"{day_dt.day}{w_str}"
                 weekly_data.append({
@@ -2117,7 +2009,7 @@ def fetch_spot_1hour_data(url):
     except requests.exceptions.Timeout:
         return None
     except Exception as e:
-        print(f"[スクレイピングエラー] {e}")
+        print(f"[スクレイピング＆API エラー] {e}")
         return None
 
 def get_cached_weather(spot_name):
@@ -2128,9 +2020,8 @@ def get_cached_weather(spot_name):
         if now - updated_time <= timedelta(hours=1):
             if isinstance(data, dict):
                 weekly = data.get("__weekly__", [])
-                # ★ キャッシュのバージョンチェック（今回から "wn_direct" を追加）
-                # これにより、前回のAPIデータ等の古い形式は強制的に破棄されます。
-                if data.get("_version") != "wn_direct":
+                # ★ バージョンを更新し、古いキャッシュデータを一発で強制破棄
+                if data.get("_version") != "api_offset_v2":
                     return None
                 if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-":
                     return None
@@ -2150,7 +2041,7 @@ def get_cached_weather(spot_name):
                         if isinstance(weather_data, dict):
                             weekly = weather_data.get("__weekly__", [])
                             # ★ Supabaseの古いキャッシュデータも強制破棄
-                            if weather_data.get("_version") != "wn_direct":
+                            if weather_data.get("_version") != "api_offset_v2":
                                 return None
                             if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-":
                                 return None
@@ -2165,8 +2056,8 @@ def get_cached_weather(spot_name):
 
 def save_cached_weather(spot_name, weather_data):
     now = datetime.now(timezone.utc)
-    # ★ バージョン情報を追加し、正しいデータであることを証明する
-    weather_data["_version"] = "wn_direct"
+    # ★ バージョンキーを更新
+    weather_data["_version"] = "api_offset_v2"
     MEMORY_CACHE[spot_name] = (weather_data, now)
     
     if not supabase: return
@@ -2624,7 +2515,7 @@ def handle_postback(event):
                     print(f" - {d.property}: {d.message}")
         except:
             pass
-        try: line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ LINE通信エラーが発生しました。（カード形式エラー等の可能性があります）"))
+        try: line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ LINE通信エラーが発生しました。（データ容量制限エラー等の可能性があります）"))
         except Exception: pass
     except Exception as e:
         print(f"Postback Error: {e}")
