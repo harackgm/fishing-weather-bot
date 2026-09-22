@@ -285,7 +285,7 @@ SPOT_WEATHER_DATA = {
         "url": "https://weathernews.jp/onebox/35.843581/140.010676/",
         "tenki_url": "https://tenki.jp/forecast/3/15/4510/12217/1hour.html",
         "hp_url": "http://zamayougyo.com/",
-        "x_url": "", "fb_url": "https://www.facebook.com/people/%E5%BA%A7%E9%96%93%E9%A4%8A%E9%AD%9A%E5%A0%B4/100065552678584/#", "insta_url": "", "blog_url": "", "yt_url": "",
+        "x_url": "", "fb_url": "https://www.facebook.com/people/%E5%BA%A7%E9%96%93%E9%A4%8A%E9%AD%9A%E5%A0%B4-762125983928950/", "insta_url": "", "blog_url": "", "yt_url": "",
         "search_name": "座間養魚場", "tel": "04-7192-1080",
         "aliases": ["座間・amaz", "座間", "座間養魚場", "ざま", "ザマ", "ざまようぎょじょう", "アメイズ", "あめいず"]
     },
@@ -931,7 +931,6 @@ def get_spot_details(spot_key):
         return spot_key, None, "", "", "", "", "", "", "", "", "", None
     map_url = f"https://www.google.com/maps/search/?api=1&query={quote(data.get('search_name', spot_key))}"
     
-    # ★ 1時間URLを自動的に10days.htmlへ置換する変換関数を通す
     tenki_10days_url = convert_to_10days_url(data.get("tenki_url"))
     
     return (
@@ -949,27 +948,29 @@ def get_spot_details(spot_key):
         tenki_10days_url
     )
 
+# ★ 修正: 「09月26日(土)」から「月」と「日」を正確に抽出する堅牢な日付判定 ★
 def guess_date_from_string(date_str, now_date):
-    match = re.search(r'(\d+)', date_str)
-    if not match:
+    if not date_str:
         return now_date
-    day = int(match.group(1))
+    m = re.search(r'(?:(\d{1,2})[月/-])?\s*(\d{1,2})日?', date_str)
+    if not m:
+        return now_date
+    
+    month_str, day_str = m.group(1), m.group(2)
+    day = int(day_str)
+    month = int(month_str) if month_str else now_date.month
     
     try:
-        target = now_date.replace(day=day)
+        target = now_date.replace(month=month, day=day)
     except ValueError:
         return now_date
         
     if (now_date - target).days > 15:
-        if now_date.month == 12:
-            target = target.replace(year=now_date.year + 1, month=1)
-        else:
-            target = target.replace(month=now_date.month + 1)
+        try: target = target.replace(year=now_date.year + 1)
+        except ValueError: pass
     elif (target - now_date).days > 15:
-        if now_date.month == 1:
-            target = target.replace(year=now_date.year - 1, month=12)
-        else:
-            target = target.replace(month=now_date.month - 1)
+        try: target = target.replace(year=now_date.year - 1)
+        except ValueError: pass
             
     return target
 
@@ -1313,7 +1314,7 @@ def get_user_setting(user_id):
                 "瑞浪": "FCE瑞浪",
                 "槻の池": "つきの池",
                 "川越": "川越パーク",
-                "宮城": "ＭＡVT",
+                "宮城": "ＭＡＶ",
                 "浅川": "浅川国際",
                 "関根": "関根養魚場",
                 "FAJ": "Ｊ",
@@ -1658,11 +1659,9 @@ def fetch_spot_1hour_data(url, tenki_url=None):
         raw_exclude_dates = list(weather_by_date.keys())
         weekly_data = []
         
-        # tenki_url がある場合は tenki.jp から取得
         if tenki_url:
             weekly_data = fetch_weekly_data_from_tenki(tenki_url, raw_exclude_dates)
             
-        # 無い場合は高精度APIを使用
         if not weekly_data:
             lat, lon = extract_lat_lon(url)
             if lat and lon:
@@ -1706,7 +1705,7 @@ def get_cached_weather(spot_name):
             if isinstance(data, dict):
                 weekly = data.get("__weekly__", [])
                 # ★ キャッシュバージョン更新。旧データを強制破棄
-                if data.get("_version") != "tenki_all_spots_v1":
+                if data.get("_version") != "tenki_date_regex_v1":
                     return None
                 if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-":
                     return None
@@ -1726,7 +1725,7 @@ def get_cached_weather(spot_name):
                         if isinstance(weather_data, dict):
                             weekly = weather_data.get("__weekly__", [])
                             # ★ Supabaseの古いキャッシュデータも強制破棄
-                            if weather_data.get("_version") != "tenki_all_spots_v1":
+                            if weather_data.get("_version") != "tenki_date_regex_v1":
                                 return None
                             if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-":
                                 return None
@@ -1742,7 +1741,7 @@ def get_cached_weather(spot_name):
 def save_cached_weather(spot_name, weather_data):
     now = datetime.now(timezone.utc)
     # ★ 新しいバージョン名を付与
-    weather_data["_version"] = "tenki_all_spots_v1"
+    weather_data["_version"] = "tenki_date_regex_v1"
     MEMORY_CACHE[spot_name] = (weather_data, now)
     
     if not supabase: return
@@ -1850,7 +1849,6 @@ def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_
             rain_val = str(w.get("rain_prob", "0")).replace("%", "").strip()
             rain_color = "#0000ff" if rain_val.isdigit() and int(rain_val) > 0 else "#555555"
             
-            # 曜日・祝日による文字色変更ロジック
             date_str = str(w.get("date", "-"))
             date_color = "#333333" # 基本は黒
             
