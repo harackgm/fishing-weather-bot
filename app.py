@@ -69,6 +69,7 @@ SPOT_WEATHER_DATA = {
         "fb_url": "",
         "insta_url": "",
         "blog_url": "",
+        "yt_url": "",
         "search_name": "東山湖フィッシングエリア",
         "tel": "0550-82-2161",
         "aliases": ["東山湖", "東山湖フィッシングエリア", "東山湖FA", "ひがしやまこ", "ひがしやま", "東山", "がし山", "がしやま"]
@@ -80,6 +81,7 @@ SPOT_WEATHER_DATA = {
         "fb_url": "",
         "insta_url": "",
         "blog_url": "",
+        "yt_url": "",
         "search_name": "すそのフィッシングパーク",
         "tel": "055-993-5514",
         "aliases": ["すその", "すそのフィッシングパーク", "すそのFP", "裾野", "すそぱ", "すそパ"]
@@ -91,6 +93,7 @@ SPOT_WEATHER_DATA = {
         "fb_url": "",
         "insta_url": "",
         "blog_url": "",
+        "yt_url": "",
         "search_name": "須川フィッシングパーク",
         "tel": "0550-75-3077",
         "aliases": ["須川", "須川フィッシングパーク", "須川FP", "すがわ"]
@@ -102,6 +105,7 @@ SPOT_WEATHER_DATA = {
         "fb_url": "",
         "insta_url": "",
         "blog_url": "",
+        "yt_url": "",
         "search_name": "アルクスポンド焼津",
         "tel": "054-622-7102",
         "aliases": ["アルクス焼津", "アルクスポンド焼津", "あるくすやいづ", "あるくす", "焼津", "アルクスポンド", "やいづ"]
@@ -113,6 +117,7 @@ SPOT_WEATHER_DATA = {
         "fb_url": "",
         "insta_url": "",
         "blog_url": "",
+        "yt_url": "",
         "search_name": "浜名湖フィッシングリゾート",
         "tel": "053-592-2221",
         "aliases": ["浜名湖", "浜名湖フィッシングリゾート", "浜名湖FR", "はまなこ"]
@@ -126,6 +131,7 @@ SPOT_WEATHER_DATA = {
         "fb_url": "",
         "insta_url": "",
         "blog_url": "",
+        "yt_url": "",
         "search_name": "キングフィッシャー 大田原",
         "tel": "0287-23-1253",
         "aliases": ["キングフィッシャー", "キング", "キングフィッシャ", "きんぐふぃっしゃー"]
@@ -137,6 +143,7 @@ SPOT_WEATHER_DATA = {
         "fb_url": "",
         "insta_url": "",
         "blog_url": "",
+        "yt_url": "",
         "search_name": "みどりフィッシングエリア",
         "tel": "0287-28-3334",
         "aliases": ["みどり", "みどりフィッシングエリア", "みどりFA"]
@@ -148,6 +155,7 @@ SPOT_WEATHER_DATA = {
         "fb_url": "",
         "insta_url": "",
         "blog_url": "",
+        "yt_url": "",
         "search_name": "那須高原ルアーフィールド",
         "tel": "0287-78-1005",
         "aliases": ["那須高原", "那須高原ルアーフィールド", "那須高原LF", "なすこうげん"]
@@ -159,6 +167,7 @@ SPOT_WEATHER_DATA = {
         "fb_url": "",
         "insta_url": "",
         "blog_url": "http://sofield.jugem.jp/",
+        "yt_url": "",
         "search_name": "尚仁沢アウトドアフィールド",
         "tel": "0287-41-0051",
         "aliases": ["尚仁沢", "尚仁沢アウトドアフィールド", "尚仁沢AF", "しょうじんざわ"]
@@ -170,6 +179,7 @@ SPOT_WEATHER_DATA = {
         "fb_url": "",
         "insta_url": "",
         "blog_url": "",
+        "yt_url": "",
         "search_name": "つり天国 那須",
         "tel": "0287-64-4286",
         "aliases": ["つり天国", "ツリテンゴク", "つりてんごく"]
@@ -181,6 +191,7 @@ SPOT_WEATHER_DATA = {
         "fb_url": "",
         "insta_url": "",
         "blog_url": "",
+        "yt_url": "",
         "search_name": "関根養魚場",
         "tel": "0287-35-2630",
         "aliases": ["関根養魚場", "関根", "せきね", "せきねようぎょじょう"]
@@ -192,6 +203,7 @@ SPOT_WEATHER_DATA = {
         "fb_url": "",
         "insta_url": "",
         "blog_url": "",
+        "yt_url": "",
         "search_name": "408Club",
         "tel": "0287-43-0408",
         "aliases": ["408", "408クラブ", "408club", "よんまるはち"]
@@ -203,6 +215,7 @@ SPOT_WEATHER_DATA = {
         "fb_url": "",
         "insta_url": "",
         "blog_url": "",
+        "yt_url": "",
         "search_name": "308Club",
         "tel": "0287-43-0308",
         "aliases": ["308", "308クラブ", "308club", "さんまるはち"]
@@ -214,6 +227,7 @@ SPOT_WEATHER_DATA = {
         "fb_url": "",
         "insta_url": "",
         "blog_url": "",
+        "yt_url": "",
         "search_name": "蛇尾川フィッシングパーク",
         "tel": "0287-32-2212",
         "aliases": ["蛇尾川", "蛇尾（さび）川", "さびがわ", "サビガワ", "へびがわ", "いびがわ", "えびがわ", "蛇尾川フィッシングパーク"]
@@ -225,6 +239,7 @@ SPOT_WEATHER_DATA = {
         "fb_url": "",
         "insta_url": "",
         "blog_url": "",
+        "yt_url": "",
         "search_name": "レイクウッドリゾート 鹿沼",
         "tel": "0289-75-1008",
         "aliases": ["レイクウッド", "レイクウッドリゾート", "れいくうっど"]
@@ -236,6 +251,7 @@ SPOT_WEATHER_DATA = {
         "fb_url": "",
         "insta_url": "",
         "blog_url": "",
+        "yt_url": "",
         "search_name": "なら山沼漁場",
         "tel": "0285-25-4350",
         "aliases": ["なら山沼", "なら山沼漁場", "ならやま", "なら山", "ならやまぬま", "ならやま沼"]
@@ -247,6 +263,7 @@ SPOT_WEATHER_DATA = {
         "fb_url": "https://ja-jp.facebook.com/ooashigawa.fcfv/",
         "insta_url": "",
         "blog_url": "",
+        "yt_url": "",
         "search_name": "大芦川 F&C フィールドビレッジ",
         "tel": "0289-74-7222",
         "aliases": ["大芦川", "大芦川F&C", "おおあしがわ"]
@@ -258,6 +275,7 @@ SPOT_WEATHER_DATA = {
         "fb_url": "",
         "insta_url": "",
         "blog_url": "https://ameblo.jp/kaga-fa/",
+        "yt_url": "",
         "search_name": "加賀フィッシングエリア",
         "tel": "0283-24-1513",
         "aliases": ["加賀", "加賀フィッシングエリア", "加賀FA", "かが"]
@@ -269,6 +287,7 @@ SPOT_WEATHER_DATA = {
         "fb_url": "",
         "insta_url": "https://www.instagram.com/ov.hokkojinomori.fa/",
         "blog_url": "https://hokkojinomori.livedoor.blog/",
+        "yt_url": "",
         "search_name": "発光路の森ファアルクス",
         "tel": "0289-85-3503",
         "aliases": ["発光路", "発光路の森", "ほっこうじ", "はっこうじ", "発光時", "発酵時"]
@@ -280,6 +299,7 @@ SPOT_WEATHER_DATA = {
         "fb_url": "",
         "insta_url": "",
         "blog_url": "",
+        "yt_url": "",
         "search_name": "フィッシングリゾート上永野",
         "tel": "0289-84-0335",
         "aliases": ["上永野", "上永野FR", "かみながの"]
@@ -291,6 +311,7 @@ SPOT_WEATHER_DATA = {
         "fb_url": "",
         "insta_url": "",
         "blog_url": "",
+        "yt_url": "",
         "search_name": "柏倉フィッシングパーク",
         "tel": "0282-23-6622",
         "aliases": ["柏倉", "柏倉FP", "かしわぐら"]
@@ -302,6 +323,7 @@ SPOT_WEATHER_DATA = {
         "fb_url": "",
         "insta_url": "",
         "blog_url": "",
+        "yt_url": "",
         "search_name": "Oyama Water Park 遊水園",
         "tel": "0285-38-8255",
         "aliases": ["遊水園", "OyamaWaterPark遊水園", "ゆうすいえん"]
@@ -313,6 +335,7 @@ SPOT_WEATHER_DATA = {
         "fb_url": "https://www.facebook.com/p/Arcus-Pond%E3%82%A2%E3%83%AB%E3%82%AF%E3%82%B9%E3%83%9D%E3%83%B3%E3%83%89-100041638634155/",
         "insta_url": "",
         "blog_url": "https://www.arcus-pond.com/wp/category/blog/",
+        "yt_url": "",
         "search_name": "アルクスポンド宇都宮",
         "tel": "028-652-3210",
         "aliases": ["アルクス宇都宮", "アルクスポンド宇都宮", "あるくすうつのみや", "あるくす", "アルクスポンド", "うつのみや"]
@@ -324,6 +347,7 @@ SPOT_WEATHER_DATA = {
         "fb_url": "",
         "insta_url": "",
         "blog_url": "",
+        "yt_url": "",
         "search_name": "エリア21 宇都宮",
         "tel": "028-656-1188",
         "aliases": ["エリア21", "えりあ21"]
@@ -335,6 +359,7 @@ SPOT_WEATHER_DATA = {
         "fb_url": "",
         "insta_url": "",
         "blog_url": "",
+        "yt_url": "",
         "search_name": "ベアーズパーク宇都宮",
         "tel": "028-656-2580",
         "aliases": ["ベアーズパーク", "増井養魚場", "べあーずぱーく"]
@@ -346,6 +371,7 @@ SPOT_WEATHER_DATA = {
         "fb_url": "",
         "insta_url": "",
         "blog_url": "",
+        "yt_url": "",
         "search_name": "鬼怒川フィッシングエリア",
         "tel": "028-672-1815",
         "aliases": ["鬼怒川", "鬼怒川フィッシングエリア", "鬼怒川FA", "きぬがわ"]
@@ -357,6 +383,7 @@ SPOT_WEATHER_DATA = {
         "fb_url": "",
         "insta_url": "",
         "blog_url": "",
+        "yt_url": "",
         "search_name": "名草釣堀",
         "tel": "0284-36-2480",
         "aliases": ["名草", "名草釣堀", "なぐさ"]
@@ -370,6 +397,7 @@ SPOT_WEATHER_DATA = {
         "fb_url": "https://www.facebook.com/people/%E5%BA%A7%E9%96%93%E9%A4%8A%E9%AD%9A%E5%A0%B4/100065552678584/#",
         "insta_url": "",
         "blog_url": "",
+        "yt_url": "",
         "search_name": "座間養魚場",
         "tel": "04-7192-1080",
         "aliases": ["座間・amaz", "座間", "座間養魚場", "ざま", "ザマ", "ざまようぎょじょう", "アメイズ", "あめいず"]
@@ -381,6 +409,7 @@ SPOT_WEATHER_DATA = {
         "fb_url": "",
         "insta_url": "",
         "blog_url": "",
+        "yt_url": "",
         "search_name": "ジョイバレー 成田",
         "tel": "0479-78-1840",
         "aliases": ["ジョイバレー", "じょいばれー", "ジョイバ"]
@@ -392,6 +421,7 @@ SPOT_WEATHER_DATA = {
         "fb_url": "",
         "insta_url": "",
         "blog_url": "",
+        "yt_url": "",
         "search_name": "ウォルトンガーデン",
         "tel": "0476-37-3315",
         "aliases": ["ウォルトン", "ウォルトンガーデン", "うぉるとん"]
@@ -403,6 +433,7 @@ SPOT_WEATHER_DATA = {
         "fb_url": "",
         "insta_url": "",
         "blog_url": "",
+        "yt_url": "",
         "search_name": "trout pond NOIKE",
         "tel": "043-228-8283",
         "aliases": ["NOIKE", "ノイケ", "のいけ"]
@@ -414,6 +445,7 @@ SPOT_WEATHER_DATA = {
         "fb_url": "",
         "insta_url": "",
         "blog_url": "",
+        "yt_url": "",
         "search_name": "釣りパラダイス 山武",
         "tel": "043-445-1216",
         "aliases": ["釣パラダイス", "パラダイス", "釣りパラダイス", "つりぱら"]
@@ -427,6 +459,7 @@ SPOT_WEATHER_DATA = {
         "fb_url": "",
         "insta_url": "",
         "blog_url": "",
+        "yt_url": "",
         "search_name": "ウォーターパーク長瀞",
         "tel": "0494-66-0312",
         "aliases": ["長瀞", "WP長瀞", "ウォーターパーク長瀞", "ながとろ"]
@@ -438,6 +471,7 @@ SPOT_WEATHER_DATA = {
         "fb_url": "",
         "insta_url": "",
         "blog_url": "",
+        "yt_url": "",
         "search_name": "フィッシングフィールド彩の国",
         "tel": "049-297-7815",
         "aliases": ["彩の国", "FF彩の国", "さいのくに"]
@@ -449,6 +483,7 @@ SPOT_WEATHER_DATA = {
         "fb_url": "",
         "insta_url": "",
         "blog_url": "",
+        "yt_url": "",
         "search_name": "朝霞ガーデン",
         "tel": "048-456-0260",
         "aliases": ["朝霞Ｇ", "朝霞", "朝霞ガーデン", "アサカガーデン", "ガーデン", "あさか", "アサカ", "あさかガーデン"]
@@ -460,6 +495,7 @@ SPOT_WEATHER_DATA = {
         "fb_url": "",
         "insta_url": "",
         "blog_url": "",
+        "yt_url": "",
         "search_name": "しらこばと水上公園",
         "tel": "048-977-5111",
         "aliases": ["しらこばと", "しらこばと水上公園"]
@@ -471,6 +507,7 @@ SPOT_WEATHER_DATA = {
         "fb_url": "",
         "insta_url": "",
         "blog_url": "",
+        "yt_url": "",
         "search_name": "川越水上公園",
         "tel": "049-241-2241",
         "aliases": ["川越パーク", "川越", "川越水上公園", "かわごえ"]
@@ -482,6 +519,7 @@ SPOT_WEATHER_DATA = {
         "fb_url": "",
         "insta_url": "",
         "blog_url": "",
+        "yt_url": "",
         "search_name": "加須はなさき水上公園",
         "tel": "0480-65-7155",
         "aliases": ["加須はなさき", "はなさき", "はなさき公園"]
@@ -493,6 +531,7 @@ SPOT_WEATHER_DATA = {
         "fb_url": "",
         "insta_url": "",
         "blog_url": "",
+        "yt_url": "",
         "search_name": "中里フィッシングクラブ",
         "tel": "0495-76-1120",
         "aliases": ["中里", "中里FC", "なかざと"]
@@ -504,6 +543,7 @@ SPOT_WEATHER_DATA = {
         "fb_url": "",
         "insta_url": "",
         "blog_url": "",
+        "yt_url": "",
         "search_name": "伊古の里フィッシングパーク",
         "tel": "0493-57-0505",
         "aliases": ["伊古", "伊古の里", "いこのさと", "伊古の里フィッシングパーク"]
@@ -517,6 +557,7 @@ SPOT_WEATHER_DATA = {
         "fb_url": "",
         "insta_url": "",
         "blog_url": "",
+        "yt_url": "",
         "search_name": "足柄キャスティングエリア",
         "tel": "0465-73-2030",
         "aliases": ["足柄", "足柄CA", "あしがら"]
@@ -528,6 +569,7 @@ SPOT_WEATHER_DATA = {
         "fb_url": "",
         "insta_url": "",
         "blog_url": "",
+        "yt_url": "",
         "search_name": "フィッシングフィールド中津川",
         "tel": "046-281-5421",
         "aliases": ["中津川", "FF中津川", "なかつがわ", "なかつ", "中津"]
@@ -539,6 +581,7 @@ SPOT_WEATHER_DATA = {
         "fb_url": "",
         "insta_url": "",
         "blog_url": "",
+        "yt_url": "",
         "search_name": "リヴァスポット早戸",
         "tel": "042-785-0774",
         "aliases": ["早戸川", "リヴァスポット早戸", "はやとがわ"]
@@ -550,6 +593,7 @@ SPOT_WEATHER_DATA = {
         "fb_url": "",
         "insta_url": "",
         "blog_url": "",
+        "yt_url": "",
         "search_name": "BerryPark in 王禅寺",
         "tel": "044-959-0037",
         "aliases": ["王禅寺", "ベリーパーク in 王禅寺", "おうぜんじ", "王禅寺ベリーパーク", "寺", "てら"]
@@ -561,6 +605,7 @@ SPOT_WEATHER_DATA = {
         "fb_url": "",
         "insta_url": "",
         "blog_url": "",
+        "yt_url": "",
         "search_name": "開成水辺フォレストスプリングス",
         "tel": "0465-85-2020",
         "aliases": ["開成", "開成水辺フォレストスプリングス", "開成FS", "かいせい", "フォレストスプリングス"]
@@ -572,6 +617,7 @@ SPOT_WEATHER_DATA = {
         "fb_url": "",
         "insta_url": "",
         "blog_url": "",
+        "yt_url": "",
         "search_name": "浅川国際マス釣り場",
         "tel": "042-661-2228",
         "aliases": ["浅川国際", "浅川", "浅川国際マス釣り場", "あさかわ", "あさかわこくさい", "あさこく", "アサコク"]
@@ -585,6 +631,7 @@ SPOT_WEATHER_DATA = {
         "fb_url": "",
         "insta_url": "",
         "blog_url": "",
+        "yt_url": "",
         "search_name": "ベリーパーク in 鹿留",
         "tel": "0554-43-0082",
         "aliases": ["鹿留", "シシドメ", "ししどめ", "ベリーパーク"]
@@ -596,6 +643,7 @@ SPOT_WEATHER_DATA = {
         "fb_url": "",
         "insta_url": "",
         "blog_url": "https://kosugetg.jugem.jp/",
+        "yt_url": "",
         "search_name": "小菅トラウトガーデン",
         "tel": "0428-87-0373",
         "aliases": ["小菅", "小菅TG", "こすげ"]
@@ -607,6 +655,7 @@ SPOT_WEATHER_DATA = {
         "fb_url": "",
         "insta_url": "",
         "blog_url": "",
+        "yt_url": "",
         "search_name": "奈良子釣りセンター",
         "tel": "0554-24-7636",
         "aliases": ["奈良子", "奈良子釣りセンター", "ならこ", "ならご", "ナラコ", "ナラゴ", "ならごつりせんたー", "ナラゴツリセンター"]
@@ -618,6 +667,7 @@ SPOT_WEATHER_DATA = {
         "fb_url": "",
         "insta_url": "",
         "blog_url": "",
+        "yt_url": "",
         "search_name": "白州トラウトフィッシングエリア",
         "tel": "0551-35-4308",
         "aliases": ["シルフ", "Shylph", "しるふ"]
@@ -629,6 +679,7 @@ SPOT_WEATHER_DATA = {
         "fb_url": "",
         "insta_url": "",
         "blog_url": "",
+        "yt_url": "",
         "search_name": "ジョイフィールド in Tsugane",
         "tel": "0551-20-7888",
         "aliases": ["JF in Tsugane", "Tsugane", "ジョイフィールド", "つがね", "ツガネ", "じょいふぃーるど"]
@@ -640,6 +691,7 @@ SPOT_WEATHER_DATA = {
         "fb_url": "",
         "insta_url": "",
         "blog_url": "",
+        "yt_url": "",
         "search_name": "フィッシングパーク竜華池",
         "tel": "055-252-0938",
         "aliases": ["竜華池", "りゅうがいけ"]
@@ -651,6 +703,7 @@ SPOT_WEATHER_DATA = {
         "fb_url": "",
         "insta_url": "",
         "blog_url": "https://ameblo.jp/hirayakobakucho/",
+        "yt_url": "",
         "search_name": "平谷湖フィッシングスポット",
         "tel": "0265-48-1127",
         "aliases": ["平谷湖", "平谷湖フィッシングスポット", "ひらやこ"]
@@ -662,6 +715,7 @@ SPOT_WEATHER_DATA = {
         "fb_url": "",
         "insta_url": "",
         "blog_url": "",
+        "yt_url": "",
         "search_name": "ハーブの里フィッシングエリア",
         "tel": "0261-62-6322",
         "aliases": ["ハーブの里", "ハーブ", "はーぶ"]
@@ -673,6 +727,7 @@ SPOT_WEATHER_DATA = {
         "fb_url": "",
         "insta_url": "",
         "blog_url": "",
+        "yt_url": "",
         "search_name": "白馬八方ニレ池フィッシングセンター",
         "tel": "0261-72-5086",
         "aliases": ["ニレ池", "にれいけ"]
@@ -684,6 +739,7 @@ SPOT_WEATHER_DATA = {
         "fb_url": "",
         "insta_url": "",
         "blog_url": "",
+        "yt_url": "",
         "search_name": "鹿島槍ガーデン",
         "tel": "0261-22-2253",
         "aliases": ["鹿島槍", "鹿島槍ガーデン", "かしまやり"]
@@ -695,6 +751,7 @@ SPOT_WEATHER_DATA = {
         "fb_url": "",
         "insta_url": "",
         "blog_url": "",
+        "yt_url": "",
         "search_name": "槻の池フィッシングエリア",
         "tel": "0266-76-2280",
         "aliases": ["つきの池", "槻の池", "槻の池フィッシングエリア", "つきのいけ"]
@@ -706,6 +763,7 @@ SPOT_WEATHER_DATA = {
         "fb_url": "",
         "insta_url": "",
         "blog_url": "",
+        "yt_url": "",
         "search_name": "あずみ野フィッシングセンター",
         "tel": "0263-82-8280",
         "aliases": ["あずみ野", "あずみ野FC", "あずみの"]
@@ -719,6 +777,7 @@ SPOT_WEATHER_DATA = {
         "fb_url": "",
         "insta_url": "https://www.instagram.com/kawaba.numata.fishingplaza/?utm_source=ig_embed",
         "blog_url": "",
+        "yt_url": "",
         "search_name": "川場フィッシングプラザ",
         "tel": "0278-52-3200",
         "aliases": ["川場", "川場FP", "かわば"]
@@ -730,6 +789,7 @@ SPOT_WEATHER_DATA = {
         "fb_url": "",
         "insta_url": "",
         "blog_url": "",
+        "yt_url": "",
         "search_name": "川場キングダムフィッシング",
         "tel": "0278-52-2002",
         "aliases": ["川場キングダム", "キングダム", "かわばきんぐだむ"]
@@ -741,6 +801,7 @@ SPOT_WEATHER_DATA = {
         "fb_url": "",
         "insta_url": "",
         "blog_url": "",
+        "yt_url": "",
         "search_name": "おくとねフィッシングパーク",
         "tel": "0278-53-3802",
         "aliases": ["おくとね", "おくとねFP"]
@@ -752,6 +813,7 @@ SPOT_WEATHER_DATA = {
         "fb_url": "",
         "insta_url": "",
         "blog_url": "",
+        "yt_url": "",
         "search_name": "日本イワナセンター",
         "tel": "0278-54-8433",
         "aliases": ["イワナセンター", "日本イワナセンター", "いわなせんたー"]
@@ -763,6 +825,7 @@ SPOT_WEATHER_DATA = {
         "fb_url": "",
         "insta_url": "",
         "blog_url": "",
+        "yt_url": "",
         "search_name": "黒保根渓流フィッシング",
         "tel": "0277-96-2091",
         "aliases": ["黒保根", "くろほね"]
@@ -774,6 +837,7 @@ SPOT_WEATHER_DATA = {
         "fb_url": "",
         "insta_url": "",
         "blog_url": "https://ameblo.jp/fp-berrys2006/",
+        "yt_url": "",
         "search_name": "ベリーズ迦葉山",
         "tel": "0278-23-9333",
         "aliases": ["迦葉山", "ベリーズ迦葉山", "かしょうざん", "ベリーズ"]
@@ -785,6 +849,7 @@ SPOT_WEATHER_DATA = {
         "fb_url": "",
         "insta_url": "",
         "blog_url": "",
+        "yt_url": "",
         "search_name": "片品川国際マス釣り場",
         "tel": "0278-24-1188",
         "aliases": ["片品", "片品川国際", "かたしな"]
@@ -796,6 +861,7 @@ SPOT_WEATHER_DATA = {
         "fb_url": "",
         "insta_url": "",
         "blog_url": "",
+        "yt_url": "",
         "search_name": "GFC中之沢",
         "tel": "027-283-3532",
         "aliases": ["中之沢", "GFC中之沢", "なかのさわ"]
@@ -807,6 +873,7 @@ SPOT_WEATHER_DATA = {
         "fb_url": "https://www.facebook.com/people/%E5%AE%AE%E5%9F%8E%E3%82%A2%E3%83%B3%E3%82%B0%E3%83%A9%E3%83%BC%E3%82%BA%E3%83%B4%E3%82%A3%E3%83%AC%E3%83%83%E3%82%B8/100049219011936/#",
         "insta_url": "",
         "blog_url": "",
+        "yt_url": "",
         "search_name": "宮城アングラーズヴィレッジ",
         "tel": "027-283-0035",
         "aliases": ["ＭＡＶ", "宮城", "宮城AV", "みやぎあんぐらーず", "まぶ", "マブ", "あんびれ", "アンビレ", "MAV", "mav"]
@@ -826,6 +893,7 @@ SPOT_WEATHER_DATA = {
         "fb_url": "",
         "insta_url": "",
         "blog_url": "",
+        "yt_url": "",
         "search_name": "釣りキチけん太",
         "tel": "027-371-3312",
         "aliases": ["けん太", "釣りキチけん太", "けんた"]
@@ -837,6 +905,7 @@ SPOT_WEATHER_DATA = {
         "fb_url": "",
         "insta_url": "",
         "blog_url": "",
+        "yt_url": "",
         "search_name": "アングラーズエリアHOOK",
         "tel": "027-283-0535",
         "aliases": ["フック", "HOOK", "ふっく"]
@@ -848,6 +917,7 @@ SPOT_WEATHER_DATA = {
         "fb_url": "",
         "insta_url": "",
         "blog_url": "",
+        "yt_url": "",
         "search_name": "赤久縄",
         "tel": "0274-56-0230",
         "aliases": ["赤久縄", "あかぐな"]
@@ -859,6 +929,7 @@ SPOT_WEATHER_DATA = {
         "fb_url": "https://www.facebook.com/otafishingclub/",
         "insta_url": "",
         "blog_url": "",
+        "yt_url": "",
         "search_name": "太田フィッシングクラブ",
         "tel": "0276-32-1230",
         "aliases": ["太田", "太田FC", "おおた"]
@@ -870,6 +941,7 @@ SPOT_WEATHER_DATA = {
         "fb_url": "",
         "insta_url": "",
         "blog_url": "",
+        "yt_url": "",
         "search_name": "東山道公園フィッシングエリア",
         "tel": "0276-56-1180",
         "aliases": ["東山道", "東山道FA", "とうさんどう"]
@@ -881,6 +953,7 @@ SPOT_WEATHER_DATA = {
         "fb_url": "",
         "insta_url": "",
         "blog_url": "",
+        "yt_url": "",
         "search_name": "榛名高原つり堀センター",
         "tel": "027-374-2228",
         "aliases": ["榛名", "榛名高原", "はるな"]
@@ -894,6 +967,7 @@ SPOT_WEATHER_DATA = {
         "fb_url": "",
         "insta_url": "https://www.instagram.com/tsuriborimitominami/",
         "blog_url": "",
+        "yt_url": "",
         "search_name": "水戸南フィッシングエリア",
         "tel": "029-246-1233",
         "aliases": ["水戸南", "水戸南FA", "みとみなみ"]
@@ -905,6 +979,7 @@ SPOT_WEATHER_DATA = {
         "fb_url": "",
         "insta_url": "",
         "blog_url": "",
+        "yt_url": "",
         "search_name": "高萩ふれあいの里フィッシングエリア",
         "tel": "0293-24-1888",
         "aliases": ["高萩", "高萩ふれあいの里", "たかはぎ"]
@@ -916,6 +991,7 @@ SPOT_WEATHER_DATA = {
         "fb_url": "https://www.facebook.com/tsukubaen5355/?ref=page_internal",
         "insta_url": "",
         "blog_url": "",
+        "yt_url": "",
         "search_name": "フィッシングパークつくば園",
         "tel": "0299-43-6111",
         "aliases": ["つくば園", "つくばえん"]
@@ -927,6 +1003,7 @@ SPOT_WEATHER_DATA = {
         "fb_url": "",
         "insta_url": "",
         "blog_url": "",
+        "yt_url": "",
         "search_name": "フィッシングエリアJ",
         "tel": "029-842-1698",
         "aliases": ["Ｊ", "J", "FAJ", "フィッシングエリアJ", "ふぃっしんぐえりあじぇい", "じぇー", "じぇい", "ジェー"]
@@ -938,6 +1015,7 @@ SPOT_WEATHER_DATA = {
         "fb_url": "",
         "insta_url": "",
         "blog_url": "",
+        "yt_url": "",
         "search_name": "レイクユザキ",
         "tel": "0296-77-8500",
         "aliases": ["ユザキ", "レイクユザキ", "ゆざき"]
@@ -949,6 +1027,7 @@ SPOT_WEATHER_DATA = {
         "fb_url": "",
         "insta_url": "",
         "blog_url": "",
+        "yt_url": "",
         "search_name": "レジャーパーク笠間",
         "tel": "0296-72-8888",
         "aliases": ["笠間", "LP笠間", "かさま"]
@@ -960,6 +1039,7 @@ SPOT_WEATHER_DATA = {
         "fb_url": "",
         "insta_url": "",
         "blog_url": "",
+        "yt_url": "",
         "search_name": "フィッシングDoDoo",
         "tel": "0299-59-7052",
         "aliases": ["DoDoo", "ドゥドゥー", "どぅどぅー"]
@@ -971,6 +1051,7 @@ SPOT_WEATHER_DATA = {
         "fb_url": "",
         "insta_url": "",
         "blog_url": "",
+        "yt_url": "",
         "search_name": "若栗フィッシングの森",
         "tel": "0293-23-3882",
         "aliases": ["若栗", "若栗フィッシングの森", "わかぐり"]
@@ -982,20 +1063,22 @@ SPOT_WEATHER_DATA = {
         "fb_url": "",
         "insta_url": "",
         "blog_url": "",
+        "yt_url": "",
         "search_name": "ミッドクリークフィッシングエリア",
         "tel": "0299-42-4578",
         "aliases": ["ミッドクリーク", "みっどくりーく"]
     },
 
     # --- 東北・東海・関西 ---
-    # ★ 表記を「Lost Lures」に変更し、ゆらぎ辞書を強化
+    # ★ YouTube用キー(yt_url)へ割り当て変更
     "Lost Lures": {
         "url": "https://weathernews.jp/onebox/37.081688/139.680305/",
         "hp_url": "https://www.lost-lures.com/",
         "x_url": "https://x.com/lostlures",
         "fb_url": "",
         "insta_url": "",
-        "blog_url": "https://www.youtube.com/@lostlures/videos",
+        "blog_url": "",
+        "yt_url": "https://www.youtube.com/@lostlures/videos",
         "search_name": "ロストルアーズ",
         "tel": "0241-66-3266",
         "aliases": ["Lost Lures", "lost lures", "ロストルアーズ", "ろすとるあーず", "ろすとるあー", "ロストルアー", "ろすと", "ロスト"]
@@ -1007,6 +1090,7 @@ SPOT_WEATHER_DATA = {
         "fb_url": "",
         "insta_url": "",
         "blog_url": "",
+        "yt_url": "",
         "search_name": "グリーンパーク不忘",
         "tel": "0224-24-8131",
         "aliases": ["GP不忘", "不忘", "グリーンパーク不忘", "グリーンパーク", "ぐりーんぱーく", "ふぼう", "フボウ"]
@@ -1018,6 +1102,7 @@ SPOT_WEATHER_DATA = {
         "fb_url": "",
         "insta_url": "",
         "blog_url": "",
+        "yt_url": "",
         "search_name": "白河フォレストスプリングス",
         "tel": "0248-25-3535",
         "aliases": ["白河", "白河フォレストスプリングス", "白河FS", "しらかわ"]
@@ -1029,6 +1114,7 @@ SPOT_WEATHER_DATA = {
         "fb_url": "",
         "insta_url": "",
         "blog_url": "",
+        "yt_url": "",
         "search_name": "ほのぼのフィッシングエリア",
         "tel": "0247-46-3200",
         "aliases": ["ほのぼの", "ほのぼのプール"]
@@ -1040,6 +1126,7 @@ SPOT_WEATHER_DATA = {
         "fb_url": "",
         "insta_url": "",
         "blog_url": "",
+        "yt_url": "",
         "search_name": "WaDoNa 釣り場",
         "tel": "090-3121-6677",
         "aliases": ["WaDoNa", "ワドナ", "わどな"]
@@ -1051,6 +1138,7 @@ SPOT_WEATHER_DATA = {
         "fb_url": "",
         "insta_url": "",
         "blog_url": "",
+        "yt_url": "",
         "search_name": "鶴沼川フィッシングパーク",
         "tel": "0241-67-2708",
         "aliases": ["鶴沼川", "つるぬまがわ", "鶴沼"]
@@ -1062,6 +1150,7 @@ SPOT_WEATHER_DATA = {
         "fb_url": "",
         "insta_url": "",
         "blog_url": "",
+        "yt_url": "",
         "search_name": "ウエルカムオーパ",
         "tel": "024-954-2007",
         "aliases": ["オーパ", "ウエルカムオーパ", "おーぱ"]
@@ -1073,6 +1162,7 @@ SPOT_WEATHER_DATA = {
         "fb_url": "",
         "insta_url": "",
         "blog_url": "https://ameblo.jp/aizu2024/",
+        "yt_url": "",
         "search_name": "あいづフィッシングエリア",
         "tel": "0241-64-2101",
         "aliases": ["あいづ", "あいづFA"]
@@ -1084,6 +1174,7 @@ SPOT_WEATHER_DATA = {
         "fb_url": "",
         "insta_url": "",
         "blog_url": "",
+        "yt_url": "",
         "search_name": "上浜釣り場",
         "tel": "0184-38-3488",
         "aliases": ["上浜", "上浜釣り場", "かみはま"]
@@ -1095,6 +1186,7 @@ SPOT_WEATHER_DATA = {
         "fb_url": "",
         "insta_url": "",
         "blog_url": "",
+        "yt_url": "",
         "search_name": "五頭フィッシングパーク",
         "tel": "0250-63-0051",
         "aliases": ["GOZU", "ごず", "五頭", "ごづ", "五頭FP", "五頭フィッシングパーク", "gozu"]
@@ -1106,6 +1198,7 @@ SPOT_WEATHER_DATA = {
         "fb_url": "",
         "insta_url": "",
         "blog_url": "",
+        "yt_url": "",
         "search_name": "フィッシングキャンプエリア瑞浪",
         "tel": "0572-68-1212",
         "aliases": ["FCE瑞浪", "瑞浪", "FC瑞浪", "みずなみ", "フィッシングキャンプエリアミズナミ", "フィッシングキャンプエリア瑞浪"]
@@ -1117,6 +1210,7 @@ SPOT_WEATHER_DATA = {
         "fb_url": "",
         "insta_url": "",
         "blog_url": "",
+        "yt_url": "",
         "search_name": "フィッシングサンクチュアリ",
         "tel": "0594-46-8820",
         "aliases": ["３９", "サンクチュアリ", "サンク", "さんくちゅあり", "39"]
@@ -1128,6 +1222,7 @@ SPOT_WEATHER_DATA = {
         "fb_url": "",
         "insta_url": "",
         "blog_url": "",
+        "yt_url": "",
         "search_name": "醒井養鱒場",
         "tel": "0749-54-0301",
         "aliases": ["醒井", "醒井養鱒場", "さめがい"]
@@ -1139,6 +1234,7 @@ SPOT_WEATHER_DATA = {
         "fb_url": "",
         "insta_url": "",
         "blog_url": "",
+        "yt_url": "",
         "search_name": "高島の泉",
         "tel": "0740-25-3790",
         "aliases": ["高島の泉", "高島", "たかしまのいずみ", "たかしま"]
@@ -1150,6 +1246,7 @@ SPOT_WEATHER_DATA = {
         "fb_url": "",
         "insta_url": "",
         "blog_url": "",
+        "yt_url": "",
         "search_name": "千早川マス釣り場",
         "tel": "0721-74-0116",
         "aliases": ["千早川", "千早川マス釣り場", "ちはやがわ"]
@@ -1188,7 +1285,6 @@ COLOR_GROUPS = [
         "header_bg": "#6a1b9a",
         "sub_groups": [
             {"bg": "#f3e5f5", "spots": ["鹿留", "小菅", "奈良子", "シルフ", "JF in Tsugane", "竜華池", "平谷湖", "ハーブの里", "ニレ池", "鹿島槍", "つきの池", "あずみ野"]},
-            # ★ 一覧ボタンの表示名を「Lost Lures」に変更
             {"bg": "#e1bee7", "spots": ["Lost Lures", "GP不忘", "白河", "ほのぼの", "WaDoNa", "鶴沼川", "オーパ", "あいづ", "上浜", "GOZU"]},
             {"bg": "#d1c4e9", "spots": ["FCE瑞浪", "３９", "醒井", "高島の泉", "千早川"]}
         ]
@@ -1213,7 +1309,7 @@ def clean_url(url_str):
 def get_spot_details(spot_key):
     data = SPOT_WEATHER_DATA.get(spot_key)
     if not data:
-        return spot_key, None, "", "", "", "", "", "", "", ""
+        return spot_key, None, "", "", "", "", "", "", "", "", ""
     map_url = f"https://www.google.com/maps/search/?api=1&query={quote(data.get('search_name', spot_key))}"
     
     return (
@@ -1226,7 +1322,8 @@ def get_spot_details(spot_key):
         clean_url(data.get("x_url", "")),
         clean_url(data.get("fb_url", "")),
         clean_url(data.get("insta_url", "")),
-        clean_url(data.get("blog_url", ""))
+        clean_url(data.get("blog_url", "")),
+        clean_url(data.get("yt_url", ""))
     )
 
 def guess_date_from_string(date_str, now_date):
@@ -1879,7 +1976,7 @@ def fetch_spot_1hour_data(url):
         print(f"[スクレイピングエラー] {e}")
         return None
 
-def build_grid_flex_message(spot_name, weather_by_date, hp_url="", hp2_url="", map_url="", tel="", x_url="", fb_url="", insta_url="", blog_url="", is_favorite=False):
+def build_grid_flex_message(spot_name, weather_by_date, hp_url="", hp2_url="", map_url="", tel="", x_url="", fb_url="", insta_url="", blog_url="", yt_url="", is_favorite=False):
     dates = list(weather_by_date.keys())
     
     jst = timezone(timedelta(hours=9))
@@ -1985,6 +2082,8 @@ def build_grid_flex_message(spot_name, weather_by_date, hp_url="", hp2_url="", m
     if fb_url: header_buttons_bottom.append({"type": "button", "action": {"type": "uri", "label": "📘 FB", "uri": fb_url}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
     if insta_url: header_buttons_bottom.append({"type": "button", "action": {"type": "uri", "label": "📷 Insta", "uri": insta_url}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
     if blog_url: header_buttons_bottom.append({"type": "button", "action": {"type": "uri", "label": "📝 Blog", "uri": blog_url}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
+    # ★ YouTube用ボタンの切り替え判定
+    if yt_url: header_buttons_bottom.append({"type": "button", "action": {"type": "uri", "label": "▶️ YouTube", "uri": yt_url}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
 
     header_contents = [{"type": "text", "text": f"📍 {spot_name}", "color": "#ffffff", "weight": "bold", "size": "lg"}]
     
@@ -2133,7 +2232,7 @@ def handle_message(event):
         print(e.error.message)
         for d in e.error.details:
             print(f" - {d.property}: {d.message}")
-        try: line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ LINE通信エラーが発生しました。（データ容量オーバー等の可能性があります）"))
+        try: line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ LINE通信エラーが発生しました。（データ容量制限エラー等の可能性があります）"))
         except Exception: pass
     except Exception as e:
         print("\n=== システムエラー詳細 ===")
@@ -2168,7 +2267,7 @@ def handle_postback(event):
             return
 
         elif action == "show_weather":
-            target_spot_name, target_url, hp_url, hp2_url, map_url, tel, x_url, fb_url, insta_url, blog_url = get_spot_details(spot_name)
+            target_spot_name, target_url, hp_url, hp2_url, map_url, tel, x_url, fb_url, insta_url, blog_url, yt_url = get_spot_details(spot_name)
             
             if not target_url:
                 line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"⚠️ 【{spot_name}】のデータが見つかりません。"))
@@ -2187,7 +2286,7 @@ def handle_postback(event):
                     save_cached_weather(target_spot_name, weather_by_date)
 
             if weather_by_date:
-                flex_msg = build_grid_flex_message(target_spot_name, weather_by_date, hp_url, hp2_url, map_url, tel, x_url, fb_url, insta_url, blog_url, is_favorite=is_fav)
+                flex_msg = build_grid_flex_message(target_spot_name, weather_by_date, hp_url, hp2_url, map_url, tel, x_url, fb_url, insta_url, blog_url, yt_url, is_favorite=is_fav)
                 line_bot_api.reply_message(event.reply_token, flex_msg)
             else:
                 line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"⚠️ 【{target_spot_name}】の天気データの取得に失敗しました。少し時間をおいてから再度お試しください。"))
