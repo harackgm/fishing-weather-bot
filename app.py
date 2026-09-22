@@ -1550,7 +1550,6 @@ def build_spot_list_carousel_horizontal(user_id=None):
                         "type": "button",
                         "style": "secondary",
                         "color": "#fff59d",  
-                        "margin": "xs",
                         "height": "sm",
                         "action": {"type": "postback", "label": spot, "data": f"w={spot}"}
                     })
@@ -1558,8 +1557,8 @@ def build_spot_list_carousel_horizontal(user_id=None):
                     row_buttons.append({"type": "filler"})
                     
                 row_margin = "none" if i == 0 else ("md" if i % 10 == 0 else "xs")
-                row_box = {"type": "box", "layout": "horizontal", "contents": row_buttons, "margin": row_margin}
-                fav_rows.append(row_box)
+                # ★ JSONサイズ削減のため、ボタン自体のmarginを削除し、親のspacingで代用
+                fav_rows.append({"type": "box", "layout": "horizontal", "contents": row_buttons, "margin": row_margin, "spacing": "xs"})
 
         fav_rows.append({"type": "separator", "margin": "md", "color": "#cccccc"})
         
@@ -1641,7 +1640,6 @@ def build_spot_list_carousel_horizontal(user_id=None):
                         "type": "button",
                         "style": "secondary",
                         "color": btn_bg,
-                        "margin": "xs",
                         "height": "sm",
                         "action": {"type": "postback", "label": label_text, "data": f"w={spot}"}
                     })
@@ -1649,7 +1647,8 @@ def build_spot_list_carousel_horizontal(user_id=None):
                     row_buttons.append({"type": "filler"})
                     
                 row_margin = "none" if is_first_row else "xs"
-                rows.append({"type": "box", "layout": "horizontal", "contents": row_buttons, "margin": row_margin})
+                # ★ JSONサイズ削減のため、spacingで調整
+                rows.append({"type": "box", "layout": "horizontal", "contents": row_buttons, "margin": row_margin, "spacing": "xs"})
                 is_first_row = False
             
         bubble = {
@@ -1852,7 +1851,7 @@ def get_cached_weather(spot_name):
                         weather_data = row.get('weather_data')
                         MEMORY_CACHE[spot_name] = (weather_data, updated_time)
                         
-                        # 安全措置：過去のキャッシュが「1時間データのみ（辞書型）」だった場合、新形式へ自動変換してクラッシュを防止
+                        # 安全措置：過去のキャッシュが「1時間データのみ（辞書型）」だった場合、新形式へ自動変換
                         if isinstance(weather_data, dict) and "hourly" not in weather_data:
                             weather_data = {"hourly": weather_data, "weekly": []}
                         
@@ -1970,7 +1969,7 @@ def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_
             ] + [{"type": "box", "layout": "vertical", "spacing": "none", "margin": "sm", "contents": rows}]
         }
 
-    # ★ 週間天気（ざっくり予報）の横並びボックス作成モジュール（より安全なレイアウト設計に修正）
+    # ★ 週間天気（ざっくり予報）の横並びボックス作成モジュール（API制約に準拠した安全構造）
     def create_weekly_box(weekly_slice):
         if not weekly_slice:
             return None
@@ -1981,25 +1980,19 @@ def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_
             rain_color = "#0000ff" if rain_val.isdigit() and int(rain_val) > 0 else "#555555"
 
             cols.append({
-                "type": "box", "layout": "vertical", "flex": 1, "alignItems": "center", "spacing": "none",
+                "type": "box", "layout": "vertical", "flex": 1, "alignItems": "center", "spacing": "sm",
                 "contents": [
-                    {"type": "text", "text": w.get("date", "-"), "size": "xxs", "weight": "bold", "color": "#333333"},
+                    {"type": "text", "text": w.get("date", "-"), "size": "xxs", "weight": "bold", "color": "#333333", "align": "center"},
                     {"type": "image", "url": w.get("img_url", "https://gvs.weathernews.jp/onebox/img/wxicon/200.png"), "size": "xs", "aspectMode": "fit"},
-                    {
-                        "type": "box", "layout": "horizontal", "spacing": "none", "alignItems": "center", "justifyContent": "center",
-                        "contents": [
-                            {"type": "text", "text": f"{w.get('temp_max', '-')}℃", "size": "xxs", "color": "#ff0000", "weight": "bold", "align": "center"},
-                            {"type": "text", "text": "/", "size": "xxs", "color": "#aaaaaa", "margin": "xs", "align": "center"},
-                            {"type": "text", "text": f"{w.get('temp_min', '-')}℃", "size": "xxs", "color": "#0000ff", "weight": "bold", "align": "center"}
-                        ]
-                    },
-                    {"type": "text", "text": f"{w.get('rain_prob', '-')}", "size": "xxs", "color": rain_color, "weight": "bold"}
+                    # ★ 横並びをやめ、1行テキストとして扱うことでFlexエラーを完全排除
+                    {"type": "text", "text": f"{w.get('temp_max', '-')} / {w.get('temp_min', '-')}℃", "size": "xxs", "color": "#333333", "weight": "bold", "align": "center"},
+                    {"type": "text", "text": f"{w.get('rain_prob', '-')}", "size": "xxs", "color": rain_color, "weight": "bold", "align": "center"}
                 ]
             })
             
         return {
             "type": "box", "layout": "horizontal", "margin": "md", "spacing": "xs",
-            "backgroundColor": "#f4f4f4", "paddingAll": "6px", "cornerRadius": "md",
+            "backgroundColor": "#f4f4f4", "paddingAll": "sm", "cornerRadius": "md",
             "contents": cols
         }
 
@@ -2038,7 +2031,7 @@ def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_
 
     banner_img_url = "https://raw.githubusercontent.com/harackgm/fishing-weather-bot/main/tenkiharackbana.jpg"
 
-    # 週間天気ボックスの生成（前半4日と後半4日）
+    # ★ 週間天気ボックスの生成（前半4日と後半4日）
     weekly_box_1 = create_weekly_box(weekly_data[0:4])
     weekly_box_2 = create_weekly_box(weekly_data[4:8])
 
@@ -2202,14 +2195,15 @@ def handle_message(event):
     except LineBotApiError as e:
         print(f"\n=== LINE API エラー: {e.status_code} ===")
         print(e.error.message)
-        for d in e.error.details:
-            print(f" - {d.property}: {d.message}")
-        try: line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ LINE通信エラーが発生しました。（データ容量制限エラー等の可能性があります）"))
+        if hasattr(e.error, 'details') and e.error.details:
+            for d in e.error.details:
+                print(f" - {d.property}: {d.message}")
+        try: line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ LINE通信エラーが発生しました。一覧の文字数オーバー、またはカードの形式エラーです。"))
         except Exception: pass
     except Exception as e:
         print("\n=== システムエラー詳細 ===")
         traceback.print_exc()
-        try: line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ 処理中にエラーが発生しました。"))
+        try: line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ 処理中にシステムエラーが発生しました。"))
         except Exception: pass
 
 @handler.add(PostbackEvent)
@@ -2333,9 +2327,10 @@ def handle_postback(event):
     except LineBotApiError as e:
         print(f"\n=== LINE API エラー: {e.status_code} ===")
         print(e.error.message)
-        for d in e.error.details:
-            print(f" - {d.property}: {d.message}")
-        try: line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ LINE通信エラーが発生しました。（データ容量オーバー等の可能性があります）"))
+        if hasattr(e.error, 'details') and e.error.details:
+            for d in e.error.details:
+                print(f" - {d.property}: {d.message}")
+        try: line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ LINE通信エラーが発生しました。一覧の文字数オーバー、またはカードの形式エラーです。"))
         except Exception: pass
     except Exception as e:
         print(f"Postback Error: {e}")
