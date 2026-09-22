@@ -53,6 +53,8 @@ MEMORY_CACHE = {}
 
 # プッシュ通知安全装置設定 (将来用)
 MAX_PUSH_LIMIT = 10  # 一度に通知する最大人数
+# ★テスト用ID（本番運用時は空にする）
+# TEST_MODE_USER_ID = "U123456789abcdef0123456789abcdef" 
 TEST_MODE_USER_ID = "" 
 
 # ==========================================
@@ -1513,7 +1515,6 @@ def build_settings_flex_message(fav_list):
     else:
         return FlexSendMessage(alt_text="お気に入り管理パネル", contents={"type": "carousel", "contents": bubbles})
 
-# ★ 一覧表示用のコードを、エラーが起きていなかった元々の状態（マージンやボタン設定）に完全に戻しました。
 def build_spot_list_carousel_horizontal(user_id=None):
     bubbles = []
     fav_list = []
@@ -1713,124 +1714,6 @@ def build_spot_list_carousel_horizontal(user_id=None):
 
     return FlexSendMessage(alt_text="釣り場一覧", contents={"type": "carousel", "contents": bubbles})
 
-def fetch_spot_1hour_data(url):
-    try:
-        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}
-        response = requests.get(url, headers=headers, timeout=3.8)
-        response.raise_for_status()
-        soup = BeautifulSoup(response.text, 'html.parser')
-        
-        weather_by_date = {}
-        weekly_data = []
-
-        # 1時間ごとの天気を取得
-        flick_list = soup.find('div', id='flick_list_1hour')
-        if not flick_list:
-            flick_list = soup.find('div', id='flick_list_3hour')
-            
-        if flick_list:
-            groups = flick_list.find_all('div', class_='group')
-            for group in groups:
-                date_tag = group.find('div', class_='date')
-                if not date_tag: continue
-                date_str = date_tag.text.strip()
-                
-                daily_list = []
-                lists = group.find_all('ul', class_='list')
-                for item in lists:
-                    if 'past' in item.get('class', []): continue
-                    time_tag = item.find('li', class_='time')
-                    hour_str = time_tag.text.strip() if time_tag else ""
-                    if not hour_str.isdigit(): continue
-                    hour_int = int(hour_str)
-                    if not (6 <= hour_int <= 21): continue
-                    hour = f"{hour_int:02d}時"
-                    
-                    img_url = "https://gvs.weathernews.jp/onebox/img/wxicon/200.png"
-                    weather_tag = item.find('li', class_='weather')
-                    img_tag = weather_tag.find('img') if weather_tag else None
-                    if img_tag and 'src' in img_tag.attrs:
-                        src = img_tag['src']
-                        if src.startswith('//'): img_url = "https:" + src
-                        elif src.startswith('/'): img_url = "https://weathernews.jp" + src
-                        else: img_url = src
-                    img_url = img_url.replace("http://", "https://")
-                    if not img_url.startswith("https://"): img_url = "https://gvs.weathernews.jp/onebox/img/wxicon/200.png"
-
-                    rain = item.find('li', class_='rain').text.strip().replace("ミリ", "mm") if item.find('li', class_='rain') else "-"
-                    temp = item.find('li', class_='temp').text.strip() if item.find('li', class_='temp') else "-"
-                    wind_p = item.find('li', class_='wind').find('p') if item.find('li', class_='wind') else None
-                    wind = wind_p.text.strip() if wind_p else "-"
-
-                    daily_list.append({"time": hour, "img_url": img_url, "temp": temp, "rain": rain, "wind": wind})
-                
-                if daily_list: weather_by_date[date_str] = daily_list
-                if len(weather_by_date) >= 4: break
-
-        # 週間天気（2週間天気）の取得ロジック
-        try:
-            w14days = soup.find('div', id='w14days') or soup.find(class_=re.compile(r'w14days|weather-14days|week'))
-            if not w14days:
-                w14days = soup
-                
-            table = w14days.find('table')
-            if table:
-                dates, weathers, max_temps, min_temps, rains = [], [], [], [], []
-                for tr in table.find_all('tr'):
-                    th = tr.find(['th', 'td'])
-                    if not th: continue
-                    th_text = th.get_text().strip()
-                    tds = tr.find_all('td')
-                    
-                    if '日' in th_text and not dates:
-                        dates = [td.get_text().replace('\n', '').strip() for td in tds]
-                    elif '天気' in th_text:
-                        for td in tds:
-                            img = td.find('img')
-                            img_src = img['src'] if img and 'src' in img.attrs else "https://gvs.weathernews.jp/onebox/img/wxicon/200.png"
-                            if img_src.startswith('//'): img_src = 'https:' + img_src
-                            elif img_src.startswith('/'): img_src = 'https://weathernews.jp' + img_src
-                            weathers.append(img_src)
-                    elif '最高' in th_text:
-                        max_temps = [td.get_text().replace('℃', '').strip() for td in tds]
-                    elif '最低' in th_text:
-                        min_temps = [td.get_text().replace('℃', '').strip() for td in tds]
-                    elif '降水' in th_text:
-                        rains = [td.get_text().strip() for td in tds]
-                
-                max_len = min(len(dates), 14)
-                if max_len > 0:
-                    for i in range(max_len):
-                        weekly_data.append({
-                            "date": dates[i] if i < len(dates) else "-",
-                            "img_url": weathers[i] if i < len(weathers) else "https://gvs.weathernews.jp/onebox/img/wxicon/200.png",
-                            "temp_max": max_temps[i] if i < len(max_temps) else "-",
-                            "temp_min": min_temps[i] if i < len(min_temps) else "-",
-                            "rain_prob": rains[i] if i < len(rains) else "-"
-                        })
-        except Exception as e:
-            print(f"[Weekly Data Extract Error] {e}")
-
-        # 取得失敗時のフェイルセーフ＆レイアウト確認用ダミーデータ
-        if not weekly_data or len(weekly_data) < 8:
-            weekly_data = [
-                {"date": "22(火)", "img_url": "https://gvs.weathernews.jp/onebox/img/wxicon/200.png", "temp_max": "28", "temp_min": "20", "rain_prob": "40%"},
-                {"date": "23(水)", "img_url": "https://gvs.weathernews.jp/onebox/img/wxicon/300.png", "temp_max": "22", "temp_min": "19", "rain_prob": "30%"},
-                {"date": "24(木)", "img_url": "https://gvs.weathernews.jp/onebox/img/wxicon/201.png", "temp_max": "26", "temp_min": "19", "rain_prob": "40%"},
-                {"date": "25(金)", "img_url": "https://gvs.weathernews.jp/onebox/img/wxicon/200.png", "temp_max": "25", "temp_min": "19", "rain_prob": "40%"},
-                {"date": "26(土)", "img_url": "https://gvs.weathernews.jp/onebox/img/wxicon/300.png", "temp_max": "20", "temp_min": "17", "rain_prob": "80%"},
-                {"date": "27(日)", "img_url": "https://gvs.weathernews.jp/onebox/img/wxicon/300.png", "temp_max": "21", "temp_min": "16", "rain_prob": "60%"},
-                {"date": "28(月)", "img_url": "https://gvs.weathernews.jp/onebox/img/wxicon/300.png", "temp_max": "25", "temp_min": "17", "rain_prob": "60%"},
-                {"date": "29(火)", "img_url": "https://gvs.weathernews.jp/onebox/img/wxicon/200.png", "temp_max": "24", "temp_min": "18", "rain_prob": "40%"}
-            ]
-            
-        return {"hourly": weather_by_date, "weekly": weekly_data}
-    except requests.exceptions.Timeout:
-        return None
-    except Exception as e:
-        print(f"[スクレイピングエラー] {e}")
-        return None
-
 def get_cached_weather(spot_name):
     now = datetime.now(timezone.utc)
     
@@ -1851,10 +1734,6 @@ def get_cached_weather(spot_name):
                     if now - updated_time <= timedelta(hours=1):
                         weather_data = row.get('weather_data')
                         MEMORY_CACHE[spot_name] = (weather_data, updated_time)
-                        
-                        if isinstance(weather_data, dict) and "hourly" not in weather_data:
-                            weather_data = {"hourly": weather_data, "weekly": []}
-                        
                         return weather_data
                 except:
                     pass
@@ -1877,14 +1756,226 @@ def save_cached_weather(spot_name, weather_data):
     except Exception as e:
         print(f"[Cache SAVE Error] {e}")
 
-def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_url="", tel="", x_url="", fb_url="", insta_url="", blog_url="", yt_url="", is_favorite=False):
-    if isinstance(weather_data, dict) and "hourly" not in weather_data:
-        weather_by_date = weather_data
-        weekly_data = []
-    else:
-        weather_by_date = weather_data.get("hourly", {})
-        weekly_data = weather_data.get("weekly", [])
+def get_user_setting(user_id):
+    if not supabase: return ('ウェザーニュース', '')
+    try:
+        res = supabase.table('user_settings').select('*').eq('user_id', user_id).execute()
+        if res.data and len(res.data) > 0:
+            row = res.data[0]
+            favs = row.get('favorite_spots') or ''
+            
+            rename_map = {
+                "五頭": "GOZU",
+                "竜华池": "竜華池",
+                "ハーブ": "ハーブの里",
+                "サンクチュアリ": "３９",
+                "高島": "高島の泉",
+                "瑞浪": "FCE瑞浪",
+                "槻の池": "つきの池",
+                "川越": "川越パーク",
+                "宮城": "ＭＡＶ",
+                "浅川": "浅川国際",
+                "関根": "関根養魚場",
+                "FAJ": "Ｊ",
+                "朝霞": "朝霞Ｇ",
+                "不忘": "GP不忘",
+                "座間": "座間・amaz",
+                "パラダイス": "釣パラダイス",
+                "蛇尾川": "蛇尾（さび）川",
+                "大崎": "大崎・赤城",
+                "ロストルアーズ": "Lost Lures"
+            }
+            
+            raw_favs = [s.strip() for s in favs.split(',')]
+            favs_list = []
+            for s in raw_favs:
+                if s in rename_map:
+                    s = rename_map[s]
+                if s not in ["多摩湖", "いなプー"] and s:
+                    favs_list.append(s)
+                    
+            return (row.get('weather_source', 'ウェザーニュース'), ','.join(favs_list))
+        return ('ウェザーニュース', '')
+    except Exception as e:
+        print(f"[Supabase取得エラー] {e}")
+        return ('ウェザーニュース', '')
 
+def add_favorite_spots(user_id, spot_names):
+    if not supabase: return False, [], ["DB接続未完了です。"]
+    source, favorites = get_user_setting(user_id)
+    fav_list = [s for s in favorites.split(',') if s]
+    
+    added = []
+    errors = []
+    for spot_name in spot_names:
+        target_name = None
+        norm_input = normalize_name(spot_name)
+        
+        for spot_key, data in SPOT_WEATHER_DATA.items():
+            norm_key = normalize_name(spot_key)
+            norm_aliases = [normalize_name(a) for a in data["aliases"]]
+            
+            if norm_input == norm_key or norm_input in norm_aliases:
+                target_name = spot_key
+                break
+        
+        if not target_name:
+            errors.append(f"{spot_name}(不明)")
+            continue
+            
+        if target_name in fav_list:
+            errors.append(f"{target_name}(登録済)")
+            continue
+        if len(fav_list) >= MAX_FAVORITES:
+            errors.append(f"{target_name}(上限{MAX_FAVORITES}件超過)")
+            continue
+            
+        fav_list.append(target_name)
+        added.append(target_name)
+        
+    if added:
+        try:
+            supabase.table('user_settings').upsert({
+                'user_id': user_id, 'weather_source': source, 'favorite_spots': ','.join(fav_list)
+            }).execute()
+        except Exception as e:
+            return False, [], [f"DB保存エラー"]
+    return True, added, errors
+
+def remove_favorite_spots(user_id, spot_names):
+    if not supabase: return False, [], ["DB接続未完了です。"]
+    source, favorites = get_user_setting(user_id)
+    fav_list = [s for s in favorites.split(',') if s]
+    
+    removed = []
+    errors = []
+    for spot_name in spot_names:
+        target_name = None
+        norm_input = normalize_name(spot_name)
+        
+        for spot_key, data in SPOT_WEATHER_DATA.items():
+            norm_key = normalize_name(spot_key)
+            norm_aliases = [normalize_name(a) for a in data["aliases"]]
+            
+            if norm_input == norm_key or norm_input in norm_aliases:
+                target_name = spot_key
+                break
+        
+        if not target_name:
+            target_name = spot_name 
+            
+        if target_name not in fav_list:
+            errors.append(f"{target_name}(未登録)")
+            continue
+            
+        fav_list.remove(target_name)
+        removed.append(target_name)
+        
+    if removed:
+        try:
+            supabase.table('user_settings').upsert({
+                'user_id': user_id, 'weather_source': source, 'favorite_spots': ','.join(fav_list)
+            }).execute()
+        except Exception as e:
+            return False, [], [f"DB保存エラー"]
+    return True, removed, errors
+
+def clear_favorite_spots(user_id):
+    if not supabase: return False, "DB接続未完了です。"
+    source, _ = get_user_setting(user_id)
+    try:
+        supabase.table('user_settings').upsert({
+            'user_id': user_id, 'weather_source': source, 'favorite_spots': ''
+        }).execute()
+        return True, "すべてのお気に入りを削除しました。"
+    except Exception as e:
+        return False, f"削除に失敗しました: {e}"
+
+def move_favorite_spot(user_id, spot_name, direction):
+    if not supabase: return False, "DB接続未完了です。"
+    source, favorites = get_user_setting(user_id)
+    fav_list = [s for s in favorites.split(',') if s]
+    
+    if spot_name not in fav_list:
+        return False, "登録されていません。"
+    
+    idx = fav_list.index(spot_name)
+    
+    if direction == "up" and idx > 0:
+        fav_list[idx - 1], fav_list[idx] = fav_list[idx], fav_list[idx - 1]
+    elif direction == "down" and idx < len(fav_list) - 1:
+        fav_list[idx + 1], fav_list[idx] = fav_list[idx], fav_list[idx + 1]
+    else:
+        return True, "移動不要"
+        
+    try:
+        supabase.table('user_settings').upsert({
+            'user_id': user_id, 'weather_source': source, 'favorite_spots': ','.join(fav_list)
+        }).execute()
+        return True, "移動しました"
+    except Exception as e:
+        return False, f"移動失敗: {e}"
+
+def fetch_spot_1hour_data(url):
+    try:
+        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}
+        response = requests.get(url, headers=headers, timeout=3.8)
+        response.raise_for_status()
+        soup = BeautifulSoup(response.text, 'html.parser')
+        
+        flick_list = soup.find('div', id='flick_list_1hour')
+        if not flick_list:
+            flick_list = soup.find('div', id='flick_list_3hour')
+            
+        if not flick_list: return None
+
+        weather_by_date = {}
+        groups = flick_list.find_all('div', class_='group')
+
+        for group in groups:
+            date_tag = group.find('div', class_='date')
+            if not date_tag: continue
+            date_str = date_tag.text.strip()
+            
+            daily_list = []
+            lists = group.find_all('ul', class_='list')
+            for item in lists:
+                if 'past' in item.get('class', []): continue
+                time_tag = item.find('li', class_='time')
+                hour_str = time_tag.text.strip() if time_tag else ""
+                if not hour_str.isdigit(): continue
+                hour_int = int(hour_str)
+                if not (6 <= hour_int <= 21): continue
+                hour = f"{hour_int:02d}時"
+                
+                img_url = "https://gvs.weathernews.jp/onebox/img/wxicon/200.png"
+                weather_tag = item.find('li', class_='weather')
+                img_tag = weather_tag.find('img') if weather_tag else None
+                if img_tag and 'src' in img_tag.attrs:
+                    src = img_tag['src']
+                    if src.startswith('//'): img_url = "https:" + src
+                    elif src.startswith('/'): img_url = "https://weathernews.jp" + src
+                    else: img_url = src
+                img_url = img_url.replace("http://", "https://")
+                if not img_url.startswith("https://"): img_url = "https://gvs.weathernews.jp/onebox/img/wxicon/200.png"
+
+                rain = item.find('li', class_='rain').text.strip().replace("ミリ", "mm") if item.find('li', class_='rain') else "-"
+                temp = item.find('li', class_='temp').text.strip() if item.find('li', class_='temp') else "-"
+                wind_p = item.find('li', class_='wind').find('p') if item.find('li', class_='wind') else None
+                wind = wind_p.text.strip() if wind_p else "-"
+
+                daily_list.append({"time": hour, "img_url": img_url, "temp": temp, "rain": rain, "wind": wind})
+            
+            if daily_list: weather_by_date[date_str] = daily_list
+            if len(weather_by_date) >= 4: break
+        return weather_by_date
+    except requests.exceptions.Timeout:
+        return None
+    except Exception as e:
+        print(f"[スクレイピングエラー] {e}")
+        return None
+
+def build_grid_flex_message(spot_name, weather_by_date, hp_url="", hp2_url="", map_url="", tel="", x_url="", fb_url="", insta_url="", blog_url="", yt_url="", is_favorite=False):
     dates = list(weather_by_date.keys())
     
     jst = timezone(timedelta(hours=9))
@@ -1968,32 +2059,6 @@ def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_
             ] + [{"type": "box", "layout": "vertical", "spacing": "none", "margin": "sm", "contents": rows}]
         }
 
-    # ★ 週間天気レイアウト（エラーが発生しないシンプルな構造に修正）
-    def create_weekly_box(weekly_slice):
-        if not weekly_slice:
-            return None
-            
-        cols = []
-        for w in weekly_slice:
-            rain_val = w.get("rain_prob", "0").replace("%", "").strip()
-            rain_color = "#0000ff" if rain_val.isdigit() and int(rain_val) > 0 else "#555555"
-
-            cols.append({
-                "type": "box", "layout": "vertical", "flex": 1, "alignItems": "center",
-                "contents": [
-                    {"type": "text", "text": w.get("date", "-"), "size": "xxs", "weight": "bold", "color": "#333333", "align": "center"},
-                    {"type": "image", "url": w.get("img_url", "https://gvs.weathernews.jp/onebox/img/wxicon/200.png"), "size": "xs", "aspectMode": "fit"},
-                    {"type": "text", "text": f"{w.get('temp_max', '-')} / {w.get('temp_min', '-')}℃", "size": "xxs", "color": "#333333", "weight": "bold", "align": "center"},
-                    {"type": "text", "text": f"{w.get('rain_prob', '-')}", "size": "xxs", "color": rain_color, "weight": "bold", "align": "center"}
-                ]
-            })
-            
-        return {
-            "type": "box", "layout": "horizontal", "margin": "md", "spacing": "xs",
-            "backgroundColor": "#f4f4f4", "paddingAll": "8px", "cornerRadius": "md",
-            "contents": cols
-        }
-
     header_buttons_top = []
     if is_favorite:
         header_buttons_top.append({"type": "button", "action": {"type": "postback", "label": "🗑️ 解除", "data": f"action=fav_del_confirm_and_list&spot={spot_name}"}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs", "color": "#ffcccc"})
@@ -2029,9 +2094,7 @@ def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_
 
     banner_img_url = "https://raw.githubusercontent.com/harackgm/fishing-weather-bot/main/tenkiharackbana.jpg"
 
-    weekly_box_1 = create_weekly_box(weekly_data[0:4])
-    weekly_box_2 = create_weekly_box(weekly_data[4:8])
-
+    # ★ 1枚目（左側）の下部構成（電話ボタンなし、一覧ボタンを100%幅で配置）
     bottom_buttons_1 = [
         {
             "type": "box", "layout": "vertical", "flex": 1, "backgroundColor": "#fff59d", "borderWidth": "normal", "borderColor": "#d4af37", "cornerRadius": "md", "paddingAll": "0px",
@@ -2039,17 +2102,14 @@ def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_
         }
     ]
 
-    bottom_block_contents_1 = []
-    if weekly_box_1:
-        bottom_block_contents_1.append(weekly_box_1)
-        
-    bottom_block_contents_1.extend([
+    bottom_block_contents_1 = [
         {"type": "separator", "margin": "md"},
         {"type": "image", "url": banner_img_url, "size": "full", "aspectRatio": "3:1", "aspectMode": "cover", "margin": "md"},
         {"type": "separator", "margin": "md"},
         {"type": "box", "layout": "horizontal", "margin": "sm", "spacing": "sm", "contents": bottom_buttons_1}
-    ])
+    ]
 
+    # ★ 2枚目（右側）の下部構成（電話ボタンあり）
     bottom_buttons_2 = []
     if tel:
         clean_tel = tel.replace('-', '').strip()
@@ -2063,19 +2123,16 @@ def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_
         "contents": [{"type": "button", "action": {"type": "postback", "label": "📋 一覧", "data": "action=show_list", "displayText": "📋 一覧"}, "style": "link", "color": "#555555", "height": "sm", "margin": "none"}]
     })
 
-    bottom_block_contents_2 = []
-    if weekly_box_2:
-        bottom_block_contents_2.append(weekly_box_2)
-        
-    bottom_block_contents_2.extend([
+    bottom_block_contents_2 = [
         {"type": "separator", "margin": "md"},
         {"type": "image", "url": banner_img_url, "size": "full", "aspectRatio": "3:1", "aspectMode": "cover", "margin": "md"},
         {"type": "separator", "margin": "md"},
         {"type": "box", "layout": "horizontal", "margin": "sm", "spacing": "sm", "contents": bottom_buttons_2}
-    ])
+    ]
 
     bubbles = []
 
+    # 1枚目生成
     if len(dates) > 0:
         day1 = dates[0]
         day2 = dates[1] if len(dates) > 1 else None
@@ -2086,6 +2143,7 @@ def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_
             "body": {"type": "box", "layout": "vertical", "spacing": "md", "paddingAll": "8px", "contents": body_contents_1}
         })
 
+    # 2枚目生成
     if len(dates) > 2:
         day3 = dates[2]
         day4 = dates[3] if len(dates) > 3 else None
@@ -2188,13 +2246,9 @@ def handle_message(event):
     except LineBotApiError as e:
         print(f"\n=== LINE API エラー: {e.status_code} ===")
         print(e.error.message)
-        try:
-            if e.error.details:
-                for d in e.error.details:
-                    print(f" - {d.property}: {d.message}")
-        except:
-            pass
-        try: line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ LINE通信エラーが発生しました。（カード形式エラー等の可能性があります）"))
+        for d in e.error.details:
+            print(f" - {d.property}: {d.message}")
+        try: line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ LINE通信エラーが発生しました。（データ容量制限エラー等の可能性があります）"))
         except Exception: pass
     except Exception as e:
         print("\n=== システムエラー詳細 ===")
@@ -2240,15 +2294,15 @@ def handle_postback(event):
             fav_list = [s for s in fav_list if s]
             is_fav = target_spot_name in fav_list
 
-            weather_data = get_cached_weather(target_spot_name)
+            weather_by_date = get_cached_weather(target_spot_name)
             
-            if not weather_data:
-                weather_data = fetch_spot_1hour_data(target_url)
-                if weather_data:
-                    save_cached_weather(target_spot_name, weather_data)
+            if not weather_by_date:
+                weather_by_date = fetch_spot_1hour_data(target_url)
+                if weather_by_date:
+                    save_cached_weather(target_spot_name, weather_by_date)
 
-            if weather_data:
-                flex_msg = build_grid_flex_message(target_spot_name, weather_data, hp_url, hp2_url, map_url, tel, x_url, fb_url, insta_url, blog_url, yt_url, is_favorite=is_fav)
+            if weather_by_date:
+                flex_msg = build_grid_flex_message(target_spot_name, weather_by_date, hp_url, hp2_url, map_url, tel, x_url, fb_url, insta_url, blog_url, yt_url, is_favorite=is_fav)
                 line_bot_api.reply_message(event.reply_token, flex_msg)
             else:
                 line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"⚠️ 【{target_spot_name}】の天気データの取得に失敗しました。少し時間をおいてから再度お試しください。"))
@@ -2323,13 +2377,9 @@ def handle_postback(event):
     except LineBotApiError as e:
         print(f"\n=== LINE API エラー: {e.status_code} ===")
         print(e.error.message)
-        try:
-            if e.error.details:
-                for d in e.error.details:
-                    print(f" - {d.property}: {d.message}")
-        except:
-            pass
-        try: line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ LINE通信エラーが発生しました。（カード形式エラー等の可能性があります）"))
+        for d in e.error.details:
+            print(f" - {d.property}: {d.message}")
+        try: line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ LINE通信エラーが発生しました。（データ容量オーバー等の可能性があります）"))
         except Exception: pass
     except Exception as e:
         print(f"Postback Error: {e}")
