@@ -7,6 +7,7 @@ import difflib
 import re
 import threading
 import unicodedata
+import jpholiday
 from urllib.parse import quote, urlparse, parse_qsl
 from bs4 import BeautifulSoup
 from flask import Flask, request, abort, jsonify
@@ -1215,6 +1216,31 @@ def get_spot_details(spot_key):
         clean_url(data.get("blog_url", ""))
     )
 
+# ★ 文字列の「〇〇日」から実際の日付を推測計算する安全装置
+def guess_date_from_string(date_str, now_date):
+    match = re.search(r'(\d+)日', date_str)
+    if not match:
+        return now_date
+    day = int(match.group(1))
+    
+    try:
+        target = now_date.replace(day=day)
+    except ValueError:
+        return now_date
+        
+    if (now_date - target).days > 15:
+        if now_date.month == 12:
+            target = target.replace(year=now_date.year + 1, month=1)
+        else:
+            target = target.replace(month=now_date.month + 1)
+    elif (target - now_date).days > 15:
+        if now_date.month == 1:
+            target = target.replace(year=now_date.year - 1, month=12)
+        else:
+            target = target.replace(month=now_date.month - 1)
+            
+    return target
+
 def build_delete_confirm_message(spot_name, source):
     execute_action = f"fav_del_execute_and_{source}"
     cancel_action = f"fav_del_cancel_and_{source}"
@@ -1838,10 +1864,14 @@ def fetch_spot_1hour_data(url):
         print(f"[スクレイピングエラー] {e}")
         return None
 
-# ★ カルーセル（2枚横並び）・全日程1時間おき・デザイン統一版
+# ★ カルーセル（2枚横並び）・全日程1時間おき・祝日自動判定版
 def build_grid_flex_message(spot_name, weather_by_date, hp_url="", hp2_url="", map_url="", tel="", x_url="", fb_url="", insta_url="", blog_url="", is_favorite=False):
     dates = list(weather_by_date.keys())
     
+    # 基準となる日本時間の今日の日付を取得
+    jst = timezone(timedelta(hours=9))
+    now_jst_date = datetime.now(jst).date()
+
     header_color = "#0066cc"
     for group in COLOR_GROUPS:
         found = False
@@ -1858,6 +1888,25 @@ def build_grid_flex_message(spot_name, weather_by_date, hp_url="", hp2_url="", m
             return {"type": "box", "layout": "vertical", "flex": 1, "contents": [{"type": "text", "text": "-", "color": "#cccccc", "align": "center", "size": "xs"}]}
         
         daily_data = weather_by_date[date_str]
+
+        # ★ 日付文字列から正確な日付を計算し、祝日かどうかを判定
+        target_date = guess_date_from_string(date_str, now_jst_date)
+        is_hol = jpholiday.is_holiday(target_date)
+        is_holiday_flag = is_hol or "(祝)" in date_str
+
+        # ★ 祝日・日曜・土曜の色判定と国旗追加
+        display_date_str = date_str
+        header_bg_color = "#f5f5f5"
+        header_text_color = "#333333"
+
+        if is_holiday_flag or "(日)" in date_str:
+            header_bg_color = "#ffe6e6"
+            header_text_color = "#cc0000"
+            if is_holiday_flag and "🇯🇵" not in display_date_str:
+                display_date_str = f"🇯🇵 {date_str}"
+        elif "(土)" in date_str:
+            header_bg_color = "#e6f2ff"
+            header_text_color = "#0066cc"
 
         rows = [
             {
@@ -1894,21 +1943,12 @@ def build_grid_flex_message(spot_name, weather_by_date, hp_url="", hp2_url="", m
                     {"type": "text", "text": w_val, "size": "xs", "flex": 1, "align": "center"}
                 ]
             })
-            
-        header_bg_color = "#f5f5f5"
-        header_text_color = "#333333"
-        if "(土)" in date_str:
-            header_bg_color = "#e6f2ff"
-            header_text_color = "#0066cc"
-        elif "(日)" in date_str or "(祝)" in date_str:
-            header_bg_color = "#ffe6e6"
-            header_text_color = "#cc0000"
 
         return {
             "type": "box", "layout": "vertical", "flex": 1,
             "contents": [
                 {"type": "box", "layout": "vertical", "backgroundColor": header_bg_color, "paddingAll": "4px", "margin": "sm",
-                 "contents": [{"type": "text", "text": date_str, "weight": "bold", "size": "sm", "align": "center", "color": header_text_color}]}
+                 "contents": [{"type": "text", "text": display_date_str, "weight": "bold", "size": "sm", "align": "center", "color": header_text_color}]}
             ] + [{"type": "box", "layout": "vertical", "spacing": "none", "margin": "sm", "contents": rows}]
         }
 
@@ -1943,7 +1983,6 @@ def build_grid_flex_message(spot_name, weather_by_date, hp_url="", hp2_url="", m
     if header_buttons_bottom: 
         header_contents.append({"type": "box", "layout": "horizontal", "margin": "sm", "spacing": "xs", "contents": header_buttons_bottom})
 
-    # ヘッダーを1つのブロックとして定義（両方のカードで使い回す）
     header_block = {"type": "box", "layout": "vertical", "backgroundColor": header_color, "paddingAll": "10px", "contents": header_contents}
 
     # ★ 共通下部（バナー・ボタン）パーツの作成
@@ -1962,7 +2001,6 @@ def build_grid_flex_message(spot_name, weather_by_date, hp_url="", hp2_url="", m
 
     banner_img_url = "https://raw.githubusercontent.com/harackgm/fishing-weather-bot/main/tenkiharackbana.jpg"
     
-    # 下部をリストとして定義（両方のカードの末尾に足す）
     bottom_block_contents = [
         {"type": "separator", "margin": "md"},
         {"type": "image", "url": banner_img_url, "size": "full", "aspectRatio": "3:1", "aspectMode": "cover", "margin": "md"},
@@ -1972,35 +2010,23 @@ def build_grid_flex_message(spot_name, weather_by_date, hp_url="", hp2_url="", m
 
     bubbles = []
 
-    # ★ 1枚目のカード（1日目・2日目）
     if len(dates) > 0:
         day1 = dates[0]
         day2 = dates[1] if len(dates) > 1 else None
-        
-        body_contents_1 = [
-            {"type": "box", "layout": "horizontal", "spacing": "sm", "contents": [create_day_column(day1), {"type": "separator"}, create_day_column(day2)]}
-        ]
-        body_contents_1.extend(bottom_block_contents) # 共通下部を追加
-        
+        body_contents_1 = [{"type": "box", "layout": "horizontal", "spacing": "sm", "contents": [create_day_column(day1), {"type": "separator"}, create_day_column(day2)]}]
+        body_contents_1.extend(bottom_block_contents) 
         bubbles.append({
-            "type": "bubble", "size": "giga",
-            "header": header_block, # 共通ヘッダー
+            "type": "bubble", "size": "giga", "header": header_block,
             "body": {"type": "box", "layout": "vertical", "spacing": "md", "paddingAll": "8px", "contents": body_contents_1}
         })
 
-    # ★ 2枚目のカード（3日目・4日目）
     if len(dates) > 2:
         day3 = dates[2]
         day4 = dates[3] if len(dates) > 3 else None
-        
-        body_contents_2 = [
-            {"type": "box", "layout": "horizontal", "spacing": "sm", "contents": [create_day_column(day3), {"type": "separator"}, create_day_column(day4)]}
-        ]
-        body_contents_2.extend(bottom_block_contents) # 共通下部を追加
-        
+        body_contents_2 = [{"type": "box", "layout": "horizontal", "spacing": "sm", "contents": [create_day_column(day3), {"type": "separator"}, create_day_column(day4)]}]
+        body_contents_2.extend(bottom_block_contents) 
         bubbles.append({
-            "type": "bubble", "size": "giga",
-            "header": header_block, # 共通ヘッダー
+            "type": "bubble", "size": "giga", "header": header_block,
             "body": {"type": "box", "layout": "vertical", "spacing": "md", "paddingAll": "8px", "contents": body_contents_2}
         })
 
