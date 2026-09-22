@@ -1872,7 +1872,7 @@ def move_favorite_spot(user_id, spot_name, direction):
     except Exception as e:
         return False, f"移動失敗: {e}"
 
-# ★ URLから緯度・経度を自動抽出し、無料の気象APIから正確な週間天気を取得する関数 ★
+# ★ URLから緯度・経度を抽出し、無料の気象APIから14日間の週間天気を取得する新関数 ★
 def extract_lat_lon(url):
     m = re.search(r'onebox/([0-9.]+)/([0-9.]+)', url)
     if m:
@@ -1881,7 +1881,8 @@ def extract_lat_lon(url):
 
 def fetch_weekly_data_from_api(lat, lon):
     try:
-        api_url = f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&daily=weathercode,temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=Asia%2FTokyo"
+        # ★forecast_days=14 を追加し、確実に14日分（2週間）のデータを取得する
+        api_url = f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&daily=weathercode,temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=Asia%2FTokyo&forecast_days=14"
         res = requests.get(api_url, timeout=5.0)
         res.raise_for_status()
         data = res.json()
@@ -1895,17 +1896,15 @@ def fetch_weekly_data_from_api(lat, lon):
         
         weekly_data = []
         for i in range(min(len(times), 14)):
-            # times[i] は "2026-09-22" のような文字列
             dt = datetime.strptime(times[i], "%Y-%m-%d")
             w_str = ["(月)", "(火)", "(水)", "(木)", "(金)", "(土)", "(日)"][dt.weekday()]
             date_label = f"{dt.day}{w_str}"
             
-            # 天気コード（WMO）をウェザーニュース風のアイコンに変換
             code = weathercodes[i]
-            if code in [0, 1]: img_url = "https://gvs.weathernews.jp/onebox/img/wxicon/100.png" # 晴れ
-            elif code in [2, 3, 45, 48]: img_url = "https://gvs.weathernews.jp/onebox/img/wxicon/200.png" # 曇り
-            elif code in [71, 73, 75, 77, 85, 86]: img_url = "https://gvs.weathernews.jp/onebox/img/wxicon/400.png" # 雪
-            else: img_url = "https://gvs.weathernews.jp/onebox/img/wxicon/300.png" # 雨
+            if code in [0, 1]: img_url = "https://gvs.weathernews.jp/onebox/img/wxicon/100.png"
+            elif code in [2, 3, 45, 48]: img_url = "https://gvs.weathernews.jp/onebox/img/wxicon/200.png"
+            elif code in [71, 73, 75, 77, 85, 86]: img_url = "https://gvs.weathernews.jp/onebox/img/wxicon/400.png"
+            else: img_url = "https://gvs.weathernews.jp/onebox/img/wxicon/300.png"
             
             t_max = str(round(temp_max[i])) if temp_max[i] is not None else "-"
             t_min = str(round(temp_min[i])) if temp_min[i] is not None else "-"
@@ -1984,7 +1983,8 @@ def fetch_spot_1hour_data(url):
             weekly_data = fetch_weekly_data_from_api(lat, lon)
 
         # 万が一APIに失敗した場合は仮のダミーデータを用意する（エラー回避）
-        if not weekly_data or len(weekly_data) < 8:
+        # ★ 安全装置の条件を緩和（4件未満ならダミーにする）
+        if not weekly_data or len(weekly_data) < 4:
             now_dt = datetime.now(timezone(timedelta(hours=9)))
             weekly_data = []
             for i in range(8):
@@ -2017,7 +2017,7 @@ def get_cached_weather(spot_name):
             if isinstance(data, dict):
                 weekly = data.get("__weekly__", [])
                 # ★ キャッシュが空、またはハイフン（ダミーデータ）の時は強制的に破棄して取り直す安全装置
-                if not weekly or len(weekly) < 8 or weekly[0].get("temp_max") == "-":
+                if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-":
                     return None
             return data
             
@@ -2035,7 +2035,7 @@ def get_cached_weather(spot_name):
                         if isinstance(weather_data, dict):
                             weekly = weather_data.get("__weekly__", [])
                             # ★ Supabaseのデータがハイフン（ダミー）の時も強制的に破棄して取り直す
-                            if not weekly or len(weekly) < 8 or weekly[0].get("temp_max") == "-":
+                            if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-":
                                 return None
                         MEMORY_CACHE[spot_name] = (weather_data, updated_time)
                         return weather_data
