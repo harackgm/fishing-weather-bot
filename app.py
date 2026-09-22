@@ -124,7 +124,6 @@ SPOT_WEATHER_DATA = {
     # --- 栃木県 ---
     "キングフィッシャー": {
         "url": "https://weathernews.jp/onebox/36.907054/140.078650/",
-        # ★ キングフィッシャーのみ tenki.jp のURLを追加
         "tenki_url": "https://tenki.jp/forecast/3/12/4120/9210/10days.html",
         "hp_url": "https://kingfisher-tochigi.com/",
         "x_url": "",
@@ -1308,7 +1307,6 @@ def clean_url(url_str):
 def get_spot_details(spot_key):
     data = SPOT_WEATHER_DATA.get(spot_key)
     if not data:
-        # ★ tenki_url の枠を含めるため、戻り値を 12個 に増やす
         return spot_key, None, "", "", "", "", "", "", "", "", "", None
     map_url = f"https://www.google.com/maps/search/?api=1&query={quote(data.get('search_name', spot_key))}"
     
@@ -1324,7 +1322,7 @@ def get_spot_details(spot_key):
         clean_url(data.get("insta_url", "")),
         clean_url(data.get("blog_url", "")),
         clean_url(data.get("yt_url", "")),
-        clean_url(data.get("tenki_url", "")) # ★ tenki.jpのURLを返す
+        clean_url(data.get("tenki_url", ""))
     )
 
 def guess_date_from_string(date_str, now_date):
@@ -1498,8 +1496,7 @@ def build_settings_flex_message(fav_list):
         })
 
         bubbles.append({
-            "type": "bubble",
-            "size": "mega",
+            "type": "bubble", "size": "mega",
             "header": {
                 "type": "box", "layout": "vertical", "backgroundColor": "#d4af37", "paddingAll": "10px",
                 "contents": [
@@ -1528,19 +1525,12 @@ def build_spot_list_carousel_horizontal(user_id=None):
         fav_rows = []
         if not fav_list:
             fav_rows.append({
-                "type": "box",
-                "layout": "vertical",
-                "backgroundColor": "#fffde7",
-                "cornerRadius": "md",
-                "paddingAll": "md",
-                "margin": "md",
+                "type": "box", "layout": "vertical", "backgroundColor": "#fffde7", "cornerRadius": "md", "paddingAll": "md", "margin": "md",
                 "contents": [
                     {
                         "type": "text",
                         "text": "現在お気に入りは登録されていません。\n右へスワイプして釣り場を探し、「⭐️ 登録」ボタンを押すか、テキストで「追加 東山湖」と送信して登録してください。",
-                        "wrap": True,
-                        "size": "sm",
-                        "color": "#555555"
+                        "wrap": True, "size": "sm", "color": "#555555"
                     }
                 ]
             })
@@ -1550,11 +1540,7 @@ def build_spot_list_carousel_horizontal(user_id=None):
                 row_buttons = []
                 for spot in pair:
                     row_buttons.append({
-                        "type": "button",
-                        "style": "secondary",
-                        "color": "#fff59d",  
-                        "margin": "xs",
-                        "height": "sm",
+                        "type": "button", "style": "secondary", "color": "#fff59d", "margin": "xs", "height": "sm",
                         "action": {"type": "postback", "label": spot, "data": f"w={spot}"}
                     })
                 if len(pair) == 1:
@@ -1567,48 +1553,25 @@ def build_spot_list_carousel_horizontal(user_id=None):
         fav_rows.append({"type": "separator", "margin": "md", "color": "#cccccc"})
         
         fav_rows.append({
-            "type": "box",
-            "layout": "horizontal",
-            "margin": "sm",
-            "spacing": "sm",
+            "type": "box", "layout": "horizontal", "margin": "sm", "spacing": "sm",
             "contents": [
                 {
-                    "type": "box",
-                    "layout": "vertical",
-                    "flex": 1,
-                    "backgroundColor": "#f8f9fa",
-                    "borderWidth": "normal",
-                    "borderColor": "#e0e0e0",
-                    "cornerRadius": "md",
-                    "paddingAll": "none",
+                    "type": "box", "layout": "vertical", "flex": 1, "backgroundColor": "#f8f9fa", "borderWidth": "normal", "borderColor": "#e0e0e0", "cornerRadius": "md", "paddingAll": "none",
                     "contents": [
                         {
                             "type": "button",
                             "action": {"type": "postback", "label": "⚙️ 設定", "data": "action=show_settings", "displayText": "⚙️ 設定"},
-                            "style": "link",
-                            "color": "#555555",
-                            "height": "sm",
-                            "margin": "none"
+                            "style": "link", "color": "#555555", "height": "sm", "margin": "none"
                         }
                     ]
                 },
                 {
-                    "type": "box",
-                    "layout": "vertical",
-                    "flex": 1,
-                    "backgroundColor": "#fff59d",
-                    "borderWidth": "normal",
-                    "borderColor": "#d4af37",
-                    "cornerRadius": "md",
-                    "paddingAll": "none",
+                    "type": "box", "layout": "vertical", "flex": 1, "backgroundColor": "#fff59d", "borderWidth": "normal", "borderColor": "#d4af37", "cornerRadius": "md", "paddingAll": "none",
                     "contents": [
                         {
                             "type": "button",
                             "action": {"type": "postback", "label": "📋 一覧", "data": "action=show_list", "displayText": "📋 一覧"},
-                            "style": "link",
-                            "color": "#555555",
-                            "height": "sm",
-                            "margin": "none"
+                            "style": "link", "color": "#555555", "height": "sm", "margin": "none"
                         }
                     ]
                 }
@@ -1616,8 +1579,7 @@ def build_spot_list_carousel_horizontal(user_id=None):
         })
 
         fav_bubble = {
-            "type": "bubble",
-            "size": "giga",
+            "type": "bubble", "size": "giga",
             "header": {
                 "type": "box", "layout": "horizontal", "backgroundColor": "#d4af37", "paddingAll": "10px", "alignItems": "center",
                 "contents": [
@@ -1641,11 +1603,7 @@ def build_spot_list_carousel_horizontal(user_id=None):
                 for spot in pair:
                     label_text = f"★ {spot}" if spot in fav_list else spot
                     row_buttons.append({
-                        "type": "button",
-                        "style": "secondary",
-                        "color": btn_bg,
-                        "margin": "xs",
-                        "height": "sm",
+                        "type": "button", "style": "secondary", "color": btn_bg, "margin": "xs", "height": "sm",
                         "action": {"type": "postback", "label": label_text, "data": f"w={spot}"}
                     })
                 if len(pair) == 1:
@@ -1656,8 +1614,7 @@ def build_spot_list_carousel_horizontal(user_id=None):
                 is_first_row = False
             
         bubble = {
-            "type": "bubble",
-            "size": "giga",
+            "type": "bubble", "size": "giga",
             "header": {
                 "type": "box", "layout": "vertical", "backgroundColor": group["header_bg"], "paddingAll": "10px",
                 "contents": [{"type": "text", "text": group["title"], "color": "#ffffff", "weight": "bold", "size": "md"}]
@@ -1668,8 +1625,7 @@ def build_spot_list_carousel_horizontal(user_id=None):
 
     # 使い方ガイド
     guide_bubble = {
-        "type": "bubble",
-        "size": "giga",
+        "type": "bubble", "size": "giga",
         "header": {
             "type": "box", "layout": "vertical", "backgroundColor": "#888888", "paddingAll": "10px",
             "contents": [{"type": "text", "text": "📖 使い方ガイド", "color": "#ffffff", "weight": "bold", "size": "md"}]
@@ -1877,7 +1833,7 @@ def move_favorite_spot(user_id, spot_name, direction):
         return False, f"移動失敗: {e}"
 
 # ==========================================
-# ★ 週間天気データを取得する高精度API & tenki.jpロジック ★
+# ★ 週間天気データを取得する高精度API & tenki.jp精密ロジック ★
 # ==========================================
 def extract_lat_lon(url):
     m = re.search(r'onebox/([0-9.]+)/([0-9.]+)', url)
@@ -1887,8 +1843,7 @@ def extract_lat_lon(url):
 
 def fetch_weekly_data_from_api(lat, lon, exclude_dates):
     try:
-        # APIの場合は従来通り、WNと日付が被らないように抽出（他釣り場用）
-        api_url = f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&daily=weathercode,temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=Asia%2FTokyo"
+        api_url = f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&daily=weathercode,temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=Asia%2FTokyo&forecast_days=14"
         res = requests.get(api_url, timeout=5.0)
         res.raise_for_status()
         data = res.json()
@@ -1909,7 +1864,6 @@ def fetch_weekly_data_from_api(lat, lon, exclude_dates):
             w_str = ["(月)", "(火)", "(水)", "(木)", "(金)", "(土)", "(日)"][dt.weekday()]
             date_label = f"{dt.day}{w_str}"
             
-            # exclude_dates には "25(金)" のように「日」を抜いた形式が入っている想定
             if date_label in exclude_dates:
                 continue
                 
@@ -1939,7 +1893,7 @@ def fetch_weekly_data_from_api(lat, lon, exclude_dates):
         print(f"[Open-Meteo API Error] {e}")
         return []
 
-# ★ 新規追加: tenki.jp から10日間予報をスクレイピングする関数 ★
+# ★ 新規追加: 提供されたHTMLソースに基づき、tenki.jpから超高精度に10日間予報を抽出する関数 ★
 def fetch_weekly_data_from_tenki(tenki_url, exclude_dates):
     try:
         headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
@@ -1947,79 +1901,66 @@ def fetch_weekly_data_from_tenki(tenki_url, exclude_dates):
         response.raise_for_status()
         soup = BeautifulSoup(response.text, 'html.parser')
         
-        dates_list, weathers, max_temps, min_temps, rains = [], [], [], [], []
-        
-        # tenki.jp の10日間予報テーブルを探す（class名が一致しない場合のフォールバックも考慮してtrで全探索）
-        for tr in soup.find_all('tr'):
-            text = tr.get_text(strip=True)
-            cells = tr.find_all(['td', 'th'])
-            if not cells: continue
-            
-            header = cells[0].get_text(strip=True)
-            
-            # 日付行の判定
-            if re.search(r'\d{1,2}\([月火水木金土日祝]\)', header) or '日' in header or '日付' in header:
-                if not dates_list:
-                    for cell in cells:
-                        txt = cell.get_text(strip=True)
-                        m = re.search(r'\d{1,2}\([月火水木金土日祝]\)', txt)
-                        if m: dates_list.append(m.group(0))
-            # 天気アイコン行の判定
-            elif tr.find('img') and not weathers:
-                for cell in cells:
-                    img = cell.find('img')
-                    if img and 'src' in img.attrs:
-                        weathers.append(img['src'])
-                    else:
-                        if cell.get_text(strip=True):
-                            weathers.append("https://gvs.weathernews.jp/onebox/img/wxicon/200.png")
-            # 最高気温の判定
-            elif '最高' in header or (cells[0].find('span', class_='high-temp')):
-                if not max_temps:
-                    for cell in cells:
-                        if '最高' in cell.get_text(): continue
-                        high = cell.find('span', class_='high-temp')
-                        if high: max_temps.append(high.get_text(strip=True))
-                        else: max_temps.append(re.sub(r'[^\d\-]', '', cell.get_text(strip=True)) or "-")
-            # 最低気温の判定
-            elif '最低' in header or (cells[0].find('span', class_='low-temp')):
-                if not min_temps:
-                    for cell in cells:
-                        if '最低' in cell.get_text(): continue
-                        low = cell.find('span', class_='low-temp')
-                        if low: min_temps.append(low.get_text(strip=True))
-                        else: min_temps.append(re.sub(r'[^\d\-]', '', cell.get_text(strip=True)) or "-")
-            # 降水確率の判定
-            elif '降水' in header and '%' in text:
-                if not rains:
-                    for cell in cells:
-                        if '降水' in cell.get_text(): continue
-                        rains.append(cell.get_text(strip=True))
-        
-        # 抽出したリストからデータを組み立てる
         weekly_data = []
-        max_len = min(len(dates_list), len(weathers), len(max_temps), len(min_temps), len(rains))
         
-        for i in range(max_len):
-            if not dates_list[i]: continue
+        # dd.forecast10days-actab 要素を直接抽出（静的HTML内に完備）
+        elems = soup.find_all('dd', class_='forecast10days-actab')
+        for elem in elems:
+            days_elem = elem.find('div', class_='days')
+            forecast_elem = elem.find('div', class_='forecast')
+            temp_elem = elem.find('div', class_='temp')
+            prob_elem = elem.find('div', class_='prob-precip')
             
-            # WNで既に表示している日付はスキップ
-            if dates_list[i] in exclude_dates:
+            if not (days_elem and temp_elem):
                 continue
                 
-            w_img = weathers[i]
-            # tenki.jpのアイコンからWN風のアイコンにざっくり変換（URLに晴や雨が含まれるかで判定）
-            if 'sun' in w_img or '100' in w_img: final_img = "https://gvs.weathernews.jp/onebox/img/wxicon/100.png"
-            elif 'rain' in w_img or '300' in w_img: final_img = "https://gvs.weathernews.jp/onebox/img/wxicon/300.png"
-            elif 'snow' in w_img or '400' in w_img: final_img = "https://gvs.weathernews.jp/onebox/img/wxicon/400.png"
-            else: final_img = "https://gvs.weathernews.jp/onebox/img/wxicon/200.png" # 曇りをデフォルト
+            raw_days = days_elem.get_text(strip=True) # 例: "09月22日(火)" や "09月26日(土)"
             
+            # 日付整形 (例: "09月22日(火)" -> "22(火)")
+            m = re.search(r'(\d{1,2})月(\d{1,2})日\((.+?)\)', raw_days)
+            if m:
+                day_num = int(m.group(2))
+                youbi = m.group(3)
+                date_label = f"{day_num}({youbi})"
+            else:
+                date_label = raw_days
+                
+            # WNと被っている日付（例: "25(金)"）はスキップ
+            if date_label in exclude_dates or raw_days in exclude_dates:
+                continue
+                
+            # 最高気温・最低気温
+            high_elem = temp_elem.find('span', class_='high-temp')
+            low_elem = temp_elem.find('span', class_='low-temp')
+            
+            t_max = high_elem.get_text(strip=True).replace('℃', '').strip() if high_elem else "-"
+            t_min = low_elem.get_text(strip=True).replace('℃', '').strip() if low_elem else "-"
+            
+            # 降水確率
+            r_prob = prob_elem.get_text(strip=True) if prob_elem else "-"
+            
+            # 天気アイコン
+            img_tag = forecast_elem.find('img') if forecast_elem else None
+            img_src = img_tag['src'] if img_tag and 'src' in img_tag.attrs else ""
+            
+            # WN風アイコンへの変換
+            if '01' in img_src or '02' in img_src or '100' in img_src:
+                final_img = "https://gvs.weathernews.jp/onebox/img/wxicon/100.png"
+            elif '08' in img_src or '09' in img_src or '12' in img_src or '200' in img_src:
+                final_img = "https://gvs.weathernews.jp/onebox/img/wxicon/200.png"
+            elif '雨' in img_src or 'rain' in img_src or '300' in img_src or '20' in img_src or '46' in img_src:
+                final_img = "https://gvs.weathernews.jp/onebox/img/wxicon/300.png"
+            elif 'snow' in img_src or '400' in img_src:
+                final_img = "https://gvs.weathernews.jp/onebox/img/wxicon/400.png"
+            else:
+                final_img = "https://gvs.weathernews.jp/onebox/img/wxicon/200.png"
+                
             weekly_data.append({
-                "date": dates_list[i],
+                "date": date_label,
                 "img_url": final_img,
-                "temp_max": max_temps[i],
-                "temp_min": min_temps[i],
-                "rain_prob": rains[i]
+                "temp_max": t_max,
+                "temp_min": t_min,
+                "rain_prob": r_prob
             })
             
             if len(weekly_data) >= 8:
@@ -2030,7 +1971,6 @@ def fetch_weekly_data_from_tenki(tenki_url, exclude_dates):
         print(f"[tenki.jp Extract Error] {e}")
         return []
 
-# ★ 引数に tenki_url を追加 ★
 def fetch_spot_1hour_data(url, tenki_url=None):
     try:
         headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}
@@ -2083,17 +2023,16 @@ def fetch_spot_1hour_data(url, tenki_url=None):
                 
                 if daily_list: 
                     weather_by_date[date_str] = daily_list
-                    # 比較のために「日」の文字を消す
                     exclude_dates.append(date_str.replace("日", ""))
                 if len(weather_by_date) >= 4: break
 
         weekly_data = []
         
-        # ★ tenki_url が設定されている場合（今回はキングフィッシャー）は tenki.jp をスクレイピング
+        # ★ tenki_url が設定されている場合（キングフィッシャー）は tenki.jp をスクレイピング
         if tenki_url:
             weekly_data = fetch_weekly_data_from_tenki(tenki_url, exclude_dates)
             
-        # tenki_url がない場合（他の釣り場）は従来通りAPIを使用
+        # 他の釣り場は従来通りAPIを使用
         if not weekly_data:
             lat, lon = extract_lat_lon(url)
             if lat and lon:
@@ -2131,8 +2070,8 @@ def get_cached_weather(spot_name):
         if now - updated_time <= timedelta(hours=1):
             if isinstance(data, dict):
                 weekly = data.get("__weekly__", [])
-                # ★ キャッシュバージョン更新。これより前のデータは強制破棄
-                if data.get("_version") != "tenki_test_v1":
+                # ★ キャッシュバージョン更新。旧データを強制破棄
+                if data.get("_version") != "tenki_html_parsed_v1":
                     return None
                 if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-":
                     return None
@@ -2152,7 +2091,7 @@ def get_cached_weather(spot_name):
                         if isinstance(weather_data, dict):
                             weekly = weather_data.get("__weekly__", [])
                             # ★ Supabaseの古いキャッシュデータも強制破棄
-                            if weather_data.get("_version") != "tenki_test_v1":
+                            if weather_data.get("_version") != "tenki_html_parsed_v1":
                                 return None
                             if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-":
                                 return None
@@ -2168,7 +2107,7 @@ def get_cached_weather(spot_name):
 def save_cached_weather(spot_name, weather_data):
     now = datetime.now(timezone.utc)
     # ★ 新しいバージョン名を付与
-    weather_data["_version"] = "tenki_test_v1"
+    weather_data["_version"] = "tenki_html_parsed_v1"
     MEMORY_CACHE[spot_name] = (weather_data, now)
     
     if not supabase: return
@@ -2526,7 +2465,6 @@ def handle_postback(event):
             return
 
         elif action == "show_weather":
-            # ★ 修正: get_spot_details の戻り値 12個 に合わせて受け取る
             target_spot_name, target_url, hp_url, hp2_url, map_url, tel, x_url, fb_url, insta_url, blog_url, yt_url, tenki_url = get_spot_details(spot_name)
             
             if not target_url:
@@ -2541,7 +2479,6 @@ def handle_postback(event):
             weather_data = get_cached_weather(target_spot_name)
             
             if not weather_data:
-                # ★ 修正: fetch_spot_1hour_data に tenki_url を渡す
                 weather_data = fetch_spot_1hour_data(target_url, tenki_url)
                 if weather_data:
                     save_cached_weather(target_spot_name, weather_data)
@@ -2628,7 +2565,7 @@ def handle_postback(event):
                     print(f" - {d.property}: {d.message}")
         except:
             pass
-        try: line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ LINE通信エラーが発生しました。（カード形式エラー等の可能性があります）"))
+        try: line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ LINE通信エラーが発生しました。（データ容量制限エラー等の可能性があります）"))
         except Exception: pass
     except Exception as e:
         print(f"Postback Error: {e}")
@@ -2685,7 +2622,6 @@ def run_background_update():
             data = SPOT_WEATHER_DATA.get(spot_name)
             if not data: continue
             
-            # ★ 修正: 背景更新でも tenki_url を渡す
             url = data["url"]
             tenki_url = data.get("tenki_url")
             
