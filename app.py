@@ -1216,7 +1216,6 @@ def get_spot_details(spot_key):
         clean_url(data.get("blog_url", ""))
     )
 
-# ★ 文字列の「〇〇日」から実際の日付を推測計算する安全装置
 def guess_date_from_string(date_str, now_date):
     match = re.search(r'(\d+)日', date_str)
     if not match:
@@ -1594,7 +1593,8 @@ def build_spot_list_carousel_horizontal(user_id=None):
                     "type": "box", "layout": "vertical", "spacing": "sm",
                     "contents": [
                         {"type": "text", "text": "🛑 配信停止・解除", "weight": "bold", "size": "sm", "color": "#333333"},
-                        {"type": "text", "text": "このBotの利用を停止したい場合は、トーク画面右上のメニュー「≡」から「ブロック」を行ってください。", "wrap": True, "size": "xs", "color": "#666666"}
+                        # ★ 削除手順を詳細化
+                        {"type": "text", "text": "このBotの利用を停止したい場合は、トーク画面右上のメニュー「≡」から「ブロック」を行ってください。\n完全に消去する場合は、「トーク一覧」画面に戻り、このBotのトークを長押し（iPhoneは左スワイプ）して「削除」してください。", "wrap": True, "size": "xs", "color": "#666666"}
                     ]
                 }
             ]
@@ -1864,11 +1864,9 @@ def fetch_spot_1hour_data(url):
         print(f"[スクレイピングエラー] {e}")
         return None
 
-# ★ カルーセル（2枚横並び）・全日程1時間おき・祝日自動判定版
 def build_grid_flex_message(spot_name, weather_by_date, hp_url="", hp2_url="", map_url="", tel="", x_url="", fb_url="", insta_url="", blog_url="", is_favorite=False):
     dates = list(weather_by_date.keys())
     
-    # 基準となる日本時間の今日の日付を取得
     jst = timezone(timedelta(hours=9))
     now_jst_date = datetime.now(jst).date()
 
@@ -1889,12 +1887,10 @@ def build_grid_flex_message(spot_name, weather_by_date, hp_url="", hp2_url="", m
         
         daily_data = weather_by_date[date_str]
 
-        # ★ 日付文字列から正確な日付を計算し、祝日かどうかを判定
         target_date = guess_date_from_string(date_str, now_jst_date)
         is_hol = jpholiday.is_holiday(target_date)
         is_holiday_flag = is_hol or "(祝)" in date_str
 
-        # ★ 祝日・日曜・土曜の色判定と国旗追加
         display_date_str = date_str
         header_bg_color = "#f5f5f5"
         header_text_color = "#333333"
@@ -1952,7 +1948,6 @@ def build_grid_flex_message(spot_name, weather_by_date, hp_url="", hp2_url="", m
             ] + [{"type": "box", "layout": "vertical", "spacing": "none", "margin": "sm", "contents": rows}]
         }
 
-    # ★ 共通ヘッダーパーツの作成
     header_buttons_top = []
     if is_favorite:
         header_buttons_top.append({"type": "button", "action": {"type": "postback", "label": "🗑️ 解除", "data": f"action=fav_del_confirm_and_list&spot={spot_name}"}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs", "color": "#ffcccc"})
@@ -1985,7 +1980,6 @@ def build_grid_flex_message(spot_name, weather_by_date, hp_url="", hp2_url="", m
 
     header_block = {"type": "box", "layout": "vertical", "backgroundColor": header_color, "paddingAll": "10px", "contents": header_contents}
 
-    # ★ 共通下部（バナー・ボタン）パーツの作成
     bottom_buttons = []
     if tel:
         clean_tel = tel.replace('-', '').strip()
