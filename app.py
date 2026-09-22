@@ -1496,7 +1496,8 @@ def build_settings_flex_message(fav_list):
         })
 
         bubbles.append({
-            "type": "bubble", "size": "mega",
+            "type": "bubble",
+            "size": "mega",
             "header": {
                 "type": "box", "layout": "vertical", "backgroundColor": "#d4af37", "paddingAll": "10px",
                 "contents": [
@@ -1902,7 +1903,6 @@ def fetch_weekly_data_from_api(lat, lon, raw_exclude_dates):
         weekly_data = []
         now_jst_date = datetime.now(timezone(timedelta(hours=9))).date()
         
-        # WNの1時間予報の「最後の日付」を割り出す
         last_wn_date = None
         if raw_exclude_dates:
             last_wn_date = guess_date_from_string(raw_exclude_dates[-1], now_jst_date)
@@ -1910,7 +1910,6 @@ def fetch_weekly_data_from_api(lat, lon, raw_exclude_dates):
         for i in range(min(len(times), 14)):
             dt = datetime.strptime(times[i], "%Y-%m-%d").date()
             
-            # ★ 1時間予報の最後の日付「以前」なら強制スキップして被りを防ぐ
             if last_wn_date and dt <= last_wn_date:
                 continue
                 
@@ -1953,7 +1952,6 @@ def fetch_weekly_data_from_tenki(tenki_url, raw_exclude_dates):
         weekly_data = []
         now_jst_date = datetime.now(timezone(timedelta(hours=9))).date()
         
-        # WNの1時間予報の「最後の日付」を割り出す
         last_wn_date = None
         if raw_exclude_dates:
             last_wn_date = guess_date_from_string(raw_exclude_dates[-1], now_jst_date)
@@ -1968,9 +1966,8 @@ def fetch_weekly_data_from_tenki(tenki_url, raw_exclude_dates):
             if not (days_elem and temp_elem):
                 continue
                 
-            raw_days = days_elem.get_text(strip=True) # 例: "09月22日(火)"
+            raw_days = days_elem.get_text(strip=True) 
             
-            # tenkiの日付を算出し、WNの最後の日付「以前」なら強制スキップして被りを防ぐ
             tenki_date = guess_date_from_string(raw_days, now_jst_date)
             if last_wn_date and tenki_date <= last_wn_date:
                 continue
@@ -2074,7 +2071,6 @@ def fetch_spot_1hour_data(url, tenki_url=None):
                     weather_by_date[date_str] = daily_list
                 if len(weather_by_date) >= 4: break
 
-        # ★ WNの1時間予報に載っていた日付のリスト（文字列そのまま）を渡す
         raw_exclude_dates = list(weather_by_date.keys())
         weekly_data = []
         
@@ -2124,7 +2120,7 @@ def get_cached_weather(spot_name):
             if isinstance(data, dict):
                 weekly = data.get("__weekly__", [])
                 # ★ キャッシュバージョン更新。旧データを強制破棄
-                if data.get("_version") != "tenki_html_parsed_v2":
+                if data.get("_version") != "tenki_html_parsed_v3":
                     return None
                 if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-":
                     return None
@@ -2144,7 +2140,7 @@ def get_cached_weather(spot_name):
                         if isinstance(weather_data, dict):
                             weekly = weather_data.get("__weekly__", [])
                             # ★ Supabaseの古いキャッシュデータも強制破棄
-                            if weather_data.get("_version") != "tenki_html_parsed_v2":
+                            if weather_data.get("_version") != "tenki_html_parsed_v3":
                                 return None
                             if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-":
                                 return None
@@ -2160,7 +2156,7 @@ def get_cached_weather(spot_name):
 def save_cached_weather(spot_name, weather_data):
     now = datetime.now(timezone.utc)
     # ★ 新しいバージョン名を付与
-    weather_data["_version"] = "tenki_html_parsed_v2"
+    weather_data["_version"] = "tenki_html_parsed_v3"
     MEMORY_CACHE[spot_name] = (weather_data, now)
     
     if not supabase: return
@@ -2174,7 +2170,6 @@ def save_cached_weather(spot_name, weather_data):
         print(f"[Cache SAVE Error] {e}")
 
 def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_url="", tel="", x_url="", fb_url="", insta_url="", blog_url="", yt_url="", is_favorite=False):
-    # 週間天気データを分離し、既存の描画ロジックが壊れないようにする
     weekly_data = weather_data.get("__weekly__", []) if isinstance(weather_data, dict) else []
     dates = [d for d in weather_data.keys() if d != "__weekly__" and d != "_version"]
     
@@ -2268,10 +2263,26 @@ def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_
         for w in slice_data:
             rain_val = str(w.get("rain_prob", "0")).replace("%", "").strip()
             rain_color = "#0000ff" if rain_val.isdigit() and int(rain_val) > 0 else "#555555"
+            
+            # ★ 曜日・祝日による文字色変更ロジック
+            date_str = str(w.get("date", "-"))
+            date_color = "#333333" # 基本は黒
+            
+            if date_str != "-":
+                # Jpholidayを使用して祝日判定
+                target_date = guess_date_from_string(date_str, now_jst_date)
+                is_hol = jpholiday.is_holiday(target_date)
+                
+                # 日曜または祝日なら赤、土曜なら青
+                if is_hol or "(日)" in date_str or "(祝)" in date_str:
+                    date_color = "#cc0000"
+                elif "(土)" in date_str:
+                    date_color = "#0066cc"
+
             cols.append({
                 "type": "box", "layout": "vertical", "flex": 1, "alignItems": "center", "spacing": "xs",
                 "contents": [
-                    {"type": "text", "text": str(w.get("date", "-")), "size": "xxs", "weight": "bold", "color": "#333333", "align": "center"},
+                    {"type": "text", "text": date_str, "size": "xxs", "weight": "bold", "color": date_color, "align": "center"},
                     {"type": "image", "url": str(w.get("img_url", "https://gvs.weathernews.jp/onebox/img/wxicon/200.png")), "size": "xs", "aspectMode": "fit"},
                     {"type": "text", "text": f"{w.get('temp_max', '-')}/{w.get('temp_min', '-')}℃", "size": "xxs", "color": "#333333", "weight": "bold", "align": "center"},
                     {"type": "text", "text": f"{w.get('rain_prob', '-')}", "size": "xxs", "color": rain_color, "weight": "bold", "align": "center"}
