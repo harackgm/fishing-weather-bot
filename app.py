@@ -346,7 +346,7 @@ SPOT_WEATHER_DATA = {
         "insta_url": "",
         "blog_url": "",
         "yt_url": "",
-        "search_name": "エリア21 宇都宮",
+        "search_name": "エリア21 宇去宮",
         "tel": "028-656-1188",
         "aliases": ["エリア21", "えりあ21"]
     },
@@ -1587,8 +1587,7 @@ def build_spot_list_carousel_horizontal(user_id=None):
                             "margin": "none"
                         }
                     ]
-                }
-                ,
+                },
                 {
                     "type": "box",
                     "layout": "vertical",
@@ -1873,10 +1872,11 @@ def move_favorite_spot(user_id, spot_name, direction):
     except Exception as e:
         return False, f"移動失敗: {e}"
 
-# ★ スマホ偽装で確実に週間天気を抽出する処理 ★
+# ★ 週間天気データを取得する最強ロジック（PCアクセス完全復帰版） ★
 def fetch_spot_1hour_data(url):
     try:
-        headers = {'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1'}
+        # PC版のユーザーエージェントに完全に戻し、確実にPCサイトのHTMLを取得
+        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}
         response = requests.get(url, headers=headers, timeout=3.8)
         response.raise_for_status()
         soup = BeautifulSoup(response.text, 'html.parser')
@@ -1884,7 +1884,7 @@ def fetch_spot_1hour_data(url):
         weather_by_date = {}
         weekly_data = []
 
-        # 1時間ごとの天気を取得
+        # --- 1時間ごとの天気を取得（既存処理） ---
         flick_list = soup.find('div', id='flick_list_1hour')
         if not flick_list:
             flick_list = soup.find('div', id='flick_list_3hour')
@@ -1928,93 +1928,91 @@ def fetch_spot_1hour_data(url):
                 if daily_list: weather_by_date[date_str] = daily_list
                 if len(weather_by_date) >= 4: break
 
-        # 週間天気（2週間天気）の取得ロジック強化版（スマホリスト抽出＋PCテーブル抽出両対応）
+        # --- 週間天気の取得ロジック（PC版表構造からの最強テキスト抽出） ---
         try:
-            weekly_extracted = False
+            dates_list, weathers, max_temps, min_temps, rains = [], [], [], [], []
             
-            # --- スマホリスト構造からの抽出 ---
-            w_list_container = soup.find('div', id=re.compile(r'flick_list_\d+days')) or soup.find('div', class_=re.compile(r'flick_list_\d+days'))
-            if w_list_container:
-                lists = w_list_container.find_all('ul', class_='list')
-                for item in lists:
-                    if 'past' in item.get('class', []): continue
+            # ウェザーニュースの画面上のあらゆる要素群を探索
+            for container in soup.find_all(['div', 'ul', 'table']):
+                text_content = container.get_text(separator="", strip=True)
+                
+                # 週間天気の表であることを文字キーワードで判定
+                if '日' in text_content and '最高' in text_content and '最低' in text_content and '降水' in text_content and len(text_content) < 1500:
                     
-                    date_tag = item.find('li', class_='day')
-                    if not date_tag: continue
-                    date_text = date_tag.get_text(separator="").strip().replace("\n", "") 
-                    
-                    img_url = "https://gvs.weathernews.jp/onebox/img/wxicon/200.png"
-                    weather_tag = item.find('li', class_='weather')
-                    img_tag = weather_tag.find('img') if weather_tag else None
-                    if img_tag and 'src' in img_tag.attrs:
-                        src = img_tag['src']
-                        if src.startswith('//'): img_url = "https:" + src
-                        elif src.startswith('/'): img_url = "https://weathernews.jp" + src
-                        else: img_url = src
+                    # 見つけたブロック（表の行）を一行ずつ調べる
+                    for child in container.find_all(['div', 'tr', 'ul', 'li']):
+                        row_text = child.get_text(separator="", strip=True)
+                        if not row_text: continue
                         
-                    temp_tag = item.find('li', class_='temp')
-                    if temp_tag:
-                        t_max = temp_tag.find('p', class_='max').text.replace('℃','').strip() if temp_tag.find('p', class_='max') else "-"
-                        t_min = temp_tag.find('p', class_='min').text.replace('℃','').strip() if temp_tag.find('p', class_='min') else "-"
-                    else:
-                        t_max, t_min = "-", "-"
+                        # 改行区切りでテキストをばらして配列にする
+                        raw_list = child.get_text(separator="\n", strip=True).split('\n')
                         
-                    rain_tag = item.find('li', class_='rain')
-                    rain_prob = rain_tag.text.strip() if rain_tag else "-"
-                    
-                    weekly_data.append({
-                        "date": date_text,
-                        "img_url": img_url,
-                        "temp_max": t_max,
-                        "temp_min": t_min,
-                        "rain_prob": rain_prob
-                    })
-                if weekly_data:
-                    weekly_extracted = True
-
-            # --- PCテーブル構造からの抽出（スマホで取れなかった場合の保険） ---
-            if not weekly_extracted:
-                for table in soup.find_all('table'):
-                    dates_list, weathers, max_temps, min_temps, rains = [], [], [], [], []
-                    for tr in table.find_all('tr'):
-                        cells = tr.find_all(['th', 'td'])
-                        if not cells or len(cells) < 2: continue
+                        # 抽出：日付
+                        if row_text.startswith('日') and len(raw_list) > 1:
+                            if not dates_list:
+                                joined = "".join(raw_list[1:])
+                                dates_list = re.findall(r'\d{1,2}\([月火水木金土日]\)', joined)
                         
-                        header_text = cells[0].get_text().strip()
-                        data_cells = cells[1:]
-                        
-                        if '日' in header_text and not dates_list:
-                            dates_list = [td.get_text(separator="").replace('\n', '').replace(' ', '').replace('\r', '') for td in data_cells]
-                        elif '天気' in header_text and not weathers:
-                            for td in data_cells:
-                                img = td.find('img')
-                                img_src = img['src'] if img and 'src' in img.attrs else "https://gvs.weathernews.jp/onebox/img/wxicon/200.png"
-                                if img_src.startswith('//'): img_src = 'https:' + img_src
-                                elif img_src.startswith('/'): img_src = 'https://weathernews.jp' + img_src
-                                weathers.append(img_src)
-                        elif '最高' in header_text and not max_temps:
-                            max_temps = [re.sub(r'[^\d\-]', '', td.get_text()) for td in data_cells]
-                        elif '最低' in header_text and not min_temps:
-                            min_temps = [re.sub(r'[^\d\-]', '', td.get_text()) for td in data_cells]
-                        elif '降水' in header_text and not rains:
-                            rains = [re.sub(r'[^\d]', '', td.get_text()) + '%' if re.sub(r'[^\d]', '', td.get_text()) else '-' for td in data_cells]
-
-                    if dates_list and weathers and max_temps and min_temps and rains:
-                        max_len = min(len(dates_list), len(weathers), len(max_temps), len(min_temps), len(rains))
-                        for i in range(max_len):
-                            if dates_list[i]:
-                                weekly_data.append({
-                                    "date": str(dates_list[i]),
-                                    "img_url": str(weathers[i]),
-                                    "temp_max": str(max_temps[i]) if max_temps[i] else "-",
-                                    "temp_min": str(min_temps[i]) if min_temps[i] else "-",
-                                    "rain_prob": str(rains[i])
-                                })
+                        # 抽出：最高気温（数字とマイナス記号以外を消す）
+                        elif row_text.startswith('最高') and len(raw_list) > 1:
+                            if not max_temps:
+                                max_temps = [re.sub(r'[^\d\-]', '', t) for t in raw_list[1:] if re.search(r'\d', t)]
+                                
+                        # 抽出：最低気温（数字とマイナス記号以外を消す）
+                        elif row_text.startswith('最低') and len(raw_list) > 1:
+                            if not min_temps:
+                                min_temps = [re.sub(r'[^\d\-]', '', t) for t in raw_list[1:] if re.search(r'\d', t)]
+                                
+                        # 抽出：降水確率（数字だけを取り出して％をつける）
+                        elif row_text.startswith('降水') and len(raw_list) > 1:
+                            if not rains:
+                                rains = [re.sub(r'[^\d]', '', t) + '%' for t in raw_list[1:] if re.search(r'\d', t)]
+                                
+                        # 抽出：天気アイコン（行内に画像タグがある場合）
+                        elif '天気' in row_text and child.find('img'):
+                            if not weathers:
+                                for img in child.find_all('img'):
+                                    src = img.get('src', '')
+                                    if 'wxicon' in src:
+                                        if src.startswith('//'): src = 'https:' + src
+                                        elif src.startswith('/'): src = 'https://weathernews.jp' + src
+                                        weathers.append(src)
+                                        
+                    # 全部揃ったら探索終了
+                    if dates_list and max_temps and min_temps and rains:
                         break
+
+            # 抽出したリストを整形して1つのデータセットにまとめる
+            max_len = min(len(dates_list), len(max_temps), len(min_temps), len(rains))
+            if max_len > 0:
+                for i in range(max_len):
+                    w_img = weathers[i] if i < len(weathers) else "https://gvs.weathernews.jp/onebox/img/wxicon/200.png"
+                    weekly_data.append({
+                        "date": str(dates_list[i]),
+                        "img_url": str(w_img),
+                        "temp_max": str(max_temps[i]),
+                        "temp_min": str(min_temps[i]),
+                        "rain_prob": str(rains[i])
+                    })
         except Exception as e:
             print(f"[Weekly Extract Error] {e}")
 
-        # エラーを出さないための特殊キー "__weekly__" に保存
+        # 抽出に失敗した場合は仮のダミーデータを用意する
+        if not weekly_data or len(weekly_data) < 8:
+            now_dt = datetime.now(timezone(timedelta(hours=9)))
+            weekly_data = []
+            for i in range(8):
+                day_dt = now_dt + timedelta(days=i)
+                w_str = ["(月)", "(火)", "(水)", "(木)", "(金)", "(土)", "(日)"][day_dt.weekday()]
+                date_label = f"{day_dt.day}{w_str}"
+                weekly_data.append({
+                    "date": date_label,
+                    "img_url": "https://gvs.weathernews.jp/onebox/img/wxicon/200.png",
+                    "temp_max": "-",
+                    "temp_min": "-",
+                    "rain_prob": "-"
+                })
+
         weather_by_date["__weekly__"] = weekly_data
             
         return weather_by_date
@@ -2030,10 +2028,11 @@ def get_cached_weather(spot_name):
     if spot_name in MEMORY_CACHE:
         data, updated_time = MEMORY_CACHE[spot_name]
         if now - updated_time <= timedelta(hours=1):
-            # ★ ダミーデータしか入っていないキャッシュの場合は強制リフレッシュ
-            weekly = data.get("__weekly__", []) if isinstance(data, dict) else []
-            if not weekly or len(weekly) < 8 or weekly[0].get("temp_max") == "-":
-                return None
+            if isinstance(data, dict):
+                weekly = data.get("__weekly__", [])
+                # ★ キャッシュが空、またはハイフン（ダミーデータ）の時は強制的に破棄して取り直す安全装置
+                if not weekly or len(weekly) < 8 or weekly[0].get("temp_max") == "-":
+                    return None
             return data
             
     if not supabase: return None
@@ -2047,9 +2046,9 @@ def get_cached_weather(spot_name):
                     updated_time = datetime.fromisoformat(updated_at_str.replace('Z', '+00:00'))
                     if now - updated_time <= timedelta(hours=1):
                         weather_data = row.get('weather_data')
-                        # ★ ダミーデータしか入っていないキャッシュの場合は強制リフレッシュ
                         if isinstance(weather_data, dict):
                             weekly = weather_data.get("__weekly__", [])
+                            # ★ Supabaseのデータがハイフン（ダミー）の時も強制的に破棄して取り直す
                             if not weekly or len(weekly) < 8 or weekly[0].get("temp_max") == "-":
                                 return None
                         MEMORY_CACHE[spot_name] = (weather_data, updated_time)
@@ -2113,7 +2112,7 @@ def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_
         if is_holiday_flag or "(日)" in date_str:
             header_bg_color = "#ffe6e6"
             header_text_color = "#cc0000"
-            if is_holiday_flag and "🇯 ঐতি {date_str}" not in display_date_str:
+            if is_holiday_flag and "🇯🇵" not in display_date_str:
                 display_date_str = f"🇯🇵 {date_str}"
         elif "(土)" in date_str:
             header_bg_color = "#e6f2ff"
@@ -2163,7 +2162,7 @@ def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_
             ] + [{"type": "box", "layout": "vertical", "spacing": "none", "margin": "sm", "contents": rows}]
         }
 
-    # ★ 週間天気レイアウト作成モジュール
+    # ★ バナーの上に配置する週間予報ボックスの生成処理
     def create_weekly_box(slice_data):
         if not slice_data: return None
         cols = []
