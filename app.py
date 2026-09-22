@@ -53,7 +53,6 @@ MEMORY_CACHE = {}
 
 # プッシュ通知安全装置設定 (将来用)
 MAX_PUSH_LIMIT = 10  # 一度に通知する最大人数
-# ★テスト用ID（本番運用時は空にする）
 TEST_MODE_USER_ID = "" 
 
 # ==========================================
@@ -1282,7 +1281,7 @@ COLOR_GROUPS = [
         "title": "📍 甲信・東北・東海・関西",
         "header_bg": "#6a1b9a",
         "sub_groups": [
-            {"bg": "#f3e5f5", "spots": ["鹿留", "小菅", "奈良子", "シルフ", "JF in Tsugane", "竜华池", "平谷湖", "ハーブの里", "ニレ池", "鹿島槍", "つきの池", "あずみ野"]},
+            {"bg": "#f3e5f5", "spots": ["鹿留", "小菅", "奈良子", "シルフ", "JF in Tsugane", "竜華池", "平谷湖", "ハーブの里", "ニレ池", "鹿島槍", "つきの池", "あずみ野"]},
             {"bg": "#e1bee7", "spots": ["Lost Lures", "GP不忘", "白河", "ほのぼの", "WaDoNa", "鶴沼川", "オーパ", "あいづ", "上浜", "GOZU"]},
             {"bg": "#d1c4e9", "spots": ["FCE瑞浪", "３９", "醒井", "高島の泉", "千早川"]}
         ]
@@ -2028,10 +2027,13 @@ def save_cached_weather(spot_name, weather_data):
     except Exception as e:
         print(f"[Cache SAVE Error] {e}")
 
-def build_grid_flex_message(spot_name, weather_by_date, hp_url="", hp2_url="", map_url="", tel="", x_url="", fb_url="", insta_url="", blog_url="", yt_url="", is_favorite=False):
+def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_url="", tel="", x_url="", fb_url="", insta_url="", blog_url="", yt_url="", is_favorite=False):
     # ★ 週間天気データを分離し、既存の描画ロジックが壊れないようにする
-    weekly_data = weather_by_date.get("__weekly__", []) if isinstance(weather_by_date, dict) else []
-    dates = [d for d in weather_by_date.keys() if d != "__weekly__"]
+    weekly_data = weather_data.get("__weekly__", []) if isinstance(weather_data, dict) else []
+    dates = [d for d in weather_data.keys() if d != "__weekly__"]
+    
+    # 既存の変数を元コード通りに復元
+    weather_by_date = weather_data
     
     jst = timezone(timedelta(hours=9))
     now_jst_date = datetime.now(jst).date()
@@ -2172,7 +2174,7 @@ def build_grid_flex_message(spot_name, weather_by_date, hp_url="", hp2_url="", m
 
     header_block = {"type": "box", "layout": "vertical", "backgroundColor": header_color, "paddingAll": "10px", "contents": header_contents}
 
-    # ★ 下部のボタンとバナーの構成（週間予報をバナーの上に跨いで配置）
+    # --- 共通のボトムボタン（電話と一覧）---
     bottom_buttons = []
     if tel:
         clean_tel = tel.replace('-', '').strip()
@@ -2188,7 +2190,7 @@ def build_grid_flex_message(spot_name, weather_by_date, hp_url="", hp2_url="", m
 
     banner_img_url = "https://raw.githubusercontent.com/harackgm/fishing-weather-bot/main/tenkiharackbana.jpg"
 
-    # --- 1枚目（左側）のボトムブロック ---
+    # --- カード1枚目（左側）のボトムブロック ---
     bottom_block_contents_1 = []
     if weekly_box_1:
         bottom_block_contents_1.append({"type": "separator", "margin": "md"})
@@ -2201,7 +2203,7 @@ def build_grid_flex_message(spot_name, weather_by_date, hp_url="", hp2_url="", m
         {"type": "box", "layout": "horizontal", "margin": "sm", "spacing": "sm", "contents": bottom_buttons}
     ])
 
-    # --- 2枚目（右側）のボトムブロック ---
+    # --- カード2枚目（右側）のボトムブロック ---
     bottom_block_contents_2 = []
     if weekly_box_2:
         bottom_block_contents_2.append({"type": "separator", "margin": "md"})
@@ -2216,6 +2218,7 @@ def build_grid_flex_message(spot_name, weather_by_date, hp_url="", hp2_url="", m
 
     bubbles = []
 
+    # 1枚目生成
     if len(dates) > 0:
         day1 = dates[0]
         day2 = dates[1] if len(dates) > 1 else None
@@ -2226,6 +2229,7 @@ def build_grid_flex_message(spot_name, weather_by_date, hp_url="", hp2_url="", m
             "body": {"type": "box", "layout": "vertical", "spacing": "md", "paddingAll": "8px", "contents": body_contents_1}
         })
 
+    # 2枚目生成
     if len(dates) > 2:
         day3 = dates[2]
         day4 = dates[3] if len(dates) > 3 else None
@@ -2328,9 +2332,13 @@ def handle_message(event):
     except LineBotApiError as e:
         print(f"\n=== LINE API エラー: {e.status_code} ===")
         print(e.error.message)
-        for d in e.error.details:
-            print(f" - {d.property}: {d.message}")
-        try: line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ LINE通信エラーが発生しました。（データ容量制限エラー等の可能性があります）"))
+        try:
+            if e.error.details:
+                for d in e.error.details:
+                    print(f" - {d.property}: {d.message}")
+        except:
+            pass
+        try: line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ LINE通信エラーが発生しました。（カード形式エラー等の可能性があります）"))
         except Exception: pass
     except Exception as e:
         print("\n=== システムエラー詳細 ===")
