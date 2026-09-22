@@ -633,7 +633,7 @@ SPOT_WEATHER_DATA = {
         "tel": "0551-20-7888",
         "aliases": ["JF in Tsugane", "Tsugane", "ジョイフィールド", "つがね", "ツガネ", "じょいふぃーるど"]
     },
-    "竜華池": {
+    "竜华池": {
         "url": "https://weathernews.jp/onebox/35.681978/138.576164/",
         "hp_url": "https://fishingmarketbear.wixsite.com/ryugaike",
         "x_url": "",
@@ -1593,8 +1593,10 @@ def build_spot_list_carousel_horizontal(user_id=None):
                     "type": "box", "layout": "vertical", "spacing": "sm",
                     "contents": [
                         {"type": "text", "text": "🛑 配信停止・解除", "weight": "bold", "size": "sm", "color": "#333333"},
-                        # ★ 削除手順を詳細化
-                        {"type": "text", "text": "このBotの利用を停止したい場合は、トーク画面右上のメニュー「≡」から「ブロック」を行ってください。\n完全に消去する場合は、「トーク一覧」画面に戻り、このBotのトークを長押し（iPhoneは左スワイプ）して「削除」してください。", "wrap": True, "size": "xs", "color": "#666666"}
+                        {"type": "text", "text": "このBotの利用を停止したい場合は、トーク画面右上のメニュー「≡」から「ブロック」を行ってください。", "wrap": True, "size": "xs", "color": "#666666"},
+                        # ★ 視認性向上のための分割と太字化
+                        {"type": "text", "text": "完全に消去する場合", "weight": "bold", "size": "xs", "color": "#333333", "margin": "md"},
+                        {"type": "text", "text": "「トーク一覧」画面に戻り、このBotのトークを長押し（iPhoneは左スワイプ）して「削除」してください。", "wrap": True, "size": "xs", "color": "#666666"}
                     ]
                 }
             ]
