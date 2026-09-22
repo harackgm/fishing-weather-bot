@@ -1872,19 +1872,68 @@ def move_favorite_spot(user_id, spot_name, direction):
     except Exception as e:
         return False, f"移動失敗: {e}"
 
-# ★ 週間天気データを取得する最強ロジック（PCアクセス完全復帰版） ★
+# ★ URLから緯度・経度を自動抽出し、無料の気象APIから正確な週間天気を取得する関数 ★
+def extract_lat_lon(url):
+    m = re.search(r'onebox/([0-9.]+)/([0-9.]+)', url)
+    if m:
+        return m.group(1), m.group(2)
+    return None, None
+
+def fetch_weekly_data_from_api(lat, lon):
+    try:
+        api_url = f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&daily=weathercode,temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=Asia%2FTokyo"
+        res = requests.get(api_url, timeout=5.0)
+        res.raise_for_status()
+        data = res.json()
+        
+        daily = data.get("daily", {})
+        times = daily.get("time", [])
+        weathercodes = daily.get("weathercode", [])
+        temp_max = daily.get("temperature_2m_max", [])
+        temp_min = daily.get("temperature_2m_min", [])
+        rain_prob = daily.get("precipitation_probability_max", [])
+        
+        weekly_data = []
+        for i in range(min(len(times), 14)):
+            # times[i] は "2026-09-22" のような文字列
+            dt = datetime.strptime(times[i], "%Y-%m-%d")
+            w_str = ["(月)", "(火)", "(水)", "(木)", "(金)", "(土)", "(日)"][dt.weekday()]
+            date_label = f"{dt.day}{w_str}"
+            
+            # 天気コード（WMO）をウェザーニュース風のアイコンに変換
+            code = weathercodes[i]
+            if code in [0, 1]: img_url = "https://gvs.weathernews.jp/onebox/img/wxicon/100.png" # 晴れ
+            elif code in [2, 3, 45, 48]: img_url = "https://gvs.weathernews.jp/onebox/img/wxicon/200.png" # 曇り
+            elif code in [71, 73, 75, 77, 85, 86]: img_url = "https://gvs.weathernews.jp/onebox/img/wxicon/400.png" # 雪
+            else: img_url = "https://gvs.weathernews.jp/onebox/img/wxicon/300.png" # 雨
+            
+            t_max = str(round(temp_max[i])) if temp_max[i] is not None else "-"
+            t_min = str(round(temp_min[i])) if temp_min[i] is not None else "-"
+            r_prob = f"{rain_prob[i]}%" if rain_prob[i] is not None else "-"
+            
+            weekly_data.append({
+                "date": date_label,
+                "img_url": img_url,
+                "temp_max": t_max,
+                "temp_min": t_min,
+                "rain_prob": r_prob
+            })
+        return weekly_data
+    except Exception as e:
+        print(f"[Open-Meteo API Error] {e}")
+        return []
+
+# ★ 天気データを取得する本体処理（1時間予報は今まで通り、週間予報はAPIから確実取得） ★
 def fetch_spot_1hour_data(url):
     try:
-        # PC版のユーザーエージェントに完全に戻し、確実にPCサイトのHTMLを取得
         headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}
         response = requests.get(url, headers=headers, timeout=3.8)
         response.raise_for_status()
         soup = BeautifulSoup(response.text, 'html.parser')
         
         weather_by_date = {}
-        weekly_data = []
 
-        # --- 1時間ごとの天気を取得（既存処理） ---
+        # 1時間ごとの天気を取得（ここは今までの動作実績通り）
         flick_list = soup.find('div', id='flick_list_1hour')
         if not flick_list:
             flick_list = soup.find('div', id='flick_list_3hour')
@@ -1928,68 +1977,13 @@ def fetch_spot_1hour_data(url):
                 if daily_list: weather_by_date[date_str] = daily_list
                 if len(weather_by_date) >= 4: break
 
-        # --- 週間天気の取得ロジック（PC版表構造からの最強テキスト抽出） ---
-        try:
-            dates_list, weathers, max_temps, min_temps, rains = [], [], [], [], []
-            
-            # ウェザーニュースの画面上にある表（table）を片っ端から調べる
-            for table in soup.find_all('table'):
-                for tr in table.find_all('tr'):
-                    cells = tr.find_all(['th', 'td'])
-                    if not cells or len(cells) < 2: continue
-                    
-                    header_text = cells[0].get_text(strip=True)
-                    data_cells = cells[1:]
-                    
-                    # 最初のセルが「日」だったら日付データ
-                    if header_text in ['日', '日付'] and not dates_list:
-                        dates_list = [td.get_text(separator="").replace('\n', '').replace(' ', '').replace('\r', '') for td in data_cells]
-                    # 最初のセルが「天気」だったらアイコンデータ
-                    elif '天気' in header_text and not weathers:
-                        for td in data_cells:
-                            img = td.find('img')
-                            if img and 'src' in img.attrs:
-                                src = img['src']
-                                if src.startswith('//'): src = 'https:' + src
-                                elif src.startswith('/'): src = 'https://weathernews.jp' + src
-                                weathers.append(src)
-                            else:
-                                weathers.append("https://gvs.weathernews.jp/onebox/img/wxicon/200.png")
-                    # 最初のセルが「最高」だったら最高気温
-                    elif '最高' in header_text and not max_temps:
-                        max_temps = [re.sub(r'[^\d\-]', '', td.get_text(strip=True)) for td in data_cells]
-                    # 最初のセルが「最低」だったら最低気温
-                    elif '最低' in header_text and not min_temps:
-                        min_temps = [re.sub(r'[^\d\-]', '', td.get_text(strip=True)) for td in data_cells]
-                    # 最初のセルが「降水」だったら降水確率
-                    elif '降水' in header_text and not rains:
-                        rains = [re.sub(r'[^\d]', '', td.get_text(strip=True)) + '%' if re.sub(r'[^\d]', '', td.get_text(strip=True)) else '-' for td in data_cells]
-                
-                # すべてのデータが見つかれば探索終了
-                if dates_list and max_temps and min_temps and rains:
-                    break
+        # --- 新・週間天気の取得ロジック（Open-Meteo APIによる確実な抽出） ---
+        weekly_data = []
+        lat, lon = extract_lat_lon(url)
+        if lat and lon:
+            weekly_data = fetch_weekly_data_from_api(lat, lon)
 
-            # 抽出したリストを整形して1つのデータセットにまとめる
-            max_len = min(len(dates_list), len(max_temps), len(min_temps), len(rains))
-            if max_len > 0:
-                for i in range(max_len):
-                    if not dates_list[i]: continue
-                    w_img = weathers[i] if i < len(weathers) else "https://gvs.weathernews.jp/onebox/img/wxicon/200.png"
-                    t_max = max_temps[i] if max_temps[i] else "-"
-                    t_min = min_temps[i] if min_temps[i] else "-"
-                    r_prob = rains[i] if rains[i] else "-"
-                    
-                    weekly_data.append({
-                        "date": str(dates_list[i]),
-                        "img_url": str(w_img),
-                        "temp_max": str(t_max),
-                        "temp_min": str(t_min),
-                        "rain_prob": str(r_prob)
-                    })
-        except Exception as e:
-            print(f"[Weekly Extract Error] {e}")
-
-        # 抽出に失敗した場合は仮のダミーデータを用意する
+        # 万が一APIに失敗した場合は仮のダミーデータを用意する（エラー回避）
         if not weekly_data or len(weekly_data) < 8:
             now_dt = datetime.now(timezone(timedelta(hours=9)))
             weekly_data = []
@@ -2011,7 +2005,7 @@ def fetch_spot_1hour_data(url):
     except requests.exceptions.Timeout:
         return None
     except Exception as e:
-        print(f"[スクレイピングエラー] {e}")
+        print(f"[スクレイピング＆API エラー] {e}")
         return None
 
 def get_cached_weather(spot_name):
