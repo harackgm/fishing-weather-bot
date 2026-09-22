@@ -1928,22 +1928,23 @@ def fetch_spot_1hour_data(url):
                 if daily_list: weather_by_date[date_str] = daily_list
                 if len(weather_by_date) >= 4: break
 
-        # --- 週間天気の取得ロジック（PC版構造からの最強テキスト抽出） ---
+        # --- 週間天気の取得ロジック（PC版表構造からの最強テキスト抽出） ---
         try:
             dates_list, weathers, max_temps, min_temps, rains = [], [], [], [], []
             
-            # ページ内のすべてのブロック要素を探索し、週間天気の場所を強制的に見つける
+            # ウェザーニュースの画面上のあらゆる要素群を探索
             for container in soup.find_all(['div', 'ul', 'table']):
                 text_content = container.get_text(separator="", strip=True)
                 
-                # 「日」「最高」「最低」「降水」がすべて含まれている塊を探す
+                # 週間天気の表であることを文字キーワードで判定
                 if '日' in text_content and '最高' in text_content and '最低' in text_content and '降水' in text_content and len(text_content) < 1500:
                     
-                    # 見つけた塊の中の各行（子要素）を順番に調べる
+                    # 見つけたブロック（表の行）を一行ずつ調べる
                     for child in container.find_all(['div', 'tr', 'ul', 'li']):
                         row_text = child.get_text(separator="", strip=True)
                         if not row_text: continue
                         
+                        # 改行区切りでテキストをばらして配列にする
                         raw_list = child.get_text(separator="\n", strip=True).split('\n')
                         
                         # 抽出：日付
@@ -1962,12 +1963,12 @@ def fetch_spot_1hour_data(url):
                             if not min_temps:
                                 min_temps = [re.sub(r'[^\d\-]', '', t) for t in raw_list[1:] if re.search(r'\d', t)]
                                 
-                        # 抽出：降水確率（数字を取り出して％をつける）
+                        # 抽出：降水確率（数字だけを取り出して％をつける）
                         elif row_text.startswith('降水') and len(raw_list) > 1:
                             if not rains:
                                 rains = [re.sub(r'[^\d]', '', t) + '%' for t in raw_list[1:] if re.search(r'\d', t)]
                                 
-                        # 抽出：天気アイコン
+                        # 抽出：天気アイコン（行内に画像タグがある場合）
                         elif '天気' in row_text and child.find('img'):
                             if not weathers:
                                 for img in child.find_all('img'):
@@ -1977,11 +1978,11 @@ def fetch_spot_1hour_data(url):
                                         elif src.startswith('/'): src = 'https://weathernews.jp' + src
                                         weathers.append(src)
                                         
-                    # すべてのデータが揃ったら探索を終了する
+                    # 全部揃ったら探索終了
                     if dates_list and max_temps and min_temps and rains:
                         break
 
-            # 抽出したデータを1つのリストにまとめる
+            # 抽出したリストを整形して1つのデータセットにまとめる
             max_len = min(len(dates_list), len(max_temps), len(min_temps), len(rains))
             if max_len > 0:
                 for i in range(max_len):
@@ -2383,7 +2384,7 @@ def handle_message(event):
                     print(f" - {d.property}: {d.message}")
         except:
             pass
-        try: line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ LINE通信エラーが発生しました。（カード形式エラー等の可能性があります）"))
+        try: line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ LINE通信エラーが発生しました。（データ容量制限エラー等の可能性があります）"))
         except Exception: pass
     except Exception as e:
         print("\n=== システムエラー詳細 ===")
