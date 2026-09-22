@@ -1713,7 +1713,6 @@ def build_spot_list_carousel_horizontal(user_id=None):
 
     return FlexSendMessage(alt_text="釣り場一覧", contents={"type": "carousel", "contents": bubbles})
 
-# ★ スクレイピング処理の改修（戻り値を辞書形式に変更し、週間データを追加）
 def fetch_spot_1hour_data(url):
     try:
         headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}
@@ -1768,7 +1767,7 @@ def fetch_spot_1hour_data(url):
                 if daily_list: weather_by_date[date_str] = daily_list
                 if len(weather_by_date) >= 4: break
 
-        # ★ 週間天気（2週間天気）の取得ロジック
+        # 週間天気（2週間天気）の取得ロジック
         try:
             w14days = soup.find('div', id='w14days') or soup.find(class_=re.compile(r'w14days|weather-14days|week'))
             if not w14days:
@@ -1853,7 +1852,7 @@ def get_cached_weather(spot_name):
                         weather_data = row.get('weather_data')
                         MEMORY_CACHE[spot_name] = (weather_data, updated_time)
                         
-                        # ★ 安全措置：過去のキャッシュが「1時間データのみ（辞書型）」だった場合、新形式へ自動変換
+                        # 安全措置：過去のキャッシュが「1時間データのみ（辞書型）」だった場合、新形式へ自動変換してクラッシュを防止
                         if isinstance(weather_data, dict) and "hourly" not in weather_data:
                             weather_data = {"hourly": weather_data, "weekly": []}
                         
@@ -1971,7 +1970,7 @@ def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_
             ] + [{"type": "box", "layout": "vertical", "spacing": "none", "margin": "sm", "contents": rows}]
         }
 
-    # ★ 週間天気（ざっくり予報）の横並びボックス作成モジュール
+    # ★ 週間天気（ざっくり予報）の横並びボックス作成モジュール（より安全なレイアウト設計に修正）
     def create_weekly_box(weekly_slice):
         if not weekly_slice:
             return None
@@ -1987,11 +1986,11 @@ def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_
                     {"type": "text", "text": w.get("date", "-"), "size": "xxs", "weight": "bold", "color": "#333333"},
                     {"type": "image", "url": w.get("img_url", "https://gvs.weathernews.jp/onebox/img/wxicon/200.png"), "size": "xs", "aspectMode": "fit"},
                     {
-                        "type": "box", "layout": "horizontal", "spacing": "none", "alignItems": "center",
+                        "type": "box", "layout": "horizontal", "spacing": "none", "alignItems": "center", "justifyContent": "center",
                         "contents": [
-                            {"type": "text", "text": f"{w.get('temp_max', '-')}℃", "size": "xxs", "color": "#ff0000", "weight": "bold", "flex": 0},
-                            {"type": "text", "text": "/", "size": "xxs", "color": "#aaaaaa", "flex": 0, "margin": "xs"},
-                            {"type": "text", "text": f"{w.get('temp_min', '-')}℃", "size": "xxs", "color": "#0000ff", "weight": "bold", "flex": 0}
+                            {"type": "text", "text": f"{w.get('temp_max', '-')}℃", "size": "xxs", "color": "#ff0000", "weight": "bold", "align": "center"},
+                            {"type": "text", "text": "/", "size": "xxs", "color": "#aaaaaa", "margin": "xs", "align": "center"},
+                            {"type": "text", "text": f"{w.get('temp_min', '-')}℃", "size": "xxs", "color": "#0000ff", "weight": "bold", "align": "center"}
                         ]
                     },
                     {"type": "text", "text": f"{w.get('rain_prob', '-')}", "size": "xxs", "color": rain_color, "weight": "bold"}
@@ -2039,7 +2038,7 @@ def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_
 
     banner_img_url = "https://raw.githubusercontent.com/harackgm/fishing-weather-bot/main/tenkiharackbana.jpg"
 
-    # ★ 週間天気ボックスの生成（前半4日と後半4日）
+    # 週間天気ボックスの生成（前半4日と後半4日）
     weekly_box_1 = create_weekly_box(weekly_data[0:4])
     weekly_box_2 = create_weekly_box(weekly_data[4:8])
 
