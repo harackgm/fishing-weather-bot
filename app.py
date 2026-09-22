@@ -2026,7 +2026,7 @@ def fetch_spot_1hour_data(url):
                         
                         day_dt = now_dt + timedelta(days=i)
                         w_str = ["(月)", "(火)", "(水)", "(木)", "(金)", "(土)", "(日)"][day_dt.weekday()]
-                        date_label = f"{day_dt.day}{w_str}"
+                        date_label = f"{dt.day}{w_str}"
                         
                         r_val = pop_list[i].strip() if i < len(pop_list) else "-"
                         if r_val != "-" and r_val != 'null': r_val += "%"
@@ -2307,7 +2307,7 @@ def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_
     
     if hp2_url:
         label_text2 = "🌐 赤城HP" if spot_name == "大崎・赤城" else "🌐 HP2"
-        header_buttons_bottom.append({"type": "button", "action": {"type": "uri", "label label_text2", "uri": hp2_url}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
+        header_buttons_bottom.append({"type": "button", "action": {"type": "uri", "label": label_text2, "uri": hp2_url}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
     
     if x_url: header_buttons_bottom.append({"type": "button", "action": {"type": "uri", "label": "𝕏", "uri": x_url}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
     if fb_url: header_buttons_bottom.append({"type": "button", "action": {"type": "uri", "label": "📘 FB", "uri": fb_url}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
@@ -2488,7 +2488,7 @@ def handle_message(event):
                     print(f" - {d.property}: {d.message}")
         except:
             pass
-        try: line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ LINE通信エラーが発生しました。（カード形式エラー等の可能性があります）"))
+        try: line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ LINE通信エラーが発生しました。（データ容量制限エラー等の可能性があります）"))
         except Exception: pass
     except Exception as e:
         print("\n=== システムエラー詳細 ===")
