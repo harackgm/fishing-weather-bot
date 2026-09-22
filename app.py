@@ -50,6 +50,12 @@ if SUPABASE_URL and SUPABASE_KEY:
 # 超高速メモリキャッシュ
 MEMORY_CACHE = {}
 
+# プッシュ通知安全装置設定 (将来用)
+MAX_PUSH_LIMIT = 10  # 一度に通知する最大人数
+# ★テスト用ID（本番運用時は空にする）
+# TEST_MODE_USER_ID = "U123456789abcdef0123456789abcdef" 
+TEST_MODE_USER_ID = "" 
+
 # ==========================================
 # 3. 釣り場URL・HP・Googleマップ・電話番号・SNS・表記揺れ辞書
 # ==========================================
@@ -807,11 +813,7 @@ SPOT_WEATHER_DATA = {
     "大崎・赤城": {
         "url": "https://weathernews.jp/onebox/36.463209/139.164867/",
         "hp_url": "https://nijimasu.com/",
-        "hp2_url": "https://anglers-base.com/",  # ★赤城用リンクを追加
-        "x_url": "",
-        "fb_url": "https://www.facebook.com/osakituribori/",
-        "insta_url": "",
-        "blog_url": "",
+        "hp2_url": "https://anglers-base.com/",  
         "search_name": "大崎つりぼり",
         "tel": "027-283-2945",
         "aliases": ["大崎・赤城", "大崎", "赤城", "大崎つりぼり", "アングラーズベース", "アングラーズベース赤城山", "おおさき", "あかぎ"]
@@ -1204,7 +1206,7 @@ def get_spot_details(spot_key):
         spot_key, 
         data["url"], 
         clean_url(data.get("hp_url", "")), 
-        clean_url(data.get("hp2_url", "")),  # ★追加
+        clean_url(data.get("hp2_url", "")), 
         map_url, 
         data.get("tel", ""),
         clean_url(data.get("x_url", "")),
@@ -1644,7 +1646,7 @@ def get_user_setting(user_id):
                 "座間": "座間・amaz",
                 "パラダイス": "釣パラダイス",
                 "蛇尾川": "蛇尾（さび）川",
-                "大崎": "大崎・赤城"  # ★旧データからの安全な自動移行設定
+                "大崎": "大崎・赤城"
             }
             
             raw_favs = [s.strip() for s in favs.split(',')]
@@ -1836,6 +1838,7 @@ def fetch_spot_1hour_data(url):
         print(f"[スクレイピングエラー] {e}")
         return None
 
+# ★ デザイン維持（1枚カード）版
 def build_grid_flex_message(spot_name, weather_by_date, hp_url="", hp2_url="", map_url="", tel="", x_url="", fb_url="", insta_url="", blog_url="", is_favorite=False):
     dates = list(weather_by_date.keys())
     
@@ -1850,10 +1853,22 @@ def build_grid_flex_message(spot_name, weather_by_date, hp_url="", hp2_url="", m
         if found:
             break
 
-    def create_day_column(date_str):
+    # ★ 3日目以降を2時間おきに間引く処理を追加
+    def create_day_column(date_str, day_index):
         if not date_str:
             return {"type": "box", "layout": "vertical", "flex": 1, "contents": [{"type": "text", "text": "-", "color": "#cccccc", "align": "center", "size": "xs"}]}
+        
         daily_data = weather_by_date[date_str]
+
+        # ★ ここでday_index（0=1日目, 1=2日目, 2=3日目...）を判定し、3日目以降なら偶数時間に間引く
+        if day_index >= 2:
+            filtered_data = []
+            for d in daily_data:
+                time_val = d.get('time', '').replace("時", "").strip()
+                if time_val.isdigit() and int(time_val) % 2 == 0:
+                    filtered_data.append(d)
+            daily_data = filtered_data
+
         rows = [
             {
                 "type": "box", "layout": "horizontal", "margin": "none",
@@ -1867,6 +1882,7 @@ def build_grid_flex_message(spot_name, weather_by_date, hp_url="", hp2_url="", m
             },
             {"type": "separator", "margin": "xs"}
         ]
+        
         for data in daily_data:
             t_val = data.get('temp', '').replace("℃", "").strip() or "-"
             r_val = data.get('rain', '').replace("mm", "").strip() or "-"
@@ -1907,11 +1923,14 @@ def build_grid_flex_message(spot_name, weather_by_date, hp_url="", hp2_url="", m
         }
 
     body_contents = []
-    row1 = {"type": "box", "layout": "horizontal", "spacing": "sm", "contents": [create_day_column(dates[0] if len(dates) > 0 else None), {"type": "separator"}, create_day_column(dates[1] if len(dates) > 1 else None)]}
+    # 1段目（今日・明日） day_index = 0, 1
+    row1 = {"type": "box", "layout": "horizontal", "spacing": "sm", "contents": [create_day_column(dates[0] if len(dates) > 0 else None, 0), {"type": "separator"}, create_day_column(dates[1] if len(dates) > 1 else None, 1)]}
     body_contents.append(row1)
+    
+    # 2段目（明後日・明明後日） day_index = 2, 3
     if len(dates) > 2:
         body_contents.append({"type": "separator", "margin": "md"})
-        row2 = {"type": "box", "layout": "horizontal", "spacing": "sm", "contents": [create_day_column(dates[2] if len(dates) > 2 else None), {"type": "separator"}, create_day_column(dates[3] if len(dates) > 3 else None)]}
+        row2 = {"type": "box", "layout": "horizontal", "spacing": "sm", "contents": [create_day_column(dates[2] if len(dates) > 2 else None, 2), {"type": "separator"}, create_day_column(dates[3] if len(dates) > 3 else None, 3)]}
         body_contents.append(row2)
 
     bottom_buttons = []
@@ -1985,7 +2004,6 @@ def build_grid_flex_message(spot_name, weather_by_date, hp_url="", hp2_url="", m
     if map_url: 
         header_buttons_top.append({"type": "button", "action": {"type": "uri", "label": "🗺️ 地図", "uri": map_url}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
 
-    # ★ 大崎・赤城 専用のボタン名処理を実装
     header_buttons_bottom = []
     if hp_url:
         label_text = "🌐 大崎HP" if spot_name == "大崎・赤城" else "🌐 HP"
@@ -2248,9 +2266,6 @@ def handle_postback(event):
             pass
 
 def get_top_favorite_spots(limit=24):
-    """
-    全ユーザーの登録データを集計し、登録数が多い上位の釣り場名リストを取得する
-    """
     if not supabase: return []
     try:
         res = supabase.table('user_settings').select('favorite_spots').execute()
@@ -2263,7 +2278,6 @@ def get_top_favorite_spots(limit=24):
                 for s in spots:
                     spot_counts[s] = spot_counts.get(s, 0) + 1
         
-        # 出現回数の多い順にソートして上位limit件を取得
         sorted_spots = sorted(spot_counts.items(), key=lambda x: x[1], reverse=True)
         top_spots = [spot for spot, count in sorted_spots[:limit]]
         return top_spots
@@ -2272,19 +2286,13 @@ def get_top_favorite_spots(limit=24):
         return []
 
 def run_background_update():
-    """
-    Cron-job等から定期的に呼ばれる裏側処理。
-    人気上位24件の中で、キャッシュが一番古い4件だけを取得して更新する。
-    """
     if not supabase: return
     try:
-        # 1. お気に入り登録されている人気上位24件を取得
         top_spots = get_top_favorite_spots(limit=24)
         if not top_spots:
             return
             
         cache_times = {}
-        # 2. 対象となる釣り場のキャッシュ更新日時を調べる
         for spot in top_spots:
             res = supabase.table('weather_cache').select('updated_at').eq('spot_name', spot).execute()
             if res.data and len(res.data) > 0:
@@ -2295,14 +2303,11 @@ def run_background_update():
                 except:
                     cache_times[spot] = datetime.min.replace(tzinfo=timezone.utc)
             else:
-                # キャッシュが存在しない場合は過去のダミー日時を入れる（最優先で取得させるため）
                 cache_times[spot] = datetime.min.replace(tzinfo=timezone.utc)
                 
-        # 3. 古い順にソートし、最大4件を抽出
         sorted_by_oldest = sorted(cache_times.items(), key=lambda x: x[1])
         target_spots = [spot for spot, time in sorted_by_oldest[:4]]
         
-        # 4. 対象の4件を安全にスクレイピング
         for spot_name in target_spots:
             data = SPOT_WEATHER_DATA.get(spot_name)
             if not data: continue
@@ -2312,7 +2317,6 @@ def run_background_update():
             if weather_data:
                 save_cached_weather(spot_name, weather_data)
                 
-            # 【重要安全装置】人間の操作を装い連続アクセスを防ぐ（2.0〜3.5秒の待機）
             time.sleep(random.uniform(2.0, 3.5))
             
     except Exception as e:
@@ -2322,7 +2326,6 @@ def run_background_update():
 def cron_trigger():
     if not supabase: return jsonify({"status": "error", "reason": "DB_NOT_CONNECTED"}), 500
     try:
-        # バックグラウンドで更新処理を走らせ、Web側の応答はすぐに返す（タイムアウト防止）
         thread = threading.Thread(target=run_background_update)
         thread.start()
         return jsonify({"status": "success", "message": "Background update started"}), 200
