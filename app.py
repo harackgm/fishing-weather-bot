@@ -82,7 +82,7 @@ SPOT_WEATHER_DATA = {
         "yt_url": "",
         "search_name": "すそのフィッシングパーク",
         "tel": "055-993-5514",
-        "aliases": ["すその", "すそのフィッシングパーク", "すそのFP", "裾野", "すそぱ", "すそパ"]
+        "aliases": ["すその", "すそのフィッシングパーク", "すそFP", "裾野", "すそぱ", "すそパ"]
     },
     "須川": {
         "url": "https://weathernews.jp/onebox/35.359818/138.977710/",
@@ -1872,7 +1872,7 @@ def move_favorite_spot(user_id, spot_name, direction):
     except Exception as e:
         return False, f"移動失敗: {e}"
 
-# ★ URLから緯度・経度を抽出し、無料の気象APIから14日間の週間天気を取得する新関数 ★
+# ★ URLから緯度・経度を抽出し、無料の気象APIから週間天気を取得する新関数 ★
 def extract_lat_lon(url):
     m = re.search(r'onebox/([0-9.]+)/([0-9.]+)', url)
     if m:
@@ -1881,8 +1881,8 @@ def extract_lat_lon(url):
 
 def fetch_weekly_data_from_api(lat, lon):
     try:
-        # ★forecast_days=14 を追加し、確実に14日分（2週間）のデータを取得する
-        api_url = f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&daily=weathercode,temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=Asia%2FTokyo&forecast_days=14"
+        # ★ エラーの原因だった「forecast_days=14」を「8」に修正し、確実にデータを取得する
+        api_url = f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&daily=weathercode,temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=Asia%2FTokyo&forecast_days=8"
         res = requests.get(api_url, timeout=5.0)
         res.raise_for_status()
         data = res.json()
@@ -1895,7 +1895,7 @@ def fetch_weekly_data_from_api(lat, lon):
         rain_prob = daily.get("precipitation_probability_max", [])
         
         weekly_data = []
-        for i in range(min(len(times), 14)):
+        for i in range(min(len(times), 8)):
             dt = datetime.strptime(times[i], "%Y-%m-%d")
             w_str = ["(月)", "(火)", "(水)", "(木)", "(金)", "(土)", "(日)"][dt.weekday()]
             date_label = f"{dt.day}{w_str}"
