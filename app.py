@@ -1046,50 +1046,53 @@ def build_settings_flex_message(fav_list):
         chunk = fav_list[i:i + chunk_size]
         rows = []
         
-        # ★ 修正: エラー回避のため、トップと最後尾へ移動する専用パネル呼び出しボタンを横並びで配置 ★
+        # ★ 修正: 各枠の上に、一発移動用の選択パネル呼び出しボタンを3つ並べる ★
         rows.append({
-            "type": "box", "layout": "horizontal", "margin": "none", "paddingBottom": "10px", "spacing": "sm",
+            "type": "box", "layout": "horizontal", "spacing": "sm", "paddingBottom": "10px",
             "contents": [
                 {
                     "type": "button",
-                    "action": {"type": "postback", "label": "🥇 1番目へ", "data": "action=show_top_selector"},
-                    "style": "secondary",
-                    "color": "#fff9c4",
-                    "height": "sm",
-                    "flex": 1
+                    "action": {"type": "postback", "label": "🥇 1番目", "data": "action=show_top_selector"},
+                    "style": "secondary", "height": "sm", "flex": 1, "color": "#fff9c4"
                 },
                 {
                     "type": "button",
-                    "action": {"type": "postback", "label": "⏬ 最後尾へ", "data": "action=show_bottom_selector"},
-                    "style": "secondary",
-                    "color": "#eceff1",
-                    "height": "sm",
-                    "flex": 1
+                    "action": {"type": "postback", "label": "🔝 先頭へ", "data": f"action=show_cell_top_selector&chunk={i}"},
+                    "style": "secondary", "height": "sm", "flex": 1, "color": "#e3f2fd"
+                },
+                {
+                    "type": "button",
+                    "action": {"type": "postback", "label": "⏬ 末尾へ", "data": f"action=show_cell_bottom_selector&chunk={i}"},
+                    "style": "secondary", "height": "sm", "flex": 1, "color": "#eceff1"
                 }
             ]
         })
         rows.append({"type": "separator", "margin": "sm"})
 
-        # ★ 修正: 行の構造を安定版（Buttonコンポーネントのみ）に戻し、スマホでの文字潰れを完全解消 ★
+        # ★ 修正: ボタンコンポーネントを使わず、Boxコンポーネントを使って横幅をpxで完全固定！絶対潰れません ★
         for spot in chunk:
             rows.append({
-                "type": "box", "layout": "horizontal", "margin": "md", "alignItems": "center",
+                "type": "box", "layout": "horizontal", "margin": "md", "alignItems": "center", "spacing": "sm",
                 "contents": [
-                    {"type": "text", "text": f"{spot}", "size": "sm", "weight": "bold", "flex": 5, "color": "#333333", "wrap": True},
+                    # テキスト領域（残り幅をすべて使う）
+                    {"type": "text", "text": f"{spot}", "size": "sm", "weight": "bold", "flex": 1, "color": "#333333", "wrap": True},
+                    # ⬆️ ボタン（幅36px完全固定）
                     {
-                        "type": "button",
-                        "action": {"type": "postback", "label": "⬆️", "data": f"action=fav_up&spot={spot}"},
-                        "style": "secondary", "flex": 2, "margin": "xs"
+                        "type": "box", "layout": "vertical", "width": "36px", "height": "36px", "backgroundColor": "#f8f9fa", "cornerRadius": "md", "justifyContent": "center", "alignItems": "center",
+                        "action": {"type": "postback", "data": f"action=fav_up&spot={spot}"},
+                        "contents": [{"type": "text", "text": "⬆️", "size": "sm", "align": "center"}]
                     },
+                    # ⬇️ ボタン（幅36px完全固定）
                     {
-                        "type": "button",
-                        "action": {"type": "postback", "label": "⬇️", "data": f"action=fav_down&spot={spot}"},
-                        "style": "secondary", "flex": 2, "margin": "xs"
+                        "type": "box", "layout": "vertical", "width": "36px", "height": "36px", "backgroundColor": "#f8f9fa", "cornerRadius": "md", "justifyContent": "center", "alignItems": "center",
+                        "action": {"type": "postback", "data": f"action=fav_down&spot={spot}"},
+                        "contents": [{"type": "text", "text": "⬇️", "size": "sm", "align": "center"}]
                     },
+                    # 🗑️ ボタン（幅36px完全固定）
                     {
-                        "type": "button",
-                        "action": {"type": "postback", "label": "🗑️", "data": f"action=fav_del_confirm_and_settings&spot={spot}"},
-                        "style": "secondary", "color": "#ffe6e6", "flex": 2, "margin": "xs"
+                        "type": "box", "layout": "vertical", "width": "36px", "height": "36px", "backgroundColor": "#ffe6e6", "cornerRadius": "md", "justifyContent": "center", "alignItems": "center",
+                        "action": {"type": "postback", "data": f"action=fav_del_confirm_and_settings&spot={spot}"},
+                        "contents": [{"type": "text", "text": "🗑️", "size": "sm", "align": "center"}]
                     }
                 ]
             })
@@ -1539,6 +1542,7 @@ def clear_favorite_spots(user_id):
     except Exception as e:
         return False, f"削除に失敗しました: {e}"
 
+# ★ 修正: それぞれの枠の先頭・最後尾へ移動する処理を追加 ★
 def move_favorite_spot(user_id, spot_name, direction):
     if not supabase: return False, "DB接続未完了です。"
     source, favorites = get_user_setting(user_id)
@@ -1557,6 +1561,14 @@ def move_favorite_spot(user_id, spot_name, direction):
         fav_list.insert(0, fav_list.pop(idx))
     elif direction == "bottom" and idx < len(fav_list) - 1:
         fav_list.append(fav_list.pop(idx))
+    elif direction == "cell_top":
+        chunk_start = (idx // 10) * 10
+        if idx > chunk_start:
+            fav_list.insert(chunk_start, fav_list.pop(idx))
+    elif direction == "cell_bottom":
+        chunk_end = min(((idx // 10) + 1) * 10 - 1, len(fav_list) - 1)
+        if idx < chunk_end:
+            fav_list.insert(chunk_end, fav_list.pop(idx))
     else:
         return True, "移動不要"
         
@@ -1813,7 +1825,7 @@ def get_cached_weather(spot_name):
         if now - updated_time <= timedelta(hours=1):
             if isinstance(data, dict):
                 weekly = data.get("__weekly__", [])
-                if data.get("_version") != "settings_shortcut_v6":
+                if data.get("_version") != "settings_shortcut_v8":
                     return None
                 if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-":
                     return None
@@ -1832,7 +1844,7 @@ def get_cached_weather(spot_name):
                         weather_data = row.get('weather_data')
                         if isinstance(weather_data, dict):
                             weekly = weather_data.get("__weekly__", [])
-                            if weather_data.get("_version") != "settings_shortcut_v6":
+                            if weather_data.get("_version") != "settings_shortcut_v8":
                                 return None
                             if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-":
                                 return None
@@ -1847,7 +1859,7 @@ def get_cached_weather(spot_name):
 
 def save_cached_weather(spot_name, weather_data):
     now = datetime.now(timezone.utc)
-    weather_data["_version"] = "settings_shortcut_v6"
+    weather_data["_version"] = "settings_shortcut_v8"
     MEMORY_CACHE[spot_name] = (weather_data, now)
     
     if not supabase: return
@@ -2240,8 +2252,8 @@ def handle_postback(event):
             action = "show_weather"
             spot_name = data_dict["w"]
 
-        # ★ トップ・ボトム一括移動パネルの呼び出し ★
-        if action in ["show_top_selector", "show_bottom_selector"]:
+        # ★ 修正: 移動パネルの呼び出し処理（1番目、枠先頭、枠最後尾） ★
+        if action in ["show_top_selector", "show_cell_top_selector", "show_cell_bottom_selector"]:
             _, favorites = get_user_setting(user_id)
             fav_list = [s.strip() for s in favorites.split(',') if s.strip()]
             
@@ -2249,13 +2261,27 @@ def handle_postback(event):
                 line_bot_api.reply_message(event.reply_token, TextSendMessage(text="お気に入りが登録されていません。"))
                 return
                 
+            chunk_idx_str = data_dict.get("chunk")
+            
             is_top = (action == "show_top_selector")
-            target_action = "fav_top" if is_top else "fav_bottom"
-            header_text = "🥇 1番目に設定する釣り場を選択" if is_top else "⏬ 最後尾に移動する釣り場を選択"
+            is_cell_top = (action == "show_cell_top_selector")
+            
+            target_action = "fav_top" if is_top else ("fav_cell_top" if is_cell_top else "fav_cell_bottom")
+            header_text = "🥇 1番目に設定" if is_top else ("🔝 枠の先頭へ移動" if is_cell_top else "⏬ 枠の最後尾へ移動")
+            bg_color = "#d4af37" if is_top else ("#64b5f6" if is_cell_top else "#78909c")
             
             selector_bubbles = []
-            for i in range(0, len(fav_list), 10):
-                chunk = fav_list[i:i+10]
+            
+            if is_top:
+                # 1番目設定は全件から選べるように全チャンクをカルーセルで出す
+                loop_chunks = [(i, fav_list[i:i+10]) for i in range(0, len(fav_list), 10)]
+            else:
+                # 枠の先頭・末尾は、その枠の釣り場だけを表示
+                c_idx = int(chunk_idx_str) if chunk_idx_str else 0
+                loop_chunks = [(c_idx, fav_list[c_idx:c_idx+10])]
+            
+            for start_idx, chunk in loop_chunks:
+                if not chunk: continue
                 btns = []
                 for spot in chunk:
                     btns.append({
@@ -2266,7 +2292,7 @@ def handle_postback(event):
                 selector_bubbles.append({
                     "type": "bubble", "size": "kilo",
                     "header": {
-                        "type": "box", "layout": "vertical", "backgroundColor": "#d4af37" if is_top else "#78909c", "paddingAll": "10px",
+                        "type": "box", "layout": "vertical", "backgroundColor": bg_color, "paddingAll": "10px",
                         "contents": [{"type": "text", "text": header_text, "color": "#ffffff", "weight": "bold", "size": "sm"}]
                     },
                     "body": {
@@ -2373,8 +2399,9 @@ def handle_postback(event):
             flex_msg = build_spot_list_carousel_horizontal(user_id=user_id)
             line_bot_api.reply_message(event.reply_token, [TextSendMessage(text=f"✅ {msg}"), flex_msg])
 
-        elif action in ["fav_up", "fav_down", "fav_top", "fav_bottom"]:
-            direction = action.split("_")[1]
+        # ★ 全ての移動アクションをキャッチして設定画面を再描画 ★
+        elif action in ["fav_up", "fav_down", "fav_top", "fav_bottom", "fav_cell_top", "fav_cell_bottom"]:
+            direction = action.replace("fav_", "")
             move_favorite_spot(user_id, spot_name, direction)
             _, favorites = get_user_setting(user_id)
             fav_list = [s.strip() for s in favorites.split(',')]
