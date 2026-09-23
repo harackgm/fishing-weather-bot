@@ -1046,7 +1046,7 @@ def build_settings_flex_message(fav_list):
         chunk = fav_list[i:i + chunk_size]
         rows = []
         
-        # ★ 修正: 各セルの最上段に「1番お気に入りに設定する」選択ボタンを1つだけ配置 ★
+        # ★ 各セルの最上段に「1番お気に入りに設定する」選択ボタンを配置
         rows.append({
             "type": "box", "layout": "vertical", "margin": "none", "paddingBottom": "10px",
             "contents": [
@@ -1061,12 +1061,12 @@ def build_settings_flex_message(fav_list):
         })
         rows.append({"type": "separator", "margin": "sm"})
 
-        # ★ 修正: 各行のボタンを減らし（🔝を削除）、文字領域を広げて文字潰れを解消 ★
+        # ★ ボタンのflex比率を調整し、文字領域(3) : 矢印上(2) : 矢印下(2) : 削除(2) で潰れを防止
         for spot in chunk:
             rows.append({
                 "type": "box", "layout": "horizontal", "margin": "md", "alignItems": "center",
                 "contents": [
-                    {"type": "text", "text": f"{spot}", "size": "sm", "weight": "bold", "flex": 5, "color": "#333333", "wrap": True},
+                    {"type": "text", "text": f"{spot}", "size": "sm", "weight": "bold", "flex": 3, "color": "#333333", "wrap": True},
                     {
                         "type": "button",
                         "action": {"type": "postback", "label": "⬆️", "data": f"action=fav_up&spot={spot}"},
@@ -1802,7 +1802,7 @@ def get_cached_weather(spot_name):
         if now - updated_time <= timedelta(hours=1):
             if isinstance(data, dict):
                 weekly = data.get("__weekly__", [])
-                if data.get("_version") != "settings_shortcut_v3":
+                if data.get("_version") != "settings_shortcut_v4":
                     return None
                 if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-":
                     return None
@@ -1821,7 +1821,7 @@ def get_cached_weather(spot_name):
                         weather_data = row.get('weather_data')
                         if isinstance(weather_data, dict):
                             weekly = weather_data.get("__weekly__", [])
-                            if weather_data.get("_version") != "settings_shortcut_v3":
+                            if weather_data.get("_version") != "settings_shortcut_v4":
                                 return None
                             if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-":
                                 return None
@@ -1836,7 +1836,7 @@ def get_cached_weather(spot_name):
 
 def save_cached_weather(spot_name, weather_data):
     now = datetime.now(timezone.utc)
-    weather_data["_version"] = "settings_shortcut_v3"
+    weather_data["_version"] = "settings_shortcut_v4"
     MEMORY_CACHE[spot_name] = (weather_data, now)
     
     if not supabase: return
@@ -2229,7 +2229,6 @@ def handle_postback(event):
             action = "show_weather"
             spot_name = data_dict["w"]
 
-        # ★ 追加: 1番お気に入りに設定する選択画面の呼び出し ★
         if action == "show_top_selector":
             _, favorites = get_user_setting(user_id)
             fav_list = [s.strip() for s in favorites.split(',') if s.strip()]
