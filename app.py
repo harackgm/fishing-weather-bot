@@ -646,7 +646,7 @@ SPOT_WEATHER_DATA = {
         "hp_url": "https://www.facebook.com/otafishingclub/",
         "x_url": "", "fb_url": "https://www.facebook.com/otafishingclub/", "insta_url": "", "blog_url": "", "yt_url": "",
         "search_name": "太田フィッシングクラブ", "tel": "0276-32-1230",
-        "aliases": ["太田", "太田FC", "おおた"]
+        "aliases": ["太田", "太田FC", "おおta"]
     },
     "東山道": {
         "url": "https://weathernews.jp/onebox/36.323047/139.280989/",
@@ -1170,15 +1170,39 @@ def build_spot_list_carousel_horizontal(user_id=None):
             for i in range(0, len(fav_list), 2):
                 pair = fav_list[i:i+2]
                 row_buttons = []
-                for spot in pair:
-                    row_buttons.append({
-                        "type": "button",
-                        "style": "secondary",
-                        "color": "#fff59d",  
-                        "margin": "xs",
-                        "height": "sm",
-                        "action": {"type": "postback", "label": spot, "data": f"w={spot}"}
-                    })
+                # ★ 修正: お気に入り上位2つに囲み線をつける特別デザイン対応
+                for j, spot in enumerate(pair):
+                    global_idx = i + j
+                    if global_idx < 2:
+                        row_buttons.append({
+                            "type": "box",
+                            "layout": "vertical",
+                            "backgroundColor": "#fff59d",
+                            "borderWidth": "normal",
+                            "borderColor": "#d4af37",
+                            "cornerRadius": "md",
+                            "paddingAll": "none",
+                            "margin": "xs",
+                            "contents": [
+                                {
+                                    "type": "button",
+                                    "action": {"type": "postback", "label": spot, "data": f"w={spot}"},
+                                    "style": "link",
+                                    "color": "#555555",
+                                    "height": "sm",
+                                    "margin": "none"
+                                }
+                            ]
+                        })
+                    else:
+                        row_buttons.append({
+                            "type": "button",
+                            "style": "secondary",
+                            "color": "#fff59d",  
+                            "margin": "xs",
+                            "height": "sm",
+                            "action": {"type": "postback", "label": spot, "data": f"w={spot}"}
+                        })
                 if len(pair) == 1:
                     row_buttons.append({"type": "filler"})
                     
@@ -1754,7 +1778,7 @@ def get_cached_weather(spot_name):
         if now - updated_time <= timedelta(hours=1):
             if isinstance(data, dict):
                 weekly = data.get("__weekly__", [])
-                if data.get("_version") != "button_layout_fix_v1":
+                if data.get("_version") != "button_layout_fix_v2":
                     return None
                 if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-":
                     return None
@@ -1773,7 +1797,7 @@ def get_cached_weather(spot_name):
                         weather_data = row.get('weather_data')
                         if isinstance(weather_data, dict):
                             weekly = weather_data.get("__weekly__", [])
-                            if weather_data.get("_version") != "button_layout_fix_v1":
+                            if weather_data.get("_version") != "button_layout_fix_v2":
                                 return None
                             if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-":
                                 return None
@@ -1788,7 +1812,7 @@ def get_cached_weather(spot_name):
 
 def save_cached_weather(spot_name, weather_data):
     now = datetime.now(timezone.utc)
-    weather_data["_version"] = "button_layout_fix_v1"
+    weather_data["_version"] = "button_layout_fix_v2"
     MEMORY_CACHE[spot_name] = (weather_data, now)
     
     if not supabase: return
