@@ -646,7 +646,7 @@ SPOT_WEATHER_DATA = {
         "hp_url": "https://www.facebook.com/otafishingclub/",
         "x_url": "", "fb_url": "https://www.facebook.com/otafishingclub/", "insta_url": "", "blog_url": "", "yt_url": "",
         "search_name": "太田フィッシングクラブ", "tel": "0276-32-1230",
-        "aliases": ["太田", "太田FC", "おおta"]
+        "aliases": ["太田", "太田FC", "おおた"]
     },
     "東山道": {
         "url": "https://weathernews.jp/onebox/36.323047/139.280989/",
@@ -893,7 +893,7 @@ COLOR_GROUPS = [
         "title": "📍 甲信・東北・東海・関西",
         "header_bg": "#6a1b9a",
         "sub_groups": [
-            {"bg": "#f3e5f5", "spots": ["鹿留", "小菅", "奈良子", "シルフ", "JF in Tsugane", "竜华池", "平谷湖", "ハーブの里", "ニレ池", "鹿島槍", "つきの池", "あずみ野"]},
+            {"bg": "#f3e5f5", "spots": ["鹿留", "小菅", "奈良子", "シルフ", "JF in Tsugane", "竜華池", "平谷湖", "ハーブの里", "ニレ池", "鹿島槍", "つきの池", "あずみ野"]},
             {"bg": "#e1bee7", "spots": ["Lost Lures", "GP不忘", "白河", "ほのぼの", "WaDoNa", "鶴沼川", "オーパ", "あいづ", "上浜", "GOZU"]},
             {"bg": "#d1c4e9", "spots": ["FCE瑞浪", "３９", "醒井", "高島の泉", "千早川"]}
         ]
@@ -1170,7 +1170,6 @@ def build_spot_list_carousel_horizontal(user_id=None):
             for i in range(0, len(fav_list), 2):
                 pair = fav_list[i:i+2]
                 row_buttons = []
-                # ★ 修正: お気に入り上位2つに囲み線をつける特別デザイン対応
                 for j, spot in enumerate(pair):
                     global_idx = i + j
                     if global_idx < 2:
@@ -1351,9 +1350,7 @@ def build_spot_list_carousel_horizontal(user_id=None):
                     "contents": [
                         {"type": "text", "text": "⭐ お気に入り機能とリッチメニュー", "weight": "bold", "size": "sm", "color": "#333333"},
                         {"type": "text", "text": "【一番お気に入り（メニュー左）】", "weight": "bold", "size": "xs", "color": "#333333", "margin": "sm"},
-                        {"type": "text", "text": "お気に入りリストの「1番目（一番上）」の釣り場の天気を瞬時に表示します。", "wrap": True, "size": "xs", "color": "#666666"},
-                        {"type": "text", "text": "【お気に入り（メニュー中央）】", "weight": "bold", "size": "xs", "color": "#333333", "margin": "sm"},
-                        {"type": "text", "text": "お気に入りリストの「2番目」の釣り場の天気を表示します。", "wrap": True, "size": "xs", "color": "#666666"}
+                        {"type": "text", "text": "お気に入りリストの「1番目（一番上）」の釣り場の天気を瞬時に表示します。", "wrap": True, "size": "xs", "color": "#666666"}
                     ]
                 },
                 {"type": "separator", "margin": "md"},
@@ -1778,7 +1775,7 @@ def get_cached_weather(spot_name):
         if now - updated_time <= timedelta(hours=1):
             if isinstance(data, dict):
                 weekly = data.get("__weekly__", [])
-                if data.get("_version") != "button_layout_fix_v2":
+                if data.get("_version") != "button_layout_fix_v1":
                     return None
                 if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-":
                     return None
@@ -1797,7 +1794,7 @@ def get_cached_weather(spot_name):
                         weather_data = row.get('weather_data')
                         if isinstance(weather_data, dict):
                             weekly = weather_data.get("__weekly__", [])
-                            if weather_data.get("_version") != "button_layout_fix_v2":
+                            if weather_data.get("_version") != "button_layout_fix_v1":
                                 return None
                             if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-":
                                 return None
@@ -1812,7 +1809,7 @@ def get_cached_weather(spot_name):
 
 def save_cached_weather(spot_name, weather_data):
     now = datetime.now(timezone.utc)
-    weather_data["_version"] = "button_layout_fix_v2"
+    weather_data["_version"] = "button_layout_fix_v1"
     MEMORY_CACHE[spot_name] = (weather_data, now)
     
     if not supabase: return
@@ -2319,7 +2316,7 @@ def handle_postback(event):
                     print(f" - {d.property}: {d.message}")
         except:
             pass
-        try: line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ LINE通信エラーが発生しました。（カード形式エラー等の可能性があります）"))
+        try: line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ LINE通信エラーが発生しました。（データ容量制限エラー等の可能性があります）"))
         except Exception: pass
     except Exception as e:
         print(f"Postback Error: {e}")
