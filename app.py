@@ -885,7 +885,7 @@ COLOR_GROUPS = [
         "title": "📍 栃木・茨城",
         "header_bg": "#e65100",
         "sub_groups": [
-            {"bg": "#fff3e0", "spots": ["キング", "みどり", "那須高原", "尚仁沢", "つり天国", "関根養魚場", "408", "308", "蛇尾（さび）川", "レイクウッド", "なら山沼", "大芦川", "加賀", "発光路", "上永野", "柏倉", "遊水園", "アルクス宇宇都宮", "エリア21", "ベアーズパーク", "鬼怒川", "名草"]},
+            {"bg": "#fff3e0", "spots": ["キング", "みどり", "那須高原", "尚仁沢", "つり天国", "関根養魚場", "408", "308", "蛇尾（さび）川", "レイクウッド", "なら山沼", "大芦川", "加賀", "発光路", "上永野", "柏倉", "遊水園", "アルクス宇都宮", "エリア21", "ベアーズパーク", "鬼怒川", "名草"]},
             {"bg": "#ffe0b2", "spots": ["水戸南", "高萩", "つくば園", "Ｊ", "ユザキ", "笠間", "DoDoo", "若栗", "ミッドクリーク"]}
         ]
     },
@@ -1818,7 +1818,7 @@ def get_cached_weather(spot_name):
         if now - updated_time <= timedelta(hours=1):
             if isinstance(data, dict):
                 weekly = data.get("__weekly__", [])
-                if data.get("_version") != "settings_shortcut_v13":
+                if data.get("_version") != "settings_shortcut_v14":
                     return None
                 if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-":
                     return None
@@ -1837,7 +1837,7 @@ def get_cached_weather(spot_name):
                         weather_data = row.get('weather_data')
                         if isinstance(weather_data, dict):
                             weekly = weather_data.get("__weekly__", [])
-                            if weather_data.get("_version") != "settings_shortcut_v13":
+                            if weather_data.get("_version") != "settings_shortcut_v14":
                                 return None
                             if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-":
                                 return None
@@ -1852,7 +1852,7 @@ def get_cached_weather(spot_name):
 
 def save_cached_weather(spot_name, weather_data):
     now = datetime.now(timezone.utc)
-    weather_data["_version"] = "settings_shortcut_v13"
+    weather_data["_version"] = "settings_shortcut_v14"
     MEMORY_CACHE[spot_name] = (weather_data, now)
     
     if not supabase: return
