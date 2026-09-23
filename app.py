@@ -479,7 +479,7 @@ SPOT_WEATHER_DATA = {
         "search_name": "ジョイフィールド in Tsugane", "tel": "0551-20-7888",
         "aliases": ["JF in Tsugane", "Tsugane", "ジョイフィールド", "つがね", "ツガネ", "じょいふぃーるど"]
     },
-    "竜华池": {
+    "竜華池": {
         "url": "https://weathernews.jp/onebox/35.681978/138.576164/",
         "tenki_url": "https://tenki.jp/forecast/3/22/4910/19201/1hour.html",
         "hp_url": "https://fishingmarketbear.wixsite.com/ryugaike",
@@ -893,7 +893,7 @@ COLOR_GROUPS = [
         "title": "📍 甲信・東北・東海・関西",
         "header_bg": "#6a1b9a",
         "sub_groups": [
-            {"bg": "#f3e5f5", "spots": ["鹿留", "小菅", "奈良子", "シルフ", "JF in Tsugane", "竜華池", "平谷湖", "ハーブの里", "ニレ池", "鹿島槍", "つきの池", "あずみ野"]},
+            {"bg": "#f3e5f5", "spots": ["鹿留", "小菅", "奈良子", "シルフ", "JF in Tsugane", "竜华池", "平谷湖", "ハーブの里", "ニレ池", "鹿島槍", "つきの池", "あずみ野"]},
             {"bg": "#e1bee7", "spots": ["Lost Lures", "GP不忘", "白河", "ほのぼの", "WaDoNa", "鶴沼川", "オーパ", "あいづ", "上浜", "GOZU"]},
             {"bg": "#d1c4e9", "spots": ["FCE瑞浪", "３９", "醒井", "高島の泉", "千早川"]}
         ]
@@ -1120,7 +1120,8 @@ def build_settings_flex_message(fav_list):
         })
 
         bubbles.append({
-            "type": "bubble", "size": "mega",
+            "type": "bubble",
+            "size": "mega",
             "header": {
                 "type": "box", "layout": "vertical", "backgroundColor": "#d4af37", "paddingAll": "10px",
                 "contents": [
@@ -1149,12 +1150,19 @@ def build_spot_list_carousel_horizontal(user_id=None):
         fav_rows = []
         if not fav_list:
             fav_rows.append({
-                "type": "box", "layout": "vertical", "backgroundColor": "#fffde7", "cornerRadius": "md", "paddingAll": "md", "margin": "md",
+                "type": "box",
+                "layout": "vertical",
+                "backgroundColor": "#fffde7",
+                "cornerRadius": "md",
+                "paddingAll": "md",
+                "margin": "md",
                 "contents": [
                     {
                         "type": "text",
                         "text": "現在お気に入りは登録されていません。\n右へスワイプして釣り場を探し、「⭐️ 登録」ボタンを押すか、テキストで「追加 東山湖」と送信して登録してください。",
-                        "wrap": True, "size": "sm", "color": "#555555"
+                        "wrap": True,
+                        "size": "sm",
+                        "color": "#555555"
                     }
                 ]
             })
@@ -1164,7 +1172,11 @@ def build_spot_list_carousel_horizontal(user_id=None):
                 row_buttons = []
                 for spot in pair:
                     row_buttons.append({
-                        "type": "button", "style": "secondary", "color": "#fff59d", "margin": "xs", "height": "sm",
+                        "type": "button",
+                        "style": "secondary",
+                        "color": "#fff59d",  
+                        "margin": "xs",
+                        "height": "sm",
                         "action": {"type": "postback", "label": spot, "data": f"w={spot}"}
                     })
                 if len(pair) == 1:
@@ -1177,25 +1189,48 @@ def build_spot_list_carousel_horizontal(user_id=None):
         fav_rows.append({"type": "separator", "margin": "md", "color": "#cccccc"})
         
         fav_rows.append({
-            "type": "box", "layout": "horizontal", "margin": "sm", "spacing": "sm",
+            "type": "box",
+            "layout": "horizontal",
+            "margin": "sm",
+            "spacing": "sm",
             "contents": [
                 {
-                    "type": "box", "layout": "vertical", "flex": 1, "backgroundColor": "#f8f9fa", "borderWidth": "normal", "borderColor": "#e0e0e0", "cornerRadius": "md", "paddingAll": "none",
+                    "type": "box",
+                    "layout": "vertical",
+                    "flex": 1,
+                    "backgroundColor": "#f8f9fa",
+                    "borderWidth": "normal",
+                    "borderColor": "#e0e0e0",
+                    "cornerRadius": "md",
+                    "paddingAll": "none",
                     "contents": [
                         {
                             "type": "button",
                             "action": {"type": "postback", "label": "⚙️ 設定", "data": "action=show_settings", "displayText": "⚙️ 設定"},
-                            "style": "link", "color": "#555555", "height": "sm", "margin": "none"
+                            "style": "link",
+                            "color": "#555555",
+                            "height": "sm",
+                            "margin": "none"
                         }
                     ]
                 },
                 {
-                    "type": "box", "layout": "vertical", "flex": 1, "backgroundColor": "#fff59d", "borderWidth": "normal", "borderColor": "#d4af37", "cornerRadius": "md", "paddingAll": "none",
+                    "type": "box",
+                    "layout": "vertical",
+                    "flex": 1,
+                    "backgroundColor": "#fff59d",
+                    "borderWidth": "normal",
+                    "borderColor": "#d4af37",
+                    "cornerRadius": "md",
+                    "paddingAll": "none",
                     "contents": [
                         {
                             "type": "button",
                             "action": {"type": "postback", "label": "📋 一覧", "data": "action=show_list", "displayText": "📋 一覧"},
-                            "style": "link", "color": "#555555", "height": "sm", "margin": "none"
+                            "style": "link",
+                            "color": "#555555",
+                            "height": "sm",
+                            "margin": "none"
                         }
                     ]
                 }
@@ -1203,7 +1238,8 @@ def build_spot_list_carousel_horizontal(user_id=None):
         })
 
         fav_bubble = {
-            "type": "bubble", "size": "giga",
+            "type": "bubble",
+            "size": "giga",
             "header": {
                 "type": "box", "layout": "horizontal", "backgroundColor": "#d4af37", "paddingAll": "10px", "alignItems": "center",
                 "contents": [
@@ -1227,7 +1263,11 @@ def build_spot_list_carousel_horizontal(user_id=None):
                 for spot in pair:
                     label_text = f"★ {spot}" if spot in fav_list else spot
                     row_buttons.append({
-                        "type": "button", "style": "secondary", "color": btn_bg, "margin": "xs", "height": "sm",
+                        "type": "button",
+                        "style": "secondary",
+                        "color": btn_bg,
+                        "margin": "xs",
+                        "height": "sm",
                         "action": {"type": "postback", "label": label_text, "data": f"w={spot}"}
                     })
                 if len(pair) == 1:
@@ -1238,7 +1278,8 @@ def build_spot_list_carousel_horizontal(user_id=None):
                 is_first_row = False
             
         bubble = {
-            "type": "bubble", "size": "giga",
+            "type": "bubble",
+            "size": "giga",
             "header": {
                 "type": "box", "layout": "vertical", "backgroundColor": group["header_bg"], "paddingAll": "10px",
                 "contents": [{"type": "text", "text": group["title"], "color": "#ffffff", "weight": "bold", "size": "md"}]
@@ -1249,7 +1290,8 @@ def build_spot_list_carousel_horizontal(user_id=None):
 
     # 使い方ガイド
     guide_bubble = {
-        "type": "bubble", "size": "giga",
+        "type": "bubble",
+        "size": "giga",
         "header": {
             "type": "box", "layout": "vertical", "backgroundColor": "#888888", "paddingAll": "10px",
             "contents": [{"type": "text", "text": "📖 使い方ガイド", "color": "#ffffff", "weight": "bold", "size": "md"}]
@@ -1277,6 +1319,19 @@ def build_spot_list_carousel_horizontal(user_id=None):
                         {"type": "text", "text": "「設定」と送信すると、並び替え・全削除パネルが出ます。", "wrap": True, "size": "xs", "color": "#666666"},
                         {"type": "text", "text": "【一覧（メニュー）の出し方】", "weight": "bold", "size": "xs", "color": "#333333", "margin": "sm"},
                         {"type": "text", "text": "「一覧」という言葉や、それ以外の適当な文字（「あ」「1」「a」など）を送信すると、この一覧表が表示されます。", "wrap": True, "size": "xs", "color": "#666666"}
+                    ]
+                },
+                {"type": "separator", "margin": "md"},
+                {
+                    "type": "box", "layout": "vertical", "spacing": "sm",
+                    "contents": [
+                        {"type": "text", "text": "⭐ お気に入り機能とリッチメニュー", "weight": "bold", "size": "sm", "color": "#333333"},
+                        {"type": "text", "text": "【お気に入りの順番について】", "weight": "bold", "size": "xs", "color": "#333333", "margin": "sm"},
+                        {"type": "text", "text": "「設定」からお気に入りの並び替えができます。上から順番に1番目、2番目と定義されます。", "wrap": True, "size": "xs", "color": "#666666"},
+                        {"type": "text", "text": "【一番お気に入り（メニュー左）】", "weight": "bold", "size": "xs", "color": "#333333", "margin": "sm"},
+                        {"type": "text", "text": "お気に入りリストの「1番目（一番上）」の釣り場の天気を瞬時に表示します。", "wrap": True, "size": "xs", "color": "#666666"},
+                        {"type": "text", "text": "【お気に入り（メニュー中央）】", "weight": "bold", "size": "xs", "color": "#333333", "margin": "sm"},
+                        {"type": "text", "text": "お気に入りリストの「2番目」の釣り場の天気を表示します。", "wrap": True, "size": "xs", "color": "#666666"}
                     ]
                 },
                 {"type": "separator", "margin": "md"},
@@ -1998,7 +2053,6 @@ def handle_message(event):
         raw_msg = event.message.text.strip()
         user_id = event.source.user_id
 
-        # ★ リッチメニュー連動：お気に入り1番目・2番目の呼び出し処理 ★
         if raw_msg in ["お気に入り1", "お気に入り2"]:
             _, favorites = get_user_setting(user_id)
             fav_list = [s.strip() for s in favorites.split(',') if s.strip()]
