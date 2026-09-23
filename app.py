@@ -1046,10 +1046,21 @@ def build_settings_flex_message(fav_list):
         chunk = fav_list[i:i + chunk_size]
         rows = []
         for spot in chunk:
+            # ★ 修正: 🥇と🥈のダイレクト移動ボタンを追加 ★
             rows.append({
                 "type": "box", "layout": "horizontal", "margin": "md", "alignItems": "center",
                 "contents": [
-                    {"type": "text", "text": f"{spot}", "size": "sm", "weight": "bold", "flex": 4, "color": "#333333", "wrap": True},
+                    {"type": "text", "text": f"{spot}", "size": "xs", "weight": "bold", "flex": 5, "color": "#333333", "wrap": True},
+                    {
+                        "type": "button",
+                        "action": {"type": "postback", "label": "🥇", "data": f"action=fav_top&spot={spot}"},
+                        "style": "secondary", "flex": 2, "margin": "xs", "color": "#fff9c4"
+                    },
+                    {
+                        "type": "button",
+                        "action": {"type": "postback", "label": "🥈", "data": f"action=fav_second&spot={spot}"},
+                        "style": "secondary", "flex": 2, "margin": "xs", "color": "#eeeeee"
+                    },
                     {
                         "type": "button",
                         "action": {"type": "postback", "label": "⬆️", "data": f"action=fav_up&spot={spot}"},
@@ -1513,6 +1524,7 @@ def clear_favorite_spots(user_id):
     except Exception as e:
         return False, f"削除に失敗しました: {e}"
 
+# ★ 修正: 🥇トップ、🥈2番目へダイレクト移動する処理の追加 ★
 def move_favorite_spot(user_id, spot_name, direction):
     if not supabase: return False, "DB接続未完了です。"
     source, favorites = get_user_setting(user_id)
@@ -1527,6 +1539,13 @@ def move_favorite_spot(user_id, spot_name, direction):
         fav_list[idx - 1], fav_list[idx] = fav_list[idx], fav_list[idx - 1]
     elif direction == "down" and idx < len(fav_list) - 1:
         fav_list[idx + 1], fav_list[idx] = fav_list[idx], fav_list[idx + 1]
+    elif direction == "top" and idx > 0:
+        fav_list.insert(0, fav_list.pop(idx))
+    elif direction == "second":
+        if idx > 1:
+            fav_list.insert(1, fav_list.pop(idx))
+        elif idx == 0 and len(fav_list) > 1:
+            fav_list.insert(1, fav_list.pop(0))
     else:
         return True, "移動不要"
         
@@ -1783,7 +1802,7 @@ def get_cached_weather(spot_name):
         if now - updated_time <= timedelta(hours=1):
             if isinstance(data, dict):
                 weekly = data.get("__weekly__", [])
-                if data.get("_version") != "guide_text_fix_v2":
+                if data.get("_version") != "settings_shortcut_v1":
                     return None
                 if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-":
                     return None
@@ -1802,7 +1821,7 @@ def get_cached_weather(spot_name):
                         weather_data = row.get('weather_data')
                         if isinstance(weather_data, dict):
                             weekly = weather_data.get("__weekly__", [])
-                            if weather_data.get("_version") != "guide_text_fix_v2":
+                            if weather_data.get("_version") != "settings_shortcut_v1":
                                 return None
                             if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-":
                                 return None
@@ -1817,7 +1836,7 @@ def get_cached_weather(spot_name):
 
 def save_cached_weather(spot_name, weather_data):
     now = datetime.now(timezone.utc)
-    weather_data["_version"] = "guide_text_fix_v2"
+    weather_data["_version"] = "settings_shortcut_v1"
     MEMORY_CACHE[spot_name] = (weather_data, now)
     
     if not supabase: return
@@ -2306,8 +2325,8 @@ def handle_postback(event):
             flex_msg = build_spot_list_carousel_horizontal(user_id=user_id)
             line_bot_api.reply_message(event.reply_token, [TextSendMessage(text=f"✅ {msg}"), flex_msg])
 
-        elif action in ["fav_up", "fav_down"]:
-            direction = "up" if action == "fav_up" else "down"
+        elif action in ["fav_up", "fav_down", "fav_top", "fav_second"]:
+            direction = action.split("_")[1]
             move_favorite_spot(user_id, spot_name, direction)
             _, favorites = get_user_setting(user_id)
             fav_list = [s.strip() for s in favorites.split(',')]
