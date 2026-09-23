@@ -748,13 +748,13 @@ SPOT_WEATHER_DATA = {
         "search_name": "ロストルアーズ", "tel": "0241-66-3266",
         "aliases": ["Lost Lures", "lost lures", "ロストルアーズ", "ろすとるあーず", "ろすとるあー", "ロストルアー", "ろすと", "ロスト"]
     },
-    "GP不忘": {
+    "不忘": {
         "url": "https://weathernews.jp/onebox/38.042491/140.554478/",
         "tenki_url": "https://tenki.jp/forecast/2/7/3420/4206/1hour.html",
         "hp_url": "http://www.fubou.jp/",
         "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "",
         "search_name": "グリーンパーク不忘", "tel": "0224-24-8131",
-        "aliases": ["GP不忘", "不忘", "グリーンパーク不忘", "グリーンパーク", "ぐりーんぱーく", "ふぼう", "フボウ"]
+        "aliases": ["ぐりーんぱーくふぼう", "グリーンパークフボウ", "不忘", "ふぼう", "フボウ", "ぐりーんぱーく", "グリーンパーク"]
     },
     "白河": {
         "url": "https://weathernews.jp/onebox/37.127955/140.081827/",
@@ -885,7 +885,7 @@ COLOR_GROUPS = [
         "title": "📍 栃木・茨城",
         "header_bg": "#e65100",
         "sub_groups": [
-            {"bg": "#fff3e0", "spots": ["キング", "みどり", "那須高原", "尚仁沢", "つり天国", "関根養魚場", "408", "308", "蛇尾（さび）川", "レイクウッド", "なら山沼", "大芦川", "加賀", "発光路", "上永野", "柏倉", "遊水園", "アルクス宇都宮", "エリア21", "ベアーズパーク", "鬼怒川", "名草"]},
+            {"bg": "#fff3e0", "spots": ["キング", "みどり", "那須高原", "尚仁沢", "つり天国", "関根養魚場", "408", "308", "蛇尾（さび）川", "レイクウッド", "なら山沼", "大芦川", "加賀", "発光路", "上永野", "柏倉", "遊水園", "アルクス宇宇都宮", "エリア21", "ベアーズパーク", "鬼怒川", "名草"]},
             {"bg": "#ffe0b2", "spots": ["水戸南", "高萩", "つくば園", "Ｊ", "ユザキ", "笠間", "DoDoo", "若栗", "ミッドクリーク"]}
         ]
     },
@@ -894,7 +894,7 @@ COLOR_GROUPS = [
         "header_bg": "#6a1b9a",
         "sub_groups": [
             {"bg": "#f3e5f5", "spots": ["鹿留", "小菅", "奈良子", "シルフ", "ツガネ", "竜華池", "平谷湖", "ハーブ", "ニレ池", "鹿島やり", "つきの池", "あずみ野"]},
-            {"bg": "#e1bee7", "spots": ["Lost Lures", "GP不忘", "白河", "ほのぼの", "WaDoNa", "鶴沼川", "オーパ", "あいづ", "上浜", "GOZU"]},
+            {"bg": "#e1bee7", "spots": ["Lost Lures", "不忘", "白河", "ほのぼの", "WaDoNa", "鶴沼川", "オーパ", "あいづ", "上浜", "GOZU"]},
             {"bg": "#d1c4e9", "spots": ["FCE瑞浪", "３９", "醒井", "高島の泉", "千早川"]}
         ]
     }
@@ -1046,7 +1046,6 @@ def build_settings_flex_message(fav_list):
         chunk = fav_list[i:i + chunk_size]
         rows = []
         
-        # ★ 変更維持: 各枠の上に、一発移動用の選択パネル呼び出しボタンを並べる ★
         rows.append({
             "type": "box", "layout": "horizontal", "spacing": "xs", "paddingBottom": "10px",
             "contents": [
@@ -1069,7 +1068,6 @@ def build_settings_flex_message(fav_list):
         })
         rows.append({"type": "separator", "margin": "sm"})
 
-        # ★ 修正: 元々正常に表示されていたButtonコンポーネントに戻しました（文字潰れを完全解消） ★
         for spot in chunk:
             rows.append({
                 "type": "box", "layout": "horizontal", "margin": "md", "alignItems": "center",
@@ -1419,7 +1417,7 @@ def get_user_setting(user_id):
                 "関根": "関根養魚場",
                 "FAJ": "Ｊ",
                 "朝霞": "朝霞Ｇ",
-                "不忘": "GP不忘",
+                "GP不忘": "不忘",
                 "座間・amaz": "座間",
                 "座間": "座間",
                 "パラダイス": "釣パラダイス",
@@ -1820,7 +1818,7 @@ def get_cached_weather(spot_name):
         if now - updated_time <= timedelta(hours=1):
             if isinstance(data, dict):
                 weekly = data.get("__weekly__", [])
-                if data.get("_version") != "settings_shortcut_v11":
+                if data.get("_version") != "settings_shortcut_v13":
                     return None
                 if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-":
                     return None
@@ -1839,7 +1837,7 @@ def get_cached_weather(spot_name):
                         weather_data = row.get('weather_data')
                         if isinstance(weather_data, dict):
                             weekly = weather_data.get("__weekly__", [])
-                            if weather_data.get("_version") != "settings_shortcut_v11":
+                            if weather_data.get("_version") != "settings_shortcut_v13":
                                 return None
                             if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-":
                                 return None
@@ -1854,7 +1852,7 @@ def get_cached_weather(spot_name):
 
 def save_cached_weather(spot_name, weather_data):
     now = datetime.now(timezone.utc)
-    weather_data["_version"] = "settings_shortcut_v11"
+    weather_data["_version"] = "settings_shortcut_v13"
     MEMORY_CACHE[spot_name] = (weather_data, now)
     
     if not supabase: return
