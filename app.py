@@ -479,7 +479,7 @@ SPOT_WEATHER_DATA = {
         "search_name": "ジョイフィールド in Tsugane", "tel": "0551-20-7888",
         "aliases": ["JF in Tsugane", "Tsugane", "ジョイフィールド", "つがね", "ツガネ", "じょいふぃーるど"]
     },
-    "竜華池": {
+    "竜华池": {
         "url": "https://weathernews.jp/onebox/35.681978/138.576164/",
         "tenki_url": "https://tenki.jp/forecast/3/22/4910/19201/1hour.html",
         "hp_url": "https://fishingmarketbear.wixsite.com/ryugaike",
@@ -1120,8 +1120,7 @@ def build_settings_flex_message(fav_list):
         })
 
         bubbles.append({
-            "type": "bubble",
-            "size": "mega",
+            "type": "bubble", "size": "mega",
             "header": {
                 "type": "box", "layout": "vertical", "backgroundColor": "#d4af37", "paddingAll": "10px",
                 "contents": [
@@ -1150,19 +1149,12 @@ def build_spot_list_carousel_horizontal(user_id=None):
         fav_rows = []
         if not fav_list:
             fav_rows.append({
-                "type": "box",
-                "layout": "vertical",
-                "backgroundColor": "#fffde7",
-                "cornerRadius": "md",
-                "paddingAll": "md",
-                "margin": "md",
+                "type": "box", "layout": "vertical", "backgroundColor": "#fffde7", "cornerRadius": "md", "paddingAll": "md", "margin": "md",
                 "contents": [
                     {
                         "type": "text",
                         "text": "現在お気に入りは登録されていません。\n右へスワイプして釣り場を探し、「⭐️ 登録」ボタンを押すか、テキストで「追加 東山湖」と送信して登録してください。",
-                        "wrap": True,
-                        "size": "sm",
-                        "color": "#555555"
+                        "wrap": True, "size": "sm", "color": "#555555"
                     }
                 ]
             })
@@ -1172,11 +1164,7 @@ def build_spot_list_carousel_horizontal(user_id=None):
                 row_buttons = []
                 for spot in pair:
                     row_buttons.append({
-                        "type": "button",
-                        "style": "secondary",
-                        "color": "#fff59d",  
-                        "margin": "xs",
-                        "height": "sm",
+                        "type": "button", "style": "secondary", "color": "#fff59d", "margin": "xs", "height": "sm",
                         "action": {"type": "postback", "label": spot, "data": f"w={spot}"}
                     })
                 if len(pair) == 1:
@@ -1189,48 +1177,25 @@ def build_spot_list_carousel_horizontal(user_id=None):
         fav_rows.append({"type": "separator", "margin": "md", "color": "#cccccc"})
         
         fav_rows.append({
-            "type": "box",
-            "layout": "horizontal",
-            "margin": "sm",
-            "spacing": "sm",
+            "type": "box", "layout": "horizontal", "margin": "sm", "spacing": "sm",
             "contents": [
                 {
-                    "type": "box",
-                    "layout": "vertical",
-                    "flex": 1,
-                    "backgroundColor": "#f8f9fa",
-                    "borderWidth": "normal",
-                    "borderColor": "#e0e0e0",
-                    "cornerRadius": "md",
-                    "paddingAll": "none",
+                    "type": "box", "layout": "vertical", "flex": 1, "backgroundColor": "#f8f9fa", "borderWidth": "normal", "borderColor": "#e0e0e0", "cornerRadius": "md", "paddingAll": "none",
                     "contents": [
                         {
                             "type": "button",
                             "action": {"type": "postback", "label": "⚙️ 設定", "data": "action=show_settings", "displayText": "⚙️ 設定"},
-                            "style": "link",
-                            "color": "#555555",
-                            "height": "sm",
-                            "margin": "none"
+                            "style": "link", "color": "#555555", "height": "sm", "margin": "none"
                         }
                     ]
                 },
                 {
-                    "type": "box",
-                    "layout": "vertical",
-                    "flex": 1,
-                    "backgroundColor": "#fff59d",
-                    "borderWidth": "normal",
-                    "borderColor": "#d4af37",
-                    "cornerRadius": "md",
-                    "paddingAll": "none",
+                    "type": "box", "layout": "vertical", "flex": 1, "backgroundColor": "#fff59d", "borderWidth": "normal", "borderColor": "#d4af37", "cornerRadius": "md", "paddingAll": "none",
                     "contents": [
                         {
                             "type": "button",
                             "action": {"type": "postback", "label": "📋 一覧", "data": "action=show_list", "displayText": "📋 一覧"},
-                            "style": "link",
-                            "color": "#555555",
-                            "height": "sm",
-                            "margin": "none"
+                            "style": "link", "color": "#555555", "height": "sm", "margin": "none"
                         }
                     ]
                 }
@@ -1238,8 +1203,7 @@ def build_spot_list_carousel_horizontal(user_id=None):
         })
 
         fav_bubble = {
-            "type": "bubble",
-            "size": "giga",
+            "type": "bubble", "size": "giga",
             "header": {
                 "type": "box", "layout": "horizontal", "backgroundColor": "#d4af37", "paddingAll": "10px", "alignItems": "center",
                 "contents": [
@@ -1263,11 +1227,7 @@ def build_spot_list_carousel_horizontal(user_id=None):
                 for spot in pair:
                     label_text = f"★ {spot}" if spot in fav_list else spot
                     row_buttons.append({
-                        "type": "button",
-                        "style": "secondary",
-                        "color": btn_bg,
-                        "margin": "xs",
-                        "height": "sm",
+                        "type": "button", "style": "secondary", "color": btn_bg, "margin": "xs", "height": "sm",
                         "action": {"type": "postback", "label": label_text, "data": f"w={spot}"}
                     })
                 if len(pair) == 1:
@@ -1278,8 +1238,7 @@ def build_spot_list_carousel_horizontal(user_id=None):
                 is_first_row = False
             
         bubble = {
-            "type": "bubble",
-            "size": "giga",
+            "type": "bubble", "size": "giga",
             "header": {
                 "type": "box", "layout": "vertical", "backgroundColor": group["header_bg"], "paddingAll": "10px",
                 "contents": [{"type": "text", "text": group["title"], "color": "#ffffff", "weight": "bold", "size": "md"}]
@@ -1290,8 +1249,7 @@ def build_spot_list_carousel_horizontal(user_id=None):
 
     # 使い方ガイド
     guide_bubble = {
-        "type": "bubble",
-        "size": "giga",
+        "type": "bubble", "size": "giga",
         "header": {
             "type": "box", "layout": "vertical", "backgroundColor": "#888888", "paddingAll": "10px",
             "contents": [{"type": "text", "text": "📖 使い方ガイド", "color": "#ffffff", "weight": "bold", "size": "md"}]
@@ -2040,6 +1998,43 @@ def handle_message(event):
         raw_msg = event.message.text.strip()
         user_id = event.source.user_id
 
+        # ★ リッチメニュー連動：お気に入り1番目・2番目の呼び出し処理 ★
+        if raw_msg in ["お気に入り1", "お気に入り2"]:
+            _, favorites = get_user_setting(user_id)
+            fav_list = [s.strip() for s in favorites.split(',') if s.strip()]
+            
+            target_spot = None
+            if raw_msg == "お気に入り1" and len(fav_list) > 0:
+                target_spot = fav_list[0]
+            elif raw_msg == "お気に入り2" and len(fav_list) > 1:
+                target_spot = fav_list[1]
+                
+            if target_spot:
+                target_spot_name, target_url, hp_url, hp2_url, map_url, tel, x_url, fb_url, insta_url, blog_url, yt_url, tenki_url = get_spot_details(target_spot)
+                
+                if not target_url:
+                    line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"⚠️ 【{target_spot}】のデータが見つかりません。"))
+                    return
+
+                is_fav = True
+                weather_data = get_cached_weather(target_spot_name)
+                
+                if not weather_data:
+                    weather_data = fetch_spot_1hour_data(target_url, tenki_url)
+                    if weather_data:
+                        save_cached_weather(target_spot_name, weather_data)
+
+                if weather_data:
+                    flex_msg = build_grid_flex_message(target_spot_name, weather_data, hp_url, hp2_url, map_url, tel, x_url, fb_url, insta_url, blog_url, yt_url, is_favorite=is_fav)
+                    line_bot_api.reply_message(event.reply_token, flex_msg)
+                else:
+                    line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"⚠️ 【{target_spot_name}】の天気データの取得に失敗しました。少し時間をおいてから再度お試しください。"))
+            else:
+                msg = "⚠️ お気に入りが登録されていないか、件数が足りません。\n「一覧」から釣り場を探して「⭐️ 登録」してください。"
+                flex_msg = build_spot_list_carousel_horizontal(user_id=user_id)
+                line_bot_api.reply_message(event.reply_token, [TextSendMessage(text=msg), flex_msg])
+            return
+
         add_match = re.match(r'^追加[\s:：]+(.+)$', raw_msg, re.DOTALL)
         if add_match:
             spots_str = add_match.group(1).strip()
@@ -2134,44 +2129,7 @@ def handle_postback(event):
             action = "show_weather"
             spot_name = data_dict["w"]
 
-        # ★ 修正: リッチメニュー用 お気に入り1・2番目呼び出し処理 ★
-        if action in ["show_favorite_first", "show_favorite_second"]:
-            _, favorites = get_user_setting(user_id)
-            fav_list = [s.strip() for s in favorites.split(',') if s.strip()]
-            
-            target_spot = None
-            if action == "show_favorite_first" and len(fav_list) > 0:
-                target_spot = fav_list[0]
-            elif action == "show_favorite_second" and len(fav_list) > 1:
-                target_spot = fav_list[1]
-                
-            if target_spot:
-                target_spot_name, target_url, hp_url, hp2_url, map_url, tel, x_url, fb_url, insta_url, blog_url, yt_url, tenki_url = get_spot_details(target_spot)
-                
-                if not target_url:
-                    line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"⚠️ 【{target_spot}】のデータが見つかりません。"))
-                    return
-
-                is_fav = target_spot_name in fav_list
-                weather_data = get_cached_weather(target_spot_name)
-                
-                if not weather_data:
-                    weather_data = fetch_spot_1hour_data(target_url, tenki_url)
-                    if weather_data:
-                        save_cached_weather(target_spot_name, weather_data)
-
-                if weather_data:
-                    flex_msg = build_grid_flex_message(target_spot_name, weather_data, hp_url, hp2_url, map_url, tel, x_url, fb_url, insta_url, blog_url, yt_url, is_favorite=is_fav)
-                    line_bot_api.reply_message(event.reply_token, flex_msg)
-                else:
-                    line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"⚠️ 【{target_spot_name}】の天気データの取得に失敗しました。少し時間をおいてから再度お試しください。"))
-            else:
-                msg = "⚠️ お気に入りが登録されていないか、件数が足りません。\n「一覧」から釣り場を探して「⭐️ 登録」してください。"
-                flex_msg = build_spot_list_carousel_horizontal(user_id=user_id)
-                line_bot_api.reply_message(event.reply_token, [TextSendMessage(text=msg), flex_msg])
-            return
-
-        elif action == "show_list":
+        if action == "show_list":
             flex_msg = build_spot_list_carousel_horizontal(user_id=user_id)
             line_bot_api.reply_message(event.reply_token, flex_msg)
             return
