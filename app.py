@@ -1045,17 +1045,28 @@ def build_settings_flex_message(fav_list):
     for i in range(0, len(fav_list), chunk_size):
         chunk = fav_list[i:i + chunk_size]
         rows = []
+        
+        # ★ 修正: 各セルの最上段に「1番お気に入りに設定する」選択ボタンを1つだけ配置 ★
+        rows.append({
+            "type": "box", "layout": "vertical", "margin": "none", "paddingBottom": "10px",
+            "contents": [
+                {
+                    "type": "button",
+                    "action": {"type": "postback", "label": "🥇 1番お気に入りを設定", "data": "action=show_top_selector"},
+                    "style": "secondary",
+                    "color": "#fff9c4",
+                    "height": "sm"
+                }
+            ]
+        })
+        rows.append({"type": "separator", "margin": "sm"})
+
+        # ★ 修正: 各行のボタンを減らし（🔝を削除）、文字領域を広げて文字潰れを解消 ★
         for spot in chunk:
-            # ★ 修正: 🥇🥈を廃止し、全体トップへ移動する「🔝」ボタンを1つ追加し幅を最適化 ★
             rows.append({
                 "type": "box", "layout": "horizontal", "margin": "md", "alignItems": "center",
                 "contents": [
-                    {"type": "text", "text": f"{spot}", "size": "sm", "weight": "bold", "flex": 4, "color": "#333333", "wrap": True},
-                    {
-                        "type": "button",
-                        "action": {"type": "postback", "label": "🔝", "data": f"action=fav_top&spot={spot}"},
-                        "style": "secondary", "flex": 2, "margin": "xs", "color": "#fff9c4"
-                    },
+                    {"type": "text", "text": f"{spot}", "size": "sm", "weight": "bold", "flex": 5, "color": "#333333", "wrap": True},
                     {
                         "type": "button",
                         "action": {"type": "postback", "label": "⬆️", "data": f"action=fav_up&spot={spot}"},
@@ -1519,7 +1530,6 @@ def clear_favorite_spots(user_id):
     except Exception as e:
         return False, f"削除に失敗しました: {e}"
 
-# ★ 修正: 🥇🥈を削除し、トップに直接移動する処理を残しました ★
 def move_favorite_spot(user_id, spot_name, direction):
     if not supabase: return False, "DB接続未完了です。"
     source, favorites = get_user_setting(user_id)
@@ -1792,7 +1802,7 @@ def get_cached_weather(spot_name):
         if now - updated_time <= timedelta(hours=1):
             if isinstance(data, dict):
                 weekly = data.get("__weekly__", [])
-                if data.get("_version") != "settings_shortcut_v2":
+                if data.get("_version") != "settings_shortcut_v3":
                     return None
                 if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-":
                     return None
@@ -1811,7 +1821,7 @@ def get_cached_weather(spot_name):
                         weather_data = row.get('weather_data')
                         if isinstance(weather_data, dict):
                             weekly = weather_data.get("__weekly__", [])
-                            if weather_data.get("_version") != "settings_shortcut_v2":
+                            if weather_data.get("_version") != "settings_shortcut_v3":
                                 return None
                             if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-":
                                 return None
@@ -1826,7 +1836,7 @@ def get_cached_weather(spot_name):
 
 def save_cached_weather(spot_name, weather_data):
     now = datetime.now(timezone.utc)
-    weather_data["_version"] = "settings_shortcut_v2"
+    weather_data["_version"] = "settings_shortcut_v3"
     MEMORY_CACHE[spot_name] = (weather_data, now)
     
     if not supabase: return
@@ -2219,7 +2229,40 @@ def handle_postback(event):
             action = "show_weather"
             spot_name = data_dict["w"]
 
-        if action == "show_list":
+        # ★ 追加: 1番お気に入りに設定する選択画面の呼び出し ★
+        if action == "show_top_selector":
+            _, favorites = get_user_setting(user_id)
+            fav_list = [s.strip() for s in favorites.split(',') if s.strip()]
+            
+            if not fav_list:
+                line_bot_api.reply_message(event.reply_token, TextSendMessage(text="お気に入りが登録されていません。"))
+                return
+                
+            selector_bubbles = []
+            for i in range(0, len(fav_list), 10):
+                chunk = fav_list[i:i+10]
+                btns = []
+                for spot in chunk:
+                    btns.append({
+                        "type": "button",
+                        "action": {"type": "postback", "label": f"{spot}", "data": f"action=fav_top&spot={spot}"},
+                        "style": "secondary", "margin": "xs", "height": "sm", "color": "#f8f9fa"
+                    })
+                selector_bubbles.append({
+                    "type": "bubble", "size": "kilo",
+                    "header": {
+                        "type": "box", "layout": "vertical", "backgroundColor": "#d4af37", "paddingAll": "10px",
+                        "contents": [{"type": "text", "text": "🥇 1番目に設定する釣り場を選択", "color": "#ffffff", "weight": "bold", "size": "sm"}]
+                    },
+                    "body": {
+                        "type": "box", "layout": "vertical", "paddingAll": "10px", "contents": btns
+                    }
+                })
+            flex_msg = FlexSendMessage(alt_text="1番お気に入り設定", contents={"type": "carousel", "contents": selector_bubbles})
+            line_bot_api.reply_message(event.reply_token, flex_msg)
+            return
+
+        elif action == "show_list":
             flex_msg = build_spot_list_carousel_horizontal(user_id=user_id)
             line_bot_api.reply_message(event.reply_token, flex_msg)
             return
@@ -2315,7 +2358,6 @@ def handle_postback(event):
             flex_msg = build_spot_list_carousel_horizontal(user_id=user_id)
             line_bot_api.reply_message(event.reply_token, [TextSendMessage(text=f"✅ {msg}"), flex_msg])
 
-        # ★ 修正: fav_top アクションの条件追加 ★
         elif action in ["fav_up", "fav_down", "fav_top"]:
             direction = action.split("_")[1]
             move_favorite_spot(user_id, spot_name, direction)
