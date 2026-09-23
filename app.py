@@ -56,7 +56,7 @@ MAX_PUSH_LIMIT = 10  # 一度に通知する最大人数
 TEST_MODE_USER_ID = "" 
 
 # ==========================================
-# 3. 釣り場URL・HP・Googleマップ・電話番号・SNS・表記揺れ辞書
+# 3. 釣り場URL・HP・Googleマップ・電話番号・SNS・表記揺れ辞書・tenki_url
 # ==========================================
 SPOT_WEATHER_DATA = {
     # --- 静岡県 ---
@@ -1743,7 +1743,6 @@ def get_cached_weather(spot_name):
         if now - updated_time <= timedelta(hours=1):
             if isinstance(data, dict):
                 weekly = data.get("__weekly__", [])
-                # ★ キャッシュバージョン更新。旧データを強制破棄
                 if data.get("_version") != "button_layout_fix_v1":
                     return None
                 if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-":
@@ -1763,7 +1762,6 @@ def get_cached_weather(spot_name):
                         weather_data = row.get('weather_data')
                         if isinstance(weather_data, dict):
                             weekly = weather_data.get("__weekly__", [])
-                            # ★ Supabaseの古いキャッシュデータも強制破棄
                             if weather_data.get("_version") != "button_layout_fix_v1":
                                 return None
                             if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-":
@@ -1779,7 +1777,6 @@ def get_cached_weather(spot_name):
 
 def save_cached_weather(spot_name, weather_data):
     now = datetime.now(timezone.utc)
-    # ★ 新しいバージョン名を付与
     weather_data["_version"] = "button_layout_fix_v1"
     MEMORY_CACHE[spot_name] = (weather_data, now)
     
@@ -1888,7 +1885,7 @@ def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_
             rain_color = "#0000ff" if rain_val.isdigit() and int(rain_val) > 0 else "#555555"
             
             date_str = str(w.get("date", "-"))
-            date_color = "#333333" # 基本は黒
+            date_color = "#333333" 
             
             if date_str != "-":
                 target_date = guess_date_from_string(date_str, now_jst_date)
@@ -1950,7 +1947,6 @@ def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_
 
     header_block = {"type": "box", "layout": "vertical", "backgroundColor": header_color, "paddingAll": "10px", "contents": header_contents}
 
-    # ★ 修正: 左側（1枚目）のボトムボタンは「一覧」のみ
     bottom_buttons_1 = [
         {
             "type": "box", "layout": "vertical", "flex": 1, "backgroundColor": "#fff59d", "borderWidth": "normal", "borderColor": "#d4af37", "cornerRadius": "md", "paddingAll": "0px",
@@ -1958,7 +1954,6 @@ def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_
         }
     ]
 
-    # ★ 修正: 右側（2枚目）のボトムボタンは「電話」と「一覧」
     bottom_buttons_2 = []
     if tel:
         clean_tel = tel.replace('-', '').strip()
@@ -1974,7 +1969,6 @@ def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_
 
     banner_img_url = "https://raw.githubusercontent.com/harackgm/fishing-weather-bot/main/tenkiharackbana.jpg"
 
-    # --- カード1枚目（左側）のボトムブロック ---
     bottom_block_contents_1 = []
     if weekly_box_1:
         bottom_block_contents_1.append({"type": "separator", "margin": "md"})
@@ -1987,7 +1981,6 @@ def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_
         {"type": "box", "layout": "horizontal", "margin": "sm", "spacing": "sm", "contents": bottom_buttons_1}
     ])
 
-    # --- カード2枚目（右側）のボトムブロック ---
     bottom_block_contents_2 = []
     if weekly_box_2:
         bottom_block_contents_2.append({"type": "separator", "margin": "md"})
@@ -2002,7 +1995,6 @@ def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_
 
     bubbles = []
 
-    # 1枚目生成
     if len(dates) > 0:
         day1 = dates[0]
         day2 = dates[1] if len(dates) > 1 else None
@@ -2013,7 +2005,6 @@ def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_
             "body": {"type": "box", "layout": "vertical", "spacing": "md", "paddingAll": "8px", "contents": body_contents_1}
         })
 
-    # 2枚目生成
     if len(dates) > 2:
         day3 = dates[2]
         day4 = dates[3] if len(dates) > 3 else None
@@ -2143,7 +2134,44 @@ def handle_postback(event):
             action = "show_weather"
             spot_name = data_dict["w"]
 
-        if action == "show_list":
+        # ★ 修正: リッチメニュー用 お気に入り1・2番目呼び出し処理 ★
+        if action in ["show_favorite_first", "show_favorite_second"]:
+            _, favorites = get_user_setting(user_id)
+            fav_list = [s.strip() for s in favorites.split(',') if s.strip()]
+            
+            target_spot = None
+            if action == "show_favorite_first" and len(fav_list) > 0:
+                target_spot = fav_list[0]
+            elif action == "show_favorite_second" and len(fav_list) > 1:
+                target_spot = fav_list[1]
+                
+            if target_spot:
+                target_spot_name, target_url, hp_url, hp2_url, map_url, tel, x_url, fb_url, insta_url, blog_url, yt_url, tenki_url = get_spot_details(target_spot)
+                
+                if not target_url:
+                    line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"⚠️ 【{target_spot}】のデータが見つかりません。"))
+                    return
+
+                is_fav = target_spot_name in fav_list
+                weather_data = get_cached_weather(target_spot_name)
+                
+                if not weather_data:
+                    weather_data = fetch_spot_1hour_data(target_url, tenki_url)
+                    if weather_data:
+                        save_cached_weather(target_spot_name, weather_data)
+
+                if weather_data:
+                    flex_msg = build_grid_flex_message(target_spot_name, weather_data, hp_url, hp2_url, map_url, tel, x_url, fb_url, insta_url, blog_url, yt_url, is_favorite=is_fav)
+                    line_bot_api.reply_message(event.reply_token, flex_msg)
+                else:
+                    line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"⚠️ 【{target_spot_name}】の天気データの取得に失敗しました。少し時間をおいてから再度お試しください。"))
+            else:
+                msg = "⚠️ お気に入りが登録されていないか、件数が足りません。\n「一覧」から釣り場を探して「⭐️ 登録」してください。"
+                flex_msg = build_spot_list_carousel_horizontal(user_id=user_id)
+                line_bot_api.reply_message(event.reply_token, [TextSendMessage(text=msg), flex_msg])
+            return
+
+        elif action == "show_list":
             flex_msg = build_spot_list_carousel_horizontal(user_id=user_id)
             line_bot_api.reply_message(event.reply_token, flex_msg)
             return
