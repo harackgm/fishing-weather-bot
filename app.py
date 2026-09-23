@@ -1046,7 +1046,7 @@ def build_settings_flex_message(fav_list):
         chunk = fav_list[i:i + chunk_size]
         rows = []
         
-        # ★ 各セルの最上段に「1番お気に入りに設定する」選択ボタンを配置
+        # セル最上段：1番お気に入り設定用ショートカットパネルの呼び出しボタン
         rows.append({
             "type": "box", "layout": "vertical", "margin": "none", "paddingBottom": "10px",
             "contents": [
@@ -1061,26 +1061,37 @@ def build_settings_flex_message(fav_list):
         })
         rows.append({"type": "separator", "margin": "sm"})
 
-        # ★ ボタンのflex比率を調整し、文字領域(3) : 矢印上(2) : 矢印下(2) : 削除(2) で潰れを防止
+        # ★ 修正: Boxを使ってパディングを極小化した「5連ボタン」 ★
+        # 釣り場名(flex:5) と ボタン5個(各flex:1)
         for spot in chunk:
             rows.append({
-                "type": "box", "layout": "horizontal", "margin": "md", "alignItems": "center",
+                "type": "box", "layout": "horizontal", "margin": "md", "alignItems": "center", "spacing": "xs",
                 "contents": [
-                    {"type": "text", "text": f"{spot}", "size": "sm", "weight": "bold", "flex": 3, "color": "#333333", "wrap": True},
+                    {"type": "text", "text": f"{spot}", "size": "sm", "weight": "bold", "flex": 5, "color": "#333333", "wrap": True},
                     {
-                        "type": "button",
-                        "action": {"type": "postback", "label": "⬆️", "data": f"action=fav_up&spot={spot}"},
-                        "style": "secondary", "flex": 2, "margin": "xs"
+                        "type": "box", "layout": "vertical", "flex": 1, "backgroundColor": "#fff9c4", "cornerRadius": "4px", "paddingAll": "6px", "justifyContent": "center", "alignItems": "center",
+                        "action": {"type": "postback", "data": f"action=fav_top&spot={spot}"},
+                        "contents": [{"type": "text", "text": "🔝", "size": "xs", "align": "center"}]
                     },
                     {
-                        "type": "button",
-                        "action": {"type": "postback", "label": "⬇️", "data": f"action=fav_down&spot={spot}"},
-                        "style": "secondary", "flex": 2, "margin": "xs"
+                        "type": "box", "layout": "vertical", "flex": 1, "backgroundColor": "#f8f9fa", "cornerRadius": "4px", "paddingAll": "6px", "justifyContent": "center", "alignItems": "center",
+                        "action": {"type": "postback", "data": f"action=fav_up&spot={spot}"},
+                        "contents": [{"type": "text", "text": "⬆️", "size": "xs", "align": "center"}]
                     },
                     {
-                        "type": "button",
-                        "action": {"type": "postback", "label": "🗑️", "data": f"action=fav_del_confirm_and_settings&spot={spot}"},
-                        "style": "secondary", "color": "#ffe6e6", "flex": 2, "margin": "xs"
+                        "type": "box", "layout": "vertical", "flex": 1, "backgroundColor": "#f8f9fa", "cornerRadius": "4px", "paddingAll": "6px", "justifyContent": "center", "alignItems": "center",
+                        "action": {"type": "postback", "data": f"action=fav_down&spot={spot}"},
+                        "contents": [{"type": "text", "text": "⬇️", "size": "xs", "align": "center"}]
+                    },
+                    {
+                        "type": "box", "layout": "vertical", "flex": 1, "backgroundColor": "#eceff1", "cornerRadius": "4px", "paddingAll": "6px", "justifyContent": "center", "alignItems": "center",
+                        "action": {"type": "postback", "data": f"action=fav_bottom&spot={spot}"},
+                        "contents": [{"type": "text", "text": "⏬", "size": "xs", "align": "center"}]
+                    },
+                    {
+                        "type": "box", "layout": "vertical", "flex": 1, "backgroundColor": "#ffe6e6", "cornerRadius": "4px", "paddingAll": "6px", "justifyContent": "center", "alignItems": "center",
+                        "action": {"type": "postback", "data": f"action=fav_del_confirm_and_settings&spot={spot}"},
+                        "contents": [{"type": "text", "text": "🗑️", "size": "xs", "align": "center"}]
                     }
                 ]
             })
@@ -1530,6 +1541,7 @@ def clear_favorite_spots(user_id):
     except Exception as e:
         return False, f"削除に失敗しました: {e}"
 
+# ★ 修正: bottom への移動処理を追加 ★
 def move_favorite_spot(user_id, spot_name, direction):
     if not supabase: return False, "DB接続未完了です。"
     source, favorites = get_user_setting(user_id)
@@ -1546,6 +1558,8 @@ def move_favorite_spot(user_id, spot_name, direction):
         fav_list[idx + 1], fav_list[idx] = fav_list[idx], fav_list[idx + 1]
     elif direction == "top" and idx > 0:
         fav_list.insert(0, fav_list.pop(idx))
+    elif direction == "bottom" and idx < len(fav_list) - 1:
+        fav_list.append(fav_list.pop(idx))
     else:
         return True, "移動不要"
         
@@ -1802,7 +1816,7 @@ def get_cached_weather(spot_name):
         if now - updated_time <= timedelta(hours=1):
             if isinstance(data, dict):
                 weekly = data.get("__weekly__", [])
-                if data.get("_version") != "settings_shortcut_v4":
+                if data.get("_version") != "settings_shortcut_v5":
                     return None
                 if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-":
                     return None
@@ -1821,7 +1835,7 @@ def get_cached_weather(spot_name):
                         weather_data = row.get('weather_data')
                         if isinstance(weather_data, dict):
                             weekly = weather_data.get("__weekly__", [])
-                            if weather_data.get("_version") != "settings_shortcut_v4":
+                            if weather_data.get("_version") != "settings_shortcut_v5":
                                 return None
                             if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-":
                                 return None
@@ -1836,7 +1850,7 @@ def get_cached_weather(spot_name):
 
 def save_cached_weather(spot_name, weather_data):
     now = datetime.now(timezone.utc)
-    weather_data["_version"] = "settings_shortcut_v4"
+    weather_data["_version"] = "settings_shortcut_v5"
     MEMORY_CACHE[spot_name] = (weather_data, now)
     
     if not supabase: return
@@ -2357,7 +2371,8 @@ def handle_postback(event):
             flex_msg = build_spot_list_carousel_horizontal(user_id=user_id)
             line_bot_api.reply_message(event.reply_token, [TextSendMessage(text=f"✅ {msg}"), flex_msg])
 
-        elif action in ["fav_up", "fav_down", "fav_top"]:
+        # ★ fav_bottom 等の処理も網羅して設定再描画 ★
+        elif action in ["fav_up", "fav_down", "fav_top", "fav_bottom"]:
             direction = action.split("_")[1]
             move_favorite_spot(user_id, spot_name, direction)
             _, favorites = get_user_setting(user_id)
