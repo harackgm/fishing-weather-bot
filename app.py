@@ -1326,8 +1326,6 @@ def build_spot_list_carousel_horizontal(user_id=None):
                     "type": "box", "layout": "vertical", "spacing": "sm",
                     "contents": [
                         {"type": "text", "text": "⭐ お気に入り機能とリッチメニュー", "weight": "bold", "size": "sm", "color": "#333333"},
-                        {"type": "text", "text": "【お気に入りの順番について】", "weight": "bold", "size": "xs", "color": "#333333", "margin": "sm"},
-                        {"type": "text", "text": "「設定」からお気に入りの並び替えができます。上から順番に1番目、2番目と定義されます。", "wrap": True, "size": "xs", "color": "#666666"},
                         {"type": "text", "text": "【一番お気に入り（メニュー左）】", "weight": "bold", "size": "xs", "color": "#333333", "margin": "sm"},
                         {"type": "text", "text": "お気に入りリストの「1番目（一番上）」の釣り場の天気を瞬時に表示します。", "wrap": True, "size": "xs", "color": "#666666"},
                         {"type": "text", "text": "【お気に入り（メニュー中央）】", "weight": "bold", "size": "xs", "color": "#333333", "margin": "sm"},
