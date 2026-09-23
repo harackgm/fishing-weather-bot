@@ -614,7 +614,7 @@ SPOT_WEATHER_DATA = {
         "tenki_url": "https://tenki.jp/forecast/3/13/4210/10201/1hour.html",
         "hp_url": "https://nijimasu.com/", "hp2_url": "https://anglers-base.com/",  
         "search_name": "大崎つりぼり", "tel": "027-283-2945",
-        "aliases": ["大崎・赤城", "大崎", "赤城", "大崎つりぼり", "アングラーズベース", "アングラーズベース赤城山", "おおさき", "あかぎ"]
+        "aliases": ["大崎・赤城", "大崎", "赤城", "大崎つりぼり", "アングラーズベース", "アングラーズベース赤城山", "おおさき", "あかぎ", "オオサキ", "アカギ", "ABA", "大崎釣り堀"]
     },
     "けん太": {
         "url": "https://weathernews.jp/onebox/36.386648/138.960021/",
