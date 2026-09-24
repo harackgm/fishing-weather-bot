@@ -922,7 +922,6 @@ BASS_SPOT_WEATHER_DATA = {
         "search_name": "柴山沼", "tel": "",
         "aliases": ["柴山沼", "しばやまぬま", "しばやま", "柴山", "柴山沼公園"]
     },
-    # ★ 城沼を追加 ★
     "城沼": {
         "url": "https://weathernews.jp/onebox/36.244/139.547/",
         "tenki_url": "https://tenki.jp/forecast/3/13/4210/10207/1hour.html",
@@ -930,13 +929,29 @@ BASS_SPOT_WEATHER_DATA = {
         "hide_default_map": True,
         "custom_button_rows": [
             [
-                {"label": "🚷陸っぱり", "url": "https://www.gunfish.jp/kumisyo/jyonumasyo.htm"},
+                {"label": "🚷陸っぱり", "url": "https://www.gunfish.jp/turiba/kondoba.htm"},
                 {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E5%B0%BE%E6%9B%B3%E9%A7%90%E8%BB%8A%E5%A0%B4+%E5%9F%8E%E6%B2%BC/@36.2442399,139.5470132,17z/data=!4m6!3m5!1s0x601f30131ecc7d7d:0xf6c7e3e2ea8e7b26!8m2!3d36.2442399!4d139.5470132!16s%2Fg%2F1tmqlwq6"}
             ]
         ],
         "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "",
         "search_name": "城沼", "tel": "",
         "aliases": ["城沼", "じょうぬま", "じょう"]
+    },
+    # ★ 近藤沼を追加 ★
+    "近藤沼": {
+        "url": "https://weathernews.jp/onebox/36.226/139.504/",
+        "tenki_url": "https://tenki.jp/forecast/3/13/4210/10207/1hour.html",
+        "hp_url": "", "hp2_url": "",
+        "hide_default_map": True,
+        "custom_button_rows": [
+            [
+                {"label": "🚷陸っぱり", "url": "https://www.gunfish.jp/turiba/kondoba.htm"},
+                {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E8%BF%91%E8%97%A4%E6%B2%BC%E5%85%AC%E5%9C%92+%E6%9D%B1%E6%B2%BC%E9%A7%90%E8%BB%8A%E5%A0%B4/@36.2267631,139.5040133,17z/data=!4m6!3m5!1s0x601f2f93b4726df5:0x314bd78c4ca70efc!8m2!3d36.2267631!4d139.5040133!16s%2Fg%2F11ddykhjqb"}
+            ]
+        ],
+        "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "",
+        "search_name": "近藤沼", "tel": "",
+        "aliases": ["近藤沼", "こんどうぬま", "こんどう"]
     },
     "片倉ダム": {
         "url": "https://weathernews.jp/onebox/35.198/140.070/",
@@ -1108,13 +1123,12 @@ COLOR_GROUPS = [
 
 BASS_COLOR_GROUPS = [
     {
-        # ★ 群馬を追加 ★
         "title": "📍 関東（千葉・埼玉・神奈川・群馬）",
         "header_bg": "#2e7d32",
         "sub_groups": [
             {"bg": "#e8f5e9", "spots": ["亀山湖", "高滝湖", "片倉ダム", "三島湖", "豊英ダム"]},
-            # ★ 城沼を追加 ★
-            {"bg": "#e3f2fd", "spots": ["GGD", "柴山沼", "城沼"]},
+            # ★ 近藤沼を追加 ★
+            {"bg": "#e3f2fd", "spots": ["GGD", "柴山沼", "城沼", "近藤沼"]},
             {"bg": "#f3e5f5", "spots": ["相模湖"]}
         ]
     },
@@ -1856,7 +1870,7 @@ def get_cached_weather(spot_name):
         if now - updated_time <= timedelta(hours=1):
             if isinstance(data, dict):
                 weekly = data.get("__weekly__", [])
-                if data.get("_version") != "settings_shortcut_v48": return None
+                if data.get("_version") != "settings_shortcut_v49": return None
                 if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-": return None
             return data
     if not supabase: return None
@@ -1872,7 +1886,7 @@ def get_cached_weather(spot_name):
                         weather_data = row.get('weather_data')
                         if isinstance(weather_data, dict):
                             weekly = weather_data.get("__weekly__", [])
-                            if weather_data.get("_version") != "settings_shortcut_v48": return None
+                            if weather_data.get("_version") != "settings_shortcut_v49": return None
                             if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-": return None
                         MEMORY_CACHE[spot_name] = (weather_data, updated_time)
                         return weather_data
@@ -1884,7 +1898,7 @@ def get_cached_weather(spot_name):
 
 def save_cached_weather(spot_name, weather_data):
     now = datetime.now(timezone.utc)
-    weather_data["_version"] = "settings_shortcut_v48"
+    weather_data["_version"] = "settings_shortcut_v49"
     MEMORY_CACHE[spot_name] = (weather_data, now)
     if not supabase: return
     try:
