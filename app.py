@@ -907,15 +907,15 @@ BASS_SPOT_WEATHER_DATA = {
         "search_name": "権現堂川", "tel": "",
         "aliases": ["GGD", "権現堂川", "権現堂", "ごんげんどう", "ggd", "権現堂公園"]
     },
-    # ★ 柴山沼を追加 ★
     "柴山沼": {
         "url": "https://weathernews.jp/onebox/36.035/139.620/",
         "tenki_url": "https://tenki.jp/forecast/3/14/4310/11246/1hour.html",
         "hp_url": "", "hp2_url": "",
         "hide_default_map": True,
+        # ★ 陸っぱりのURLを追加 ★
         "custom_button_rows": [
             [
-                {"label": "🚷陸っぱり", "url": ""},
+                {"label": "🚷陸っぱり", "url": "https://www.city.shiraoka.lg.jp/soshiki/toshiseibibu/machizukurika/1/2/kouenshoukai/7077.html"},
                 {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E6%9F%B4%E5%B1%B1%E6%B2%BC%E5%85%AC%E5%9C%92/@36.0353769,139.6204098,17z/data=!4m6!3m5!1s0x6018c93793c9501b:0xd88ae95754a5a434!8m2!3d36.0353769!4d139.6204098!16s%2Fg%2F11j8gglrfy"}
             ]
         ],
@@ -1839,7 +1839,7 @@ def get_cached_weather(spot_name):
         if now - updated_time <= timedelta(hours=1):
             if isinstance(data, dict):
                 weekly = data.get("__weekly__", [])
-                if data.get("_version") != "settings_shortcut_v46": return None
+                if data.get("_version") != "settings_shortcut_v47": return None
                 if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-": return None
             return data
     if not supabase: return None
@@ -1855,7 +1855,7 @@ def get_cached_weather(spot_name):
                         weather_data = row.get('weather_data')
                         if isinstance(weather_data, dict):
                             weekly = weather_data.get("__weekly__", [])
-                            if weather_data.get("_version") != "settings_shortcut_v46": return None
+                            if weather_data.get("_version") != "settings_shortcut_v47": return None
                             if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-": return None
                         MEMORY_CACHE[spot_name] = (weather_data, updated_time)
                         return weather_data
@@ -1867,7 +1867,7 @@ def get_cached_weather(spot_name):
 
 def save_cached_weather(spot_name, weather_data):
     now = datetime.now(timezone.utc)
-    weather_data["_version"] = "settings_shortcut_v46"
+    weather_data["_version"] = "settings_shortcut_v47"
     MEMORY_CACHE[spot_name] = (weather_data, now)
     if not supabase: return
     try:
