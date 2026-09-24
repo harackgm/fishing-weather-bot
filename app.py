@@ -481,7 +481,6 @@ SPOT_WEATHER_DATA = {
         "hp_url": "https://fishingmarketbear.wixsite.com/ryugaike",
         "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "",
         "search_name": "フィッシングパーク竜華池", "tel": "055-252-0938",
-        # ★ここで「竜华池」のゆらぎも追加しています★
         "aliases": ["竜華池", "りゅうがいけ", "竜华池"]
     },
     "平谷湖": {
@@ -889,7 +888,7 @@ COLOR_GROUPS = [
         "title": "📍 甲信・東北・東海・関西",
         "header_bg": "#6a1b9a",
         "sub_groups": [
-            {"bg": "#f3e5f5", "spots": ["鹿留", "小菅", "奈良子", "シルフ", "ツガネ", "竜華池", "平谷湖", "ハーブ", "ニレ池", "鹿島やり", "つきの池", "あずみ野"]},
+            {"bg": "#f3e5f5", "spots": ["鹿留", "小菅", "奈良子", "シルフ", "ツガネ", "竜华池", "平谷湖", "ハーブ", "ニレ池", "鹿島やり", "つきの池", "あずみ野"]},
             {"bg": "#e1bee7", "spots": ["Lost Lures", "不忘", "白河", "ほのぼの", "WaDoNa", "鶴沼川", "オーパ", "あいづ", "上浜", "GOZU"]},
             {"bg": "#d1c4e9", "spots": ["FCE瑞浪", "３９", "醒井", "高島の泉", "千早川"]}
         ]
@@ -906,6 +905,14 @@ BASS_SPOT_WEATHER_DATA = {
         "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "",
         "search_name": "亀山湖", "tel": "",
         "aliases": ["亀山湖", "亀山ダム", "かめやまこ", "亀山"]
+    },
+    "高滝湖": {
+        "url": "https://weathernews.jp/onebox/35.34/140.15/",
+        "tenki_url": "https://tenki.jp/forecast/3/15/4510/12219/1hour.html",
+        "hp_url": "", "hp2_url": "",
+        "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "",
+        "search_name": "高滝湖", "tel": "",
+        "aliases": ["高滝湖", "高滝ダム", "たかたきこ", "高滝", "たかたき"]
     }
 }
 
@@ -914,7 +921,8 @@ BASS_COLOR_GROUPS = [
         "title": "📍 関東（千葉）",
         "header_bg": "#2e7d32",
         "sub_groups": [
-            {"bg": "#e8f5e9", "spots": ["亀山湖"]}
+            # ★ 高滝湖を追加しました ★
+            {"bg": "#e8f5e9", "spots": ["亀山湖", "高滝湖"]}
         ]
     }
 ]
@@ -1052,7 +1060,6 @@ def build_settings_flex_message(fav_list, mode="trout"):
         chunk = filtered_favs[i:i + chunk_size]
         rows = []
         
-        # モード切替ボタンを各カードの先頭に追加
         rows.append(switch_btn)
         rows.append({"type": "separator", "margin": "md"})
         
@@ -1302,7 +1309,7 @@ def get_user_setting(user_id):
                 "GP不忘": "不忘", "座間・amaz": "座間", "パラダイス": "釣パラダイス", "蛇尾川": "蛇尾（さび）川",
                 "大崎": "大崎・赤城", "ロストルアーズ": "Lost Lures", "キングフィッシャー": "キング",
                 "JF in Tsugane": "ツガネ", "川場キングダム": "キングダム", "イワナセンター": "イワセン", "鹿島槍": "鹿島やり",
-                "アルクス宇宇都宮": "アルクス宇都宮" # 過去の誤字救済用
+                "アルクス宇宇都宮": "アルクス宇都宮"
             }
             
             raw_favs = [s.strip() for s in favs.split(',')]
@@ -1354,7 +1361,7 @@ def add_favorite_spots(user_id, spot_names):
                 'user_id': user_id, 'weather_source': source, 'favorite_spots': ','.join(fav_list), 'fishing_mode': fishing_mode
             }).execute()
         except Exception as e:
-            return False, [], [f"DB保存エラー"]
+            return False, [], [f"DB保存エラー: fishing_mode列の設定をご確認ください"]
     return True, added, errors
 
 def remove_favorite_spots(user_id, spot_names):
@@ -1389,7 +1396,7 @@ def remove_favorite_spots(user_id, spot_names):
                 'user_id': user_id, 'weather_source': source, 'favorite_spots': ','.join(fav_list), 'fishing_mode': fishing_mode
             }).execute()
         except Exception as e:
-            return False, [], [f"DB保存エラー"]
+            return False, [], [f"DB保存エラー: fishing_mode列の設定をご確認ください"]
     return True, removed, errors
 
 def clear_favorite_spots(user_id, mode="trout"):
@@ -1403,7 +1410,6 @@ def clear_favorite_spots(user_id, mode="trout"):
         for sg in group["sub_groups"]:
             active_spots.extend(sg["spots"])
 
-    # 他のモードのお気に入りは残し、現在のモードのお気に入りだけ削除する
     other_mode_favs = [s for s in raw_fav_list if s not in active_spots]
 
     try:
@@ -1412,7 +1418,7 @@ def clear_favorite_spots(user_id, mode="trout"):
         }).execute()
         return True, "表示中のすべてのお気に入りを削除しました。"
     except Exception as e:
-        return False, f"削除に失敗しました: {e}"
+        return False, f"削除に失敗しました: DB設定をご確認ください。詳細:{e}"
 
 def move_favorite_spot(user_id, spot_name, direction, mode="trout"):
     if not supabase: return False, "DB接続未完了です。"
@@ -1463,7 +1469,7 @@ def move_favorite_spot(user_id, spot_name, direction, mode="trout"):
         }).execute()
         return True, "移動しました"
     except Exception as e:
-        return False, f"移動失敗: {e}"
+        return False, f"移動失敗: DB設定をご確認ください。詳細:{e}"
 
 # ==========================================
 # ★ 週間天気データを取得する高精度API & tenki.jp精密ロジック ★
@@ -1710,7 +1716,7 @@ def get_cached_weather(spot_name):
         if now - updated_time <= timedelta(hours=1):
             if isinstance(data, dict):
                 weekly = data.get("__weekly__", [])
-                if data.get("_version") != "settings_shortcut_v18":
+                if data.get("_version") != "settings_shortcut_v19":
                     return None
                 if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-":
                     return None
@@ -1729,7 +1735,7 @@ def get_cached_weather(spot_name):
                         weather_data = row.get('weather_data')
                         if isinstance(weather_data, dict):
                             weekly = weather_data.get("__weekly__", [])
-                            if weather_data.get("_version") != "settings_shortcut_v18":
+                            if weather_data.get("_version") != "settings_shortcut_v19":
                                 return None
                             if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-":
                                 return None
@@ -1744,7 +1750,7 @@ def get_cached_weather(spot_name):
 
 def save_cached_weather(spot_name, weather_data):
     now = datetime.now(timezone.utc)
-    weather_data["_version"] = "settings_shortcut_v18"
+    weather_data["_version"] = "settings_shortcut_v19"
     MEMORY_CACHE[spot_name] = (weather_data, now)
     
     if not supabase: return
@@ -1766,7 +1772,6 @@ def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_
     jst = timezone(timedelta(hours=9))
     now_jst_date = datetime.now(jst).date()
 
-    # 表示するスポットがバスモードのグループに属しているか判定
     active_group = COLOR_GROUPS
     for group in BASS_COLOR_GROUPS:
         for sg in group["sub_groups"]:
@@ -2015,11 +2020,9 @@ def handle_message(event):
         raw_msg = event.message.text.strip()
         user_id = event.source.user_id
 
-        # ユーザーのモードを取得
         source, favorites, fishing_mode = get_user_setting(user_id)
 
         if raw_msg in ["お気に入り1", "お気に入り2"]:
-            # 現在のモードに属するお気に入りだけを抽出
             active_group = COLOR_GROUPS if fishing_mode == "trout" else BASS_COLOR_GROUPS
             active_spots = []
             for group in active_group:
@@ -2149,7 +2152,8 @@ def handle_postback(event):
                     }).execute()
                 except Exception as e:
                     print(f"モード変更エラー: {e}")
-                    pass
+                    line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ モード切替DBエラー: Supabaseに「fishing_mode」列が正しく追加されているか確認してください。"))
+                    return
             
             mode_name = "🐟 ブラックバス" if target_mode == "bass" else "🐟 エリアトラウト"
             flex_msg = build_spot_list_carousel_horizontal(user_id=user_id, mode=target_mode)
@@ -2159,7 +2163,6 @@ def handle_postback(event):
         elif action in ["show_top_selector", "show_cell_top_selector", "show_cell_bottom_selector"]:
             fav_list = [s.strip() for s in favorites.split(',') if s.strip()]
             
-            # 現在のモードのスポットだけを抽出
             active_group = COLOR_GROUPS if fishing_mode == "trout" else BASS_COLOR_GROUPS
             active_spots = []
             for group in active_group:
