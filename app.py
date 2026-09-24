@@ -199,7 +199,7 @@ SPOT_WEATHER_DATA = {
         "url": "https://weathernews.jp/onebox/36.388609/139.537247/",
         "tenki_url": "https://tenki.jp/forecast/3/12/4110/9204/1hour.html",
         "hp_url": "http://www.kaga-fa.co.jp/",
-        "x_url": "", "fb_url": "", "insta_url": "https://www.instagram.com/kaga_fishing_area/", "blog_url": "https://ameblo.jp/kaga-fa/", "yt_url": "",
+        "x_url": "", "fb_url": "", "insta_url": "https://ameblo.jp/kaga-fa/", "yt_url": "",
         "search_name": "加賀フィッシングエリア", "tel": "0283-24-1513",
         "aliases": ["加賀", "加賀フィッシングエリア", "加賀FA", "かが"]
     },
@@ -968,10 +968,8 @@ BASS_SPOT_WEATHER_DATA = {
         "search_name": "豊英ダム", "tel": "",
         "aliases": ["豊英ダム", "豊英湖", "とよふさ", "豊英", "豊栄ダム", "豊栄"]
     },
-    # ★相模湖を追加★
     "相模湖": {
         "url": "https://weathernews.jp/onebox/35.6122/139.1567/",
-        # ★ tenki.jp の地域コードを 4610 から正しい 4620 に修正 ★
         "tenki_url": "https://tenki.jp/forecast/3/17/4620/14151/1hour.html",
         "hp_url": "", "hp2_url": "",
         "hide_default_map": True,
@@ -992,6 +990,22 @@ BASS_SPOT_WEATHER_DATA = {
         "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "",
         "search_name": "相模湖", "tel": "",
         "aliases": ["相模湖", "さがみこ", "さがみ"]
+    },
+    # ★ 東山ダムを追加 ★
+    "東山ダム": {
+        "url": "https://weathernews.jp/onebox/37.460705/139.965895/",
+        "tenki_url": "https://tenki.jp/forecast/2/10/3630/7202/1hour.html",
+        "hp_url": "", "hp2_url": "",
+        "hide_default_map": True,
+        "custom_button_rows": [
+            [
+                {"label": "🚷陸っぱり", "url": ""},  # ★ URLを空にすると、自動で「押しても何も起きないダミーボタン」になります ★
+                {"label": "🗺️地図", "url": "https://www.google.com/maps/search/%E6%9D%B1%E5%B1%B1%E3%83%80%E3%83%A0/@37.4607054,139.9658954,17z"}
+            ]
+        ],
+        "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "",
+        "search_name": "東山ダム", "tel": "",
+        "aliases": ["東山ダム", "ひがしやまだむ", "ひがしやま"]
     }
 }
 
@@ -1040,6 +1054,14 @@ BASS_COLOR_GROUPS = [
             {"bg": "#e8f5e9", "spots": ["亀山湖", "高滝湖", "片倉ダム", "三島湖", "豊英ダム"]},
             {"bg": "#e3f2fd", "spots": ["GGD"]},
             {"bg": "#f3e5f5", "spots": ["相模湖"]}
+        ]
+    },
+    # ★ 東北グループを追加 ★
+    {
+        "title": "📍 東北（福島）",
+        "header_bg": "#6a1b9a",
+        "sub_groups": [
+            {"bg": "#e1bee7", "spots": ["東山ダム"]}
         ]
     }
 ]
@@ -1773,7 +1795,7 @@ def get_cached_weather(spot_name):
         if now - updated_time <= timedelta(hours=1):
             if isinstance(data, dict):
                 weekly = data.get("__weekly__", [])
-                if data.get("_version") != "settings_shortcut_v41": return None
+                if data.get("_version") != "settings_shortcut_v42": return None
                 if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-": return None
             return data
     if not supabase: return None
@@ -1789,7 +1811,7 @@ def get_cached_weather(spot_name):
                         weather_data = row.get('weather_data')
                         if isinstance(weather_data, dict):
                             weekly = weather_data.get("__weekly__", [])
-                            if weather_data.get("_version") != "settings_shortcut_v41": return None
+                            if weather_data.get("_version") != "settings_shortcut_v42": return None
                             if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-": return None
                         MEMORY_CACHE[spot_name] = (weather_data, updated_time)
                         return weather_data
@@ -1801,7 +1823,7 @@ def get_cached_weather(spot_name):
 
 def save_cached_weather(spot_name, weather_data):
     now = datetime.now(timezone.utc)
-    weather_data["_version"] = "settings_shortcut_v41"
+    weather_data["_version"] = "settings_shortcut_v42"
     MEMORY_CACHE[spot_name] = (weather_data, now)
     if not supabase: return
     try:
@@ -1937,7 +1959,12 @@ def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_
         custom_button_rows = spot_data.get("custom_button_rows", [])
         for row_links in custom_button_rows:
             row_buttons = []
-            for link in row_links: row_buttons.append({"type": "button", "action": {"type": "uri", "label": link["label"], "uri": link["url"]}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
+            for link in row_links:
+                if link.get("url"):
+                    action_data = {"type": "uri", "label": link["label"], "uri": link["url"]}
+                else:
+                    action_data = {"type": "postback", "label": link["label"], "data": "action=dummy"}
+                row_buttons.append({"type": "button", "action": action_data, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
             if row_buttons: all_rows.append(row_buttons)
 
         header_buttons_bottom = []
@@ -2131,6 +2158,8 @@ def handle_postback(event):
         action = data_dict.get("action")
         spot_name = data_dict.get("spot")
         source, favorites, fishing_mode = get_user_setting(user_id)
+        
+        if action == "dummy": return
 
         if "w" in data_dict:
             action = "show_weather"
