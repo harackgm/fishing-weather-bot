@@ -907,6 +907,22 @@ BASS_SPOT_WEATHER_DATA = {
         "search_name": "権現堂川", "tel": "",
         "aliases": ["GGD", "権現堂川", "権現堂", "ごんげんどう", "ggd", "権現堂公園"]
     },
+    # ★ 柴山沼を追加 ★
+    "柴山沼": {
+        "url": "https://weathernews.jp/onebox/36.035/139.620/",
+        "tenki_url": "https://tenki.jp/forecast/3/14/4310/11246/1hour.html",
+        "hp_url": "", "hp2_url": "",
+        "hide_default_map": True,
+        "custom_button_rows": [
+            [
+                {"label": "🚷陸っぱり", "url": ""},
+                {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E6%9F%B4%E5%B1%B1%E6%B2%BC%E5%85%AC%E5%9C%92/@36.0353769,139.6204098,17z/data=!4m6!3m5!1s0x6018c93793c9501b:0xd88ae95754a5a434!8m2!3d36.0353769!4d139.6204098!16s%2Fg%2F11j8gglrfy"}
+            ]
+        ],
+        "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "",
+        "search_name": "柴山沼", "tel": "",
+        "aliases": ["柴山沼", "しばやまぬま", "しばやま", "柴山", "柴山沼公園"]
+    },
     "片倉ダム": {
         "url": "https://weathernews.jp/onebox/35.198/140.070/",
         "tenki_url": "https://tenki.jp/forecast/3/15/4530/12225/1hour.html",
@@ -1021,10 +1037,8 @@ BASS_SPOT_WEATHER_DATA = {
         "search_name": "羽鳥湖", "tel": "",
         "aliases": ["羽鳥湖", "羽鳥ダム", "はとりこ", "はとり"]
     },
-    # ★ 桧原湖を追加 ★
     "桧原湖": {
         "url": "https://weathernews.jp/onebox/37.652/140.062/",
-        # ★ tenki.jp の地域コードを 7428 から正しい 7402 に修正 ★
         "tenki_url": "https://tenki.jp/forecast/2/10/3630/7402/1hour.html",
         "hp_url": "", "hp2_url": "",
         "hide_default_map": True,
@@ -1083,7 +1097,7 @@ BASS_COLOR_GROUPS = [
         "header_bg": "#2e7d32",
         "sub_groups": [
             {"bg": "#e8f5e9", "spots": ["亀山湖", "高滝湖", "片倉ダム", "三島湖", "豊英ダム"]},
-            {"bg": "#e3f2fd", "spots": ["GGD"]},
+            {"bg": "#e3f2fd", "spots": ["GGD", "柴山沼"]},
             {"bg": "#f3e5f5", "spots": ["相模湖"]}
         ]
     },
@@ -1825,7 +1839,7 @@ def get_cached_weather(spot_name):
         if now - updated_time <= timedelta(hours=1):
             if isinstance(data, dict):
                 weekly = data.get("__weekly__", [])
-                if data.get("_version") != "settings_shortcut_v45": return None
+                if data.get("_version") != "settings_shortcut_v46": return None
                 if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-": return None
             return data
     if not supabase: return None
@@ -1841,7 +1855,7 @@ def get_cached_weather(spot_name):
                         weather_data = row.get('weather_data')
                         if isinstance(weather_data, dict):
                             weekly = weather_data.get("__weekly__", [])
-                            if weather_data.get("_version") != "settings_shortcut_v45": return None
+                            if weather_data.get("_version") != "settings_shortcut_v46": return None
                             if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-": return None
                         MEMORY_CACHE[spot_name] = (weather_data, updated_time)
                         return weather_data
@@ -1853,7 +1867,7 @@ def get_cached_weather(spot_name):
 
 def save_cached_weather(spot_name, weather_data):
     now = datetime.now(timezone.utc)
-    weather_data["_version"] = "settings_shortcut_v45"
+    weather_data["_version"] = "settings_shortcut_v46"
     MEMORY_CACHE[spot_name] = (weather_data, now)
     if not supabase: return
     try:
