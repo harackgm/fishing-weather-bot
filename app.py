@@ -888,7 +888,7 @@ COLOR_GROUPS = [
         "title": "📍 甲信・東北・東海・関西",
         "header_bg": "#6a1b9a",
         "sub_groups": [
-            {"bg": "#f3e5f5", "spots": ["鹿留", "小菅", "奈良子", "シルフ", "ツガネ", "竜華池", "平谷湖", "ハーブ", "ニレ池", "鹿島やり", "つきの池", "あずみ野"]},
+            {"bg": "#f3e5f5", "spots": ["鹿留", "小菅", "奈良子", "シルフ", "ツガネ", "竜华池", "平谷湖", "ハーブ", "ニレ池", "鹿島やり", "つきの池", "あずみ野"]},
             {"bg": "#e1bee7", "spots": ["Lost Lures", "不忘", "白河", "ほのぼの", "WaDoNa", "鶴沼川", "オーパ", "あいづ", "上浜", "GOZU"]},
             {"bg": "#d1c4e9", "spots": ["FCE瑞浪", "３９", "醒井", "高島の泉", "千早川"]}
         ]
@@ -900,8 +900,8 @@ BASS_SPOT_WEATHER_DATA = {
     # --- 千葉県 ---
     "亀山湖": {
         "url": "https://weathernews.jp/onebox/35.23/140.09/",
-        # ★ 亀山湖の市町村コードを正確な「南部（4530）」に修正しました ★
-        "tenki_url": "https://tenki.jp/forecast/3/15/4530/12227/1hour.html",
+        # ★ 亀山湖の市町村コードを「君津市（12225）」に修正しました ★
+        "tenki_url": "https://tenki.jp/forecast/3/15/4530/12225/1hour.html",
         "hp_url": "", "hp2_url": "",
         "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "",
         "search_name": "亀山湖", "tel": "",
@@ -1481,9 +1481,8 @@ def extract_lat_lon(url):
     return None, None
 
 def fetch_weekly_data_from_api(lat, lon, raw_exclude_dates):
-    # ★ オープンメテオの要求パラメータを修正し、エラーを完全回避
     try:
-        api_url = f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&daily=weathercode,temperature_2m_max,temperature_2m_min&timezone=Asia%2FTokyo&forecast_days=14"
+        api_url = f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&daily=weathercode,temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=Asia%2FTokyo&forecast_days=14"
         res = requests.get(api_url, timeout=5.0)
         res.raise_for_status()
         data = res.json()
@@ -1493,7 +1492,10 @@ def fetch_weekly_data_from_api(lat, lon, raw_exclude_dates):
         weathercodes = daily.get("weathercode", [])
         temp_max = daily.get("temperature_2m_max", [])
         temp_min = daily.get("temperature_2m_min", [])
-        rain_prob = ["-"] * len(times) # 無料APIのエラー回避のためダミーをセット
+        rain_prob = daily.get("precipitation_probability_max", [])
+        
+        if not rain_prob:
+            rain_prob = [0] * len(times)
         
         weekly_data = []
         now_jst_date = datetime.now(timezone(timedelta(hours=9))).date()
@@ -1519,7 +1521,7 @@ def fetch_weekly_data_from_api(lat, lon, raw_exclude_dates):
             
             t_max = str(round(temp_max[i])) if i < len(temp_max) and temp_max[i] is not None else "-"
             t_min = str(round(temp_min[i])) if i < len(temp_min) and temp_min[i] is not None else "-"
-            r_prob = f"{rain_prob[i]}%" if i < len(rain_prob) and rain_prob[i] != "-" else "-"
+            r_prob = f"{rain_prob[i]}%" if i < len(rain_prob) and rain_prob[i] is not None else "-"
             
             weekly_data.append({
                 "date": date_label,
@@ -1539,9 +1541,8 @@ def fetch_weekly_data_from_api(lat, lon, raw_exclude_dates):
 
 def fetch_weekly_data_from_tenki(tenki_url, raw_exclude_dates):
     try:
-        # ★ Timeoutを3秒に短縮し、ブロックされた場合の待ち時間をカット
         headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
-        response = requests.get(tenki_url, headers=headers, timeout=3.0)
+        response = requests.get(tenki_url, headers=headers, timeout=5.0)
         response.raise_for_status()
         soup = BeautifulSoup(response.text, 'html.parser')
         
@@ -1552,9 +1553,7 @@ def fetch_weekly_data_from_tenki(tenki_url, raw_exclude_dates):
         if raw_exclude_dates:
             last_wn_date = guess_date_from_string(raw_exclude_dates[-1], now_jst_date)
             
-        # ★ tenki.jpの「14日間天気」リニューアルにも自動対応
-        elems = soup.select('.forecast10days-actab, .forecast14days-actab')
-        
+        elems = soup.find_all('dd', class_='forecast10days-actab')
         for elem in elems:
             days_elem = elem.find('div', class_='days')
             forecast_elem = elem.find('div', class_='forecast')
@@ -1570,8 +1569,7 @@ def fetch_weekly_data_from_tenki(tenki_url, raw_exclude_dates):
             if last_wn_date and tenki_date <= last_wn_date:
                 continue
 
-            # ★ 14日間天気の新しい日付フォーマット（10/28など）にも対応
-            m = re.search(r'(\d{1,2})[月/](\d{1,2})日?\((.+?)\)', raw_days)
+            m = re.search(r'(\d{1,2})月(\d{1,2})日\((.+?)\)', raw_days)
             if m:
                 day_num = int(m.group(2))
                 youbi = m.group(3)
@@ -1718,8 +1716,7 @@ def get_cached_weather(spot_name):
         if now - updated_time <= timedelta(hours=1):
             if isinstance(data, dict):
                 weekly = data.get("__weekly__", [])
-                # ★ キャッシュバージョンを更新し、過去のダミーデータを完全に破棄します
-                if data.get("_version") != "settings_shortcut_v21":
+                if data.get("_version") != "settings_shortcut_v22":
                     return None
                 if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-":
                     return None
@@ -1738,7 +1735,7 @@ def get_cached_weather(spot_name):
                         weather_data = row.get('weather_data')
                         if isinstance(weather_data, dict):
                             weekly = weather_data.get("__weekly__", [])
-                            if weather_data.get("_version") != "settings_shortcut_v21":
+                            if weather_data.get("_version") != "settings_shortcut_v22":
                                 return None
                             if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-":
                                 return None
@@ -1753,7 +1750,7 @@ def get_cached_weather(spot_name):
 
 def save_cached_weather(spot_name, weather_data):
     now = datetime.now(timezone.utc)
-    weather_data["_version"] = "settings_shortcut_v21"
+    weather_data["_version"] = "settings_shortcut_v22"
     MEMORY_CACHE[spot_name] = (weather_data, now)
     
     if not supabase: return
@@ -2324,7 +2321,6 @@ def get_top_favorite_spots(limit=30):
         sorted_spots = sorted(spot_counts.items(), key=lambda x: x[1], reverse=True)
         top_spots = [spot for spot, count in sorted_spots[:limit]]
 
-        # ★バス用のスポットはテスト中につき、無条件で事前取得対象に含める
         for bass_spot in BASS_SPOT_WEATHER_DATA.keys():
             if bass_spot not in top_spots:
                 top_spots.append(bass_spot)
