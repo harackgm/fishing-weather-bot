@@ -475,7 +475,7 @@ SPOT_WEATHER_DATA = {
         "search_name": "ジョイフィールド in Tsugane", "tel": "0551-20-7888",
         "aliases": ["つがね", "ツガネ", "津金", "ジョイフィールド", "じょいふぃーるど", "JF in Tsugane"]
     },
-    "竜華池": {
+    "竜华池": {
         "url": "https://weathernews.jp/onebox/35.681978/138.576164/",
         "tenki_url": "https://tenki.jp/forecast/3/22/4910/19201/1hour.html",
         "hp_url": "https://fishingmarketbear.wixsite.com/ryugaike",
@@ -865,7 +865,6 @@ BASS_SPOT_WEATHER_DATA = {
         "tenki_url": "https://tenki.jp/forecast/3/15/4530/12225/1hour.html",
         "hp_url": "", "hp2_url": "",
         "hide_default_map": True,
-        # ★ 各ボート屋ごとに「HP」「地図」を横並びにするレイアウト ★
         "custom_button_rows": [
             [
                 {"label": "🌐つばき", "url": "https://tubakimoto.com/sp/"},
@@ -892,8 +891,7 @@ BASS_SPOT_WEATHER_DATA = {
         "custom_button_rows": [
             [
                 {"label": "🌐ボート", "url": "http://www.takatakiko.jp/"},
-                # ★ ご指定の地図URLに修正済み ★
-                {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E9%AB%98%E6%BB%9D%E6%B9%96%E8%A6%B3%E5%85%89%E4%BC%81%E6%A5%AD%E7%B5%84%E5%90%88/data=!4m2!3m1!1s0x0:0xeaa9dddefc1dab6?sa=X&ved=1t:2428&ictx=111"}
+                {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E9%AB%98%E6%BB%9D%E6%B9%96%E8%A6%B3%E5%85%89%E4%BC%81%E6%A5%AD%E7%B5%84%E5%90%88/@35.3508961,140.1592915,17z/data=!3m1!4b1!4m6!3m5!1s0x6022a5160fd78bad:0xeaa9dddefc1dab6!8m2!3d35.3508918!4d140.1618664"}
             ]
         ],
         "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "",
@@ -908,6 +906,26 @@ BASS_SPOT_WEATHER_DATA = {
         "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "",
         "search_name": "権現堂川", "tel": "",
         "aliases": ["GGD", "権現堂川", "権現堂", "ごんげんどう", "ggd", "権現堂公園"]
+    },
+    # ★片倉ダムを追加★
+    "片倉ダム": {
+        "url": "https://weathernews.jp/onebox/35.198/140.070/",
+        "tenki_url": "https://tenki.jp/forecast/3/15/4530/12225/1hour.html",
+        "hp_url": "", "hp2_url": "",
+        "hide_default_map": True,
+        "custom_button_rows": [
+            [
+                {"label": "🌐すずき", "url": "https://shop-hp.com/suzuki/"},
+                {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E3%83%AC%E3%83%B3%E3%82%BF%E3%83%AB%E3%83%9C%E3%83%BC%E3%83%88%E3%81%99%E3%81%9A%E3%81%8D/@35.1965778,140.0676243,17z/data=!3m1!4b1!4m6!3m5!1s0x6022abb789c73453:0x7cbbb99574db9fa!8m2!3d35.1965734!4d140.0701992"}
+            ],
+            [
+                {"label": "🌐笹川", "url": "http://sasagawab.xsrv.jp/index555555.htm"},
+                {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E3%83%AC%E3%83%B3%E3%82%BF%E3%83%AB%E3%83%9C%E3%83%BC%E3%83%88%E7%AC%B9%E5%B7%9D+%E7%AC%B9%E5%B7%9D%E3%83%9C%E3%83%BC%E3%83%88/@35.1996084,140.0687261,17z/data=!4m6!3m5!1s0x6022abc7ec99af2b:0xf3ec8e21fec19bac!8m2!3d35.199604!4d140.071301"}
+            ]
+        ],
+        "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "",
+        "search_name": "片倉ダム", "tel": "",
+        "aliases": ["片倉ダム", "笹川湖", "かたくらだむ", "かたくら", "片倉"]
     }
 }
 
@@ -953,7 +971,7 @@ BASS_COLOR_GROUPS = [
         "title": "📍 関東（千葉・埼玉）",
         "header_bg": "#2e7d32",
         "sub_groups": [
-            {"bg": "#e8f5e9", "spots": ["亀山湖", "高滝湖"]},
+            {"bg": "#e8f5e9", "spots": ["亀山湖", "高滝湖", "片倉ダム"]},
             {"bg": "#e3f2fd", "spots": ["GGD"]}
         ]
     }
@@ -1751,7 +1769,7 @@ def get_cached_weather(spot_name):
         if now - updated_time <= timedelta(hours=1):
             if isinstance(data, dict):
                 weekly = data.get("__weekly__", [])
-                if data.get("_version") != "settings_shortcut_v31":
+                if data.get("_version") != "settings_shortcut_v33":
                     return None
                 if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-":
                     return None
@@ -1770,7 +1788,7 @@ def get_cached_weather(spot_name):
                         weather_data = row.get('weather_data')
                         if isinstance(weather_data, dict):
                             weekly = weather_data.get("__weekly__", [])
-                            if weather_data.get("_version") != "settings_shortcut_v31":
+                            if weather_data.get("_version") != "settings_shortcut_v33":
                                 return None
                             if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-":
                                 return None
@@ -1785,7 +1803,7 @@ def get_cached_weather(spot_name):
 
 def save_cached_weather(spot_name, weather_data):
     now = datetime.now(timezone.utc)
-    weather_data["_version"] = "settings_shortcut_v31"
+    weather_data["_version"] = "settings_shortcut_v33"
     MEMORY_CACHE[spot_name] = (weather_data, now)
     
     if not supabase: return
@@ -1926,14 +1944,12 @@ def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_
             "contents": cols
         }
 
-    # ★ 各セル（バブル）ごとにヘッダーのボタン群を振り分けて構築するシステム ★
+    # ★ 各セルごとにヘッダーボタン群を構築 ★
     def create_header_block(bubble_index):
-        # 1. 共通: タイトル
         header_contents = [{"type": "text", "text": f"📍 {spot_name}", "color": "#ffffff", "weight": "bold", "size": "lg"}]
-        
         all_rows = []
         
-        # --- Top Button Row (登録/解除 & Default Map) ---
+        # 1. 登録/解除 ＆ デフォルト地図
         top_buttons = []
         if is_favorite:
             top_buttons.append({"type": "button", "action": {"type": "postback", "label": "🗑️ 解除", "data": f"action=fav_del_confirm_and_list&spot={spot_name}"}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs", "color": "#ffcccc"})
@@ -1946,12 +1962,12 @@ def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_
         if map_url and not hide_default_map: 
             top_buttons.append({"type": "button", "action": {"type": "uri", "label": "🗺️ 地図", "uri": map_url}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
         elif len(top_buttons) == 1:
-            # ★ 削除/登録ボタンを半分サイズにするためのダミー（空のボックス）を追加
+            # 透明ダミーボタンを入れて解除ボタンをハーフサイズに
             top_buttons.append({"type": "box", "layout": "vertical", "flex": 1, "margin": "xs", "contents": []})
             
         all_rows.append(top_buttons)
 
-        # --- Custom Button Rows (Boat shops etc) ---
+        # 2. ボート屋等のカスタムリンク
         custom_button_rows = spot_data.get("custom_button_rows", [])
         for row_links in custom_button_rows:
             row_buttons = []
@@ -1960,7 +1976,7 @@ def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_
             if row_buttons:
                 all_rows.append(row_buttons)
 
-        # --- Legacy Bottom Rows (HP, SNS for Trout) ---
+        # 3. 旧仕様のHP等リンク
         header_buttons_bottom = []
         if not custom_button_rows:
             if hp_url:
@@ -1979,7 +1995,7 @@ def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_
         if header_buttons_bottom:
             all_rows.append(header_buttons_bottom)
 
-        # ★ 全ボタン行を左右のセルに振り分けるロジック ★
+        # 4. ボタン行の左右分散と高さ合わせのロジック
         if len(all_rows) > 2:
             mid = (len(all_rows) + 1) // 2
             left_rows = all_rows[:mid]
@@ -1991,11 +2007,9 @@ def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_
         max_rows = max(len(left_rows), len(right_rows))
         target_rows = left_rows if bubble_index == 0 else right_rows
 
-        # ボタン行の追加
         for row_buttons in target_rows:
             header_contents.append({"type": "box", "layout": "horizontal", "margin": "sm", "spacing": "xs", "contents": row_buttons})
 
-        # ★ 段差（ズレ）を防ぐためのスペーサー追加 ★
         spacer_count = max_rows - len(target_rows)
         for _ in range(spacer_count):
             spacer = {
@@ -2005,6 +2019,7 @@ def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_
             header_contents.append(spacer)
 
         return {"type": "box", "layout": "vertical", "backgroundColor": header_color, "paddingAll": "10px", "contents": header_contents}
+
 
     weekly_box_1 = create_weekly_box(weekly_data[0:4]) if len(weekly_data) > 0 else None
     weekly_box_2 = create_weekly_box(weekly_data[4:8]) if len(weekly_data) > 4 else None
