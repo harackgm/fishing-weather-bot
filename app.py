@@ -447,7 +447,7 @@ SPOT_WEATHER_DATA = {
         "url": "https://weathernews.jp/onebox/35.760330/138.940529/",
         "tenki_url": "https://tenki.jp/forecast/3/22/4920/19442/1hour.html",
         "hp_url": "http://kosuge-tg.com/",
-        "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "https://kosugetg.jugem.jp/", "yt_url": "",
+        "x_url": "", "fb_url": "", "insta_url": "https://kosugetg.jugem.jp/", "yt_url": "",
         "search_name": "小菅トラウトガーデン", "tel": "0428-87-0373",
         "aliases": ["小菅", "小菅TG", "こすげ"]
     },
@@ -487,7 +487,7 @@ SPOT_WEATHER_DATA = {
         "url": "https://weathernews.jp/onebox/35.332243/137.632213/",
         "tenki_url": "https://tenki.jp/forecast/3/23/4830/20409/1hour.html",
         "hp_url": "https://hirayako.com/",
-        "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "https://ameblo.jp/hirayakobakucho/", "yt_url": "",
+        "x_url": "", "fb_url": "", "insta_url": "https://ameblo.jp/hirayakobakucho/", "yt_url": "",
         "search_name": "平谷湖フィッシングスポット", "tel": "0265-48-1127",
         "aliases": ["平谷湖", "平谷湖フィッシングスポット", "ひらやこ"]
     },
@@ -577,7 +577,7 @@ SPOT_WEATHER_DATA = {
         "url": "https://weathernews.jp/onebox/36.685419/139.071387/",
         "tenki_url": "https://tenki.jp/forecast/3/13/4220/10206/1hour.html",
         "hp_url": "http://www.fp-berrys.net/",
-        "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "https://ameblo.jp/fp-berrys2006/", "yt_url": "",
+        "x_url": "", "fb_url": "", "insta_url": "https://ameblo.jp/fp-berrys2006/", "yt_url": "",
         "search_name": "ベリーズ迦葉山", "tel": "0278-23-9333",
         "aliases": ["迦葉山", "ベリーズ迦葉山", "かしょうざん", "ベリーズ"]
     },
@@ -734,6 +734,8 @@ SPOT_WEATHER_DATA = {
         "search_name": "ミッドクリークフィッシングエリア", "tel": "0299-42-4578",
         "aliases": ["ミッドクリーク", "みっどくりーく"]
     },
+
+    # --- 東北・東海・関西 ---
     "Lost Lures": {
         "url": "https://weathernews.jp/onebox/37.081688/139.680305/",
         "tenki_url": "https://tenki.jp/forecast/2/10/3630/7368/1hour.html",
@@ -794,7 +796,7 @@ SPOT_WEATHER_DATA = {
         "url": "https://weathernews.jp/onebox/37.204977/139.729681/",
         "tenki_url": "https://tenki.jp/forecast/2/10/3630/7368/1hour.html",
         "hp_url": "https://aizufishing.jp/",
-        "x_url": "https://x.com/aizufishing", "fb_url": "", "insta_url": "", "blog_url": "https://ameblo.jp/aizu2024/", "yt_url": "",
+        "x_url": "https://x.com/aizufishing", "fb_url": "", "insta_url": "https://ameblo.jp/aizu2024/", "yt_url": "",
         "search_name": "あいづフィッシングエリア", "tel": "0241-64-2101",
         "aliases": ["あいづ", "あいづFA"]
     },
@@ -863,7 +865,7 @@ BASS_SPOT_WEATHER_DATA = {
         "tenki_url": "https://tenki.jp/forecast/3/15/4530/12225/1hour.html",
         "hp_url": "", "hp2_url": "",
         "hide_default_map": True,
-        # ★ 左セルと右セルでボート屋のリンクを分散配置 ★
+        # ★各ボート屋ごとに「HP」「地図」を横並びにするレイアウト★
         "custom_button_rows": [
             [
                 {"label": "🌐つばき", "url": "https://tubakimoto.com/sp/"},
@@ -939,7 +941,7 @@ COLOR_GROUPS = [
         "header_bg": "#6a1b9a",
         "sub_groups": [
             {"bg": "#f3e5f5", "spots": ["鹿留", "小菅", "奈良子", "シルフ", "ツガネ", "竜华池", "平谷湖", "ハーブ", "ニレ池", "鹿島やり", "つきの池", "あずみ野"]},
-            {"bg": "#e1bee7", "spots": ["Lost Lures", "不忘", "白河", "ほのぼの", "WaDoNa", "鶴沼川", "オーパ", "あいづ", "上浜", "GOZU"]},
+            {"bg": "#e1bee7", "spots": ["Lost Lures", "不忘", "白河", "ほのぼの", "WaDoNa", "鹤沼川", "オーパ", "あいづ", "上浜", "GOZU"]},
             {"bg": "#d1c4e9", "spots": ["FCE瑞浪", "３９", "醒井", "高島の泉", "千早川"]}
         ]
     }
@@ -1291,7 +1293,7 @@ def build_spot_list_carousel_horizontal(user_id=None, mode="trout"):
                         {"type": "text", "text": "【まとめて追加】", "weight": "bold", "size": "xs", "color": "#333333", "margin": "sm"},
                         {"type": "text", "text": "例：「追加 東山湖 すその 足柄 座間 醒井」\n※釣り場と釣り場の名前の間にスペースを入れてください。", "wrap": True, "size": "xs", "color": "#666666"},
                         {"type": "text", "text": "【まとめて削除】", "weight": "bold", "size": "xs", "color": "#333333", "margin": "sm"},
-                        {"type": "text", "text": "例：「削除 東山湖 す সাইফুল 裾野」\n※追加と同じく、名前の間にスペースを入れて複数同時に解除できます。", "wrap": True, "size": "xs", "color": "#666666"},
+                        {"type": "text", "text": "例：「削除 東山湖 すその 足柄」\n※追加と同じく、名前の間にスペースを入れて複数同時に解除できます。", "wrap": True, "size": "xs", "color": "#666666"},
                         {"type": "text", "text": "【設定】", "weight": "bold", "size": "xs", "color": "#333333", "margin": "sm"},
                         {"type": "text", "text": "「設定」と送信すると、並び替え・全削除パネルが出ます。", "wrap": True, "size": "xs", "color": "#666666"},
                         {"type": "text", "text": "【一覧（メニュー）の出し方】", "weight": "bold", "size": "xs", "color": "#333333", "margin": "sm"},
@@ -1748,7 +1750,7 @@ def get_cached_weather(spot_name):
         if now - updated_time <= timedelta(hours=1):
             if isinstance(data, dict):
                 weekly = data.get("__weekly__", [])
-                if data.get("_version") != "settings_shortcut_v29":
+                if data.get("_version") != "settings_shortcut_v30":
                     return None
                 if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-":
                     return None
@@ -1767,7 +1769,7 @@ def get_cached_weather(spot_name):
                         weather_data = row.get('weather_data')
                         if isinstance(weather_data, dict):
                             weekly = weather_data.get("__weekly__", [])
-                            if weather_data.get("_version") != "settings_shortcut_v29":
+                            if weather_data.get("_version") != "settings_shortcut_v30":
                                 return None
                             if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-":
                                 return None
@@ -1782,7 +1784,7 @@ def get_cached_weather(spot_name):
 
 def save_cached_weather(spot_name, weather_data):
     now = datetime.now(timezone.utc)
-    weather_data["_version"] = "settings_shortcut_v29"
+    weather_data["_version"] = "settings_shortcut_v30"
     MEMORY_CACHE[spot_name] = (weather_data, now)
     
     if not supabase: return
