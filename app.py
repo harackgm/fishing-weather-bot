@@ -199,7 +199,7 @@ SPOT_WEATHER_DATA = {
         "url": "https://weathernews.jp/onebox/36.388609/139.537247/",
         "tenki_url": "https://tenki.jp/forecast/3/12/4110/9204/1hour.html",
         "hp_url": "http://www.kaga-fa.co.jp/",
-        "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "https://ameblo.jp/kaga-fa/", "yt_url": "",
+        "x_url": "", "fb_url": "", "insta_url": "https://ameblo.jp/kaga-fa/", "yt_url": "",
         "search_name": "加賀フィッシングエリア", "tel": "0283-24-1513",
         "aliases": ["加賀", "加賀フィッシングエリア", "加賀FA", "かが"]
     },
@@ -856,6 +856,58 @@ SPOT_WEATHER_DATA = {
     }
 }
 
+# --- バス釣り用データ定義 ---
+BASS_SPOT_WEATHER_DATA = {
+    "亀山湖": {
+        "url": "https://weathernews.jp/onebox/35.23/140.09/",
+        "tenki_url": "https://tenki.jp/forecast/3/15/4530/12225/1hour.html",
+        "hp_url": "", "hp2_url": "",
+        "hide_default_map": True,
+        # ★スマホで見切れないよう、各ボート屋ごとに「HP」「地図」を横並びにしました★
+        "custom_button_rows": [
+            [
+                {"label": "🌐つばき", "url": "https://tubakimoto.com/sp/"},
+                {"label": "🗺️地図", "url": "https://www.google.com/maps/search/?api=1&query=" + quote("亀山湖 つばきもとボート")}
+            ],
+            [
+                {"label": "🌐のむら", "url": "https://nomuraboat.com/"},
+                {"label": "🗺️地図", "url": "https://www.google.com/maps/search/?api=1&query=" + quote("亀山湖 のむらボートハウス")}
+            ],
+            [
+                {"label": "🌐トキタ", "url": "http://www.tokitaboat.com/"},
+                {"label": "🗺️地図", "url": "https://www.google.com/maps/search/?api=1&query=" + quote("亀山湖 トキタボート")}
+            ]
+        ],
+        "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "",
+        "search_name": "亀山湖", "tel": "",
+        "aliases": ["亀山湖", "亀山ダム", "かめやまこ", "亀山"]
+    },
+    "高滝湖": {
+        "url": "https://weathernews.jp/onebox/35.34/140.15/",
+        "tenki_url": "https://tenki.jp/forecast/3/15/4510/12219/1hour.html",
+        "hp_url": "", "hp2_url": "",
+        "hide_default_map": True,
+        "custom_button_rows": [
+            [
+                {"label": "🌐ボート", "url": "http://www.takatakiko.jp/"},
+                {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E9%AB%98%E6%BB%9D%E6%B9%96%E8%A6%B3%E5%85%89%E4%BC%81%E6%A5%AD%E7%B5%84%E5%90%88/@35.3508961,140.1592915,17z/data=!3m1!4b1!4m6!3m5!1s0x6022a5160fd78bad:0xeaa9dddefc1dab6!8m2!3d35.3508918!4d140.1618664"}
+            ]
+        ],
+        "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "",
+        "search_name": "高滝湖", "tel": "",
+        "aliases": ["高滝湖", "高滝ダム", "たかたきこ", "高滝", "たかたき"]
+    },
+    "GGD": {
+        "url": "https://weathernews.jp/onebox/36.103735/139.726303/",
+        "tenki_url": "https://tenki.jp/forecast/3/14/4320/11232/1hour.html",
+        "hp_url": "", "hp2_url": "",
+        "map_url": "https://www.google.com/maps/place/36%C2%B006'13.5%22N+139%C2%B043'34.7%22E/@36.103735,139.7237281,17z/data=!3m1!4b1!4m4!3m3!8m2!3d36.103735!4d139.726303",
+        "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "",
+        "search_name": "権現堂川", "tel": "",
+        "aliases": ["GGD", "権現堂川", "権現堂", "ごんげんどう", "ggd", "権現堂公園"]
+    }
+}
+
 COLOR_GROUPS = [
     {
         "title": "📍 静岡・神奈川・東京・千葉",
@@ -892,55 +944,6 @@ COLOR_GROUPS = [
         ]
     }
 ]
-
-# --- バス釣り用データ定義 ---
-BASS_SPOT_WEATHER_DATA = {
-    "亀山湖": {
-        "url": "https://weathernews.jp/onebox/35.23/140.09/",
-        "tenki_url": "https://tenki.jp/forecast/3/15/4530/12225/1hour.html",
-        "hp_url": "", "hp2_url": "",
-        "hide_default_map": True,
-        "custom_button_rows": [
-            [
-                {"label": "🌐つばき", "url": "https://tubakimoto.com/sp/"},
-                {"label": "🌐のむら", "url": "https://nomuraboat.com/"},
-                {"label": "🌐トキタ", "url": "http://www.tokitaboat.com/"}
-            ],
-            [
-                {"label": "🗺️つばき", "url": "https://www.google.com/maps/search/?api=1&query=" + quote("亀山湖 つばきもとボート")},
-                {"label": "🗺️のむら", "url": "https://www.google.com/maps/search/?api=1&query=" + quote("亀山湖 のむらボートハウス")},
-                {"label": "🗺️トキタ", "url": "https://www.google.com/maps/search/?api=1&query=" + quote("亀山湖 トキタボート")}
-            ]
-        ],
-        "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "",
-        "search_name": "亀山湖", "tel": "",
-        "aliases": ["亀山湖", "亀山ダム", "かめやまこ", "亀山"]
-    },
-    "高滝湖": {
-        "url": "https://weathernews.jp/onebox/35.34/140.15/",
-        "tenki_url": "https://tenki.jp/forecast/3/15/4510/12219/1hour.html",
-        "hp_url": "", "hp2_url": "",
-        "hide_default_map": True,
-        "custom_button_rows": [
-            [
-                {"label": "🌐ボート", "url": "http://www.takatakiko.jp/"},
-                {"label": "🗺️ボート", "url": "https://www.google.com/maps/place/%E9%AB%98%E6%BB%9D%E6%B9%96%E8%A6%B3%E5%85%89%E4%BC%81%E6%A5%AD%E7%B5%84%E5%90%88/@35.3508961,140.1592915,17z/data=!3m1!4b1!4m6!3m5!1s0x6022a5160fd78bad:0xeaa9dddefc1dab6!8m2!3d35.3508918!4d140.1618664"}
-            ]
-        ],
-        "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "",
-        "search_name": "高滝湖", "tel": "",
-        "aliases": ["高滝湖", "高滝ダム", "たかたきこ", "高滝", "たかたき"]
-    },
-    "GGD": {
-        "url": "https://weathernews.jp/onebox/36.103735/139.726303/",
-        "tenki_url": "https://tenki.jp/forecast/3/14/4320/11232/1hour.html",
-        "hp_url": "", "hp2_url": "",
-        "map_url": "https://www.google.com/maps/place/36%C2%B006'13.5%22N+139%C2%B043'34.7%22E/@36.103735,139.7237281,17z/data=!3m1!4b1!4m4!3m3!8m2!3d36.103735!4d139.726303",
-        "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "",
-        "search_name": "権現堂川", "tel": "",
-        "aliases": ["GGD", "権現堂川", "権現堂", "ごんげんどう", "ggd", "権現堂公園"]
-    }
-}
 
 BASS_COLOR_GROUPS = [
     {
@@ -1745,7 +1748,7 @@ def get_cached_weather(spot_name):
         if now - updated_time <= timedelta(hours=1):
             if isinstance(data, dict):
                 weekly = data.get("__weekly__", [])
-                if data.get("_version") != "settings_shortcut_v26":
+                if data.get("_version") != "settings_shortcut_v27":
                     return None
                 if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-":
                     return None
@@ -1764,7 +1767,7 @@ def get_cached_weather(spot_name):
                         weather_data = row.get('weather_data')
                         if isinstance(weather_data, dict):
                             weekly = weather_data.get("__weekly__", [])
-                            if weather_data.get("_version") != "settings_shortcut_v26":
+                            if weather_data.get("_version") != "settings_shortcut_v27":
                                 return None
                             if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-":
                                 return None
@@ -1779,7 +1782,7 @@ def get_cached_weather(spot_name):
 
 def save_cached_weather(spot_name, weather_data):
     now = datetime.now(timezone.utc)
-    weather_data["_version"] = "settings_shortcut_v26"
+    weather_data["_version"] = "settings_shortcut_v27"
     MEMORY_CACHE[spot_name] = (weather_data, now)
     
     if not supabase: return
@@ -1940,7 +1943,6 @@ def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_
     if header_buttons_top: 
         header_contents.append({"type": "box", "layout": "horizontal", "margin": "sm", "spacing": "xs", "contents": header_buttons_top})
         
-    # ★ カスタムボタンの複数行配置システム ★
     custom_button_rows = spot_data.get("custom_button_rows", [])
     for row_links in custom_button_rows:
         row_buttons = []
@@ -1949,7 +1951,6 @@ def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_
         if row_buttons:
             header_contents.append({"type": "box", "layout": "horizontal", "margin": "sm", "spacing": "xs", "contents": row_buttons})
 
-    # (旧仕様のHPリンク用互換処理)
     header_buttons_bottom = []
     if not custom_button_rows:
         if hp_url:
