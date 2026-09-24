@@ -26,18 +26,12 @@ if hasattr(time, 'tzset'):
 
 app = Flask(__name__)
 
-# ==========================================
-# 2. 設定値および安全装置（ガードレール）
-# ==========================================
 LINE_CHANNEL_ACCESS_TOKEN = os.getenv('LINE_CHANNEL_ACCESS_TOKEN', '').strip()
 LINE_CHANNEL_SECRET = os.getenv('LINE_CHANNEL_SECRET', '').strip()
-
 line_bot_api = LineBotApi(LINE_CHANNEL_ACCESS_TOKEN)
 handler = WebhookHandler(LINE_CHANNEL_SECRET)
 
 MAX_FAVORITES = 30
-
-# Supabase接続初期化
 SUPABASE_URL = os.getenv('SUPABASE_URL', '').strip()
 SUPABASE_KEY = os.getenv('SUPABASE_KEY', '').strip()
 
@@ -48,14 +42,12 @@ if SUPABASE_URL and SUPABASE_KEY:
     except Exception as e:
         print(f"[Supabase初期化エラー] {e}")
 
-# 超高速メモリキャッシュ
 MEMORY_CACHE = {}
 
 # ==========================================
 # 3. 釣り場データ定義（トラウト用 ＆ バス用）
 # ==========================================
 SPOT_WEATHER_DATA = {
-    # --- 静岡県 ---
     "東山湖": {
         "url": "https://weathernews.jp/onebox/35.296739/138.955925/",
         "tenki_url": "https://tenki.jp/forecast/5/25/5030/22215/1hour.html",
@@ -96,8 +88,6 @@ SPOT_WEATHER_DATA = {
         "search_name": "浜名湖フィッシングリゾート", "tel": "053-592-2221",
         "aliases": ["浜名湖", "浜名湖フィッシングリゾート", "浜名湖FR", "はまなこ"]
     },
-
-    # --- 栃木県 ---
     "キング": {
         "url": "https://weathernews.jp/onebox/36.907054/140.078650/",
         "tenki_url": "https://tenki.jp/forecast/3/12/4120/9210/1hour.html",
@@ -245,7 +235,7 @@ SPOT_WEATHER_DATA = {
     },
     "エリア21": {
         "url": "https://weathernews.jp/onebox/36.496150/139.899522/",
-        "tenki_url": "https://tenki.jp/forecast/3/12/4110/9201/1hour.html",
+        "tenki_url": "https://tenki.jp/forecast/3/16/4410/13201/1hour.html",
         "hp_url": "http://www.area21.jp/",
         "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "",
         "search_name": "エリア21 宇都宮", "tel": "028-656-1188",
@@ -275,8 +265,6 @@ SPOT_WEATHER_DATA = {
         "search_name": "名草釣堀", "tel": "0284-36-2480",
         "aliases": ["名草", "名草釣堀", "なぐさ"]
     },
-
-    # --- 千葉県 ---
     "座間": {
         "url": "https://weathernews.jp/onebox/35.843581/140.010676/",
         "tenki_url": "https://tenki.jp/forecast/3/15/4510/12217/1hour.html",
@@ -317,8 +305,6 @@ SPOT_WEATHER_DATA = {
         "search_name": "釣りパラダイス 山武", "tel": "043-445-1216",
         "aliases": ["釣パラダイス", "パラダイス", "釣りパラダイス", "つりぱら"]
     },
-
-    # --- 埼玉県 ---
     "長瀞": {
         "url": "https://weathernews.jp/onebox/36.084376/139.104604/",
         "tenki_url": "https://tenki.jp/forecast/3/14/4330/11362/1hour.html",
@@ -383,8 +369,6 @@ SPOT_WEATHER_DATA = {
         "search_name": "伊古の里フィッシングパーク", "tel": "0493-57-0505",
         "aliases": ["伊古", "伊古の里", "いこのさと", "伊古の里フィッシングパーク"]
     },
-
-    # --- 神奈川県・東京都 ---
     "足柄": {
         "url": "https://weathernews.jp/onebox/35.319275/139.042723/",
         "tenki_url": "https://tenki.jp/forecast/3/17/4620/14217/1hour.html",
@@ -433,8 +417,6 @@ SPOT_WEATHER_DATA = {
         "search_name": "浅川国際マス釣り場", "tel": "042-661-2228",
         "aliases": ["浅川国際", "浅川", "浅川国際マス釣り場", "あさかわ", "あさかわこくさい", "あさこく", "アサコク"]
     },
-
-    # --- 山梨県・長野県 ---
     "鹿留": {
         "url": "https://weathernews.jp/onebox/35.512350/138.887160/",
         "tenki_url": "https://tenki.jp/forecast/3/22/4920/19204/1hour.html",
@@ -531,8 +513,6 @@ SPOT_WEATHER_DATA = {
         "search_name": "あずみ野フィッシングセンター", "tel": "0263-82-8280",
         "aliases": ["あずみ野", "あずみ野FC", "あずみの"]
     },
-
-    # --- 群馬県 ---
     "川場": {
         "url": "https://weathernews.jp/onebox/36.690767/139.121662/",
         "tenki_url": "https://tenki.jp/forecast/3/13/4220/10444/1hour.html",
@@ -660,8 +640,6 @@ SPOT_WEATHER_DATA = {
         "search_name": "榛名高原つり堀センター", "tel": "027-374-2228",
         "aliases": ["榛名", "榛名高原", "はるな"]
     },
-
-    # --- 茨城県 ---
     "水戸南": {
         "url": "https://weathernews.jp/onebox/36.326377/140.501362/",
         "tenki_url": "https://tenki.jp/forecast/3/11/4020/8230/1hour.html",
@@ -734,8 +712,6 @@ SPOT_WEATHER_DATA = {
         "search_name": "ミッドクリークフィッシングエリア", "tel": "0299-42-4578",
         "aliases": ["ミッドクリーク", "みっどくりーく"]
     },
-
-    # --- 東北・東海・関西 ---
     "Lost Lures": {
         "url": "https://weathernews.jp/onebox/37.081688/139.680305/",
         "tenki_url": "https://tenki.jp/forecast/2/10/3630/7368/1hour.html",
@@ -888,7 +864,7 @@ COLOR_GROUPS = [
         "title": "📍 甲信・東北・東海・関西",
         "header_bg": "#6a1b9a",
         "sub_groups": [
-            {"bg": "#f3e5f5", "spots": ["鹿留", "小菅", "奈良子", "シルフ", "ツガネ", "竜华池", "平谷湖", "ハーブ", "ニレ池", "鹿島やり", "つきの池", "あずみ野"]},
+            {"bg": "#f3e5f5", "spots": ["鹿留", "小菅", "奈良子", "シルフ", "ツガネ", "竜華池", "平谷湖", "ハーブ", "ニレ池", "鹿島やり", "つきの池", "あずみ野"]},
             {"bg": "#e1bee7", "spots": ["Lost Lures", "不忘", "白河", "ほのぼの", "WaDoNa", "鶴沼川", "オーパ", "あいづ", "上浜", "GOZU"]},
             {"bg": "#d1c4e9", "spots": ["FCE瑞浪", "３９", "醒井", "高島の泉", "千早川"]}
         ]
@@ -897,7 +873,6 @@ COLOR_GROUPS = [
 
 # --- バス釣り用データ定義 ---
 BASS_SPOT_WEATHER_DATA = {
-    # --- 千葉県 ---
     "亀山湖": {
         "url": "https://weathernews.jp/onebox/35.23/140.09/",
         "tenki_url": "https://tenki.jp/forecast/3/15/4530/12225/1hour.html",
@@ -910,17 +885,19 @@ BASS_SPOT_WEATHER_DATA = {
         "url": "https://weathernews.jp/onebox/35.34/140.15/",
         "tenki_url": "https://tenki.jp/forecast/3/15/4510/12219/1hour.html",
         "hp_url": "", "hp2_url": "",
+        "map_url": "https://www.google.com/maps/place/%E9%AB%98%E6%BB%9D%E6%B9%96%E8%A6%B3%E5%85%89%E4%BC%81%E6%A5%AD%E7%B5%84%E5%90%88/@35.3508961,140.1592915,17z/data=!3m1!4b1!4m6!3m5!1s0x6022a5160fd78bad:0xeaa9dddefc1dab6!8m2!3d35.3508918!4d140.1618664!16s%2Fg%2F1tpf77dl?entry=ttu&g_ep=EgoyMDI2MDkyMS4wIKXMDSoASAFQAw%3D%3D",
+        "custom_links": [{"label": "🚤 ボート屋", "url": "http://www.tokitaboat.com/"}],
         "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "",
         "search_name": "高滝湖", "tel": "",
         "aliases": ["高滝湖", "高滝ダム", "たかたきこ", "高滝", "たかたき"]
     },
-    # --- 埼玉県 ---
     "GGD": {
         "url": "https://weathernews.jp/onebox/36.103735/139.726303/",
         "tenki_url": "https://tenki.jp/forecast/3/14/4320/11232/1hour.html",
         "hp_url": "", "hp2_url": "",
+        "map_url": "https://www.google.com/maps/place/36%C2%B006'13.5%22N+139%C2%B043'34.7%22E/@36.103735,139.7237281,17z/data=!3m1!4b1!4m4!3m3!8m2!3d36.103735!4d139.726303?entry=ttu&g_ep=EgoyMDI2MDkyMS4wIKXMDSoASAFQAw%3D%3D",
         "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "",
-        "search_name": "36.103735,139.726303", "tel": "",
+        "search_name": "権現堂川", "tel": "",
         "aliases": ["GGD", "権現堂川", "権現堂", "ごんげんどう", "ggd", "権現堂公園"]
     }
 }
@@ -960,10 +937,11 @@ def get_spot_details(spot_key):
     data = ALL_SPOT_DATA.get(spot_key)
     if not data: return spot_key, None, "", "", "", "", "", "", "", "", "", None
     
-    # 座標が直接指定されている場合はそのまま検索クエリにする
-    search_q = data.get('search_name', spot_key)
-    map_url = f"https://www.google.com/maps/search/?api=1&query={quote(search_q)}"
-    
+    map_url = data.get("map_url")
+    if not map_url:
+        search_q = data.get('search_name', spot_key)
+        map_url = f"https://www.google.com/maps/search/?api=1&query={quote(search_q)}"
+        
     tenki_10days_url = convert_to_10days_url(data.get("tenki_url"))
     return (
         spot_key, data["url"], clean_url(data.get("hp_url", "")), clean_url(data.get("hp2_url", "")), 
@@ -1727,7 +1705,7 @@ def get_cached_weather(spot_name):
         if now - updated_time <= timedelta(hours=1):
             if isinstance(data, dict):
                 weekly = data.get("__weekly__", [])
-                if data.get("_version") != "settings_shortcut_v23":
+                if data.get("_version") != "settings_shortcut_v25":
                     return None
                 if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-":
                     return None
@@ -1746,7 +1724,7 @@ def get_cached_weather(spot_name):
                         weather_data = row.get('weather_data')
                         if isinstance(weather_data, dict):
                             weekly = weather_data.get("__weekly__", [])
-                            if weather_data.get("_version") != "settings_shortcut_v23":
+                            if weather_data.get("_version") != "settings_shortcut_v25":
                                 return None
                             if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-":
                                 return None
@@ -1761,7 +1739,7 @@ def get_cached_weather(spot_name):
 
 def save_cached_weather(spot_name, weather_data):
     now = datetime.now(timezone.utc)
-    weather_data["_version"] = "settings_shortcut_v23"
+    weather_data["_version"] = "settings_shortcut_v25"
     MEMORY_CACHE[spot_name] = (weather_data, now)
     
     if not supabase: return
@@ -1915,13 +1893,20 @@ def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_
         header_buttons_top.append({"type": "button", "action": {"type": "uri", "label": "🗺️ 地図", "uri": map_url}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
 
     header_buttons_bottom = []
-    if hp_url:
-        label_text = "🌐 大崎HP" if spot_name == "大崎・赤城" else "🌐 HP"
-        header_buttons_bottom.append({"type": "button", "action": {"type": "uri", "label": label_text, "uri": hp_url}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
     
-    if hp2_url:
-        label_text2 = "🌐 赤城HP" if spot_name == "大崎・赤城" else "🌐 HP2"
-        header_buttons_bottom.append({"type": "button", "action": {"type": "uri", "label": label_text2, "uri": hp2_url}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
+    spot_data = ALL_SPOT_DATA.get(spot_name, {})
+    custom_links = spot_data.get("custom_links", [])
+    
+    if custom_links:
+        for link in custom_links:
+            header_buttons_bottom.append({"type": "button", "action": {"type": "uri", "label": link["label"], "uri": link["url"]}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
+    else:
+        if hp_url:
+            label_text = "🌐 大崎HP" if spot_name == "大崎・赤城" else "🌐 HP"
+            header_buttons_bottom.append({"type": "button", "action": {"type": "uri", "label": label_text, "uri": hp_url}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
+        if hp2_url:
+            label_text2 = "🌐 赤城HP" if spot_name == "大崎・赤城" else "🌐 HP2"
+            header_buttons_bottom.append({"type": "button", "action": {"type": "uri", "label": label_text2, "uri": hp2_url}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
     
     if x_url: header_buttons_bottom.append({"type": "button", "action": {"type": "uri", "label": "𝕏", "uri": x_url}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
     if fb_url: header_buttons_bottom.append({"type": "button", "action": {"type": "uri", "label": "📘 FB", "uri": fb_url}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
