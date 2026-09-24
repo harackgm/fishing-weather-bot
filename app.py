@@ -275,6 +275,8 @@ SPOT_WEATHER_DATA = {
         "search_name": "名草釣堀", "tel": "0284-36-2480",
         "aliases": ["名草", "名草釣堀", "なぐさ"]
     },
+
+    # --- 千葉県 ---
     "座間": {
         "url": "https://weathernews.jp/onebox/35.843581/140.010676/",
         "tenki_url": "https://tenki.jp/forecast/3/15/4510/12217/1hour.html",
@@ -315,6 +317,8 @@ SPOT_WEATHER_DATA = {
         "search_name": "釣りパラダイス 山武", "tel": "043-445-1216",
         "aliases": ["釣パラダイス", "パラダイス", "釣りパラダイス", "つりぱら"]
     },
+
+    # --- 埼玉県 ---
     "長瀞": {
         "url": "https://weathernews.jp/onebox/36.084376/139.104604/",
         "tenki_url": "https://tenki.jp/forecast/3/14/4330/11362/1hour.html",
@@ -379,6 +383,8 @@ SPOT_WEATHER_DATA = {
         "search_name": "伊古の里フィッシングパーク", "tel": "0493-57-0505",
         "aliases": ["伊古", "伊古の里", "いこのさと", "伊古の里フィッシングパーク"]
     },
+
+    # --- 神奈川県・東京都 ---
     "足柄": {
         "url": "https://weathernews.jp/onebox/35.319275/139.042723/",
         "tenki_url": "https://tenki.jp/forecast/3/17/4620/14217/1hour.html",
@@ -427,6 +433,8 @@ SPOT_WEATHER_DATA = {
         "search_name": "浅川国際マス釣り場", "tel": "042-661-2228",
         "aliases": ["浅川国際", "浅川", "浅川国際マス釣り場", "あさかわ", "あさかわこくさい", "あさこく", "アサコク"]
     },
+
+    # --- 山梨県・長野県 ---
     "鹿留": {
         "url": "https://weathernews.jp/onebox/35.512350/138.887160/",
         "tenki_url": "https://tenki.jp/forecast/3/22/4920/19204/1hour.html",
@@ -523,6 +531,8 @@ SPOT_WEATHER_DATA = {
         "search_name": "あずみ野フィッシングセンター", "tel": "0263-82-8280",
         "aliases": ["あずみ野", "あずみ野FC", "あずみの"]
     },
+
+    # --- 群馬県 ---
     "川場": {
         "url": "https://weathernews.jp/onebox/36.690767/139.121662/",
         "tenki_url": "https://tenki.jp/forecast/3/13/4220/10444/1hour.html",
@@ -650,6 +660,8 @@ SPOT_WEATHER_DATA = {
         "search_name": "榛名高原つり堀センター", "tel": "027-374-2228",
         "aliases": ["榛名", "榛名高原", "はるな"]
     },
+
+    # --- 茨城県 ---
     "水戸南": {
         "url": "https://weathernews.jp/onebox/36.326377/140.501362/",
         "tenki_url": "https://tenki.jp/forecast/3/11/4020/8230/1hour.html",
@@ -722,6 +734,8 @@ SPOT_WEATHER_DATA = {
         "search_name": "ミッドクリークフィッシングエリア", "tel": "0299-42-4578",
         "aliases": ["ミッドクリーク", "みっどくりーく"]
     },
+
+    # --- 東北・東海・関西 ---
     "Lost Lures": {
         "url": "https://weathernews.jp/onebox/37.081688/139.680305/",
         "tenki_url": "https://tenki.jp/forecast/2/10/3630/7368/1hour.html",
@@ -984,7 +998,6 @@ BASS_COLOR_GROUPS = [
         "title": "📍 関東（千葉・埼玉）",
         "header_bg": "#2e7d32",
         "sub_groups": [
-            # ★ グループに三島湖を追加 ★
             {"bg": "#e8f5e9", "spots": ["亀山湖", "高滝湖", "片倉ダム", "三島湖"]},
             {"bg": "#e3f2fd", "spots": ["GGD"]}
         ]
