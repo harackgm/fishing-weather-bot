@@ -991,7 +991,6 @@ BASS_SPOT_WEATHER_DATA = {
         "search_name": "相模湖", "tel": "",
         "aliases": ["相模湖", "さがみこ", "さがみ"]
     },
-    # ★ 東山ダムを追加 ★
     "東山ダム": {
         "url": "https://weathernews.jp/onebox/37.460705/139.965895/",
         "tenki_url": "https://tenki.jp/forecast/2/10/3630/7202/1hour.html",
@@ -999,13 +998,29 @@ BASS_SPOT_WEATHER_DATA = {
         "hide_default_map": True,
         "custom_button_rows": [
             [
-                {"label": "🚷陸っぱり", "url": ""},  # ★ URLを空にすると、自動で「押しても何も起きないダミーボタン」になります ★
+                {"label": "🚷陸っぱり", "url": ""},
                 {"label": "🗺️地図", "url": "https://www.google.com/maps/search/%E6%9D%B1%E5%B1%B1%E3%83%80%E3%83%A0/@37.4607054,139.9658954,17z"}
             ]
         ],
         "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "",
         "search_name": "東山ダム", "tel": "",
         "aliases": ["東山ダム", "ひがしやまだむ", "ひがしやま"]
+    },
+    # ★ 羽鳥湖を追加 ★
+    "羽鳥湖": {
+        "url": "https://weathernews.jp/onebox/37.271554/140.076067/",
+        "tenki_url": "https://tenki.jp/forecast/2/10/3610/7461/1hour.html",
+        "hp_url": "", "hp2_url": "",
+        "hide_default_map": True,
+        "custom_button_rows": [
+            [
+                {"label": "🚷陸っぱり", "url": ""},
+                {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E7%BE%BD%E9%B3%A5%E3%83%80%E3%83%A0/@37.2715954,140.0769915,17.25z/data=!4m14!1m7!3m6!1s0x60201e92da9ad8eb:0xad0e8032ff7d73cc!2z57696bOl5rmW!8m2!3d37.2613577!4d140.0791107!16s%2Fg%2F1yl491l68!3m5!1s0x60201c21470050c1:0x591eec4fb9db922e!8m2!3d37.2715547!4d140.0760678!16s%2Fm%2F04n1yk0"}
+            ]
+        ],
+        "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "",
+        "search_name": "羽鳥湖", "tel": "",
+        "aliases": ["羽鳥湖", "羽鳥ダム", "はとりこ", "はとり"]
     }
 }
 
@@ -1056,12 +1071,11 @@ BASS_COLOR_GROUPS = [
             {"bg": "#f3e5f5", "spots": ["相模湖"]}
         ]
     },
-    # ★ 東北グループを追加 ★
     {
         "title": "📍 東北（福島）",
         "header_bg": "#6a1b9a",
         "sub_groups": [
-            {"bg": "#e1bee7", "spots": ["東山ダム"]}
+            {"bg": "#e1bee7", "spots": ["東山ダム", "羽鳥湖"]}
         ]
     }
 ]
@@ -1795,7 +1809,7 @@ def get_cached_weather(spot_name):
         if now - updated_time <= timedelta(hours=1):
             if isinstance(data, dict):
                 weekly = data.get("__weekly__", [])
-                if data.get("_version") != "settings_shortcut_v42": return None
+                if data.get("_version") != "settings_shortcut_v43": return None
                 if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-": return None
             return data
     if not supabase: return None
@@ -1811,7 +1825,7 @@ def get_cached_weather(spot_name):
                         weather_data = row.get('weather_data')
                         if isinstance(weather_data, dict):
                             weekly = weather_data.get("__weekly__", [])
-                            if weather_data.get("_version") != "settings_shortcut_v42": return None
+                            if weather_data.get("_version") != "settings_shortcut_v43": return None
                             if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-": return None
                         MEMORY_CACHE[spot_name] = (weather_data, updated_time)
                         return weather_data
@@ -1823,7 +1837,7 @@ def get_cached_weather(spot_name):
 
 def save_cached_weather(spot_name, weather_data):
     now = datetime.now(timezone.utc)
-    weather_data["_version"] = "settings_shortcut_v42"
+    weather_data["_version"] = "settings_shortcut_v43"
     MEMORY_CACHE[spot_name] = (weather_data, now)
     if not supabase: return
     try:
