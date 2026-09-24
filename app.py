@@ -199,7 +199,7 @@ SPOT_WEATHER_DATA = {
         "url": "https://weathernews.jp/onebox/36.388609/139.537247/",
         "tenki_url": "https://tenki.jp/forecast/3/12/4110/9204/1hour.html",
         "hp_url": "http://www.kaga-fa.co.jp/",
-        "x_url": "", "fb_url": "", "insta_url": "https://www.instagram.com/kaga_fishing_area/", "blog_url": "https://ameblo.jp/kaga-fa/", "yt_url": "",
+        "x_url": "", "fb_url": "", "insta_url": "https://ameblo.jp/kaga-fa/", "yt_url": "",
         "search_name": "加賀フィッシングエリア", "tel": "0283-24-1513",
         "aliases": ["加賀", "加賀フィッシングエリア", "加賀FA", "かが"]
     },
@@ -734,8 +734,6 @@ SPOT_WEATHER_DATA = {
         "search_name": "ミッドクリークフィッシングエリア", "tel": "0299-42-4578",
         "aliases": ["ミッドクリーク", "みっどくりーく"]
     },
-
-    # --- 東北・東海・関西 ---
     "Lost Lures": {
         "url": "https://weathernews.jp/onebox/37.081688/139.680305/",
         "tenki_url": "https://tenki.jp/forecast/2/10/3630/7368/1hour.html",
@@ -865,7 +863,7 @@ BASS_SPOT_WEATHER_DATA = {
         "tenki_url": "https://tenki.jp/forecast/3/15/4530/12225/1hour.html",
         "hp_url": "", "hp2_url": "",
         "hide_default_map": True,
-        # ★ 左セル（バブル0）用と、右セル（バブル1）用でボート屋を自動分割する設定 ★
+        # ★ 左セルと右セルでボート屋のリンクを分散配置 ★
         "custom_button_rows": [
             [
                 {"label": "🌐つばき", "url": "https://tubakimoto.com/sp/"},
@@ -892,7 +890,6 @@ BASS_SPOT_WEATHER_DATA = {
         "custom_button_rows": [
             [
                 {"label": "🌐ボート", "url": "http://www.takatakiko.jp/"},
-                # ★ ご指定の地図URLに修正済み ★
                 {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E9%AB%98%E6%BB%9D%E6%B9%96%E8%A6%B3%E5%85%89%E4%BC%81%E6%A5%AD%E7%B5%84%E5%90%88/data=!4m2!3m1!1s0x0:0xeaa9dddefc1dab6?sa=X&ved=1t:2428&ictx=111"}
             ]
         ],
@@ -1294,7 +1291,7 @@ def build_spot_list_carousel_horizontal(user_id=None, mode="trout"):
                         {"type": "text", "text": "【まとめて追加】", "weight": "bold", "size": "xs", "color": "#333333", "margin": "sm"},
                         {"type": "text", "text": "例：「追加 東山湖 すその 足柄 座間 醒井」\n※釣り場と釣り場の名前の間にスペースを入れてください。", "wrap": True, "size": "xs", "color": "#666666"},
                         {"type": "text", "text": "【まとめて削除】", "weight": "bold", "size": "xs", "color": "#333333", "margin": "sm"},
-                        {"type": "text", "text": "例：「削除 東山湖 すその 足柄」\n※追加と同じく、名前の間にスペースを入れて複数同時に解除できます。", "wrap": True, "size": "xs", "color": "#666666"},
+                        {"type": "text", "text": "例：「削除 東山湖 す সাইফুল 裾野」\n※追加と同じく、名前の間にスペースを入れて複数同時に解除できます。", "wrap": True, "size": "xs", "color": "#666666"},
                         {"type": "text", "text": "【設定】", "weight": "bold", "size": "xs", "color": "#333333", "margin": "sm"},
                         {"type": "text", "text": "「設定」と送信すると、並び替え・全削除パネルが出ます。", "wrap": True, "size": "xs", "color": "#666666"},
                         {"type": "text", "text": "【一覧（メニュー）の出し方】", "weight": "bold", "size": "xs", "color": "#333333", "margin": "sm"},
@@ -1751,7 +1748,7 @@ def get_cached_weather(spot_name):
         if now - updated_time <= timedelta(hours=1):
             if isinstance(data, dict):
                 weekly = data.get("__weekly__", [])
-                if data.get("_version") != "settings_shortcut_v28":
+                if data.get("_version") != "settings_shortcut_v29":
                     return None
                 if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-":
                     return None
@@ -1770,7 +1767,7 @@ def get_cached_weather(spot_name):
                         weather_data = row.get('weather_data')
                         if isinstance(weather_data, dict):
                             weekly = weather_data.get("__weekly__", [])
-                            if weather_data.get("_version") != "settings_shortcut_v28":
+                            if weather_data.get("_version") != "settings_shortcut_v29":
                                 return None
                             if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-":
                                 return None
@@ -1785,7 +1782,7 @@ def get_cached_weather(spot_name):
 
 def save_cached_weather(spot_name, weather_data):
     now = datetime.now(timezone.utc)
-    weather_data["_version"] = "settings_shortcut_v28"
+    weather_data["_version"] = "settings_shortcut_v29"
     MEMORY_CACHE[spot_name] = (weather_data, now)
     
     if not supabase: return
@@ -1928,22 +1925,24 @@ def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_
 
     # ★ 各セル（バブル）ごとにヘッダーのボタン群を振り分けて構築するシステム ★
     def create_header_block(bubble_index):
-        header_buttons_top = []
-        if is_favorite:
-            header_buttons_top.append({"type": "button", "action": {"type": "postback", "label": "🗑️ 解除", "data": f"action=fav_del_confirm_and_list&spot={spot_name}"}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs", "color": "#ffcccc"})
-        else:
-            header_buttons_top.append({"type": "button", "action": {"type": "postback", "label": "⭐️ 登録", "data": f"action=fav_add_and_list&spot={spot_name}"}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs", "color": "#fff59d"})
-
+        header_contents = [{"type": "text", "text": f"📍 {spot_name}", "color": "#ffffff", "weight": "bold", "size": "lg"}]
+        
         spot_data = ALL_SPOT_DATA.get(spot_name, {})
         hide_default_map = spot_data.get("hide_default_map", False)
 
-        if map_url and not hide_default_map: 
-            header_buttons_top.append({"type": "button", "action": {"type": "uri", "label": "🗺️ 地図", "uri": map_url}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
+        # 登録/解除ボタンおよびデフォルトの地図ボタンは「左セル(0枚目)」にのみ表示する
+        if bubble_index == 0:
+            header_buttons_top = []
+            if is_favorite:
+                header_buttons_top.append({"type": "button", "action": {"type": "postback", "label": "🗑️ 解除", "data": f"action=fav_del_confirm_and_list&spot={spot_name}"}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs", "color": "#ffcccc"})
+            else:
+                header_buttons_top.append({"type": "button", "action": {"type": "postback", "label": "⭐️ 登録", "data": f"action=fav_add_and_list&spot={spot_name}"}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs", "color": "#fff59d"})
 
-        header_contents = [{"type": "text", "text": f"📍 {spot_name}", "color": "#ffffff", "weight": "bold", "size": "lg"}]
-        
-        if header_buttons_top: 
-            header_contents.append({"type": "box", "layout": "horizontal", "margin": "sm", "spacing": "xs", "contents": header_buttons_top})
+            if map_url and not hide_default_map: 
+                header_buttons_top.append({"type": "button", "action": {"type": "uri", "label": "🗺️ 地図", "uri": map_url}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
+            
+            if header_buttons_top: 
+                header_contents.append({"type": "box", "layout": "horizontal", "margin": "sm", "spacing": "xs", "contents": header_buttons_top})
             
         custom_button_rows = spot_data.get("custom_button_rows", [])
         
@@ -1953,7 +1952,10 @@ def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_
             else:
                 target_rows = custom_button_rows[1:]  # バブル1（右）は2行目以降
         else:
-            target_rows = custom_button_rows # 1行以下の場合は両方に表示
+            if bubble_index == 0:
+                target_rows = custom_button_rows # 1行以下の場合は左セルに全て表示
+            else:
+                target_rows = [] # 右セルには何も出さない
 
         for row_links in target_rows:
             row_buttons = []
@@ -1964,18 +1966,19 @@ def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_
 
         header_buttons_bottom = []
         if not custom_button_rows:
-            if hp_url:
-                label_text = "🌐 大崎HP" if spot_name == "大崎・赤城" else "🌐 HP"
-                header_buttons_bottom.append({"type": "button", "action": {"type": "uri", "label": label_text, "uri": hp_url}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
-            if hp2_url:
-                label_text2 = "🌐 赤城HP" if spot_name == "大崎・赤城" else "🌐 HP2"
-                header_buttons_bottom.append({"type": "button", "action": {"type": "uri", "label": label_text2, "uri": hp2_url}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
-            
-            if x_url: header_buttons_bottom.append({"type": "button", "action": {"type": "uri", "label": "𝕏", "uri": x_url}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
-            if fb_url: header_buttons_bottom.append({"type": "button", "action": {"type": "uri", "label": "📘 FB", "uri": fb_url}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
-            if insta_url: header_buttons_bottom.append({"type": "button", "action": {"type": "uri", "label": "📷 Insta", "uri": insta_url}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
-            if blog_url: header_buttons_bottom.append({"type": "button", "action": {"type": "uri", "label": "📝 Blog", "uri": blog_url}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
-            if yt_url: header_buttons_bottom.append({"type": "button", "action": {"type": "uri", "label": "▶️ YouTube", "uri": yt_url}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
+            if bubble_index == 0: # 既存のHP等のボタン群も左セルのみに表示
+                if hp_url:
+                    label_text = "🌐 大崎HP" if spot_name == "大崎・赤城" else "🌐 HP"
+                    header_buttons_bottom.append({"type": "button", "action": {"type": "uri", "label": label_text, "uri": hp_url}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
+                if hp2_url:
+                    label_text2 = "🌐 赤城HP" if spot_name == "大崎・赤城" else "🌐 HP2"
+                    header_buttons_bottom.append({"type": "button", "action": {"type": "uri", "label": label_text2, "uri": hp2_url}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
+                
+                if x_url: header_buttons_bottom.append({"type": "button", "action": {"type": "uri", "label": "𝕏", "uri": x_url}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
+                if fb_url: header_buttons_bottom.append({"type": "button", "action": {"type": "uri", "label": "📘 FB", "uri": fb_url}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
+                if insta_url: header_buttons_bottom.append({"type": "button", "action": {"type": "uri", "label": "📷 Insta", "uri": insta_url}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
+                if blog_url: header_buttons_bottom.append({"type": "button", "action": {"type": "uri", "label": "📝 Blog", "uri": blog_url}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
+                if yt_url: header_buttons_bottom.append({"type": "button", "action": {"type": "uri", "label": "▶️ YouTube", "uri": yt_url}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
 
         if header_buttons_bottom: 
             header_contents.append({"type": "box", "layout": "horizontal", "margin": "sm", "spacing": "xs", "contents": header_buttons_bottom})
