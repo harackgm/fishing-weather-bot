@@ -199,7 +199,7 @@ SPOT_WEATHER_DATA = {
         "url": "https://weathernews.jp/onebox/36.388609/139.537247/",
         "tenki_url": "https://tenki.jp/forecast/3/12/4110/9204/1hour.html",
         "hp_url": "http://www.kaga-fa.co.jp/",
-        "x_url": "", "fb_url": "", "insta_url": "https://www.instagram.com/kaga_fishing_area/", "blog_url": "https://ameblo.jp/kaga-fa/", "yt_url": "",
+        "x_url": "", "fb_url": "", "insta_url": "https://ameblo.jp/kaga-fa/", "yt_url": "",
         "search_name": "加賀フィッシングエリア", "tel": "0283-24-1513",
         "aliases": ["加賀", "加賀フィッシングエリア", "加賀FA", "かが"]
     },
@@ -915,22 +915,21 @@ BASS_SPOT_WEATHER_DATA = {
         "custom_button_rows": [
             [
                 {"label": "🌐笹川", "url": "http://sasagawab.xsrv.jp/index555555.htm"},
-                {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E3%83%AC%E3%83%B3%E3%82%BF%E3%83%AB%E3%83%9C%E3%83%BC%E3%83%88%E7%AC%B9%E5%B7%9D+%E7%AC%B9%E5%B7%9D%E3%83%9C%E3%83%BC%E3%83%88/@35.199604,140.071301,17z/data=!4m6!3m5!1s0x6022abc7ec99af2b:0xf3ec8e21fec19bac!8m2!3d35.199604!4d140.071301!16s%2Fg%2F1tfn2w38!18m1!1e1"}
+                {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E3%83%AC%E3%83%B3%E3%82%BF%E3%83%AB%E3%83%9C%E3%83%BC%E3%83%88%E7%AC%B9%E5%B7%9D+%E7%AC%B9%E5%B7%9D%E3%83%9C%E3%83%BC%E3%83%88/@35.199604,140.071301,17z/data=!4m6!3m5!1s0x6022abc7ec99af2b:0xf3ec8e21fec19bac!8m2!3d35.199604!4d140.071301!16s%2Fg%2F1tfn2w38"}
             ],
             [
                 {"label": "🌐すずき", "url": "https://shop-hp.com/suzuki/"},
-                {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E3%83%AC%E3%83%B3%E3%82%BF%E3%83%AB%E3%83%9C%E3%83%BC%E3%83%88%E3%81%99%E3%81%9A%E3%81%8D/@35.1965734,140.0701992,17z/data=!4m6!3m5!1s0x6022abb789c73453:0x7cbbb99574db9fa!8m2!3d35.1965734!4d140.0701992!16s%2Fg%2F1t_wpgq2!18m1!1e1"}
+                {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E3%83%AC%E3%83%B3%E3%82%BF%E3%83%AB%E3%83%9C%E3%83%BC%E3%83%88%E3%81%99%E3%81%9A%E3%81%8D/@35.1965734,140.0701992,17z/data=!4m6!3m5!1s0x6022abb789c73453:0x7cbbb99574db9fa!8m2!3d35.1965734!4d140.0701992!16s%2Fg%2F1t_wpgq2"}
             ],
             [
                 {"label": "🌐もとよし", "url": "https://www.kimitsu-rentalboatmotoyoshi.com/"},
-                {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E3%83%AC%E3%83%B3%E3%82%BF%E3%83%AB%E3%83%9C%E3%83%BC%E3%83%88%E3%82%82%E3%81%A8%E3%82%88%E3%81%97/@35.193371,140.062838,17z/data=!4m6!3m5!1s0x6022abb5ac3b3e55:0xd4e187031199a582!8m2!3d35.193371!4d140.062838!16s%2Fg%2F12hmg6w0f!18m1!1e1"}
+                {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E3%83%AC%E3%83%B3%E3%82%BF%E3%83%AB%E3%83%9C%E3%83%BC%E3%83%88%E3%82%82%E3%81%A8%E3%82%88%E3%81%97/@35.193371,140.062838,17z/data=!4m6!3m5!1s0x6022abb5ac3b3e55:0xd4e187031199a582!8m2!3d35.193371!4d140.062838!16s%2Fg%2F12hmg6w0f"}
             ]
         ],
         "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "",
         "search_name": "片倉ダム", "tel": "",
         "aliases": ["片倉ダム", "笹川湖", "かたくらだむ", "かたくら", "片倉"]
     },
-    # ★三島湖を追加★
     "三島湖": {
         "url": "https://weathernews.jp/onebox/35.211/140.033/",
         "tenki_url": "https://tenki.jp/forecast/3/15/4530/12225/1hour.html",
@@ -939,20 +938,36 @@ BASS_SPOT_WEATHER_DATA = {
         "custom_button_rows": [
             [
                 {"label": "🌐ともえ", "url": "https://tomoeboat.jp/"},
-                {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E3%81%A8%E3%82%82%E3%82%91%E9%87%A3%E8%88%9F%E5%BA%97/@35.2125738,140.032063,17z/data=!4m6!3m5!1s0x6022a9ee4ef4324f:0xfcc38c1093948001!8m2!3d35.2125738!4d140.032063!16s%2Fg%2F1tg15vsm!18m1!1e1"}
+                {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E3%81%A8%E3%82%82%E3%82%91%E9%87%A3%E8%88%9F%E5%BA%97/@35.2125738,140.032063,17z/data=!4m6!3m5!1s0x6022a9ee4ef4324f:0xfcc38c1093948001!8m2!3d35.2125738!4d140.032063!16s%2Fg%2F1tg15vsm"}
             ],
             [
                 {"label": "🌐石井", "url": "https://mishimako-ishii-bass.net/"},
-                {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E7%9F%B3%E4%BA%95%E9%87%A3%E8%88%9F%E5%BA%97/@35.209197,140.03331,17z/data=!4m6!3m5!1s0x6022a9f1763b3519:0x994b241807e038bf!8m2!3d35.209197!4d140.03331!16s%2Fg%2F1tfn2w37!18m1!1e1"}
+                {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E7%9F%B3%E4%BA%95%E9%87%A3%E8%88%9F%E5%BA%97/@35.209197,140.03331,17z/data=!4m6!3m5!1s0x6022a9f1763b3519:0x994b241807e038bf!8m2!3d35.209197!4d140.03331!16s%2Fg%2F1tfn2w37"}
             ],
             [
                 {"label": "🌐ロッヂ", "url": "https://bousou60.net/"},
-                {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E6%88%BF%E7%B7%8F%E3%83%AD%E3%83%83%E3%83%82%E9%87%A3%E3%82%8A%E3%82%BB%E3%83%B3%E3%82%BF%E3%83%BC/@35.2114932,140.0332243,17z/data=!4m6!3m5!1s0x6022a9ee1f03983d:0x517ca52856b81f5a!8m2!3d35.2114932!4d140.0332243!16s%2Fg%2F1ts2_d6_!18m1!1e1"}
+                {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E6%88%BF%E7%B7%8F%E3%83%AD%E3%83%83%E3%83%82%E9%87%A3%E3%82%8A%E3%82%BB%E3%83%B3%E3%82%BF%E3%83%BC/@35.2114932,140.0332243,17z/data=!4m6!3m5!1s0x6022a9ee1f03983d:0x517ca52856b81f5a!8m2!3d35.2114932!4d140.0332243!16s%2Fg%2F1ts2_d6_"}
             ]
         ],
         "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "",
         "search_name": "三島湖", "tel": "",
         "aliases": ["三島湖", "三島ダム", "みしまこ", "みしま", "三島"]
+    },
+    # ★豊英ダムを追加★
+    "豊英ダム": {
+        "url": "https://weathernews.jp/onebox/35.190041/140.015195/",
+        "tenki_url": "https://tenki.jp/forecast/3/15/4530/12225/1hour.html",
+        "hp_url": "", "hp2_url": "",
+        "hide_default_map": True,
+        "custom_button_rows": [
+            [
+                {"label": "🌐豊英", "url": "https://www.bassinheaven.com/toyofusa/toyofusaindex.html"},
+                {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E8%B1%8A%E8%8B%B1%E6%B9%96%E3%81%A4%E3%82%8A%E8%88%9F%E3%82%BB%E3%83%B3%E3%82%BF%E3%83%BC/@35.190041,140.015195,17z/data=!4m6!3m5!1s0x601800a9666e2423:0xb9b78a967c956e!8m2!3d35.190041!4d140.015195!16s%2Fg%2F1tjg_9xs"}
+            ]
+        ],
+        "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "",
+        "search_name": "豊英ダム", "tel": "",
+        "aliases": ["豊英ダム", "豊英湖", "とよふさ", "豊英", "豊栄ダム", "豊栄"]
     }
 }
 
@@ -998,7 +1013,8 @@ BASS_COLOR_GROUPS = [
         "title": "📍 関東（千葉・埼玉）",
         "header_bg": "#2e7d32",
         "sub_groups": [
-            {"bg": "#e8f5e9", "spots": ["亀山湖", "高滝湖", "片倉ダム", "三島湖"]},
+            # ★ グループに豊英ダムを追加 ★
+            {"bg": "#e8f5e9", "spots": ["亀山湖", "高滝湖", "片倉ダム", "三島湖", "豊英ダム"]},
             {"bg": "#e3f2fd", "spots": ["GGD"]}
         ]
     }
@@ -1733,7 +1749,7 @@ def get_cached_weather(spot_name):
         if now - updated_time <= timedelta(hours=1):
             if isinstance(data, dict):
                 weekly = data.get("__weekly__", [])
-                if data.get("_version") != "settings_shortcut_v38": return None
+                if data.get("_version") != "settings_shortcut_v40": return None
                 if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-": return None
             return data
     if not supabase: return None
@@ -1749,7 +1765,7 @@ def get_cached_weather(spot_name):
                         weather_data = row.get('weather_data')
                         if isinstance(weather_data, dict):
                             weekly = weather_data.get("__weekly__", [])
-                            if weather_data.get("_version") != "settings_shortcut_v38": return None
+                            if weather_data.get("_version") != "settings_shortcut_v40": return None
                             if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-": return None
                         MEMORY_CACHE[spot_name] = (weather_data, updated_time)
                         return weather_data
@@ -1761,7 +1777,7 @@ def get_cached_weather(spot_name):
 
 def save_cached_weather(spot_name, weather_data):
     now = datetime.now(timezone.utc)
-    weather_data["_version"] = "settings_shortcut_v38"
+    weather_data["_version"] = "settings_shortcut_v40"
     MEMORY_CACHE[spot_name] = (weather_data, now)
     if not supabase: return
     try:
