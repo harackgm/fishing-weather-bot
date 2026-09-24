@@ -26,18 +26,12 @@ if hasattr(time, 'tzset'):
 
 app = Flask(__name__)
 
-# ==========================================
-# 2. 設定値および安全装置（ガードレール）
-# ==========================================
 LINE_CHANNEL_ACCESS_TOKEN = os.getenv('LINE_CHANNEL_ACCESS_TOKEN', '').strip()
 LINE_CHANNEL_SECRET = os.getenv('LINE_CHANNEL_SECRET', '').strip()
-
 line_bot_api = LineBotApi(LINE_CHANNEL_ACCESS_TOKEN)
 handler = WebhookHandler(LINE_CHANNEL_SECRET)
 
 MAX_FAVORITES = 30
-
-# Supabase接続初期化
 SUPABASE_URL = os.getenv('SUPABASE_URL', '').strip()
 SUPABASE_KEY = os.getenv('SUPABASE_KEY', '').strip()
 
@@ -48,7 +42,6 @@ if SUPABASE_URL and SUPABASE_KEY:
     except Exception as e:
         print(f"[Supabase初期化エラー] {e}")
 
-# 超高速メモリキャッシュ
 MEMORY_CACHE = {}
 
 # ==========================================
@@ -96,8 +89,6 @@ SPOT_WEATHER_DATA = {
         "search_name": "浜名湖フィッシングリゾート", "tel": "053-592-2221",
         "aliases": ["浜名湖", "浜名湖フィッシングリゾート", "浜名湖FR", "はまなこ"]
     },
-
-    # --- 栃木県 ---
     "キング": {
         "url": "https://weathernews.jp/onebox/36.907054/140.078650/",
         "tenki_url": "https://tenki.jp/forecast/3/12/4120/9210/1hour.html",
@@ -199,7 +190,7 @@ SPOT_WEATHER_DATA = {
         "url": "https://weathernews.jp/onebox/36.388609/139.537247/",
         "tenki_url": "https://tenki.jp/forecast/3/12/4110/9204/1hour.html",
         "hp_url": "http://www.kaga-fa.co.jp/",
-        "x_url": "", "fb_url": "", "insta_url": "https://ameblo.jp/kaga-fa/", "yt_url": "",
+        "x_url": "", "fb_url": "", "insta_url": "https://www.instagram.com/kaga_fishing_area/", "blog_url": "https://ameblo.jp/kaga-fa/", "yt_url": "",
         "search_name": "加賀フィッシングエリア", "tel": "0283-24-1513",
         "aliases": ["加賀", "加賀フィッシングエリア", "加賀FA", "かが"]
     },
@@ -275,8 +266,6 @@ SPOT_WEATHER_DATA = {
         "search_name": "名草釣堀", "tel": "0284-36-2480",
         "aliases": ["名草", "名草釣堀", "なぐさ"]
     },
-
-    # --- 千葉県 ---
     "座間": {
         "url": "https://weathernews.jp/onebox/35.843581/140.010676/",
         "tenki_url": "https://tenki.jp/forecast/3/15/4510/12217/1hour.html",
@@ -317,8 +306,6 @@ SPOT_WEATHER_DATA = {
         "search_name": "釣りパラダイス 山武", "tel": "043-445-1216",
         "aliases": ["釣パラダイス", "パラダイス", "釣りパラダイス", "つりぱら"]
     },
-
-    # --- 埼玉県 ---
     "長瀞": {
         "url": "https://weathernews.jp/onebox/36.084376/139.104604/",
         "tenki_url": "https://tenki.jp/forecast/3/14/4330/11362/1hour.html",
@@ -383,8 +370,6 @@ SPOT_WEATHER_DATA = {
         "search_name": "伊古の里フィッシングパーク", "tel": "0493-57-0505",
         "aliases": ["伊古", "伊古の里", "いこのさと", "伊古の里フィッシングパーク"]
     },
-
-    # --- 神奈川県・東京都 ---
     "足柄": {
         "url": "https://weathernews.jp/onebox/35.319275/139.042723/",
         "tenki_url": "https://tenki.jp/forecast/3/17/4620/14217/1hour.html",
@@ -433,8 +418,6 @@ SPOT_WEATHER_DATA = {
         "search_name": "浅川国際マス釣り場", "tel": "042-661-2228",
         "aliases": ["浅川国際", "浅川", "浅川国際マス釣り場", "あさかわ", "あさかわこくさい", "あさこく", "アサコク"]
     },
-
-    # --- 山梨県・長野県 ---
     "鹿留": {
         "url": "https://weathernews.jp/onebox/35.512350/138.887160/",
         "tenki_url": "https://tenki.jp/forecast/3/22/4920/19204/1hour.html",
@@ -475,7 +458,7 @@ SPOT_WEATHER_DATA = {
         "search_name": "ジョイフィールド in Tsugane", "tel": "0551-20-7888",
         "aliases": ["つがね", "ツガネ", "津金", "ジョイフィールド", "じょいふぃーるど", "JF in Tsugane"]
     },
-    "竜华池": {
+    "竜華池": {
         "url": "https://weathernews.jp/onebox/35.681978/138.576164/",
         "tenki_url": "https://tenki.jp/forecast/3/22/4910/19201/1hour.html",
         "hp_url": "https://fishingmarketbear.wixsite.com/ryugaike",
@@ -531,8 +514,6 @@ SPOT_WEATHER_DATA = {
         "search_name": "あずみ野フィッシングセンター", "tel": "0263-82-8280",
         "aliases": ["あずみ野", "あずみ野FC", "あずみの"]
     },
-
-    # --- 群馬県 ---
     "川場": {
         "url": "https://weathernews.jp/onebox/36.690767/139.121662/",
         "tenki_url": "https://tenki.jp/forecast/3/13/4220/10444/1hour.html",
@@ -660,8 +641,6 @@ SPOT_WEATHER_DATA = {
         "search_name": "榛名高原つり堀センター", "tel": "027-374-2228",
         "aliases": ["榛名", "榛名高原", "はるな"]
     },
-
-    # --- 茨城県 ---
     "水戸南": {
         "url": "https://weathernews.jp/onebox/36.326377/140.501362/",
         "tenki_url": "https://tenki.jp/forecast/3/11/4020/8230/1hour.html",
@@ -734,8 +713,6 @@ SPOT_WEATHER_DATA = {
         "search_name": "ミッドクリークフィッシングエリア", "tel": "0299-42-4578",
         "aliases": ["ミッドクリーク", "みっどくりーく"]
     },
-
-    # --- 東北・東海・関西 ---
     "Lost Lures": {
         "url": "https://weathernews.jp/onebox/37.081688/139.680305/",
         "tenki_url": "https://tenki.jp/forecast/2/10/3630/7368/1hour.html",
@@ -891,7 +868,7 @@ BASS_SPOT_WEATHER_DATA = {
         "custom_button_rows": [
             [
                 {"label": "🌐ボート", "url": "http://www.takatakiko.jp/"},
-                {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E9%AB%98%E6%BB%9D%E6%B9%96%E8%A6%B3%E5%85%89%E4%BC%81%E6%A5%AD%E7%B5%84%E5%90%88/@35.3508961,140.1592915,17z/data=!3m1!4b1!4m6!3m5!1s0x6022a5160fd78bad:0xeaa9dddefc1dab6!8m2!3d35.3508918!4d140.1618664"}
+                {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E9%AB%98%E6%BB%9D%E6%B9%96%E8%A6%B3%E5%85%89%E4%BC%81%E6%A5%AD%E7%B5%84%E5%90%88/data=!4m2!3m1!1s0x0:0xeaa9dddefc1dab6?sa=X&ved=1t:2428&ictx=111"}
             ]
         ],
         "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "",
@@ -1526,13 +1503,9 @@ def move_favorite_spot(user_id, spot_name, direction, mode="trout"):
     except Exception as e:
         return False, f"移動失敗: DB設定をご確認ください。詳細:{e}"
 
-# ==========================================
-# ★ 週間天気データを取得する高精度API & tenki.jp精密ロジック ★
-# ==========================================
 def extract_lat_lon(url):
     m = re.search(r'onebox/([0-9.]+)/([0-9.]+)', url)
-    if m:
-        return m.group(1), m.group(2)
+    if m: return m.group(1), m.group(2)
     return None, None
 
 def fetch_weekly_data_from_api(lat, lon, raw_exclude_dates):
@@ -1551,16 +1524,11 @@ def fetch_weekly_data_from_api(lat, lon, raw_exclude_dates):
         
         weekly_data = []
         now_jst_date = datetime.now(timezone(timedelta(hours=9))).date()
-        
-        last_wn_date = None
-        if raw_exclude_dates:
-            last_wn_date = guess_date_from_string(raw_exclude_dates[-1], now_jst_date)
+        last_wn_date = guess_date_from_string(raw_exclude_dates[-1], now_jst_date) if raw_exclude_dates else None
 
         for i in range(min(len(times), 14)):
             dt = datetime.strptime(times[i], "%Y-%m-%d").date()
-            
-            if last_wn_date and dt <= last_wn_date:
-                continue
+            if last_wn_date and dt <= last_wn_date: continue
                 
             w_str = ["(月)", "(火)", "(水)", "(木)", "(金)", "(土)", "(日)"][dt.weekday()]
             date_label = f"{dt.day}{w_str}"
@@ -1575,17 +1543,8 @@ def fetch_weekly_data_from_api(lat, lon, raw_exclude_dates):
             t_min = str(round(temp_min[i])) if i < len(temp_min) and temp_min[i] is not None else "-"
             r_prob = f"{rain_prob[i]}%" if i < len(rain_prob) and rain_prob[i] != "-" else "-"
             
-            weekly_data.append({
-                "date": date_label,
-                "img_url": img_url,
-                "temp_max": t_max,
-                "temp_min": t_min,
-                "rain_prob": r_prob
-            })
-            
-            if len(weekly_data) >= 8:
-                break
-                
+            weekly_data.append({"date": date_label, "img_url": img_url, "temp_max": t_max, "temp_min": t_min, "rain_prob": r_prob})
+            if len(weekly_data) >= 8: break
         return weekly_data
     except Exception as e:
         print(f"[Open-Meteo API Error] {e}")
@@ -1600,69 +1559,43 @@ def fetch_weekly_data_from_tenki(tenki_url, raw_exclude_dates):
         
         weekly_data = []
         now_jst_date = datetime.now(timezone(timedelta(hours=9))).date()
-        
-        last_wn_date = None
-        if raw_exclude_dates:
-            last_wn_date = guess_date_from_string(raw_exclude_dates[-1], now_jst_date)
+        last_wn_date = guess_date_from_string(raw_exclude_dates[-1], now_jst_date) if raw_exclude_dates else None
             
         elems = soup.select('.forecast10days-actab, .forecast14days-actab')
-        
         for elem in elems:
             days_elem = elem.find('div', class_='days')
             forecast_elem = elem.find('div', class_='forecast')
             temp_elem = elem.find('div', class_='temp')
             prob_elem = elem.find('div', class_='prob-precip')
             
-            if not (days_elem and temp_elem):
-                continue
-                
+            if not (days_elem and temp_elem): continue
             raw_days = days_elem.get_text(strip=True) 
-            
             tenki_date = guess_date_from_string(raw_days, now_jst_date)
-            if last_wn_date and tenki_date <= last_wn_date:
-                continue
+            if last_wn_date and tenki_date <= last_wn_date: continue
 
             m = re.search(r'(\d{1,2})[月/](\d{1,2})日?\((.+?)\)', raw_days)
             if m:
-                day_num = int(m.group(2))
-                youbi = m.group(3)
-                date_label = f"{day_num}({youbi})"
+                date_label = f"{m.group(2)}({m.group(3)})"
             else:
                 date_label = raw_days
                 
             high_elem = temp_elem.find('span', class_='high-temp')
             low_elem = temp_elem.find('span', class_='low-temp')
-            
             t_max = high_elem.get_text(strip=True).replace('℃', '').strip() if high_elem else "-"
             t_min = low_elem.get_text(strip=True).replace('℃', '').strip() if low_elem else "-"
-            
             r_prob = prob_elem.get_text(strip=True) if prob_elem else "-"
             
             img_tag = forecast_elem.find('img') if forecast_elem else None
             img_src = img_tag['src'] if img_tag and 'src' in img_tag.attrs else ""
             
-            if '01' in img_src or '02' in img_src or '100' in img_src:
-                final_img = "https://gvs.weathernews.jp/onebox/img/wxicon/100.png"
-            elif '08' in img_src or '09' in img_src or '12' in img_src or '200' in img_src:
-                final_img = "https://gvs.weathernews.jp/onebox/img/wxicon/200.png"
-            elif '雨' in img_src or 'rain' in img_src or '300' in img_src or '20' in img_src or '46' in img_src:
-                final_img = "https://gvs.weathernews.jp/onebox/img/wxicon/300.png"
-            elif 'snow' in img_src or '400' in img_src:
-                final_img = "https://gvs.weathernews.jp/onebox/img/wxicon/400.png"
-            else:
-                final_img = "https://gvs.weathernews.jp/onebox/img/wxicon/200.png"
+            if '01' in img_src or '02' in img_src or '100' in img_src: final_img = "https://gvs.weathernews.jp/onebox/img/wxicon/100.png"
+            elif '08' in img_src or '09' in img_src or '12' in img_src or '200' in img_src: final_img = "https://gvs.weathernews.jp/onebox/img/wxicon/200.png"
+            elif '雨' in img_src or 'rain' in img_src or '300' in img_src or '20' in img_src or '46' in img_src: final_img = "https://gvs.weathernews.jp/onebox/img/wxicon/300.png"
+            elif 'snow' in img_src or '400' in img_src: final_img = "https://gvs.weathernews.jp/onebox/img/wxicon/400.png"
+            else: final_img = "https://gvs.weathernews.jp/onebox/img/wxicon/200.png"
                 
-            weekly_data.append({
-                "date": date_label,
-                "img_url": final_img,
-                "temp_max": t_max,
-                "temp_min": t_min,
-                "rain_prob": r_prob
-            })
-            
-            if len(weekly_data) >= 8:
-                break
-                
+            weekly_data.append({"date": date_label, "img_url": final_img, "temp_max": t_max, "temp_min": t_min, "rain_prob": r_prob})
+            if len(weekly_data) >= 8: break
         return weekly_data
     except Exception as e:
         print(f"[tenki.jp Extract Error] {e}")
@@ -1676,10 +1609,7 @@ def fetch_spot_1hour_data(url, tenki_url=None):
         soup = BeautifulSoup(response.text, 'html.parser')
         
         weather_by_date = {}
-
-        flick_list = soup.find('div', id='flick_list_1hour')
-        if not flick_list:
-            flick_list = soup.find('div', id='flick_list_3hour')
+        flick_list = soup.find('div', id='flick_list_1hour') or soup.find('div', id='flick_list_3hour')
             
         if flick_list:
             groups = flick_list.find_all('div', class_='group')
@@ -1717,20 +1647,15 @@ def fetch_spot_1hour_data(url, tenki_url=None):
 
                     daily_list.append({"time": hour, "img_url": img_url, "temp": temp, "rain": rain, "wind": wind})
                 
-                if daily_list: 
-                    weather_by_date[date_str] = daily_list
+                if daily_list: weather_by_date[date_str] = daily_list
                 if len(weather_by_date) >= 4: break
 
         raw_exclude_dates = list(weather_by_date.keys())
         weekly_data = []
-        
-        if tenki_url:
-            weekly_data = fetch_weekly_data_from_tenki(tenki_url, raw_exclude_dates)
-            
+        if tenki_url: weekly_data = fetch_weekly_data_from_tenki(tenki_url, raw_exclude_dates)
         if not weekly_data:
             lat, lon = extract_lat_lon(url)
-            if lat and lon:
-                weekly_data = fetch_weekly_data_from_api(lat, lon, raw_exclude_dates)
+            if lat and lon: weekly_data = fetch_weekly_data_from_api(lat, lon, raw_exclude_dates)
 
         if not weekly_data or len(weekly_data) < 4:
             now_dt = datetime.now(timezone(timedelta(hours=9)))
@@ -1738,43 +1663,29 @@ def fetch_spot_1hour_data(url, tenki_url=None):
             if raw_exclude_dates:
                 last_wn = guess_date_from_string(raw_exclude_dates[-1], now_dt.date())
                 start_date = last_wn + timedelta(days=1)
-                
             weekly_data = []
             for i in range(8):
                 day_dt = start_date + timedelta(days=i)
                 w_str = ["(月)", "(火)", "(水)", "(木)", "(金)", "(土)", "(日)"][day_dt.weekday()]
-                date_label = f"{day_dt.day}{w_str}"
-                weekly_data.append({
-                    "date": date_label,
-                    "img_url": "https://gvs.weathernews.jp/onebox/img/wxicon/200.png",
-                    "temp_max": "-",
-                    "temp_min": "-",
-                    "rain_prob": "-"
-                })
+                weekly_data.append({"date": f"{day_dt.day}{w_str}", "img_url": "https://gvs.weathernews.jp/onebox/img/wxicon/200.png", "temp_max": "-", "temp_min": "-", "rain_prob": "-"})
 
         weather_by_date["__weekly__"] = weekly_data
-            
         return weather_by_date
-    except requests.exceptions.Timeout:
-        return None
+    except requests.exceptions.Timeout: return None
     except Exception as e:
         print(f"[スクレイピング＆API エラー] {e}")
         return None
 
 def get_cached_weather(spot_name):
     now = datetime.now(timezone.utc)
-    
     if spot_name in MEMORY_CACHE:
         data, updated_time = MEMORY_CACHE[spot_name]
         if now - updated_time <= timedelta(hours=1):
             if isinstance(data, dict):
                 weekly = data.get("__weekly__", [])
-                if data.get("_version") != "settings_shortcut_v33":
-                    return None
-                if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-":
-                    return None
+                if data.get("_version") != "settings_shortcut_v34": return None
+                if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-": return None
             return data
-            
     if not supabase: return None
     try:
         res = supabase.table('weather_cache').select('*').eq('spot_name', spot_name).execute()
@@ -1788,14 +1699,11 @@ def get_cached_weather(spot_name):
                         weather_data = row.get('weather_data')
                         if isinstance(weather_data, dict):
                             weekly = weather_data.get("__weekly__", [])
-                            if weather_data.get("_version") != "settings_shortcut_v33":
-                                return None
-                            if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-":
-                                return None
+                            if weather_data.get("_version") != "settings_shortcut_v34": return None
+                            if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-": return None
                         MEMORY_CACHE[spot_name] = (weather_data, updated_time)
                         return weather_data
-                except:
-                    pass
+                except: pass
         return None
     except Exception as e:
         print(f"[Cache GET Error] {e}")
@@ -1803,25 +1711,17 @@ def get_cached_weather(spot_name):
 
 def save_cached_weather(spot_name, weather_data):
     now = datetime.now(timezone.utc)
-    weather_data["_version"] = "settings_shortcut_v33"
+    weather_data["_version"] = "settings_shortcut_v34"
     MEMORY_CACHE[spot_name] = (weather_data, now)
-    
     if not supabase: return
     try:
-        supabase.table('weather_cache').upsert({
-            'spot_name': spot_name,
-            'weather_data': weather_data,
-            'updated_at': now.isoformat()
-        }).execute()
-    except Exception as e:
-        print(f"[Cache SAVE Error] {e}")
+        supabase.table('weather_cache').upsert({'spot_name': spot_name, 'weather_data': weather_data, 'updated_at': now.isoformat()}).execute()
+    except Exception as e: print(f"[Cache SAVE Error] {e}")
 
 def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_url="", tel="", x_url="", fb_url="", insta_url="", blog_url="", yt_url="", is_favorite=False):
     weekly_data = weather_data.get("__weekly__", []) if isinstance(weather_data, dict) else []
     dates = [d for d in weather_data.keys() if d != "__weekly__" and d != "_version"]
-    
     weather_by_date = weather_data
-
     jst = timezone(timedelta(hours=9))
     now_jst_date = datetime.now(jst).date()
 
@@ -1840,19 +1740,14 @@ def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_
                 header_color = group["header_bg"]
                 found = True
                 break
-        if found:
-            break
+        if found: break
 
     def create_day_column(date_str):
-        if not date_str:
-            return {"type": "box", "layout": "vertical", "flex": 1, "contents": [{"type": "text", "text": "-", "color": "#cccccc", "align": "center", "size": "xs"}]}
-        
+        if not date_str: return {"type": "box", "layout": "vertical", "flex": 1, "contents": [{"type": "text", "text": "-", "color": "#cccccc", "align": "center", "size": "xs"}]}
         daily_data = weather_by_date[date_str]
-
         target_date = guess_date_from_string(date_str, now_jst_date)
         is_hol = jpholiday.is_holiday(target_date)
         is_holiday_flag = is_hol or "(祝)" in date_str
-
         display_date_str = date_str
         header_bg_color = "#f5f5f5"
         header_text_color = "#333333"
@@ -1860,8 +1755,7 @@ def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_
         if is_holiday_flag or "(日)" in date_str:
             header_bg_color = "#ffe6e6"
             header_text_color = "#cc0000"
-            if is_holiday_flag and "🇯🇵" not in display_date_str:
-                display_date_str = f"🇯🇵 {date_str}"
+            if is_holiday_flag and "🇯🇵" not in display_date_str: display_date_str = f"🇯🇵 {date_str}"
         elif "(土)" in date_str:
             header_bg_color = "#e6f2ff"
             header_text_color = "#0066cc"
@@ -1886,7 +1780,6 @@ def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_
             w_val = data.get('wind', '').replace("m/s", "").replace("m", "").strip() or "-"
             time_str = data.get('time', '').replace("時", "").strip() or "-"
             img_url = data.get('img_url', '') or "https://gvs.weathernews.jp/onebox/img/wxicon/200.png"
-            
             temp_color = "#ff0000" if t_val.isdigit() and int(t_val) >= 25 else "#333333"
             rain_color = "#0000ff" if r_val.isdigit() and int(r_val) > 0 else "#333333"
             if r_val == "-": rain_color = "#333333"
@@ -1916,18 +1809,13 @@ def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_
         for w in slice_data:
             rain_val = str(w.get("rain_prob", "0")).replace("%", "").strip()
             rain_color = "#0000ff" if rain_val.isdigit() and int(rain_val) > 0 else "#555555"
-            
             date_str = str(w.get("date", "-"))
             date_color = "#333333" 
-            
             if date_str != "-":
                 target_date = guess_date_from_string(date_str, now_jst_date)
                 is_hol = jpholiday.is_holiday(target_date)
-                
-                if is_hol or "(日)" in date_str or "(祝)" in date_str:
-                    date_color = "#cc0000"
-                elif "(土)" in date_str:
-                    date_color = "#0066cc"
+                if is_hol or "(日)" in date_str or "(祝)" in date_str: date_color = "#cc0000"
+                elif "(土)" in date_str: date_color = "#0066cc"
 
             cols.append({
                 "type": "box", "layout": "vertical", "flex": 1, "alignItems": "center", "spacing": "xs",
@@ -1938,45 +1826,30 @@ def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_
                     {"type": "text", "text": f"{w.get('rain_prob', '-')}", "size": "xxs", "color": rain_color, "weight": "bold", "align": "center"}
                 ]
             })
-        return {
-            "type": "box", "layout": "horizontal", "margin": "md", "spacing": "xs",
-            "backgroundColor": "#f4f4f4", "paddingAll": "8px", "cornerRadius": "sm",
-            "contents": cols
-        }
+        return {"type": "box", "layout": "horizontal", "margin": "md", "spacing": "xs", "backgroundColor": "#f4f4f4", "paddingAll": "8px", "cornerRadius": "sm", "contents": cols}
 
-    # ★ 各セルごとにヘッダーボタン群を構築 ★
     def create_header_block(bubble_index):
         header_contents = [{"type": "text", "text": f"📍 {spot_name}", "color": "#ffffff", "weight": "bold", "size": "lg"}]
         all_rows = []
         
-        # 1. 登録/解除 ＆ デフォルト地図
         top_buttons = []
-        if is_favorite:
-            top_buttons.append({"type": "button", "action": {"type": "postback", "label": "🗑️ 解除", "data": f"action=fav_del_confirm_and_list&spot={spot_name}"}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs", "color": "#ffcccc"})
-        else:
-            top_buttons.append({"type": "button", "action": {"type": "postback", "label": "⭐️ 登録", "data": f"action=fav_add_and_list&spot={spot_name}"}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs", "color": "#fff59d"})
+        if is_favorite: top_buttons.append({"type": "button", "action": {"type": "postback", "label": "🗑️ 解除", "data": f"action=fav_del_confirm_and_list&spot={spot_name}"}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs", "color": "#ffcccc"})
+        else: top_buttons.append({"type": "button", "action": {"type": "postback", "label": "⭐️ 登録", "data": f"action=fav_add_and_list&spot={spot_name}"}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs", "color": "#fff59d"})
 
         spot_data = ALL_SPOT_DATA.get(spot_name, {})
         hide_default_map = spot_data.get("hide_default_map", False)
 
-        if map_url and not hide_default_map: 
-            top_buttons.append({"type": "button", "action": {"type": "uri", "label": "🗺️ 地図", "uri": map_url}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
-        elif len(top_buttons) == 1:
-            # 透明ダミーボタンを入れて解除ボタンをハーフサイズに
-            top_buttons.append({"type": "box", "layout": "vertical", "flex": 1, "margin": "xs", "contents": []})
+        if map_url and not hide_default_map: top_buttons.append({"type": "button", "action": {"type": "uri", "label": "🗺️ 地図", "uri": map_url}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
+        elif len(top_buttons) == 1: top_buttons.append({"type": "box", "layout": "vertical", "flex": 1, "margin": "xs", "contents": []})
             
         all_rows.append(top_buttons)
 
-        # 2. ボート屋等のカスタムリンク
         custom_button_rows = spot_data.get("custom_button_rows", [])
         for row_links in custom_button_rows:
             row_buttons = []
-            for link in row_links:
-                row_buttons.append({"type": "button", "action": {"type": "uri", "label": link["label"], "uri": link["url"]}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
-            if row_buttons:
-                all_rows.append(row_buttons)
+            for link in row_links: row_buttons.append({"type": "button", "action": {"type": "uri", "label": link["label"], "uri": link["url"]}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
+            if row_buttons: all_rows.append(row_buttons)
 
-        # 3. 旧仕様のHP等リンク
         header_buttons_bottom = []
         if not custom_button_rows:
             if hp_url:
@@ -1985,17 +1858,14 @@ def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_
             if hp2_url:
                 label_text2 = "🌐 赤城HP" if spot_name == "大崎・赤城" else "🌐 HP2"
                 header_buttons_bottom.append({"type": "button", "action": {"type": "uri", "label": label_text2, "uri": hp2_url}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
-            
             if x_url: header_buttons_bottom.append({"type": "button", "action": {"type": "uri", "label": "𝕏", "uri": x_url}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
             if fb_url: header_buttons_bottom.append({"type": "button", "action": {"type": "uri", "label": "📘 FB", "uri": fb_url}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
             if insta_url: header_buttons_bottom.append({"type": "button", "action": {"type": "uri", "label": "📷 Insta", "uri": insta_url}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
             if blog_url: header_buttons_bottom.append({"type": "button", "action": {"type": "uri", "label": "📝 Blog", "uri": blog_url}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
             if yt_url: header_buttons_bottom.append({"type": "button", "action": {"type": "uri", "label": "▶️ YouTube", "uri": yt_url}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
             
-        if header_buttons_bottom:
-            all_rows.append(header_buttons_bottom)
+        if header_buttons_bottom: all_rows.append(header_buttons_bottom)
 
-        # 4. ボタン行の左右分散と高さ合わせのロジック
         if len(all_rows) > 2:
             mid = (len(all_rows) + 1) // 2
             left_rows = all_rows[:mid]
@@ -2007,100 +1877,56 @@ def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_
         max_rows = max(len(left_rows), len(right_rows))
         target_rows = left_rows if bubble_index == 0 else right_rows
 
-        for row_buttons in target_rows:
-            header_contents.append({"type": "box", "layout": "horizontal", "margin": "sm", "spacing": "xs", "contents": row_buttons})
-
+        for row_buttons in target_rows: header_contents.append({"type": "box", "layout": "horizontal", "margin": "sm", "spacing": "xs", "contents": row_buttons})
+        
         spacer_count = max_rows - len(target_rows)
         for _ in range(spacer_count):
-            spacer = {
-                "type": "box", "layout": "vertical", "margin": "sm", "height": "40px",
-                "contents": [{"type": "filler"}]
-            }
+            spacer = {"type": "box", "layout": "vertical", "margin": "sm", "height": "40px", "contents": [{"type": "filler"}]}
             header_contents.append(spacer)
 
         return {"type": "box", "layout": "vertical", "backgroundColor": header_color, "paddingAll": "10px", "contents": header_contents}
 
-
     weekly_box_1 = create_weekly_box(weekly_data[0:4]) if len(weekly_data) > 0 else None
     weekly_box_2 = create_weekly_box(weekly_data[4:8]) if len(weekly_data) > 4 else None
+    banner_img_url = "https://raw.githubusercontent.com/harackgm/fishing-weather-bot/main/tenkiharackbana.jpg"
 
-    bottom_buttons_1 = [
-        {
-            "type": "box", "layout": "vertical", "flex": 1, "backgroundColor": "#fff59d", "borderWidth": "normal", "borderColor": "#d4af37", "cornerRadius": "md", "paddingAll": "0px",
-            "contents": [{"type": "button", "action": {"type": "postback", "label": "📋 一覧", "data": "action=show_list", "displayText": "📋 一覧"}, "style": "link", "color": "#555555", "height": "sm", "margin": "none"}]
-        }
-    ]
-
+    bottom_buttons_1 = [{"type": "box", "layout": "vertical", "flex": 1, "backgroundColor": "#fff59d", "borderWidth": "normal", "borderColor": "#d4af37", "cornerRadius": "md", "paddingAll": "0px", "contents": [{"type": "button", "action": {"type": "postback", "label": "📋 一覧", "data": "action=show_list", "displayText": "📋 一覧"}, "style": "link", "color": "#555555", "height": "sm", "margin": "none"}]}]
     bottom_buttons_2 = []
     if tel:
         clean_tel = tel.replace('-', '').strip()
-        bottom_buttons_2.append({
-            "type": "box", "layout": "vertical", "flex": 2, "backgroundColor": "#f8f9fa", "borderWidth": "normal", "borderColor": "#e0e0e0", "cornerRadius": "md", "paddingAll": "0px",
-            "contents": [{"type": "button", "action": {"type": "uri", "label": "📞 電話", "uri": f"tel:{clean_tel}"}, "style": "link", "color": "#555555", "height": "sm", "margin": "none"}]
-        })
-    
-    bottom_buttons_2.append({
-        "type": "box", "layout": "vertical", "flex": 3 if tel else 1, "backgroundColor": "#fff59d", "borderWidth": "normal", "borderColor": "#d4af37", "cornerRadius": "md", "paddingAll": "0px",
-        "contents": [{"type": "button", "action": {"type": "postback", "label": "📋 一覧", "data": "action=show_list", "displayText": "📋 一覧"}, "style": "link", "color": "#555555", "height": "sm", "margin": "none"}]
-    })
-
-    banner_img_url = "https://raw.githubusercontent.com/harackgm/fishing-weather-bot/main/tenkiharackbana.jpg"
+        bottom_buttons_2.append({"type": "box", "layout": "vertical", "flex": 2, "backgroundColor": "#f8f9fa", "borderWidth": "normal", "borderColor": "#e0e0e0", "cornerRadius": "md", "paddingAll": "0px", "contents": [{"type": "button", "action": {"type": "uri", "label": "📞 電話", "uri": f"tel:{clean_tel}"}, "style": "link", "color": "#555555", "height": "sm", "margin": "none"}]})
+    bottom_buttons_2.append({"type": "box", "layout": "vertical", "flex": 3 if tel else 1, "backgroundColor": "#fff59d", "borderWidth": "normal", "borderColor": "#d4af37", "cornerRadius": "md", "paddingAll": "0px", "contents": [{"type": "button", "action": {"type": "postback", "label": "📋 一覧", "data": "action=show_list", "displayText": "📋 一覧"}, "style": "link", "color": "#555555", "height": "sm", "margin": "none"}]})
 
     bottom_block_contents_1 = []
     if weekly_box_1:
         bottom_block_contents_1.append({"type": "separator", "margin": "md"})
         bottom_block_contents_1.append(weekly_box_1)
-        
-    bottom_block_contents_1.extend([
-        {"type": "separator", "margin": "md"},
-        {"type": "image", "url": banner_img_url, "size": "full", "aspectRatio": "3:1", "aspectMode": "cover", "margin": "md"},
-        {"type": "separator", "margin": "md"},
-        {"type": "box", "layout": "horizontal", "margin": "sm", "spacing": "sm", "contents": bottom_buttons_1}
-    ])
+    bottom_block_contents_1.extend([{"type": "separator", "margin": "md"}, {"type": "image", "url": banner_img_url, "size": "full", "aspectRatio": "3:1", "aspectMode": "cover", "margin": "md"}, {"type": "separator", "margin": "md"}, {"type": "box", "layout": "horizontal", "margin": "sm", "spacing": "sm", "contents": bottom_buttons_1}])
 
     bottom_block_contents_2 = []
     if weekly_box_2:
         bottom_block_contents_2.append({"type": "separator", "margin": "md"})
         bottom_block_contents_2.append(weekly_box_2)
-        
-    bottom_block_contents_2.extend([
-        {"type": "separator", "margin": "md"},
-        {"type": "image", "url": banner_img_url, "size": "full", "aspectRatio": "3:1", "aspectMode": "cover", "margin": "md"},
-        {"type": "separator", "margin": "md"},
-        {"type": "box", "layout": "horizontal", "margin": "sm", "spacing": "sm", "contents": bottom_buttons_2}
-    ])
+    bottom_block_contents_2.extend([{"type": "separator", "margin": "md"}, {"type": "image", "url": banner_img_url, "size": "full", "aspectRatio": "3:1", "aspectMode": "cover", "margin": "md"}, {"type": "separator", "margin": "md"}, {"type": "box", "layout": "horizontal", "margin": "sm", "spacing": "sm", "contents": bottom_buttons_2}])
 
     bubbles = []
-
     if len(dates) > 0:
         day1 = dates[0]
         day2 = dates[1] if len(dates) > 1 else None
         body_contents_1 = [{"type": "box", "layout": "horizontal", "spacing": "sm", "contents": [create_day_column(day1), {"type": "separator"}, create_day_column(day2)]}]
         body_contents_1.extend(bottom_block_contents_1) 
-        bubbles.append({
-            "type": "bubble", "size": "giga", "header": create_header_block(0),
-            "body": {"type": "box", "layout": "vertical", "spacing": "md", "paddingAll": "8px", "contents": body_contents_1}
-        })
-
+        bubbles.append({"type": "bubble", "size": "giga", "header": create_header_block(0), "body": {"type": "box", "layout": "vertical", "spacing": "md", "paddingAll": "8px", "contents": body_contents_1}})
     if len(dates) > 2:
         day3 = dates[2]
         day4 = dates[3] if len(dates) > 3 else None
         body_contents_2 = [{"type": "box", "layout": "horizontal", "spacing": "sm", "contents": [create_day_column(day3), {"type": "separator"}, create_day_column(day4)]}]
         body_contents_2.extend(bottom_block_contents_2) 
-        bubbles.append({
-            "type": "bubble", "size": "giga", "header": create_header_block(1),
-            "body": {"type": "box", "layout": "vertical", "spacing": "md", "paddingAll": "8px", "contents": body_contents_2}
-        })
+        bubbles.append({"type": "bubble", "size": "giga", "header": create_header_block(1), "body": {"type": "box", "layout": "vertical", "spacing": "md", "paddingAll": "8px", "contents": body_contents_2}})
 
     return FlexSendMessage(alt_text=f"{spot_name}の天気予報", contents={"type": "carousel", "contents": bubbles})
 
 @app.route("/", methods=['GET'])
 def top_page():
-    if supabase:
-        try:
-            supabase.table('user_settings').select('user_id').limit(1).execute()
-        except Exception as e:
-            print(f"[Supabase Wakeup Error] {e}")
     return "LINE Reply Bot Server is running!", 200
 
 @app.route("/callback", methods=['POST'])
@@ -2116,39 +1942,32 @@ def handle_message(event):
     try:
         raw_msg = event.message.text.strip()
         user_id = event.source.user_id
-
         source, favorites, fishing_mode = get_user_setting(user_id)
 
         if raw_msg in ["お気に入り1", "お気に入り2"]:
             active_group = COLOR_GROUPS if fishing_mode == "trout" else BASS_COLOR_GROUPS
             active_spots = []
             for group in active_group:
-                for sg in group["sub_groups"]:
-                    active_spots.extend(sg["spots"])
+                for sg in group["sub_groups"]: active_spots.extend(sg["spots"])
                     
             raw_fav_list = [s.strip() for s in favorites.split(',') if s.strip()]
             fav_list = [s for s in raw_fav_list if s in active_spots]
             
             target_spot = None
-            if raw_msg == "お気に入り1" and len(fav_list) > 0:
-                target_spot = fav_list[0]
-            elif raw_msg == "お気に入り2" and len(fav_list) > 1:
-                target_spot = fav_list[1]
+            if raw_msg == "お気に入り1" and len(fav_list) > 0: target_spot = fav_list[0]
+            elif raw_msg == "お気に入り2" and len(fav_list) > 1: target_spot = fav_list[1]
                 
             if target_spot:
                 target_spot_name, target_url, hp_url, hp2_url, map_url, tel, x_url, fb_url, insta_url, blog_url, yt_url, tenki_url = get_spot_details(target_spot)
-                
                 if not target_url:
                     line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"⚠️ 【{target_spot}】のデータが見つかりません。"))
                     return
 
                 is_fav = True
                 weather_data = get_cached_weather(target_spot_name)
-                
                 if not weather_data:
                     weather_data = fetch_spot_1hour_data(target_url, tenki_url)
-                    if weather_data:
-                        save_cached_weather(target_spot_name, weather_data)
+                    if weather_data: save_cached_weather(target_spot_name, weather_data)
 
                 if weather_data:
                     flex_msg = build_grid_flex_message(target_spot_name, weather_data, hp_url, hp2_url, map_url, tel, x_url, fb_url, insta_url, blog_url, yt_url, is_favorite=is_fav)
@@ -2210,24 +2029,15 @@ def handle_message(event):
 
         flex_msg = build_spot_list_carousel_horizontal(user_id=user_id, mode=fishing_mode)
         line_bot_api.reply_message(event.reply_token, flex_msg)
-
-    except LineBotApiError as e:
-        print(f"\n=== LINE API エラー: {e.status_code} ===")
-        print(e.error.message)
-        try: line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ LINE通信エラーが発生しました。"))
-        except Exception: pass
     except Exception as e:
         print("\n=== システムエラー詳細 ===")
         traceback.print_exc()
-        try: line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ 処理中にエラーが発生しました。"))
-        except Exception: pass
 
 @handler.add(PostbackEvent)
 def handle_postback(event):
     try:
         user_id = event.source.user_id
         data_dict = dict(parse_qsl(event.postback.data))
-        
         action = data_dict.get("action")
         spot_name = data_dict.get("spot")
         source, favorites, fishing_mode = get_user_setting(user_id)
@@ -2239,18 +2049,8 @@ def handle_postback(event):
         if action == "switch_mode":
             target_mode = data_dict.get("mode", "trout")
             if supabase:
-                try:
-                    supabase.table('user_settings').upsert({
-                        'user_id': user_id, 
-                        'weather_source': source, 
-                        'favorite_spots': favorites,
-                        'fishing_mode': target_mode
-                    }).execute()
-                except Exception as e:
-                    print(f"モード変更エラー: {e}")
-                    line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ モード切替DBエラー: Supabaseに「fishing_mode」列が正しく追加されているか確認してください。"))
-                    return
-            
+                try: supabase.table('user_settings').upsert({'user_id': user_id, 'weather_source': source, 'favorite_spots': favorites, 'fishing_mode': target_mode}).execute()
+                except: pass
             mode_name = "🐟 ブラックバス" if target_mode == "bass" else "🐟 エリアトラウト"
             flex_msg = build_spot_list_carousel_horizontal(user_id=user_id, mode=target_mode)
             line_bot_api.reply_message(event.reply_token, [TextSendMessage(text=f"{mode_name} モードに切り替えました！"), flex_msg])
@@ -2258,21 +2058,16 @@ def handle_postback(event):
 
         elif action in ["show_top_selector", "show_cell_top_selector", "show_cell_bottom_selector"]:
             fav_list = [s.strip() for s in favorites.split(',') if s.strip()]
-            
             active_group = COLOR_GROUPS if fishing_mode == "trout" else BASS_COLOR_GROUPS
             active_spots = []
             for group in active_group:
                 for sg in group["sub_groups"]: active_spots.extend(sg["spots"])
             filtered_favs = [s for s in fav_list if s in active_spots]
+            if not filtered_favs: return
 
-            if not filtered_favs:
-                line_bot_api.reply_message(event.reply_token, TextSendMessage(text="お気に入りが登録されていません。"))
-                return
-                
             chunk_idx_str = data_dict.get("chunk")
             is_top = (action == "show_top_selector")
             is_cell_top = (action == "show_cell_top_selector")
-            
             target_action = "fav_top" if is_top else ("fav_cell_top" if is_cell_top else "fav_cell_bottom")
             header_text = "🥇 1番目に設定する釣り場を選択" if is_top else ("🔝 枠の先頭へ移動" if is_cell_top else "⏬ 枠の最後尾へ移動")
             bg_color = "#d4af37" if is_top else ("#64b5f6" if is_cell_top else "#78909c")
@@ -2291,11 +2086,7 @@ def handle_postback(event):
                 btns.append({"type": "separator", "margin": "md"})
                 btns.append({"type": "button", "action": {"type": "postback", "label": "🔙 戻る（キャンセル）", "data": "action=show_settings"}, "style": "secondary", "margin": "md", "height": "sm", "color": "#e0e0e0"})
 
-                selector_bubbles.append({
-                    "type": "bubble", "size": "kilo",
-                    "header": {"type": "box", "layout": "vertical", "backgroundColor": bg_color, "paddingAll": "10px", "contents": [{"type": "text", "text": header_text, "color": "#ffffff", "weight": "bold", "size": "sm"}]},
-                    "body": {"type": "box", "layout": "vertical", "paddingAll": "10px", "contents": btns}
-                })
+                selector_bubbles.append({"type": "bubble", "size": "kilo", "header": {"type": "box", "layout": "vertical", "backgroundColor": bg_color, "paddingAll": "10px", "contents": [{"type": "text", "text": header_text, "color": "#ffffff", "weight": "bold", "size": "sm"}]}, "body": {"type": "box", "layout": "vertical", "paddingAll": "10px", "contents": btns}})
             flex_msg = FlexSendMessage(alt_text="移動する釣り場の選択", contents={"type": "carousel", "contents": selector_bubbles})
             line_bot_api.reply_message(event.reply_token, flex_msg)
             return
@@ -2313,10 +2104,7 @@ def handle_postback(event):
 
         elif action == "show_weather":
             target_spot_name, target_url, hp_url, hp2_url, map_url, tel, x_url, fb_url, insta_url, blog_url, yt_url, tenki_url = get_spot_details(spot_name)
-            if not target_url:
-                line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"⚠️ 【{spot_name}】のデータが見つかりません。"))
-                return
-
+            if not target_url: return
             fav_list = [s.strip() for s in favorites.split(',') if s.strip()]
             is_fav = target_spot_name in fav_list
 
@@ -2329,7 +2117,7 @@ def handle_postback(event):
                 flex_msg = build_grid_flex_message(target_spot_name, weather_data, hp_url, hp2_url, map_url, tel, x_url, fb_url, insta_url, blog_url, yt_url, is_favorite=is_fav)
                 line_bot_api.reply_message(event.reply_token, flex_msg)
             else:
-                line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"⚠️ 【{target_spot_name}】の天気データの取得に失敗しました。少し時間をおいてから再度お試しください。"))
+                line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"⚠️ 【{target_spot_name}】の天気データの取得に失敗しました。"))
             return
 
         elif action == "fav_add_and_list":
@@ -2391,16 +2179,9 @@ def handle_postback(event):
             flex_msg = build_settings_flex_message(fav_list, mode=fishing_mode)
             line_bot_api.reply_message(event.reply_token, flex_msg)
             
-    except LineBotApiError as e:
-        print(f"\n=== LINE API エラー: {e.status_code} ===")
-        print(e.error.message)
-        try: line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ LINE通信エラーが発生しました。"))
-        except Exception: pass
     except Exception as e:
         print(f"Postback Error: {e}")
         traceback.print_exc()
-        try: line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ 処理中にシステムエラーが発生しました。"))
-        except Exception: pass
 
 def get_top_favorite_spots(limit=30):
     if not supabase: return []
@@ -2412,16 +2193,11 @@ def get_top_favorite_spots(limit=30):
                 favs = row.get('favorite_spots', '')
                 if not favs: continue
                 spots = [s.strip() for s in favs.split(',') if s.strip()]
-                for s in spots:
-                    spot_counts[s] = spot_counts.get(s, 0) + 1
-        
+                for s in spots: spot_counts[s] = spot_counts.get(s, 0) + 1
         sorted_spots = sorted(spot_counts.items(), key=lambda x: x[1], reverse=True)
         top_spots = [spot for spot, count in sorted_spots[:limit]]
-
         for bass_spot in BASS_SPOT_WEATHER_DATA.keys():
-            if bass_spot not in top_spots:
-                top_spots.append(bass_spot)
-
+            if bass_spot not in top_spots: top_spots.append(bass_spot)
         return top_spots
     except Exception as e:
         print(f"[Top Favs Error] {e}")
@@ -2432,7 +2208,6 @@ def run_background_update():
     try:
         top_spots = get_top_favorite_spots(limit=30)
         if not top_spots: return
-            
         cache_times = {}
         for spot in top_spots:
             res = supabase.table('weather_cache').select('updated_at').eq('spot_name', spot).execute()
@@ -2448,14 +2223,11 @@ def run_background_update():
         for spot_name in target_spots:
             data = ALL_SPOT_DATA.get(spot_name)
             if not data: continue
-            
             url = data["url"]
             tenki_url = convert_to_10days_url(data.get("tenki_url"))
-            
             weather_data = fetch_spot_1hour_data(url, tenki_url)
             if weather_data: save_cached_weather(spot_name, weather_data)
             time.sleep(random.uniform(2.0, 3.5))
-            
     except Exception as e:
         print(f"[Cron Background Error] {e}")
 
