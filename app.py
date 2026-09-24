@@ -1088,7 +1088,7 @@ COLOR_GROUPS = [
         "title": "📍 静岡・神奈川・東京・千葉",
         "header_bg": "#0066cc",
         "sub_groups": [
-            {"bg": "#e6f0fa", "spots": ["東山湖", "す走到", "須川", "アルクス焼津", "浜名湖"]},
+            {"bg": "#e6f0fa", "spots": ["東山湖", "すその", "須川", "アルクス焼津", "浜名湖"]},
             {"bg": "#d4e6f1", "spots": ["足柄", "中津川", "早戸川", "王禅寺", "開成", "浅川国際"]},
             {"bg": "#cce5ff", "spots": ["座間", "ジョイバレー", "ウォルトン", "NOIKE", "釣パラダイス"]}
         ]
@@ -1887,15 +1887,21 @@ def fetch_spot_1hour_data(url, tenki_url=None):
         return None
 
 def get_cached_weather(spot_name):
+    # ★ バス釣り場はキャッシュを取得しない（常にリアルタイム取得）
+    if spot_name in BASS_SPOT_WEATHER_DATA:
+        return None
+        
     now = datetime.now(timezone.utc)
     if spot_name in MEMORY_CACHE:
         data, updated_time = MEMORY_CACHE[spot_name]
+        # ★ キャッシュ寿命を1時間に戻す
         if now - updated_time <= timedelta(hours=1):
             if isinstance(data, dict):
                 weekly = data.get("__weekly__", [])
-                if data.get("_version") != "settings_shortcut_v50": return None
+                if data.get("_version") != "settings_shortcut_v53": return None
                 if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-": return None
             return data
+            
     if not supabase: return None
     try:
         res = supabase.table('weather_cache').select('*').eq('spot_name', spot_name).execute()
@@ -1909,7 +1915,7 @@ def get_cached_weather(spot_name):
                         weather_data = row.get('weather_data')
                         if isinstance(weather_data, dict):
                             weekly = weather_data.get("__weekly__", [])
-                            if weather_data.get("_version") != "settings_shortcut_v50": return None
+                            if weather_data.get("_version") != "settings_shortcut_v53": return None
                             if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-": return None
                         MEMORY_CACHE[spot_name] = (weather_data, updated_time)
                         return weather_data
@@ -1920,8 +1926,12 @@ def get_cached_weather(spot_name):
         return None
 
 def save_cached_weather(spot_name, weather_data):
+    # ★ バス釣り場はキャッシュを保存しない
+    if spot_name in BASS_SPOT_WEATHER_DATA:
+        return
+        
     now = datetime.now(timezone.utc)
-    weather_data["_version"] = "settings_shortcut_v50"
+    weather_data["_version"] = "settings_shortcut_v53"
     MEMORY_CACHE[spot_name] = (weather_data, now)
     if not supabase: return
     try:
@@ -2400,30 +2410,41 @@ def handle_postback(event):
         print(f"Postback Error: {e}")
         traceback.print_exc()
 
-def get_top_favorite_spots(limit=30):
+def get_top_favorite_spots(limit=24):
     if not supabase: return []
     try:
         res = supabase.table('user_settings').select('favorite_spots').execute()
-        spot_counts = {}
+        trout_counts = {}
+        
+        # ★ トラウト用の釣り場リストのみを抽出 ★
+        trout_spots_list = []
+        for g in COLOR_GROUPS:
+            for sg in g["sub_groups"]:
+                trout_spots_list.extend(sg["spots"])
+                
         if res.data:
             for row in res.data:
                 favs = row.get('favorite_spots', '')
                 if not favs: continue
                 spots = [s.strip() for s in favs.split(',') if s.strip()]
-                for s in spots: spot_counts[s] = spot_counts.get(s, 0) + 1
-        sorted_spots = sorted(spot_counts.items(), key=lambda x: x[1], reverse=True)
-        top_spots = [spot for spot, count in sorted_spots[:limit]]
-        for bass_spot in BASS_SPOT_WEATHER_DATA.keys():
-            if bass_spot not in top_spots: top_spots.append(bass_spot)
-        return top_spots
+                for s in spots: 
+                    # ★ トラウト釣り場のみカウントする ★
+                    if s in trout_spots_list:
+                        trout_counts[s] = trout_counts.get(s, 0) + 1
+                        
+        sorted_trout = sorted(trout_counts.items(), key=lambda x: x[1], reverse=True)
+        top_trout = [spot for spot, count in sorted_trout[:limit]]
+        
+        return top_trout
     except Exception as e:
         print(f"[Top Favs Error] {e}")
-        return list(BASS_SPOT_WEATHER_DATA.keys())
+        return []
 
 def run_background_update():
     if not supabase: return
     try:
-        top_spots = get_top_favorite_spots(limit=30)
+        # トラウトの上位24カ所のみを取得
+        top_spots = get_top_favorite_spots(limit=24)
         if not top_spots: return
         cache_times = {}
         for spot in top_spots:
