@@ -199,7 +199,7 @@ SPOT_WEATHER_DATA = {
         "url": "https://weathernews.jp/onebox/36.388609/139.537247/",
         "tenki_url": "https://tenki.jp/forecast/3/12/4110/9204/1hour.html",
         "hp_url": "http://www.kaga-fa.co.jp/",
-        "x_url": "", "fb_url": "", "insta_url": "https://ameblo.jp/kaga-fa/", "yt_url": "",
+        "x_url": "", "fb_url": "", "insta_url": "https://www.instagram.com/kaga_fishing_area/", "blog_url": "https://ameblo.jp/kaga-fa/", "yt_url": "",
         "search_name": "加賀フィッシングエリア", "tel": "0283-24-1513",
         "aliases": ["加賀", "加賀フィッシングエリア", "加賀FA", "かが"]
     },
@@ -891,7 +891,7 @@ BASS_SPOT_WEATHER_DATA = {
         "custom_button_rows": [
             [
                 {"label": "🌐ボート", "url": "http://www.takatakiko.jp/"},
-                {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E9%AB%98%E6%BB%9D%E6%B9%96%E8%A6%B3%E5%85%89%E4%BC%81%E6%A5%AD%E7%B5%84%E5%90%88/@35.3508961,140.1592915,17z/data=!3m1!4b1!4m6!3m5!1s0x6022a5160fd78bad:0xeaa9dddefc1dab6!8m2!3d35.3508918!4d140.1618664"}
+                {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E9%AB%98%E6%BB%9D%E6%B9%96%E8%A6%B3%E5%85%89%E4%BC%81%E6%A5%AD%E7%B5%84%E5%90%88/data=!4m2!3m1!1s0x0:0xeaa9dddefc1dab6?sa=X&ved=1t:2428&ictx=111"}
             ]
         ],
         "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "",
@@ -958,7 +958,6 @@ BASS_SPOT_WEATHER_DATA = {
         "tenki_url": "https://tenki.jp/forecast/3/15/4530/12225/1hour.html",
         "hp_url": "", "hp2_url": "",
         "hide_default_map": True,
-        # ★ 豊英湖へ表示名を変更 ★
         "custom_button_rows": [
             [
                 {"label": "🌐豊英湖", "url": "https://www.bassinheaven.com/toyofusa/toyofusaindex.html"},
@@ -969,24 +968,25 @@ BASS_SPOT_WEATHER_DATA = {
         "search_name": "豊英ダム", "tel": "",
         "aliases": ["豊英ダム", "豊英湖", "とよふさ", "豊英", "豊栄ダム", "豊栄"]
     },
-    # ★ 相模湖を追加 ★
+    # ★相模湖を追加★
     "相模湖": {
         "url": "https://weathernews.jp/onebox/35.6122/139.1567/",
-        "tenki_url": "https://tenki.jp/forecast/3/17/4610/14151/1hour.html",
+        # ★ tenki.jp の地域コードを 4610 から正しい 4620 に修正 ★
+        "tenki_url": "https://tenki.jp/forecast/3/17/4620/14151/1hour.html",
         "hp_url": "", "hp2_url": "",
         "hide_default_map": True,
         "custom_button_rows": [
             [
                 {"label": "🌐日相園", "url": "https://nissoen.com/fishing.html"},
-                {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E6%97%A5%E7%9B%B8%E5%9C%92/@35.6122284,139.1567688,17z/data=!4m9!3m8!1s0x601916e4bc54fcd1:0xaae699bbf6f6a491!5m2!4m1!1i2!8m2!3d35.6122284!4d139.1567688!16s%2Fg%2F1tdy935d!18m1!1e1"}
+                {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E6%97%A5%E7%9B%B8%E5%9C%92/@35.6122284,139.1567688,17z/data=!4m9!3m8!1s0x601916e4bc54fcd1:0xaae699bbf6f6a491!5m2!4m1!1i2!8m2!3d35.6122284!4d139.1567688!16s%2Fg%2F1tdy935d"}
             ],
             [
                 {"label": "🌐小川亭", "url": "https://www.ogawatei.info/"},
-                {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E5%B0%8F%E5%B7%9D%E4%BA%AD%E3%83%9C%E3%83%BC%E3%83%88%E4%B9%97%E3%82%8A%E5%A0%B4/@35.6125584,139.1929263,17z/data=!4m6!3m5!1s0x601917dc454d5fdd:0x96e49dec990ec06d!8m2!3d35.6125584!4d139.1929263!16s%2Fg%2F11ghq01q9k!18m1!1e1"}
+                {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E5%B0%8F%E5%B7%9D%E4%BA%AD%E3%83%9C%E3%83%BC%E3%83%88%E4%B9%97%E3%82%8A%E5%A0%B4/@35.6125584,139.1929263,17z/data=!4m6!3m5!1s0x601917dc454d5fdd:0x96e49dec990ec06d!8m2!3d35.6125584!4d139.1929263!16s%2Fg%2F11ghq01q9k"}
             ],
             [
                 {"label": "🌐柴田", "url": "https://www.shibata-boat.com/"},
-                {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E6%9F%B4%E7%94%B0%E3%83%9C%E3%83%BC%E3%83%88/@35.6147906,139.1714628,17z/data=!4m6!3m5!1s0x60191719f57c043f:0xe8099ba9d0727d8b!8m2!3d35.6147906!4d139.1714628!16s%2Fg%2F1tvrzs4p!18m1!1e1"}
+                {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E6%9F%B4%E7%94%B0%E3%83%9C%E3%83%BC%E3%83%88/@35.6147906,139.1714628,17z/data=!4m6!3m5!1s0x60191719f57c043f:0xe8099ba9d0727d8b!8m2!3d35.6147906!4d139.1714628!16s%2Fg%2F1tvrzs4p"}
             ]
         ],
         "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "",
@@ -1034,12 +1034,12 @@ COLOR_GROUPS = [
 
 BASS_COLOR_GROUPS = [
     {
-        "title": "📍 関東（千葉・埼玉・神奈川）", # ★ 神奈川を追加 ★
+        "title": "📍 関東（千葉・埼玉・神奈川）",
         "header_bg": "#2e7d32",
         "sub_groups": [
             {"bg": "#e8f5e9", "spots": ["亀山湖", "高滝湖", "片倉ダム", "三島湖", "豊英ダム"]},
             {"bg": "#e3f2fd", "spots": ["GGD"]},
-            {"bg": "#f3e5f5", "spots": ["相模湖"]} # ★ 相模湖のサブグループを追加 ★
+            {"bg": "#f3e5f5", "spots": ["相模湖"]}
         ]
     }
 ]
