@@ -35,7 +35,7 @@ LINE_CHANNEL_SECRET = os.getenv('LINE_CHANNEL_SECRET', '').strip()
 line_bot_api = LineBotApi(LINE_CHANNEL_ACCESS_TOKEN)
 handler = WebhookHandler(LINE_CHANNEL_SECRET)
 
-MAX_FAVORITES = 30   # ★お気に入り登録の最大数（30箇所）
+MAX_FAVORITES = 30
 
 # Supabase接続初期化
 SUPABASE_URL = os.getenv('SUPABASE_URL', '').strip()
@@ -51,12 +51,8 @@ if SUPABASE_URL and SUPABASE_KEY:
 # 超高速メモリキャッシュ
 MEMORY_CACHE = {}
 
-# プッシュ通知安全装置設定 (将来用)
-MAX_PUSH_LIMIT = 10  # 一度に通知する最大人数
-TEST_MODE_USER_ID = "" 
-
 # ==========================================
-# 3. 釣り場URL・HP・Googleマップ・電話番号・SNS・表記揺れ辞書・tenki_url
+# 3. 釣り場データ定義（トラウト用 ＆ バス用）
 # ==========================================
 SPOT_WEATHER_DATA = {
     # --- 静岡県 ---
@@ -485,7 +481,8 @@ SPOT_WEATHER_DATA = {
         "hp_url": "https://fishingmarketbear.wixsite.com/ryugaike",
         "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "",
         "search_name": "フィッシングパーク竜華池", "tel": "055-252-0938",
-        "aliases": ["竜華池", "りゅうがいけ"]
+        # ★ここで「竜华池」のゆらぎも追加しています★
+        "aliases": ["竜華池", "りゅうがいけ", "竜华池"]
     },
     "平谷湖": {
         "url": "https://weathernews.jp/onebox/35.332243/137.632213/",
@@ -862,7 +859,6 @@ SPOT_WEATHER_DATA = {
     }
 }
 
-# 各地域カード内での県別ブロック＆色分けデータ
 COLOR_GROUPS = [
     {
         "title": "📍 静岡・神奈川・東京・千葉",
@@ -900,86 +896,83 @@ COLOR_GROUPS = [
     }
 ]
 
+# --- バス釣り用データ定義 ---
+BASS_SPOT_WEATHER_DATA = {
+    # --- 千葉県 ---
+    "亀山湖": {
+        "url": "https://weathernews.jp/onebox/35.23/140.09/",
+        "tenki_url": "https://tenki.jp/leisure/3/15/83/69857/1hour.html",
+        "hp_url": "", "hp2_url": "",
+        "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "",
+        "search_name": "亀山湖", "tel": "",
+        "aliases": ["亀山湖", "亀山ダム", "かめやまこ", "亀山"]
+    }
+}
+
+BASS_COLOR_GROUPS = [
+    {
+        "title": "📍 関東（千葉）",
+        "header_bg": "#2e7d32",
+        "sub_groups": [
+            {"bg": "#e8f5e9", "spots": ["亀山湖"]}
+        ]
+    }
+]
+
+ALL_SPOT_DATA = {**SPOT_WEATHER_DATA, **BASS_SPOT_WEATHER_DATA}
+
 def normalize_name(name_str):
-    if not name_str:
-        return ""
+    if not name_str: return ""
     return unicodedata.normalize('NFKC', name_str).lower()
 
 def clean_url(url_str):
-    if not url_str:
-        return ""
+    if not url_str: return ""
     cleaned = url_str.strip().replace(" ", "").replace("\t", "")
-    if not (cleaned.startswith("http://") or cleaned.startswith("https://")):
-        return ""
-    if "#" in cleaned:
-        cleaned = cleaned.split("#")[0]
+    if not (cleaned.startswith("http://") or cleaned.startswith("https://")): return ""
+    if "#" in cleaned: cleaned = cleaned.split("#")[0]
     return cleaned
 
 def convert_to_10days_url(url_str):
-    if not url_str:
-        return None
+    if not url_str: return None
     cleaned = clean_url(url_str)
-    if '1hour.html' in cleaned:
-        return cleaned.replace('1hour.html', '10days.html')
-    if cleaned.endswith('/'):
-        return cleaned + '10days.html'
+    if '1hour.html' in cleaned: return cleaned.replace('1hour.html', '10days.html')
+    if cleaned.endswith('/'): return cleaned + '10days.html'
     return cleaned
 
 def get_spot_details(spot_key):
-    data = SPOT_WEATHER_DATA.get(spot_key)
-    if not data:
-        return spot_key, None, "", "", "", "", "", "", "", "", "", None
+    data = ALL_SPOT_DATA.get(spot_key)
+    if not data: return spot_key, None, "", "", "", "", "", "", "", "", "", None
     map_url = f"https://www.google.com/maps/search/?api=1&query={quote(data.get('search_name', spot_key))}"
-    
     tenki_10days_url = convert_to_10days_url(data.get("tenki_url"))
-    
     return (
-        spot_key, 
-        data["url"], 
-        clean_url(data.get("hp_url", "")), 
-        clean_url(data.get("hp2_url", "")), 
-        map_url, 
-        data.get("tel", ""),
-        clean_url(data.get("x_url", "")),
-        clean_url(data.get("fb_url", "")),
-        clean_url(data.get("insta_url", "")),
-        clean_url(data.get("blog_url", "")),
-        clean_url(data.get("yt_url", "")),
+        spot_key, data["url"], clean_url(data.get("hp_url", "")), clean_url(data.get("hp2_url", "")), 
+        map_url, data.get("tel", ""), clean_url(data.get("x_url", "")), clean_url(data.get("fb_url", "")),
+        clean_url(data.get("insta_url", "")), clean_url(data.get("blog_url", "")), clean_url(data.get("yt_url", "")),
         tenki_10days_url
     )
 
 def guess_date_from_string(date_str, now_date):
-    if not date_str:
-        return now_date
+    if not date_str: return now_date
     m = re.search(r'(?:(\d{1,2})[月/-])?\s*(\d{1,2})日?', date_str)
-    if not m:
-        return now_date
-    
+    if not m: return now_date
     month_str, day_str = m.group(1), m.group(2)
     day = int(day_str)
     month = int(month_str) if month_str else now_date.month
-    
-    try:
-        target = now_date.replace(month=month, day=day)
-    except ValueError:
-        return now_date
-        
+    try: target = now_date.replace(month=month, day=day)
+    except ValueError: return now_date
     if (now_date - target).days > 15:
         try: target = target.replace(year=now_date.year + 1)
         except ValueError: pass
     elif (target - now_date).days > 15:
         try: target = target.replace(year=now_date.year - 1)
         except ValueError: pass
-            
     return target
 
 def build_delete_confirm_message(spot_name, source):
     execute_action = f"fav_del_execute_and_{source}"
     cancel_action = f"fav_del_cancel_and_{source}"
-    
     bubble = {
-        "type": "bubble",
-        "size": "kilo",
+        "type": "bubble", "size": "kilo",
         "body": {
             "type": "box", "layout": "vertical", "spacing": "md", "paddingAll": "15px",
             "contents": [
@@ -999,13 +992,12 @@ def build_delete_confirm_message(spot_name, source):
 
 def build_delete_all_confirm_message():
     bubble = {
-        "type": "bubble",
-        "size": "kilo",
+        "type": "bubble", "size": "kilo",
         "body": {
             "type": "box", "layout": "vertical", "spacing": "md", "paddingAll": "15px",
             "contents": [
                 {"type": "text", "text": "⚠️ 全て削除の確認", "weight": "bold", "color": "#ff0000", "size": "md"},
-                {"type": "text", "text": "登録されているすべてのお気に入りを削除しますか？\n（この操作は元に戻せません）", "wrap": True, "size": "sm", "color": "#333333"}
+                {"type": "text", "text": "表示中のすべてのお気に入りを削除しますか？\n（この操作は元に戻せません）", "wrap": True, "size": "sm", "color": "#333333"}
             ]
         },
         "footer": {
@@ -1018,52 +1010,58 @@ def build_delete_all_confirm_message():
     }
     return FlexSendMessage(alt_text="全て削除の確認", contents=bubble)
 
-def build_settings_flex_message(fav_list):
-    if not fav_list:
+def build_settings_flex_message(fav_list, mode="trout"):
+    active_group = COLOR_GROUPS if mode == "trout" else BASS_COLOR_GROUPS
+    active_spots = []
+    for group in active_group:
+        for sg in group["sub_groups"]:
+            active_spots.extend(sg["spots"])
+            
+    filtered_favs = [s for s in fav_list if s in active_spots]
+
+    if mode == "trout":
+        switch_btn = {"type": "button", "action": {"type": "postback", "label": "🎣 バスモードへ切替", "data": "action=switch_mode&mode=bass"}, "style": "primary", "color": "#1e88e5", "margin": "md", "height": "sm"}
+        title_text = "⚙️ お気に入り設定 (トラウト)"
+        header_color = "#d4af37"
+    else:
+        switch_btn = {"type": "button", "action": {"type": "postback", "label": "🐟 トラウトモードへ戻る", "data": "action=switch_mode&mode=trout"}, "style": "primary", "color": "#e65100", "margin": "md", "height": "sm"}
+        title_text = "⚙️ お気に入り設定 (バス)"
+        header_color = "#4caf50"
+
+    if not filtered_favs:
         bubble = {
-            "type": "bubble",
-            "size": "mega",
+            "type": "bubble", "size": "mega",
             "header": {
-                "type": "box", "layout": "vertical", "backgroundColor": "#d4af37", "paddingAll": "10px",
-                "contents": [
-                    {"type": "text", "text": "⚙️ お気に入り設定", "color": "#ffffff", "weight": "bold", "size": "md"}
-                ]
+                "type": "box", "layout": "vertical", "backgroundColor": header_color, "paddingAll": "10px",
+                "contents": [{"type": "text", "text": title_text, "color": "#ffffff", "weight": "bold", "size": "md"}]
             },
             "body": {
                 "type": "box", "layout": "vertical", "spacing": "sm", "paddingAll": "10px",
-                "contents": [{
-                    "type": "text",
-                    "text": "現在お気に入りは登録されていません。\n\n釣り場を検索し、天気カード内の「⭐️ 登録」ボタンを押すだけで追加できます！",
-                    "wrap": True, "size": "sm", "color": "#555555"
-                }]
+                "contents": [
+                    switch_btn,
+                    {"type": "separator", "margin": "md"},
+                    {"type": "text", "text": "現在お気に入りは登録されていません。\n\n釣り場を検索し、天気カード内の「⭐️ 登録」ボタンを押すだけで追加できます！", "wrap": True, "size": "sm", "color": "#555555", "margin": "md"}
+                ]
             }
         }
         return FlexSendMessage(alt_text="お気に入り管理パネル", contents=bubble)
 
     bubbles = []
     chunk_size = 10
-    for i in range(0, len(fav_list), chunk_size):
-        chunk = fav_list[i:i + chunk_size]
+    for i in range(0, len(filtered_favs), chunk_size):
+        chunk = filtered_favs[i:i + chunk_size]
         rows = []
         
+        # モード切替ボタンを各カードの先頭に追加
+        rows.append(switch_btn)
+        rows.append({"type": "separator", "margin": "md"})
+        
         rows.append({
-            "type": "box", "layout": "horizontal", "spacing": "xs", "paddingBottom": "10px",
+            "type": "box", "layout": "horizontal", "spacing": "xs", "paddingTop": "10px", "paddingBottom": "10px",
             "contents": [
-                {
-                    "type": "button",
-                    "action": {"type": "postback", "label": "🥇1番", "data": "action=show_top_selector"},
-                    "style": "secondary", "height": "sm", "flex": 1, "color": "#fff9c4"
-                },
-                {
-                    "type": "button",
-                    "action": {"type": "postback", "label": "🔝先頭", "data": f"action=show_cell_top_selector&chunk={i}"},
-                    "style": "secondary", "height": "sm", "flex": 1, "color": "#e3f2fd"
-                },
-                {
-                    "type": "button",
-                    "action": {"type": "postback", "label": "⏬末尾", "data": f"action=show_cell_bottom_selector&chunk={i}"},
-                    "style": "secondary", "height": "sm", "flex": 1, "color": "#eceff1"
-                }
+                {"type": "button", "action": {"type": "postback", "label": "🥇1番", "data": "action=show_top_selector"}, "style": "secondary", "height": "sm", "flex": 1, "color": "#fff9c4"},
+                {"type": "button", "action": {"type": "postback", "label": "🔝先頭", "data": f"action=show_cell_top_selector&chunk={i}"}, "style": "secondary", "height": "sm", "flex": 1, "color": "#e3f2fd"},
+                {"type": "button", "action": {"type": "postback", "label": "⏬末尾", "data": f"action=show_cell_bottom_selector&chunk={i}"}, "style": "secondary", "height": "sm", "flex": 1, "color": "#eceff1"}
             ]
         })
         rows.append({"type": "separator", "margin": "sm"})
@@ -1073,87 +1071,35 @@ def build_settings_flex_message(fav_list):
                 "type": "box", "layout": "horizontal", "margin": "md", "alignItems": "center",
                 "contents": [
                     {"type": "text", "text": f"{spot}", "size": "sm", "weight": "bold", "flex": 4, "color": "#333333", "wrap": True},
-                    {
-                        "type": "button",
-                        "action": {"type": "postback", "label": "⬆️", "data": f"action=fav_up&spot={spot}"},
-                        "style": "secondary", "flex": 2, "margin": "xs"
-                    },
-                    {
-                        "type": "button",
-                        "action": {"type": "postback", "label": "⬇️", "data": f"action=fav_down&spot={spot}"},
-                        "style": "secondary", "flex": 2, "margin": "xs"
-                    },
-                    {
-                        "type": "button",
-                        "action": {"type": "postback", "label": "🗑️", "data": f"action=fav_del_confirm_and_settings&spot={spot}"},
-                        "style": "secondary", "color": "#ffe6e6", "flex": 2, "margin": "xs"
-                    }
+                    {"type": "button", "action": {"type": "postback", "label": "⬆️", "data": f"action=fav_up&spot={spot}"}, "style": "secondary", "flex": 2, "margin": "xs"},
+                    {"type": "button", "action": {"type": "postback", "label": "⬇️", "data": f"action=fav_down&spot={spot}"}, "style": "secondary", "flex": 2, "margin": "xs"},
+                    {"type": "button", "action": {"type": "postback", "label": "🗑️", "data": f"action=fav_del_confirm_and_settings&spot={spot}"}, "style": "secondary", "color": "#ffe6e6", "flex": 2, "margin": "xs"}
                 ]
             })
 
         rows.append({"type": "separator", "margin": "md"})
-        
         rows.append({
-            "type": "box",
-            "layout": "horizontal",
-            "margin": "md",
-            "spacing": "sm",
+            "type": "box", "layout": "horizontal", "margin": "md", "spacing": "sm",
             "contents": [
                 {
-                    "type": "box",
-                    "layout": "vertical",
-                    "flex": 1,
-                    "backgroundColor": "#e53935",
-                    "borderWidth": "normal",
-                    "borderColor": "#e53935",
-                    "cornerRadius": "md",
-                    "paddingAll": "none",
-                    "contents": [
-                        {
-                            "type": "button",
-                            "action": {"type": "postback", "label": "🗑️ 全て削除", "data": "action=fav_del_all_confirm"},
-                            "style": "link",
-                            "color": "#ffffff",
-                            "height": "sm",
-                            "margin": "none"
-                        }
-                    ]
+                    "type": "box", "layout": "vertical", "flex": 1, "backgroundColor": "#e53935", "borderWidth": "normal", "borderColor": "#e53935", "cornerRadius": "md", "paddingAll": "none",
+                    "contents": [{"type": "button", "action": {"type": "postback", "label": "🗑️ 全て削除", "data": "action=fav_del_all_confirm"}, "style": "link", "color": "#ffffff", "height": "sm", "margin": "none"}]
                 },
                 {
-                    "type": "box",
-                    "layout": "vertical",
-                    "flex": 1,
-                    "backgroundColor": "#fff59d",
-                    "borderWidth": "normal",
-                    "borderColor": "#d4af37",
-                    "cornerRadius": "md",
-                    "paddingAll": "none",
-                    "contents": [
-                        {
-                            "type": "button",
-                            "action": {"type": "postback", "label": "📋 一覧", "data": "action=show_list", "displayText": "📋 一覧"},
-                            "style": "link",
-                            "color": "#555555",
-                            "height": "sm",
-                            "margin": "none"
-                        }
-                    ]
+                    "type": "box", "layout": "vertical", "flex": 1, "backgroundColor": "#fff59d", "borderWidth": "normal", "borderColor": "#d4af37", "cornerRadius": "md", "paddingAll": "none",
+                    "contents": [{"type": "button", "action": {"type": "postback", "label": "📋 一覧", "data": "action=show_list", "displayText": "📋 一覧"}, "style": "link", "color": "#555555", "height": "sm", "margin": "none"}]
                 }
             ]
         })
 
         bubbles.append({
-            "type": "bubble",
-            "size": "mega",
+            "type": "bubble", "size": "mega",
             "header": {
-                "type": "box", "layout": "vertical", "backgroundColor": "#d4af37", "paddingAll": "10px",
-                "contents": [
-                    {"type": "text", "text": f"⚙️ お気に入り ({i+1}-{min(i+chunk_size, len(fav_list))}/{len(fav_list)}件)", "color": "#ffffff", "weight": "bold", "size": "md"}
-                ]
+                "type": "box", "layout": "vertical", "backgroundColor": header_color, "paddingAll": "10px",
+                "contents": [{"type": "text", "text": f"{title_text} ({i+1}-{min(i+chunk_size, len(filtered_favs))}/{len(filtered_favs)}件)", "color": "#ffffff", "weight": "bold", "size": "md"}]
             },
             "body": {
-                "type": "box", "layout": "vertical", "spacing": "sm", "paddingAll": "10px",
-                "contents": rows
+                "type": "box", "layout": "vertical", "spacing": "sm", "paddingAll": "10px", "contents": rows
             }
         })
     
@@ -1162,49 +1108,36 @@ def build_settings_flex_message(fav_list):
     else:
         return FlexSendMessage(alt_text="お気に入り管理パネル", contents={"type": "carousel", "contents": bubbles})
 
-def build_spot_list_carousel_horizontal(user_id=None):
+def build_spot_list_carousel_horizontal(user_id=None, mode="trout"):
+    active_group = COLOR_GROUPS if mode == "trout" else BASS_COLOR_GROUPS
+    active_spots = []
+    for group in active_group:
+        for sg in group["sub_groups"]:
+            active_spots.extend(sg["spots"])
+
     bubbles = []
-    fav_list = []
+    filtered_favs = []
 
     if user_id:
-        _, favorites = get_user_setting(user_id)
-        fav_list = [s for s in favorites.split(',') if s]
+        _, favorites, _ = get_user_setting(user_id)
+        raw_fav_list = [s for s in favorites.split(',') if s]
+        filtered_favs = [s for s in raw_fav_list if s in active_spots]
         
         fav_rows = []
-        if not fav_list:
+        if not filtered_favs:
             fav_rows.append({
-                "type": "box",
-                "layout": "vertical",
-                "backgroundColor": "#fffde7",
-                "cornerRadius": "md",
-                "paddingAll": "md",
-                "margin": "md",
-                "contents": [
-                    {
-                        "type": "text",
-                        "text": "現在お気に入りは登録されていません。\n右へスワイプして釣り場を探し、「⭐️ 登録」ボタンを押すか、テキストで「追加 東山湖」と送信して登録してください。",
-                        "wrap": True,
-                        "size": "sm",
-                        "color": "#555555"
-                    }
-                ]
+                "type": "box", "layout": "vertical", "backgroundColor": "#fffde7", "cornerRadius": "md", "paddingAll": "md", "margin": "md",
+                "contents": [{"type": "text", "text": "現在このモードでお気に入りは登録されていません。\n右へスワイプして釣り場を探し、「⭐️ 登録」ボタンを押すか、テキストで「追加 〇〇」と送信してください。", "wrap": True, "size": "sm", "color": "#555555"}]
             })
         else:
-            for i in range(0, len(fav_list), 2):
-                pair = fav_list[i:i+2]
+            for i in range(0, len(filtered_favs), 2):
+                pair = filtered_favs[i:i+2]
                 row_buttons = []
                 for j, spot in enumerate(pair):
                     global_idx = i + j
                     if global_idx < 2:
                         row_buttons.append({
-                            "type": "box",
-                            "layout": "vertical",
-                            "backgroundColor": "#fff59d",
-                            "borderWidth": "normal",
-                            "borderColor": "#d4af37",
-                            "cornerRadius": "md",
-                            "paddingAll": "none",
-                            "margin": "xs",
+                            "type": "box", "layout": "vertical", "backgroundColor": "#fff59d", "borderWidth": "normal", "borderColor": "#d4af37", "cornerRadius": "md", "paddingAll": "none", "margin": "xs",
                             "contents": [
                                 {
                                     "type": "button",
@@ -1235,69 +1168,36 @@ def build_spot_list_carousel_horizontal(user_id=None):
         fav_rows.append({"type": "separator", "margin": "md", "color": "#cccccc"})
         
         fav_rows.append({
-            "type": "box",
-            "layout": "horizontal",
-            "margin": "sm",
-            "spacing": "sm",
+            "type": "box", "layout": "horizontal", "margin": "sm", "spacing": "sm",
             "contents": [
                 {
-                    "type": "box",
-                    "layout": "vertical",
-                    "flex": 1,
-                    "backgroundColor": "#f8f9fa",
-                    "borderWidth": "normal",
-                    "borderColor": "#e0e0e0",
-                    "cornerRadius": "md",
-                    "paddingAll": "none",
-                    "contents": [
-                        {
-                            "type": "button",
-                            "action": {"type": "postback", "label": "⚙️ 設定", "data": "action=show_settings", "displayText": "⚙️ 設定"},
-                            "style": "link",
-                            "color": "#555555",
-                            "height": "sm",
-                            "margin": "none"
-                        }
-                    ]
+                    "type": "box", "layout": "vertical", "flex": 1, "backgroundColor": "#f8f9fa", "borderWidth": "normal", "borderColor": "#e0e0e0", "cornerRadius": "md", "paddingAll": "none",
+                    "contents": [{"type": "button", "action": {"type": "postback", "label": "⚙️ 設定/切替", "data": "action=show_settings", "displayText": "⚙️ 設定"}, "style": "link", "color": "#555555", "height": "sm", "margin": "none"}]
                 },
                 {
-                    "type": "box",
-                    "layout": "vertical",
-                    "flex": 1,
-                    "backgroundColor": "#fff59d",
-                    "borderWidth": "normal",
-                    "borderColor": "#d4af37",
-                    "cornerRadius": "md",
-                    "paddingAll": "none",
-                    "contents": [
-                        {
-                            "type": "button",
-                            "action": {"type": "postback", "label": "📋 一覧", "data": "action=show_list", "displayText": "📋 一覧"},
-                            "style": "link",
-                            "color": "#555555",
-                            "height": "sm",
-                            "margin": "none"
-                        }
-                    ]
+                    "type": "box", "layout": "vertical", "flex": 1, "backgroundColor": "#fff59d", "borderWidth": "normal", "borderColor": "#d4af37", "cornerRadius": "md", "paddingAll": "none",
+                    "contents": [{"type": "button", "action": {"type": "postback", "label": "📋 一覧更新", "data": "action=show_list", "displayText": "📋 一覧"}, "style": "link", "color": "#555555", "height": "sm", "margin": "none"}]
                 }
             ]
         })
 
+        header_color = "#d4af37" if mode == "trout" else "#4caf50"
+        header_text = "⭐ トラウトお気に入り" if mode == "trout" else "⭐ バスお気に入り"
+
         fav_bubble = {
-            "type": "bubble",
-            "size": "giga",
+            "type": "bubble", "size": "giga",
             "header": {
-                "type": "box", "layout": "horizontal", "backgroundColor": "#d4af37", "paddingAll": "10px", "alignItems": "center",
+                "type": "box", "layout": "horizontal", "backgroundColor": header_color, "paddingAll": "10px", "alignItems": "center",
                 "contents": [
-                    {"type": "text", "text": "⭐ お気に入り釣り場", "color": "#ffffff", "weight": "bold", "size": "md", "flex": 1},
-                    {"type": "text", "text": f"({len(fav_list)}/{MAX_FAVORITES})", "color": "#eeeeee", "size": "xs", "align": "end", "flex": 0}
+                    {"type": "text", "text": header_text, "color": "#ffffff", "weight": "bold", "size": "md", "flex": 1},
+                    {"type": "text", "text": f"({len(filtered_favs)}/{MAX_FAVORITES})", "color": "#eeeeee", "size": "xs", "align": "end", "flex": 0}
                 ]
             },
             "body": {"type": "box", "layout": "vertical", "paddingAll": "6px", "contents": fav_rows}
         }
         bubbles.append(fav_bubble)
 
-    for group in COLOR_GROUPS:
+    for group in active_group:
         rows = []
         is_first_row = True
         for sg in group["sub_groups"]:
@@ -1307,15 +1207,8 @@ def build_spot_list_carousel_horizontal(user_id=None):
                 pair = spots[i:i+2]
                 row_buttons = []
                 for spot in pair:
-                    label_text = f"★ {spot}" if spot in fav_list else spot
-                    row_buttons.append({
-                        "type": "button",
-                        "style": "secondary",
-                        "color": btn_bg,
-                        "margin": "xs",
-                        "height": "sm",
-                        "action": {"type": "postback", "label": label_text, "data": f"w={spot}"}
-                    })
+                    label_text = f"★ {spot}" if spot in filtered_favs else spot
+                    row_buttons.append({"type": "button", "style": "secondary", "color": btn_bg, "margin": "xs", "height": "sm", "action": {"type": "postback", "label": label_text, "data": f"w={spot}"}})
                 if len(pair) == 1:
                     row_buttons.append({"type": "filler"})
                     
@@ -1324,8 +1217,7 @@ def build_spot_list_carousel_horizontal(user_id=None):
                 is_first_row = False
             
         bubble = {
-            "type": "bubble",
-            "size": "giga",
+            "type": "bubble", "size": "giga",
             "header": {
                 "type": "box", "layout": "vertical", "backgroundColor": group["header_bg"], "paddingAll": "10px",
                 "contents": [{"type": "text", "text": group["title"], "color": "#ffffff", "weight": "bold", "size": "md"}]
@@ -1334,10 +1226,8 @@ def build_spot_list_carousel_horizontal(user_id=None):
         }
         bubbles.append(bubble)
 
-    # 使い方ガイド
     guide_bubble = {
-        "type": "bubble",
-        "size": "giga",
+        "type": "bubble", "size": "giga",
         "header": {
             "type": "box", "layout": "vertical", "backgroundColor": "#888888", "paddingAll": "10px",
             "contents": [{"type": "text", "text": "📖 使い方ガイド", "color": "#ffffff", "weight": "bold", "size": "md"}]
@@ -1373,7 +1263,7 @@ def build_spot_list_carousel_horizontal(user_id=None):
                     "contents": [
                         {"type": "text", "text": "⭐ お気に入り機能とリッチメニュー", "weight": "bold", "size": "sm", "color": "#333333"},
                         {"type": "text", "text": "【一番お気に入り（メニュー左）】", "weight": "bold", "size": "xs", "color": "#333333", "margin": "sm"},
-                        {"type": "text", "text": "お気に入りリストの「1番目（一番上）」の釣り場の天気を瞬時に表示します。", "wrap": True, "size": "xs", "color": "#666666"}
+                        {"type": "text", "text": "現在のモードにおけるお気に入りリストの「1番目（一番上）」の釣り場の天気を瞬時に表示します。", "wrap": True, "size": "xs", "color": "#666666"}
                     ]
                 },
                 {"type": "separator", "margin": "md"},
@@ -1394,60 +1284,42 @@ def build_spot_list_carousel_horizontal(user_id=None):
     return FlexSendMessage(alt_text="釣り場一覧", contents={"type": "carousel", "contents": bubbles})
 
 def get_user_setting(user_id):
-    if not supabase: return ('ウェザーニュース', '')
+    if not supabase: return ('ウェザーニュース', '', 'trout')
     try:
         res = supabase.table('user_settings').select('*').eq('user_id', user_id).execute()
         if res.data and len(res.data) > 0:
             row = res.data[0]
             favs = row.get('favorite_spots') or ''
+            try:
+                fishing_mode = row.get('fishing_mode') or 'trout'
+            except KeyError:
+                fishing_mode = 'trout'
             
             rename_map = {
-                "五頭": "GOZU",
-                "竜华池": "竜華池",
-                "ハーブの里": "ハーブ",
-                "ハーブ": "ハーブ",
-                "サンクチュアリ": "３９",
-                "高島": "高島の泉",
-                "瑞浪": "FCE瑞浪",
-                "槻の池": "つきの池",
-                "川越": "川越パーク",
-                "ＭＡＶ": "宮城",
-                "宮城": "宮城",
-                "浅川": "浅川国際",
-                "関根": "関根養魚場",
-                "FAJ": "Ｊ",
-                "朝霞": "朝霞Ｇ",
-                "GP不忘": "不忘",
-                "座間・amaz": "座間",
-                "座間": "座間",
-                "パラダイス": "釣パラダイス",
-                "蛇尾川": "蛇尾（さび）川",
-                "大崎": "大崎・赤城",
-                "ロストルアーズ": "Lost Lures",
-                "キングフィッシャー": "キング",
-                "JF in Tsugane": "ツガネ",
-                "川場キングダム": "キングダム",
-                "イワナセンター": "イワセン",
-                "鹿島槍": "鹿島やり"
+                "五頭": "GOZU", "竜华池": "竜華池", "ハーブの里": "ハーブ", "サンクチュアリ": "３９",
+                "高島": "高島の泉", "瑞浪": "FCE瑞浪", "槻の池": "つきの池", "川越": "川越パーク",
+                "ＭＡＶ": "宮城", "浅川": "浅川国際", "関根": "関根養魚場", "FAJ": "Ｊ", "朝霞": "朝霞Ｇ",
+                "GP不忘": "不忘", "座間・amaz": "座間", "パラダイス": "釣パラダイス", "蛇尾川": "蛇尾（さび）川",
+                "大崎": "大崎・赤城", "ロストルアーズ": "Lost Lures", "キングフィッシャー": "キング",
+                "JF in Tsugane": "ツガネ", "川場キングダム": "キングダム", "イワナセンター": "イワセン", "鹿島槍": "鹿島やり",
+                "アルクス宇宇都宮": "アルクス宇都宮" # 過去の誤字救済用
             }
             
             raw_favs = [s.strip() for s in favs.split(',')]
             favs_list = []
             for s in raw_favs:
-                if s in rename_map:
-                    s = rename_map[s]
-                if s not in ["多摩湖", "いなプー"] and s:
-                    favs_list.append(s)
+                if s in rename_map: s = rename_map[s]
+                if s not in ["多摩湖", "いなプー"] and s: favs_list.append(s)
                     
-            return (row.get('weather_source', 'ウェザーニュース'), ','.join(favs_list))
-        return ('ウェザーニュース', '')
+            return (row.get('weather_source', 'ウェザーニュース'), ','.join(favs_list), fishing_mode)
+        return ('ウェザーニュース', '', 'trout')
     except Exception as e:
         print(f"[Supabase取得エラー] {e}")
-        return ('ウェザーニュース', '')
+        return ('ウェザーニュース', '', 'trout')
 
 def add_favorite_spots(user_id, spot_names):
     if not supabase: return False, [], ["DB接続未完了です。"]
-    source, favorites = get_user_setting(user_id)
+    source, favorites, fishing_mode = get_user_setting(user_id)
     fav_list = [s for s in favorites.split(',') if s]
     
     added = []
@@ -1456,10 +1328,9 @@ def add_favorite_spots(user_id, spot_names):
         target_name = None
         norm_input = normalize_name(spot_name)
         
-        for spot_key, data in SPOT_WEATHER_DATA.items():
+        for spot_key, data in ALL_SPOT_DATA.items():
             norm_key = normalize_name(spot_key)
             norm_aliases = [normalize_name(a) for a in data["aliases"]]
-            
             if norm_input == norm_key or norm_input in norm_aliases:
                 target_name = spot_key
                 break
@@ -1467,7 +1338,6 @@ def add_favorite_spots(user_id, spot_names):
         if not target_name:
             errors.append(f"{spot_name}(不明)")
             continue
-            
         if target_name in fav_list:
             errors.append(f"{target_name}(登録済)")
             continue
@@ -1481,7 +1351,7 @@ def add_favorite_spots(user_id, spot_names):
     if added:
         try:
             supabase.table('user_settings').upsert({
-                'user_id': user_id, 'weather_source': source, 'favorite_spots': ','.join(fav_list)
+                'user_id': user_id, 'weather_source': source, 'favorite_spots': ','.join(fav_list), 'fishing_mode': fishing_mode
             }).execute()
         except Exception as e:
             return False, [], [f"DB保存エラー"]
@@ -1489,7 +1359,7 @@ def add_favorite_spots(user_id, spot_names):
 
 def remove_favorite_spots(user_id, spot_names):
     if not supabase: return False, [], ["DB接続未完了です。"]
-    source, favorites = get_user_setting(user_id)
+    source, favorites, fishing_mode = get_user_setting(user_id)
     fav_list = [s for s in favorites.split(',') if s]
     
     removed = []
@@ -1498,17 +1368,14 @@ def remove_favorite_spots(user_id, spot_names):
         target_name = None
         norm_input = normalize_name(spot_name)
         
-        for spot_key, data in SPOT_WEATHER_DATA.items():
+        for spot_key, data in ALL_SPOT_DATA.items():
             norm_key = normalize_name(spot_key)
             norm_aliases = [normalize_name(a) for a in data["aliases"]]
-            
             if norm_input == norm_key or norm_input in norm_aliases:
                 target_name = spot_key
                 break
         
-        if not target_name:
-            target_name = spot_name 
-            
+        if not target_name: target_name = spot_name 
         if target_name not in fav_list:
             errors.append(f"{target_name}(未登録)")
             continue
@@ -1519,55 +1386,80 @@ def remove_favorite_spots(user_id, spot_names):
     if removed:
         try:
             supabase.table('user_settings').upsert({
-                'user_id': user_id, 'weather_source': source, 'favorite_spots': ','.join(fav_list)
+                'user_id': user_id, 'weather_source': source, 'favorite_spots': ','.join(fav_list), 'fishing_mode': fishing_mode
             }).execute()
         except Exception as e:
             return False, [], [f"DB保存エラー"]
     return True, removed, errors
 
-def clear_favorite_spots(user_id):
+def clear_favorite_spots(user_id, mode="trout"):
     if not supabase: return False, "DB接続未完了です。"
-    source, _ = get_user_setting(user_id)
+    source, favorites, fishing_mode = get_user_setting(user_id)
+    raw_fav_list = [s for s in favorites.split(',') if s]
+
+    active_group = COLOR_GROUPS if mode == "trout" else BASS_COLOR_GROUPS
+    active_spots = []
+    for group in active_group:
+        for sg in group["sub_groups"]:
+            active_spots.extend(sg["spots"])
+
+    # 他のモードのお気に入りは残し、現在のモードのお気に入りだけ削除する
+    other_mode_favs = [s for s in raw_fav_list if s not in active_spots]
+
     try:
         supabase.table('user_settings').upsert({
-            'user_id': user_id, 'weather_source': source, 'favorite_spots': ''
+            'user_id': user_id, 'weather_source': source, 'favorite_spots': ','.join(other_mode_favs), 'fishing_mode': fishing_mode
         }).execute()
-        return True, "すべてのお気に入りを削除しました。"
+        return True, "表示中のすべてのお気に入りを削除しました。"
     except Exception as e:
         return False, f"削除に失敗しました: {e}"
 
-def move_favorite_spot(user_id, spot_name, direction):
+def move_favorite_spot(user_id, spot_name, direction, mode="trout"):
     if not supabase: return False, "DB接続未完了です。"
-    source, favorites = get_user_setting(user_id)
-    fav_list = [s for s in favorites.split(',') if s]
+    source, favorites, fishing_mode = get_user_setting(user_id)
+    raw_fav_list = [s for s in favorites.split(',') if s]
     
-    if spot_name not in fav_list:
+    if spot_name not in raw_fav_list:
         return False, "登録されていません。"
-    
-    idx = fav_list.index(spot_name)
+
+    active_group = COLOR_GROUPS if mode == "trout" else BASS_COLOR_GROUPS
+    active_spots = []
+    for group in active_group:
+        for sg in group["sub_groups"]:
+            active_spots.extend(sg["spots"])
+
+    current_mode_favs = [s for s in raw_fav_list if s in active_spots]
+    other_mode_favs = [s for s in raw_fav_list if s not in active_spots]
+
+    if spot_name not in current_mode_favs:
+         return False, "モードが違います。"
+
+    idx = current_mode_favs.index(spot_name)
     
     if direction == "up" and idx > 0:
-        fav_list[idx - 1], fav_list[idx] = fav_list[idx], fav_list[idx - 1]
-    elif direction == "down" and idx < len(fav_list) - 1:
-        fav_list[idx + 1], fav_list[idx] = fav_list[idx], fav_list[idx + 1]
+        current_mode_favs[idx - 1], current_mode_favs[idx] = current_mode_favs[idx], current_mode_favs[idx - 1]
+    elif direction == "down" and idx < len(current_mode_favs) - 1:
+        current_mode_favs[idx + 1], current_mode_favs[idx] = current_mode_favs[idx], current_mode_favs[idx + 1]
     elif direction == "top" and idx > 0:
-        fav_list.insert(0, fav_list.pop(idx))
-    elif direction == "bottom" and idx < len(fav_list) - 1:
-        fav_list.append(fav_list.pop(idx))
+        current_mode_favs.insert(0, current_mode_favs.pop(idx))
+    elif direction == "bottom" and idx < len(current_mode_favs) - 1:
+        current_mode_favs.append(current_mode_favs.pop(idx))
     elif direction == "cell_top":
         chunk_start = (idx // 10) * 10
         if idx > chunk_start:
-            fav_list.insert(chunk_start, fav_list.pop(idx))
+            current_mode_favs.insert(chunk_start, current_mode_favs.pop(idx))
     elif direction == "cell_bottom":
-        chunk_end = min(((idx // 10) + 1) * 10 - 1, len(fav_list) - 1)
+        chunk_end = min(((idx // 10) + 1) * 10 - 1, len(current_mode_favs) - 1)
         if idx < chunk_end:
-            fav_list.insert(chunk_end, fav_list.pop(idx))
+            current_mode_favs.insert(chunk_end, current_mode_favs.pop(idx))
     else:
         return True, "移動不要"
         
+    new_fav_list = current_mode_favs + other_mode_favs
+
     try:
         supabase.table('user_settings').upsert({
-            'user_id': user_id, 'weather_source': source, 'favorite_spots': ','.join(fav_list)
+            'user_id': user_id, 'weather_source': source, 'favorite_spots': ','.join(new_fav_list), 'fishing_mode': fishing_mode
         }).execute()
         return True, "移動しました"
     except Exception as e:
@@ -1818,7 +1710,7 @@ def get_cached_weather(spot_name):
         if now - updated_time <= timedelta(hours=1):
             if isinstance(data, dict):
                 weekly = data.get("__weekly__", [])
-                if data.get("_version") != "settings_shortcut_v14":
+                if data.get("_version") != "settings_shortcut_v18":
                     return None
                 if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-":
                     return None
@@ -1837,7 +1729,7 @@ def get_cached_weather(spot_name):
                         weather_data = row.get('weather_data')
                         if isinstance(weather_data, dict):
                             weekly = weather_data.get("__weekly__", [])
-                            if weather_data.get("_version") != "settings_shortcut_v14":
+                            if weather_data.get("_version") != "settings_shortcut_v18":
                                 return None
                             if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-":
                                 return None
@@ -1852,7 +1744,7 @@ def get_cached_weather(spot_name):
 
 def save_cached_weather(spot_name, weather_data):
     now = datetime.now(timezone.utc)
-    weather_data["_version"] = "settings_shortcut_v14"
+    weather_data["_version"] = "settings_shortcut_v18"
     MEMORY_CACHE[spot_name] = (weather_data, now)
     
     if not supabase: return
@@ -1874,8 +1766,16 @@ def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_
     jst = timezone(timedelta(hours=9))
     now_jst_date = datetime.now(jst).date()
 
+    # 表示するスポットがバスモードのグループに属しているか判定
+    active_group = COLOR_GROUPS
+    for group in BASS_COLOR_GROUPS:
+        for sg in group["sub_groups"]:
+            if spot_name in sg["spots"]:
+                active_group = BASS_COLOR_GROUPS
+                break
+
     header_color = "#0066cc"
-    for group in COLOR_GROUPS:
+    for group in active_group:
         found = False
         for sg in group["sub_groups"]:
             if spot_name in sg["spots"]:
@@ -2115,9 +2015,19 @@ def handle_message(event):
         raw_msg = event.message.text.strip()
         user_id = event.source.user_id
 
+        # ユーザーのモードを取得
+        source, favorites, fishing_mode = get_user_setting(user_id)
+
         if raw_msg in ["お気に入り1", "お気に入り2"]:
-            _, favorites = get_user_setting(user_id)
-            fav_list = [s.strip() for s in favorites.split(',') if s.strip()]
+            # 現在のモードに属するお気に入りだけを抽出
+            active_group = COLOR_GROUPS if fishing_mode == "trout" else BASS_COLOR_GROUPS
+            active_spots = []
+            for group in active_group:
+                for sg in group["sub_groups"]:
+                    active_spots.extend(sg["spots"])
+                    
+            raw_fav_list = [s.strip() for s in favorites.split(',') if s.strip()]
+            fav_list = [s for s in raw_fav_list if s in active_spots]
             
             target_spot = None
             if raw_msg == "お気に入り1" and len(fav_list) > 0:
@@ -2147,7 +2057,7 @@ def handle_message(event):
                     line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"⚠️ 【{target_spot_name}】の天気データの取得に失敗しました。少し時間をおいてから再度お試しください。"))
             else:
                 msg = "⚠️ お気に入りが登録されていないか、件数が足りません。\n「一覧」から釣り場を探して「⭐️ 登録」してください。"
-                flex_msg = build_spot_list_carousel_horizontal(user_id=user_id)
+                flex_msg = build_spot_list_carousel_horizontal(user_id=user_id, mode=fishing_mode)
                 line_bot_api.reply_message(event.reply_token, [TextSendMessage(text=msg), flex_msg])
             return
 
@@ -2155,23 +2065,17 @@ def handle_message(event):
         if add_match:
             spots_str = add_match.group(1).strip()
             spot_names = [s for s in re.split(r'[\s,、\n]+', spots_str) if s and s not in ["追加", "削除"]]
-            
             success, added, errors = add_favorite_spots(user_id, spot_names)
-            
-            _, favorites = get_user_setting(user_id)
+            _, favorites, _ = get_user_setting(user_id)
             total_count = len([s for s in favorites.split(',') if s])
             
             reply_lines = []
-            if added:
-                reply_lines.append(f"✅ {len(added)}件追加しました: {', '.join(added)}")
-            if errors:
-                reply_lines.append(f"⚠️ スキップ・失敗: {', '.join(errors)}")
-            if added or errors:
-                reply_lines.append(f"📊 現在の登録数: {total_count}/{MAX_FAVORITES}箇所")
-            else:
-                reply_lines.append("⚠️ 釣り場名が認識できませんでした。")
+            if added: reply_lines.append(f"✅ {len(added)}件追加しました: {', '.join(added)}")
+            if errors: reply_lines.append(f"⚠️ スキップ・失敗: {', '.join(errors)}")
+            if added or errors: reply_lines.append(f"📊 現在の登録数: {total_count}/{MAX_FAVORITES}箇所")
+            else: reply_lines.append("⚠️ 釣り場名が認識できませんでした。")
                 
-            flex_msg = build_spot_list_carousel_horizontal(user_id=user_id)
+            flex_msg = build_spot_list_carousel_horizontal(user_id=user_id, mode=fishing_mode)
             line_bot_api.reply_message(event.reply_token, [TextSendMessage(text="\n".join(reply_lines)), flex_msg])
             return
 
@@ -2179,52 +2083,38 @@ def handle_message(event):
         if del_match:
             spots_str = del_match.group(1).strip()
             spot_names = [s for s in re.split(r'[\s,、\n]+', spots_str) if s and s not in ["追加", "削除"]]
-            
             success, removed, errors = remove_favorite_spots(user_id, spot_names)
-            
-            _, favorites = get_user_setting(user_id)
+            _, favorites, _ = get_user_setting(user_id)
             total_count = len([s for s in favorites.split(',') if s])
             
             reply_lines = []
-            if removed:
-                reply_lines.append(f"✅ {len(removed)}件削除しました: {', '.join(removed)}")
-            if errors:
-                reply_lines.append(f"⚠️ スキップ・失敗: {', '.join(errors)}")
-            if removed or errors:
-                reply_lines.append(f"📊 現在の登録数: {total_count}/{MAX_FAVORITES}箇所")
-            else:
-                reply_lines.append("⚠️ 釣り場名が認識できませんでした。")
+            if removed: reply_lines.append(f"✅ {len(removed)}件削除しました: {', '.join(removed)}")
+            if errors: reply_lines.append(f"⚠️ スキップ・失敗: {', '.join(errors)}")
+            if removed or errors: reply_lines.append(f"📊 現在の登録数: {total_count}/{MAX_FAVORITES}箇所")
+            else: reply_lines.append("⚠️ 釣り場名が認識できませんでした。")
                 
-            flex_msg = build_spot_list_carousel_horizontal(user_id=user_id)
+            flex_msg = build_spot_list_carousel_horizontal(user_id=user_id, mode=fishing_mode)
             line_bot_api.reply_message(event.reply_token, [TextSendMessage(text="\n".join(reply_lines)), flex_msg])
             return
 
         if raw_msg in ["一覧", "リスト", "釣り場一覧", "エリア", "📋 一覧", "📋一覧"]:
-            flex_msg = build_spot_list_carousel_horizontal(user_id=user_id)
+            flex_msg = build_spot_list_carousel_horizontal(user_id=user_id, mode=fishing_mode)
             line_bot_api.reply_message(event.reply_token, flex_msg)
             return
 
         if raw_msg in ["設定", "⚙️設定", "⚙️ 設定", "設定（並び替え・削除）", "⚙️ 設定（並び替え・削除）"]:
-            _, favorites = get_user_setting(user_id)
-            fav_list = [s.strip() for s in favorites.split(',')]
-            fav_list = [s for s in fav_list if s]
-            flex_msg = build_settings_flex_message(fav_list)
+            fav_list = [s.strip() for s in favorites.split(',') if s.strip()]
+            flex_msg = build_settings_flex_message(fav_list, mode=fishing_mode)
             line_bot_api.reply_message(event.reply_token, flex_msg)
             return
 
-        flex_msg = build_spot_list_carousel_horizontal(user_id=user_id)
+        flex_msg = build_spot_list_carousel_horizontal(user_id=user_id, mode=fishing_mode)
         line_bot_api.reply_message(event.reply_token, flex_msg)
 
     except LineBotApiError as e:
         print(f"\n=== LINE API エラー: {e.status_code} ===")
         print(e.error.message)
-        try:
-            if e.error.details:
-                for d in e.error.details:
-                    print(f" - {d.property}: {d.message}")
-        except:
-            pass
-        try: line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ LINE通信エラーが発生しました。（データ容量制限エラー等の可能性があります）"))
+        try: line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ LINE通信エラーが発生しました。"))
         except Exception: pass
     except Exception as e:
         print("\n=== システムエラー詳細 ===")
@@ -2240,21 +2130,47 @@ def handle_postback(event):
         
         action = data_dict.get("action")
         spot_name = data_dict.get("spot")
+        source, favorites, fishing_mode = get_user_setting(user_id)
 
         if "w" in data_dict:
             action = "show_weather"
             spot_name = data_dict["w"]
 
-        if action in ["show_top_selector", "show_cell_top_selector", "show_cell_bottom_selector"]:
-            _, favorites = get_user_setting(user_id)
+        # ★ モード切替の処理 ★
+        if action == "switch_mode":
+            target_mode = data_dict.get("mode", "trout")
+            if supabase:
+                try:
+                    supabase.table('user_settings').upsert({
+                        'user_id': user_id, 
+                        'weather_source': source, 
+                        'favorite_spots': favorites,
+                        'fishing_mode': target_mode
+                    }).execute()
+                except Exception as e:
+                    print(f"モード変更エラー: {e}")
+                    pass
+            
+            mode_name = "🐟 ブラックバス" if target_mode == "bass" else "🐟 エリアトラウト"
+            flex_msg = build_spot_list_carousel_horizontal(user_id=user_id, mode=target_mode)
+            line_bot_api.reply_message(event.reply_token, [TextSendMessage(text=f"{mode_name} モードに切り替えました！"), flex_msg])
+            return
+
+        elif action in ["show_top_selector", "show_cell_top_selector", "show_cell_bottom_selector"]:
             fav_list = [s.strip() for s in favorites.split(',') if s.strip()]
             
-            if not fav_list:
+            # 現在のモードのスポットだけを抽出
+            active_group = COLOR_GROUPS if fishing_mode == "trout" else BASS_COLOR_GROUPS
+            active_spots = []
+            for group in active_group:
+                for sg in group["sub_groups"]: active_spots.extend(sg["spots"])
+            filtered_favs = [s for s in fav_list if s in active_spots]
+
+            if not filtered_favs:
                 line_bot_api.reply_message(event.reply_token, TextSendMessage(text="お気に入りが登録されていません。"))
                 return
                 
             chunk_idx_str = data_dict.get("chunk")
-            
             is_top = (action == "show_top_selector")
             is_cell_top = (action == "show_cell_top_selector")
             
@@ -2263,75 +2179,52 @@ def handle_postback(event):
             bg_color = "#d4af37" if is_top else ("#64b5f6" if is_cell_top else "#78909c")
             
             selector_bubbles = []
-            
-            if is_top:
-                loop_chunks = [(i, fav_list[i:i+10]) for i in range(0, len(fav_list), 10)]
+            if is_top: loop_chunks = [(i, filtered_favs[i:i+10]) for i in range(0, len(filtered_favs), 10)]
             else:
                 c_idx = int(chunk_idx_str) if chunk_idx_str else 0
-                loop_chunks = [(c_idx, fav_list[c_idx:c_idx+10])]
+                loop_chunks = [(c_idx, filtered_favs[c_idx:c_idx+10])]
             
             for start_idx, chunk in loop_chunks:
                 if not chunk: continue
                 btns = []
                 for spot in chunk:
-                    btns.append({
-                        "type": "button",
-                        "action": {"type": "postback", "label": f"{spot}", "data": f"action={target_action}&spot={spot}"},
-                        "style": "secondary", "margin": "xs", "height": "sm", "color": "#f8f9fa"
-                    })
-                    
+                    btns.append({"type": "button", "action": {"type": "postback", "label": f"{spot}", "data": f"action={target_action}&spot={spot}"}, "style": "secondary", "margin": "xs", "height": "sm", "color": "#f8f9fa"})
                 btns.append({"type": "separator", "margin": "md"})
-                btns.append({
-                    "type": "button",
-                    "action": {"type": "postback", "label": "🔙 戻る（キャンセル）", "data": "action=show_settings"},
-                    "style": "secondary", "margin": "md", "height": "sm", "color": "#e0e0e0"
-                })
+                btns.append({"type": "button", "action": {"type": "postback", "label": "🔙 戻る（キャンセル）", "data": "action=show_settings"}, "style": "secondary", "margin": "md", "height": "sm", "color": "#e0e0e0"})
 
                 selector_bubbles.append({
                     "type": "bubble", "size": "kilo",
-                    "header": {
-                        "type": "box", "layout": "vertical", "backgroundColor": bg_color, "paddingAll": "10px",
-                        "contents": [{"type": "text", "text": header_text, "color": "#ffffff", "weight": "bold", "size": "sm"}]
-                    },
-                    "body": {
-                        "type": "box", "layout": "vertical", "paddingAll": "10px", "contents": btns
-                    }
+                    "header": {"type": "box", "layout": "vertical", "backgroundColor": bg_color, "paddingAll": "10px", "contents": [{"type": "text", "text": header_text, "color": "#ffffff", "weight": "bold", "size": "sm"}]},
+                    "body": {"type": "box", "layout": "vertical", "paddingAll": "10px", "contents": btns}
                 })
             flex_msg = FlexSendMessage(alt_text="移動する釣り場の選択", contents={"type": "carousel", "contents": selector_bubbles})
             line_bot_api.reply_message(event.reply_token, flex_msg)
             return
 
         elif action == "show_list":
-            flex_msg = build_spot_list_carousel_horizontal(user_id=user_id)
+            flex_msg = build_spot_list_carousel_horizontal(user_id=user_id, mode=fishing_mode)
             line_bot_api.reply_message(event.reply_token, flex_msg)
             return
             
         elif action == "show_settings":
-            _, favorites = get_user_setting(user_id)
             fav_list = [s.strip() for s in favorites.split(',') if s.strip()]
-            fav_list = [s for s in fav_list if s]
-            flex_msg = build_settings_flex_message(fav_list)
+            flex_msg = build_settings_flex_message(fav_list, mode=fishing_mode)
             line_bot_api.reply_message(event.reply_token, flex_msg)
             return
 
         elif action == "show_weather":
             target_spot_name, target_url, hp_url, hp2_url, map_url, tel, x_url, fb_url, insta_url, blog_url, yt_url, tenki_url = get_spot_details(spot_name)
-            
             if not target_url:
                 line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"⚠️ 【{spot_name}】のデータが見つかりません。"))
                 return
 
-            _, favorites = get_user_setting(user_id)
-            fav_list = [s.strip() for s in favorites.split(',')]
-            fav_list = [s for s in fav_list if s]
+            fav_list = [s.strip() for s in favorites.split(',') if s.strip()]
             is_fav = target_spot_name in fav_list
 
             weather_data = get_cached_weather(target_spot_name)
-            
             if not weather_data:
                 weather_data = fetch_spot_1hour_data(target_url, tenki_url)
-                if weather_data:
-                    save_cached_weather(target_spot_name, weather_data)
+                if weather_data: save_cached_weather(target_spot_name, weather_data)
 
             if weather_data:
                 flex_msg = build_grid_flex_message(target_spot_name, weather_data, hp_url, hp2_url, map_url, tel, x_url, fb_url, insta_url, blog_url, yt_url, is_favorite=is_fav)
@@ -2342,11 +2235,10 @@ def handle_postback(event):
 
         elif action == "fav_add_and_list":
             success, added, errors = add_favorite_spots(user_id, [spot_name])
-            _, favorites = get_user_setting(user_id)
+            _, favorites, _ = get_user_setting(user_id)
             total_count = len([s for s in favorites.split(',') if s])
-            
             msg = f"✅ 追加しました: {added[0]}\n📊 現在の登録数: {total_count}/{MAX_FAVORITES}箇所" if added else f"⚠️ {errors[0]}\n📊 現在の登録数: {total_count}/{MAX_FAVORITES}箇所"
-            flex_msg = build_spot_list_carousel_horizontal(user_id=user_id)
+            flex_msg = build_spot_list_carousel_horizontal(user_id=user_id, mode=fishing_mode)
             line_bot_api.reply_message(event.reply_token, [TextSendMessage(text=msg), flex_msg])
 
         elif action == "fav_del_confirm_and_list":
@@ -2359,33 +2251,28 @@ def handle_postback(event):
 
         elif action == "fav_del_execute_and_list":
             success, removed, errors = remove_favorite_spots(user_id, [spot_name])
-            _, favorites = get_user_setting(user_id)
+            _, favorites, _ = get_user_setting(user_id)
             total_count = len([s for s in favorites.split(',') if s])
-            
             msg = f"✅ 削除しました: {removed[0]}\n📊 現在の登録数: {total_count}/{MAX_FAVORITES}箇所" if removed else f"⚠️ {errors[0]}\n📊 現在の登録数: {total_count}/{MAX_FAVORITES}箇所"
-            flex_msg = build_spot_list_carousel_horizontal(user_id=user_id)
+            flex_msg = build_spot_list_carousel_horizontal(user_id=user_id, mode=fishing_mode)
             line_bot_api.reply_message(event.reply_token, [TextSendMessage(text=msg), flex_msg])
 
         elif action == "fav_del_execute_and_settings":
             success, removed, errors = remove_favorite_spots(user_id, [spot_name])
-            _, favorites = get_user_setting(user_id)
-            fav_list = [s.strip() for s in favorites.split(',')]
-            fav_list = [s for s in fav_list if s]
+            _, favorites, _ = get_user_setting(user_id)
+            fav_list = [s.strip() for s in favorites.split(',') if s.strip()]
             total_count = len(fav_list)
-            
             msg = f"✅ 削除しました: {removed[0]}\n📊 現在の登録数: {total_count}/{MAX_FAVORITES}箇所" if removed else f"⚠️ {errors[0]}\n📊 現在の登録数: {total_count}/{MAX_FAVORITES}箇所"
-            flex_msg = build_settings_flex_message(fav_list)
+            flex_msg = build_settings_flex_message(fav_list, mode=fishing_mode)
             line_bot_api.reply_message(event.reply_token, [TextSendMessage(text=msg), flex_msg])
 
         elif action == "fav_del_cancel_and_list":
-            flex_msg = build_spot_list_carousel_horizontal(user_id=user_id)
+            flex_msg = build_spot_list_carousel_horizontal(user_id=user_id, mode=fishing_mode)
             line_bot_api.reply_message(event.reply_token, [TextSendMessage(text="キャンセルしました。"), flex_msg])
 
         elif action == "fav_del_cancel_and_settings":
-            _, favorites = get_user_setting(user_id)
-            fav_list = [s.strip() for s in favorites.split(',')]
-            fav_list = [s for s in fav_list if s]
-            flex_msg = build_settings_flex_message(fav_list)
+            fav_list = [s.strip() for s in favorites.split(',') if s.strip()]
+            flex_msg = build_settings_flex_message(fav_list, mode=fishing_mode)
             line_bot_api.reply_message(event.reply_token, [TextSendMessage(text="キャンセルしました。"), flex_msg])
 
         elif action == "fav_del_all_confirm":
@@ -2393,37 +2280,28 @@ def handle_postback(event):
             line_bot_api.reply_message(event.reply_token, flex_msg)
 
         elif action == "fav_del_all_execute":
-            success, msg = clear_favorite_spots(user_id)
-            flex_msg = build_spot_list_carousel_horizontal(user_id=user_id)
+            success, msg = clear_favorite_spots(user_id, mode=fishing_mode)
+            flex_msg = build_spot_list_carousel_horizontal(user_id=user_id, mode=fishing_mode)
             line_bot_api.reply_message(event.reply_token, [TextSendMessage(text=f"✅ {msg}"), flex_msg])
 
         elif action in ["fav_up", "fav_down", "fav_top", "fav_bottom", "fav_cell_top", "fav_cell_bottom"]:
             direction = action.replace("fav_", "")
-            move_favorite_spot(user_id, spot_name, direction)
-            _, favorites = get_user_setting(user_id)
-            fav_list = [s.strip() for s in favorites.split(',')]
-            fav_list = [s for s in fav_list if s]
-            flex_msg = build_settings_flex_message(fav_list)
+            move_favorite_spot(user_id, spot_name, direction, mode=fishing_mode)
+            _, favorites, _ = get_user_setting(user_id)
+            fav_list = [s.strip() for s in favorites.split(',') if s.strip()]
+            flex_msg = build_settings_flex_message(fav_list, mode=fishing_mode)
             line_bot_api.reply_message(event.reply_token, flex_msg)
             
     except LineBotApiError as e:
         print(f"\n=== LINE API エラー: {e.status_code} ===")
         print(e.error.message)
-        try:
-            if e.error.details:
-                for d in e.error.details:
-                    print(f" - {d.property}: {d.message}")
-        except:
-            pass
-        try: line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ LINE通信エラーが発生しました。（カード形式エラー等の可能性があります）"))
+        try: line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ LINE通信エラーが発生しました。"))
         except Exception: pass
     except Exception as e:
         print(f"Postback Error: {e}")
         traceback.print_exc()
-        try:
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ 処理中にシステムエラーが発生しました。"))
-        except Exception:
-            pass
+        try: line_bot_api.reply_message(event.reply_token, TextSendMessage(text="⚠️ 処理中にシステムエラーが発生しました。"))
+        except Exception: pass
 
 def get_top_favorite_spots(limit=24):
     if not supabase: return []
@@ -2449,36 +2327,29 @@ def run_background_update():
     if not supabase: return
     try:
         top_spots = get_top_favorite_spots(limit=24)
-        if not top_spots:
-            return
+        if not top_spots: return
             
         cache_times = {}
         for spot in top_spots:
             res = supabase.table('weather_cache').select('updated_at').eq('spot_name', spot).execute()
             if res.data and len(res.data) > 0:
                 updated_at_str = res.data[0].get('updated_at')
-                try:
-                    updated_time = datetime.fromisoformat(updated_at_str.replace('Z', '+00:00'))
-                    cache_times[spot] = updated_time
-                except:
-                    cache_times[spot] = datetime.min.replace(tzinfo=timezone.utc)
-            else:
-                cache_times[spot] = datetime.min.replace(tzinfo=timezone.utc)
+                try: cache_times[spot] = datetime.fromisoformat(updated_at_str.replace('Z', '+00:00'))
+                except: cache_times[spot] = datetime.min.replace(tzinfo=timezone.utc)
+            else: cache_times[spot] = datetime.min.replace(tzinfo=timezone.utc)
                 
         sorted_by_oldest = sorted(cache_times.items(), key=lambda x: x[1])
         target_spots = [spot for spot, time in sorted_by_oldest[:4]]
         
         for spot_name in target_spots:
-            data = SPOT_WEATHER_DATA.get(spot_name)
+            data = ALL_SPOT_DATA.get(spot_name)
             if not data: continue
             
             url = data["url"]
             tenki_url = convert_to_10days_url(data.get("tenki_url"))
             
             weather_data = fetch_spot_1hour_data(url, tenki_url)
-            if weather_data:
-                save_cached_weather(spot_name, weather_data)
-                
+            if weather_data: save_cached_weather(spot_name, weather_data)
             time.sleep(random.uniform(2.0, 3.5))
             
     except Exception as e:
