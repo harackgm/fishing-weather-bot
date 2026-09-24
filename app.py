@@ -475,12 +475,12 @@ SPOT_WEATHER_DATA = {
         "search_name": "ジョイフィールド in Tsugane", "tel": "0551-20-7888",
         "aliases": ["つがね", "ツガネ", "津金", "ジョイフィールド", "じょいふぃーるど", "JF in Tsugane"]
     },
-    "竜华池": {
+    "竜華池": {
         "url": "https://weathernews.jp/onebox/35.681978/138.576164/",
         "tenki_url": "https://tenki.jp/forecast/3/22/4910/19201/1hour.html",
         "hp_url": "https://fishingmarketbear.wixsite.com/ryugaike",
         "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "",
-        "search_name": "フィッシングパーク竜华池", "tel": "055-252-0938",
+        "search_name": "フィッシングパーク竜華池", "tel": "055-252-0938",
         "aliases": ["竜華池", "りゅうがいけ", "竜华池"]
     },
     "平谷湖": {
@@ -952,7 +952,7 @@ BASS_SPOT_WEATHER_DATA = {
         "search_name": "近藤沼", "tel": "",
         "aliases": ["近藤沼", "こんどうぬま", "こんどう"]
     },
-    "片仓ダム": {
+    "片倉ダム": {
         "url": "https://weathernews.jp/onebox/35.198/140.070/",
         "tenki_url": "https://tenki.jp/forecast/3/15/4530/12225/1hour.html",
         "hp_url": "", "hp2_url": "",
@@ -972,8 +972,8 @@ BASS_SPOT_WEATHER_DATA = {
             ]
         ],
         "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "",
-        "search_name": "片仓ダム", "tel": "",
-        "aliases": ["片仓ダム", "笹川湖", "かたくらだむ", "かたくら", "片仓"]
+        "search_name": "片倉ダム", "tel": "",
+        "aliases": ["片倉ダム", "笹川湖", "かたくらだむ", "かたくら", "片仓"]
     },
     "三島湖": {
         "url": "https://weathernews.jp/onebox/35.211/140.033/",
@@ -1113,7 +1113,7 @@ COLOR_GROUPS = [
         "title": "📍 甲信・東北・東海・関西",
         "header_bg": "#6a1b9a",
         "sub_groups": [
-            {"bg": "#f3e5f5", "spots": ["鹿留", "小菅", "奈良子", "シルフ", "ツガネ", "竜华池", "平谷湖", "ハーブ", "ニレ池", "鹿島やり", "つきの池", "あずみ野"]},
+            {"bg": "#f3e5f5", "spots": ["鹿留", "小菅", "奈良子", "シルフ", "ツガネ", "竜華池", "平谷湖", "ハーブ", "ニレ池", "鹿島やり", "つきの池", "あずみ野"]},
             {"bg": "#e1bee7", "spots": ["Lost Lures", "不忘", "白河", "ほのぼの", "WaDoNa", "鶴沼川", "オーパ", "あいづ", "上浜", "GOZU"]},
             {"bg": "#d1c4e9", "spots": ["FCE瑞浪", "３９", "醒井", "高島の泉", "千早川"]}
         ]
@@ -1125,7 +1125,7 @@ BASS_COLOR_GROUPS = [
         "title": "📍 関東（千葉・埼玉・神奈川・群馬）",
         "header_bg": "#2e7d32",
         "sub_groups": [
-            {"bg": "#e8f5e9", "spots": ["亀山湖", "高滝湖", "片仓ダム", "三島湖", "豊英ダム"]},
+            {"bg": "#e8f5e9", "spots": ["亀山湖", "高滝湖", "片倉ダム", "三島湖", "豊英ダム"]},
             {"bg": "#e3f2fd", "spots": ["GGD", "柴山沼", "城沼", "近藤沼"]},
             {"bg": "#f3e5f5", "spots": ["相模湖"]}
         ]
@@ -1526,7 +1526,8 @@ def get_user_setting(user_id):
                 "GP不忘": "不忘", "座間・amaz": "座間", "パラダイス": "釣パラダイス", "蛇尾川": "蛇尾（さび）川",
                 "大崎": "大崎・赤城", "ロストルアーズ": "Lost Lures", "キングフィッシャー": "キング",
                 "JF in Tsugane": "ツガネ", "川場キングダム": "キングダム", "イワナセンター": "イワセン", "鹿島槍": "鹿島やり",
-                "アルクス宇宇都宮": "アルクス宇都宮"
+                "アルクス宇宇都宮": "アルクス宇都宮",
+                "片仓ダム": "片倉ダム"
             }
             
             raw_favs = [s.strip() for s in favs.split(',')]
@@ -1887,21 +1888,15 @@ def fetch_spot_1hour_data(url, tenki_url=None):
         return None
 
 def get_cached_weather(spot_name):
-    # ★ バス釣り場はキャッシュを取得しない（常にリアルタイム取得）
-    if spot_name in BASS_SPOT_WEATHER_DATA:
-        return None
-        
     now = datetime.now(timezone.utc)
     if spot_name in MEMORY_CACHE:
         data, updated_time = MEMORY_CACHE[spot_name]
-        # ★ キャッシュ寿命を1時間に戻す
         if now - updated_time <= timedelta(hours=1):
             if isinstance(data, dict):
                 weekly = data.get("__weekly__", [])
-                if data.get("_version") != "settings_shortcut_v53": return None
+                if data.get("_version") != "settings_shortcut_v54": return None
                 if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-": return None
             return data
-            
     if not supabase: return None
     try:
         res = supabase.table('weather_cache').select('*').eq('spot_name', spot_name).execute()
@@ -1915,7 +1910,7 @@ def get_cached_weather(spot_name):
                         weather_data = row.get('weather_data')
                         if isinstance(weather_data, dict):
                             weekly = weather_data.get("__weekly__", [])
-                            if weather_data.get("_version") != "settings_shortcut_v53": return None
+                            if weather_data.get("_version") != "settings_shortcut_v54": return None
                             if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-": return None
                         MEMORY_CACHE[spot_name] = (weather_data, updated_time)
                         return weather_data
@@ -1926,12 +1921,8 @@ def get_cached_weather(spot_name):
         return None
 
 def save_cached_weather(spot_name, weather_data):
-    # ★ バス釣り場はキャッシュを保存しない
-    if spot_name in BASS_SPOT_WEATHER_DATA:
-        return
-        
     now = datetime.now(timezone.utc)
-    weather_data["_version"] = "settings_shortcut_v53"
+    weather_data["_version"] = "settings_shortcut_v54"
     MEMORY_CACHE[spot_name] = (weather_data, now)
     if not supabase: return
     try:
