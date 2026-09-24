@@ -199,7 +199,7 @@ SPOT_WEATHER_DATA = {
         "url": "https://weathernews.jp/onebox/36.388609/139.537247/",
         "tenki_url": "https://tenki.jp/forecast/3/12/4110/9204/1hour.html",
         "hp_url": "http://www.kaga-fa.co.jp/",
-        "x_url": "", "fb_url": "", "insta_url": "https://www.instagram.com/kaga_fishing_area/", "blog_url": "https://ameblo.jp/kaga-fa/", "yt_url": "",
+        "x_url": "", "fb_url": "", "insta_url": "https://ameblo.jp/kaga-fa/", "yt_url": "",
         "search_name": "加賀フィッシングエリア", "tel": "0283-24-1513",
         "aliases": ["加賀", "加賀フィッシングエリア", "加賀FA", "かが"]
     },
@@ -1006,7 +1006,6 @@ BASS_SPOT_WEATHER_DATA = {
         "search_name": "東山ダム", "tel": "",
         "aliases": ["東山ダム", "ひがしやまだむ", "ひがしやま"]
     },
-    # ★ 羽鳥湖を追加 ★
     "羽鳥湖": {
         "url": "https://weathernews.jp/onebox/37.261/140.079/",
         "tenki_url": "https://tenki.jp/forecast/2/10/3610/7461/1hour.html",
@@ -1025,7 +1024,8 @@ BASS_SPOT_WEATHER_DATA = {
     # ★ 桧原湖を追加 ★
     "桧原湖": {
         "url": "https://weathernews.jp/onebox/37.652/140.062/",
-        "tenki_url": "https://tenki.jp/forecast/2/10/3630/7428/1hour.html",
+        # ★ tenki.jp の地域コードを 7428 から正しい 7402 に修正 ★
+        "tenki_url": "https://tenki.jp/forecast/2/10/3630/7402/1hour.html",
         "hp_url": "", "hp2_url": "",
         "hide_default_map": True,
         "custom_button_rows": [
@@ -1825,7 +1825,7 @@ def get_cached_weather(spot_name):
         if now - updated_time <= timedelta(hours=1):
             if isinstance(data, dict):
                 weekly = data.get("__weekly__", [])
-                if data.get("_version") != "settings_shortcut_v44": return None
+                if data.get("_version") != "settings_shortcut_v45": return None
                 if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-": return None
             return data
     if not supabase: return None
@@ -1841,7 +1841,7 @@ def get_cached_weather(spot_name):
                         weather_data = row.get('weather_data')
                         if isinstance(weather_data, dict):
                             weekly = weather_data.get("__weekly__", [])
-                            if weather_data.get("_version") != "settings_shortcut_v44": return None
+                            if weather_data.get("_version") != "settings_shortcut_v45": return None
                             if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-": return None
                         MEMORY_CACHE[spot_name] = (weather_data, updated_time)
                         return weather_data
@@ -1853,7 +1853,7 @@ def get_cached_weather(spot_name):
 
 def save_cached_weather(spot_name, weather_data):
     now = datetime.now(timezone.utc)
-    weather_data["_version"] = "settings_shortcut_v44"
+    weather_data["_version"] = "settings_shortcut_v45"
     MEMORY_CACHE[spot_name] = (weather_data, now)
     if not supabase: return
     try:
