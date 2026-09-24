@@ -900,7 +900,6 @@ BASS_SPOT_WEATHER_DATA = {
     # --- 千葉県 ---
     "亀山湖": {
         "url": "https://weathernews.jp/onebox/35.23/140.09/",
-        # ★ 亀山湖の市町村コードを「君津市（12225）」に修正しました ★
         "tenki_url": "https://tenki.jp/forecast/3/15/4530/12225/1hour.html",
         "hp_url": "", "hp2_url": "",
         "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "",
@@ -914,15 +913,25 @@ BASS_SPOT_WEATHER_DATA = {
         "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "",
         "search_name": "高滝湖", "tel": "",
         "aliases": ["高滝湖", "高滝ダム", "たかたきこ", "高滝", "たかたき"]
+    },
+    # --- 埼玉県 ---
+    "GGD": {
+        "url": "https://weathernews.jp/onebox/36.103735/139.726303/",
+        "tenki_url": "https://tenki.jp/forecast/3/14/4320/11232/1hour.html",
+        "hp_url": "", "hp2_url": "",
+        "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "",
+        "search_name": "36.103735,139.726303", "tel": "",
+        "aliases": ["GGD", "権現堂川", "権現堂", "ごんげんどう", "ggd", "権現堂公園"]
     }
 }
 
 BASS_COLOR_GROUPS = [
     {
-        "title": "📍 関東（千葉）",
+        "title": "📍 関東（千葉・埼玉）",
         "header_bg": "#2e7d32",
         "sub_groups": [
-            {"bg": "#e8f5e9", "spots": ["亀山湖", "高滝湖"]}
+            {"bg": "#e8f5e9", "spots": ["亀山湖", "高滝湖"]},
+            {"bg": "#e3f2fd", "spots": ["GGD"]}
         ]
     }
 ]
@@ -950,7 +959,11 @@ def convert_to_10days_url(url_str):
 def get_spot_details(spot_key):
     data = ALL_SPOT_DATA.get(spot_key)
     if not data: return spot_key, None, "", "", "", "", "", "", "", "", "", None
-    map_url = f"https://www.google.com/maps/search/?api=1&query={quote(data.get('search_name', spot_key))}"
+    
+    # 座標が直接指定されている場合はそのまま検索クエリにする
+    search_q = data.get('search_name', spot_key)
+    map_url = f"https://www.google.com/maps/search/?api=1&query={quote(search_q)}"
+    
     tenki_10days_url = convert_to_10days_url(data.get("tenki_url"))
     return (
         spot_key, data["url"], clean_url(data.get("hp_url", "")), clean_url(data.get("hp2_url", "")), 
@@ -1482,7 +1495,7 @@ def extract_lat_lon(url):
 
 def fetch_weekly_data_from_api(lat, lon, raw_exclude_dates):
     try:
-        api_url = f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&daily=weathercode,temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=Asia%2FTokyo&forecast_days=14"
+        api_url = f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&daily=weathercode,temperature_2m_max,temperature_2m_min&timezone=Asia%2FTokyo&forecast_days=14"
         res = requests.get(api_url, timeout=5.0)
         res.raise_for_status()
         data = res.json()
@@ -1492,10 +1505,7 @@ def fetch_weekly_data_from_api(lat, lon, raw_exclude_dates):
         weathercodes = daily.get("weathercode", [])
         temp_max = daily.get("temperature_2m_max", [])
         temp_min = daily.get("temperature_2m_min", [])
-        rain_prob = daily.get("precipitation_probability_max", [])
-        
-        if not rain_prob:
-            rain_prob = [0] * len(times)
+        rain_prob = ["-"] * len(times) 
         
         weekly_data = []
         now_jst_date = datetime.now(timezone(timedelta(hours=9))).date()
@@ -1521,7 +1531,7 @@ def fetch_weekly_data_from_api(lat, lon, raw_exclude_dates):
             
             t_max = str(round(temp_max[i])) if i < len(temp_max) and temp_max[i] is not None else "-"
             t_min = str(round(temp_min[i])) if i < len(temp_min) and temp_min[i] is not None else "-"
-            r_prob = f"{rain_prob[i]}%" if i < len(rain_prob) and rain_prob[i] is not None else "-"
+            r_prob = f"{rain_prob[i]}%" if i < len(rain_prob) and rain_prob[i] != "-" else "-"
             
             weekly_data.append({
                 "date": date_label,
@@ -1542,7 +1552,7 @@ def fetch_weekly_data_from_api(lat, lon, raw_exclude_dates):
 def fetch_weekly_data_from_tenki(tenki_url, raw_exclude_dates):
     try:
         headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
-        response = requests.get(tenki_url, headers=headers, timeout=5.0)
+        response = requests.get(tenki_url, headers=headers, timeout=3.0)
         response.raise_for_status()
         soup = BeautifulSoup(response.text, 'html.parser')
         
@@ -1553,7 +1563,8 @@ def fetch_weekly_data_from_tenki(tenki_url, raw_exclude_dates):
         if raw_exclude_dates:
             last_wn_date = guess_date_from_string(raw_exclude_dates[-1], now_jst_date)
             
-        elems = soup.find_all('dd', class_='forecast10days-actab')
+        elems = soup.select('.forecast10days-actab, .forecast14days-actab')
+        
         for elem in elems:
             days_elem = elem.find('div', class_='days')
             forecast_elem = elem.find('div', class_='forecast')
@@ -1569,7 +1580,7 @@ def fetch_weekly_data_from_tenki(tenki_url, raw_exclude_dates):
             if last_wn_date and tenki_date <= last_wn_date:
                 continue
 
-            m = re.search(r'(\d{1,2})月(\d{1,2})日\((.+?)\)', raw_days)
+            m = re.search(r'(\d{1,2})[月/](\d{1,2})日?\((.+?)\)', raw_days)
             if m:
                 day_num = int(m.group(2))
                 youbi = m.group(3)
@@ -1716,7 +1727,7 @@ def get_cached_weather(spot_name):
         if now - updated_time <= timedelta(hours=1):
             if isinstance(data, dict):
                 weekly = data.get("__weekly__", [])
-                if data.get("_version") != "settings_shortcut_v22":
+                if data.get("_version") != "settings_shortcut_v23":
                     return None
                 if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-":
                     return None
@@ -1735,7 +1746,7 @@ def get_cached_weather(spot_name):
                         weather_data = row.get('weather_data')
                         if isinstance(weather_data, dict):
                             weekly = weather_data.get("__weekly__", [])
-                            if weather_data.get("_version") != "settings_shortcut_v22":
+                            if weather_data.get("_version") != "settings_shortcut_v23":
                                 return None
                             if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-":
                                 return None
@@ -1750,7 +1761,7 @@ def get_cached_weather(spot_name):
 
 def save_cached_weather(spot_name, weather_data):
     now = datetime.now(timezone.utc)
-    weather_data["_version"] = "settings_shortcut_v22"
+    weather_data["_version"] = "settings_shortcut_v23"
     MEMORY_CACHE[spot_name] = (weather_data, now)
     
     if not supabase: return
