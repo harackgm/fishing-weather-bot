@@ -32,10 +32,10 @@ app = Flask(__name__)
 LINE_CHANNEL_ACCESS_TOKEN = os.getenv('LINE_CHANNEL_ACCESS_TOKEN', '').strip()
 LINE_CHANNEL_SECRET = os.getenv('LINE_CHANNEL_SECRET', '').strip()
 
+MAX_FAVORITES = 30
+
 line_bot_api = LineBotApi(LINE_CHANNEL_ACCESS_TOKEN)
 handler = WebhookHandler(LINE_CHANNEL_SECRET)
-
-MAX_FAVORITES = 30
 
 # Supabase接続初期化
 SUPABASE_URL = os.getenv('SUPABASE_URL', '').strip()
@@ -199,7 +199,7 @@ SPOT_WEATHER_DATA = {
         "url": "https://weathernews.jp/onebox/36.388609/139.537247/",
         "tenki_url": "https://tenki.jp/forecast/3/12/4110/9204/1hour.html",
         "hp_url": "http://www.kaga-fa.co.jp/",
-        "x_url": "", "fb_url": "", "insta_url": "https://ameblo.jp/kaga-fa/", "yt_url": "",
+        "x_url": "", "fb_url": "", "insta_url": "https://www.instagram.com/kaga_fishing_area/", "blog_url": "https://ameblo.jp/kaga-fa/", "yt_url": "",
         "search_name": "加賀フィッシングエリア", "tel": "0283-24-1513",
         "aliases": ["加賀", "加賀フィッシングエリア", "加賀FA", "かが"]
     },
@@ -929,7 +929,7 @@ BASS_SPOT_WEATHER_DATA = {
         "hide_default_map": True,
         "custom_button_rows": [
             [
-                {"label": "🚷陸っぱり", "url": "https://www.gunfish.jp/turiba/kondoba.htm"},
+                {"label": "🚷陸っぱり", "url": "https://www.gunfish.jp/kumisyo/jyonumasyo.htm"},
                 {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E5%B0%BE%E6%9B%B3%E9%A7%90%E8%BB%8A%E5%A0%B4+%E5%9F%8E%E6%B2%BC/@36.2442399,139.5470132,17z/data=!4m6!3m5!1s0x601f30131ecc7d7d:0xf6c7e3e2ea8e7b26!8m2!3d36.2442399!4d139.5470132!16s%2Fg%2F1tmqlwq6"}
             ]
         ],
@@ -937,7 +937,6 @@ BASS_SPOT_WEATHER_DATA = {
         "search_name": "城沼", "tel": "",
         "aliases": ["城沼", "じょうぬま", "じょう"]
     },
-    # ★ 近藤沼を追加 ★
     "近藤沼": {
         "url": "https://weathernews.jp/onebox/36.226/139.504/",
         "tenki_url": "https://tenki.jp/forecast/3/13/4210/10207/1hour.html",
@@ -953,7 +952,7 @@ BASS_SPOT_WEATHER_DATA = {
         "search_name": "近藤沼", "tel": "",
         "aliases": ["近藤沼", "こんどうぬま", "こんどう"]
     },
-    "片倉ダム": {
+    "片仓ダム": {
         "url": "https://weathernews.jp/onebox/35.198/140.070/",
         "tenki_url": "https://tenki.jp/forecast/3/15/4530/12225/1hour.html",
         "hp_url": "", "hp2_url": "",
@@ -973,8 +972,8 @@ BASS_SPOT_WEATHER_DATA = {
             ]
         ],
         "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "",
-        "search_name": "片倉ダム", "tel": "",
-        "aliases": ["片倉ダム", "笹川湖", "かたくらだむ", "かたくら", "片倉"]
+        "search_name": "片仓ダム", "tel": "",
+        "aliases": ["片仓ダム", "笹川湖", "かたくらだむ", "かたくら", "片仓"]
     },
     "三島湖": {
         "url": "https://weathernews.jp/onebox/35.211/140.033/",
@@ -1089,7 +1088,7 @@ COLOR_GROUPS = [
         "title": "📍 静岡・神奈川・東京・千葉",
         "header_bg": "#0066cc",
         "sub_groups": [
-            {"bg": "#e6f0fa", "spots": ["東山湖", "すその", "須川", "アルクス焼津", "浜名湖"]},
+            {"bg": "#e6f0fa", "spots": ["東山湖", "す走到", "須川", "アルクス焼津", "浜名湖"]},
             {"bg": "#d4e6f1", "spots": ["足柄", "中津川", "早戸川", "王禅寺", "開成", "浅川国際"]},
             {"bg": "#cce5ff", "spots": ["座間", "ジョイバレー", "ウォルトン", "NOIKE", "釣パラダイス"]}
         ]
@@ -1126,8 +1125,7 @@ BASS_COLOR_GROUPS = [
         "title": "📍 関東（千葉・埼玉・神奈川・群馬）",
         "header_bg": "#2e7d32",
         "sub_groups": [
-            {"bg": "#e8f5e9", "spots": ["亀山湖", "高滝湖", "片倉ダム", "三島湖", "豊英ダム"]},
-            # ★ 近藤沼を追加 ★
+            {"bg": "#e8f5e9", "spots": ["亀山湖", "高滝湖", "片仓ダム", "三島湖", "豊英ダム"]},
             {"bg": "#e3f2fd", "spots": ["GGD", "柴山沼", "城沼", "近藤沼"]},
             {"bg": "#f3e5f5", "spots": ["相模湖"]}
         ]
@@ -1543,6 +1541,14 @@ def get_user_setting(user_id):
         print(f"[Supabase取得エラー] {e}")
         return ('ウェザーニュース', '', 'trout')
 
+def get_mode_fav_count(favorites, fishing_mode):
+    active_group = COLOR_GROUPS if fishing_mode == "trout" else BASS_COLOR_GROUPS
+    active_spots = []
+    for group in active_group:
+        for sg in group["sub_groups"]:
+            active_spots.extend(sg["spots"])
+    return len([s for s in favorites.split(',') if s in active_spots])
+
 def add_favorite_spots(user_id, spot_names):
     if not supabase: return False, [], ["DB接続未完了です。"]
     source, favorites, fishing_mode = get_user_setting(user_id)
@@ -1564,10 +1570,27 @@ def add_favorite_spots(user_id, spot_names):
         if not target_name:
             errors.append(f"{spot_name}(不明)")
             continue
+            
+        is_trout = False
+        for g in COLOR_GROUPS:
+            for sg in g["sub_groups"]:
+                if target_name in sg["spots"]:
+                    is_trout = True
+                    break
+            if is_trout: break
+            
+        target_active_group = COLOR_GROUPS if is_trout else BASS_COLOR_GROUPS
+        target_active_spots = []
+        for g in target_active_group:
+            for sg in g["sub_groups"]:
+                target_active_spots.extend(sg["spots"])
+                
+        target_mode_favs = [s for s in fav_list if s in target_active_spots]
+
         if target_name in fav_list:
             errors.append(f"{target_name}(登録済)")
             continue
-        if len(fav_list) >= MAX_FAVORITES:
+        if len(target_mode_favs) >= MAX_FAVORITES:
             errors.append(f"{target_name}(上限{MAX_FAVORITES}件超過)")
             continue
             
@@ -1870,7 +1893,7 @@ def get_cached_weather(spot_name):
         if now - updated_time <= timedelta(hours=1):
             if isinstance(data, dict):
                 weekly = data.get("__weekly__", [])
-                if data.get("_version") != "settings_shortcut_v49": return None
+                if data.get("_version") != "settings_shortcut_v50": return None
                 if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-": return None
             return data
     if not supabase: return None
@@ -1886,7 +1909,7 @@ def get_cached_weather(spot_name):
                         weather_data = row.get('weather_data')
                         if isinstance(weather_data, dict):
                             weekly = weather_data.get("__weekly__", [])
-                            if weather_data.get("_version") != "settings_shortcut_v49": return None
+                            if weather_data.get("_version") != "settings_shortcut_v50": return None
                             if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-": return None
                         MEMORY_CACHE[spot_name] = (weather_data, updated_time)
                         return weather_data
@@ -1898,7 +1921,7 @@ def get_cached_weather(spot_name):
 
 def save_cached_weather(spot_name, weather_data):
     now = datetime.now(timezone.utc)
-    weather_data["_version"] = "settings_shortcut_v49"
+    weather_data["_version"] = "settings_shortcut_v50"
     MEMORY_CACHE[spot_name] = (weather_data, now)
     if not supabase: return
     try:
@@ -2178,7 +2201,7 @@ def handle_message(event):
             spot_names = [s for s in re.split(r'[\s,、\n]+', spots_str) if s and s not in ["追加", "削除"]]
             success, added, errors = add_favorite_spots(user_id, spot_names)
             _, favorites, _ = get_user_setting(user_id)
-            total_count = len([s for s in favorites.split(',') if s])
+            total_count = get_mode_fav_count(favorites, fishing_mode)
             
             reply_lines = []
             if added: reply_lines.append(f"✅ {len(added)}件追加しました: {', '.join(added)}")
@@ -2196,7 +2219,7 @@ def handle_message(event):
             spot_names = [s for s in re.split(r'[\s,、\n]+', spots_str) if s and s not in ["追加", "削除"]]
             success, removed, errors = remove_favorite_spots(user_id, spot_names)
             _, favorites, _ = get_user_setting(user_id)
-            total_count = len([s for s in favorites.split(',') if s])
+            total_count = get_mode_fav_count(favorites, fishing_mode)
             
             reply_lines = []
             if removed: reply_lines.append(f"✅ {len(removed)}件削除しました: {', '.join(removed)}")
@@ -2317,7 +2340,7 @@ def handle_postback(event):
         elif action == "fav_add_and_list":
             success, added, errors = add_favorite_spots(user_id, [spot_name])
             _, favorites, _ = get_user_setting(user_id)
-            total_count = len([s for s in favorites.split(',') if s])
+            total_count = get_mode_fav_count(favorites, fishing_mode)
             msg = f"✅ 追加しました: {added[0]}\n📊 現在の登録数: {total_count}/{MAX_FAVORITES}箇所" if added else f"⚠️ {errors[0]}\n📊 現在の登録数: {total_count}/{MAX_FAVORITES}箇所"
             flex_msg = build_spot_list_carousel_horizontal(user_id=user_id, mode=fishing_mode)
             line_bot_api.reply_message(event.reply_token, [TextSendMessage(text=msg), flex_msg])
@@ -2333,7 +2356,7 @@ def handle_postback(event):
         elif action == "fav_del_execute_and_list":
             success, removed, errors = remove_favorite_spots(user_id, [spot_name])
             _, favorites, _ = get_user_setting(user_id)
-            total_count = len([s for s in favorites.split(',') if s])
+            total_count = get_mode_fav_count(favorites, fishing_mode)
             msg = f"✅ 削除しました: {removed[0]}\n📊 現在の登録数: {total_count}/{MAX_FAVORITES}箇所" if removed else f"⚠️ {errors[0]}\n📊 現在の登録数: {total_count}/{MAX_FAVORITES}箇所"
             flex_msg = build_spot_list_carousel_horizontal(user_id=user_id, mode=fishing_mode)
             line_bot_api.reply_message(event.reply_token, [TextSendMessage(text=msg), flex_msg])
@@ -2342,7 +2365,7 @@ def handle_postback(event):
             success, removed, errors = remove_favorite_spots(user_id, [spot_name])
             _, favorites, _ = get_user_setting(user_id)
             fav_list = [s.strip() for s in favorites.split(',') if s.strip()]
-            total_count = len(fav_list)
+            total_count = get_mode_fav_count(favorites, fishing_mode)
             msg = f"✅ 削除しました: {removed[0]}\n📊 現在の登録数: {total_count}/{MAX_FAVORITES}箇所" if removed else f"⚠️ {errors[0]}\n📊 現在の登録数: {total_count}/{MAX_FAVORITES}箇所"
             flex_msg = build_settings_flex_message(fav_list, mode=fishing_mode)
             line_bot_api.reply_message(event.reply_token, [TextSendMessage(text=msg), flex_msg])
