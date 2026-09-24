@@ -199,7 +199,7 @@ SPOT_WEATHER_DATA = {
         "url": "https://weathernews.jp/onebox/36.388609/139.537247/",
         "tenki_url": "https://tenki.jp/forecast/3/12/4110/9204/1hour.html",
         "hp_url": "http://www.kaga-fa.co.jp/",
-        "x_url": "", "fb_url": "", "insta_url": "https://ameblo.jp/kaga-fa/", "yt_url": "",
+        "x_url": "", "fb_url": "", "insta_url": "https://www.instagram.com/kaga_fishing_area/", "blog_url": "https://ameblo.jp/kaga-fa/", "yt_url": "",
         "search_name": "加賀フィッシングエリア", "tel": "0283-24-1513",
         "aliases": ["加賀", "加賀フィッシングエリア", "加賀FA", "かが"]
     },
@@ -1008,7 +1008,7 @@ BASS_SPOT_WEATHER_DATA = {
     },
     # ★ 羽鳥湖を追加 ★
     "羽鳥湖": {
-        "url": "https://weathernews.jp/onebox/37.271554/140.076067/",
+        "url": "https://weathernews.jp/onebox/37.261/140.079/",
         "tenki_url": "https://tenki.jp/forecast/2/10/3610/7461/1hour.html",
         "hp_url": "", "hp2_url": "",
         "hide_default_map": True,
@@ -1021,6 +1021,22 @@ BASS_SPOT_WEATHER_DATA = {
         "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "",
         "search_name": "羽鳥湖", "tel": "",
         "aliases": ["羽鳥湖", "羽鳥ダム", "はとりこ", "はとり"]
+    },
+    # ★ 桧原湖を追加 ★
+    "桧原湖": {
+        "url": "https://weathernews.jp/onebox/37.652/140.062/",
+        "tenki_url": "https://tenki.jp/forecast/2/10/3630/7428/1hour.html",
+        "hp_url": "", "hp2_url": "",
+        "hide_default_map": True,
+        "custom_button_rows": [
+            [
+                {"label": "🌐ゴールドH", "url": "https://gmeguro.com/"},
+                {"label": "🗺️地図", "url": "https://www.google.co.jp/maps/place/%E3%80%92969-2701+%E7%A6%8F%E5%B3%B6%E7%9C%8C%E8%80%B6%E9%BA%BB%E9%83%A1%E5%8C%97%E5%A1%A9%E5%8E%9F%E6%9D%91%E6%AA%9C%E5%8E%9F%E5%A4%A7%E5%BA%9C%E5%B9%B3%E5%8E%9F%EF%BC%91%EF%BC%91%EF%BC%97%EF%BC%92%E2%88%92%EF%BC%94/@37.6529382,140.0621476,17z/data=!3m1!4b1!4m6!3m5!1s0x5f8abb0db874825d:0x68d33e5c0fb7e72d!8m2!3d37.6529382!4d140.0647225!16s%2Fg%2F11ggzdspy0"}
+            ]
+        ],
+        "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "",
+        "search_name": "桧原湖", "tel": "",
+        "aliases": ["桧原湖", "ひばらこ", "ひばら", "桧原", "裏磐梯"]
     }
 }
 
@@ -1075,7 +1091,7 @@ BASS_COLOR_GROUPS = [
         "title": "📍 東北（福島）",
         "header_bg": "#6a1b9a",
         "sub_groups": [
-            {"bg": "#e1bee7", "spots": ["東山ダム", "羽鳥湖"]}
+            {"bg": "#e1bee7", "spots": ["東山ダム", "羽鳥湖", "桧原湖"]}
         ]
     }
 ]
@@ -1809,7 +1825,7 @@ def get_cached_weather(spot_name):
         if now - updated_time <= timedelta(hours=1):
             if isinstance(data, dict):
                 weekly = data.get("__weekly__", [])
-                if data.get("_version") != "settings_shortcut_v43": return None
+                if data.get("_version") != "settings_shortcut_v44": return None
                 if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-": return None
             return data
     if not supabase: return None
@@ -1825,7 +1841,7 @@ def get_cached_weather(spot_name):
                         weather_data = row.get('weather_data')
                         if isinstance(weather_data, dict):
                             weekly = weather_data.get("__weekly__", [])
-                            if weather_data.get("_version") != "settings_shortcut_v43": return None
+                            if weather_data.get("_version") != "settings_shortcut_v44": return None
                             if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-": return None
                         MEMORY_CACHE[spot_name] = (weather_data, updated_time)
                         return weather_data
@@ -1837,7 +1853,7 @@ def get_cached_weather(spot_name):
 
 def save_cached_weather(spot_name, weather_data):
     now = datetime.now(timezone.utc)
-    weather_data["_version"] = "settings_shortcut_v43"
+    weather_data["_version"] = "settings_shortcut_v44"
     MEMORY_CACHE[spot_name] = (weather_data, now)
     if not supabase: return
     try:
