@@ -1106,8 +1106,9 @@ BASS_SPOT_WEATHER_DATA = {
         "search_name": "榛名湖", "tel": "",
         "aliases": ["榛名湖", "はるなこ"]
     },
+    # ★ 入鹿池 のURLを代表地点に修正 ★
     "入鹿池": {
-        "url": "https://weathernews.jp/onebox/35.338/136.991/",
+        "url": "https://weathernews.jp/onebox/35.38/136.94/",
         "tenki_url": "https://tenki.jp/forecast/5/26/5110/23215/1hour.html",
         "hp_url": "", "hp2_url": "",
         "hide_default_map": True,
@@ -1144,9 +1145,9 @@ BASS_SPOT_WEATHER_DATA = {
         "search_name": "雄蛇ヶ池", "tel": "",
         "aliases": ["雄蛇ヶ池", "おじゃがいけ", "おじゃが", "雄蛇が池"]
     },
-    # ★ 七色ダムを正しく取得できるように修正 ★
+    # ★ 七色ダム のURLを代表地点に修正 ★
     "七色ダム": {
-        "url": "https://weathernews.jp/onebox/34.015/135.998/",
+        "url": "https://weathernews.jp/onebox/34.03/135.98/",
         "tenki_url": "https://tenki.jp/forecast/6/32/6420/29450/1hour.html",
         "hp_url": "", "hp2_url": "",
         "hide_default_map": True,
@@ -1168,9 +1169,9 @@ BASS_SPOT_WEATHER_DATA = {
         "search_name": "七色ダム", "tel": "",
         "aliases": ["七色ダム", "なないろだむ", "なないろ"]
     },
-    # ★ 弥栄湖を正しく取得できるように修正 ★
+    # ★ 弥栄湖 のURLを代表地点に修正 ★
     "弥栄湖": {
-        "url": "https://weathernews.jp/onebox/34.236/132.142/",
+        "url": "https://weathernews.jp/onebox/34.16/132.22/",
         "tenki_url": "https://tenki.jp/forecast/7/38/8130/35208/1hour.html",
         "hp_url": "", "hp2_url": "",
         "hide_default_map": True,
@@ -1996,6 +1997,10 @@ def fetch_spot_1hour_data(url, tenki_url=None):
                 if daily_list: weather_by_date[date_str] = daily_list
                 if len(weather_by_date) >= 4: break
 
+        # 1時間天気が1日分も取得できなかった場合はエラーとして扱う
+        if not weather_by_date:
+            return None
+
         raw_exclude_dates = list(weather_by_date.keys())
         weekly_data = []
         if tenki_url: weekly_data = fetch_weekly_data_from_tenki(tenki_url, raw_exclude_dates)
@@ -2029,8 +2034,11 @@ def get_cached_weather(spot_name):
         if now - updated_time <= timedelta(hours=1):
             if isinstance(data, dict):
                 weekly = data.get("__weekly__", [])
-                if data.get("_version") != "settings_shortcut_v76": return None
+                if data.get("_version") != "settings_shortcut_v77": return None
                 if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-": return None
+                # 1時間天気が入っているかチェック
+                dates = [d for d in data.keys() if d != "__weekly__" and d != "_version"]
+                if not dates: return None
             return data
             
     if not supabase: return None
@@ -2046,8 +2054,10 @@ def get_cached_weather(spot_name):
                         weather_data = row.get('weather_data')
                         if isinstance(weather_data, dict):
                             weekly = weather_data.get("__weekly__", [])
-                            if weather_data.get("_version") != "settings_shortcut_v76": return None
+                            if weather_data.get("_version") != "settings_shortcut_v77": return None
                             if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-": return None
+                            dates = [d for d in weather_data.keys() if d != "__weekly__" and d != "_version"]
+                            if not dates: return None
                         MEMORY_CACHE[spot_name] = (weather_data, updated_time)
                         return weather_data
                 except: pass
@@ -2058,7 +2068,7 @@ def get_cached_weather(spot_name):
 
 def save_cached_weather(spot_name, weather_data):
     now = datetime.now(timezone.utc)
-    weather_data["_version"] = "settings_shortcut_v76"
+    weather_data["_version"] = "settings_shortcut_v77"
     MEMORY_CACHE[spot_name] = (weather_data, now)
     if not supabase: return
     try:
@@ -2471,7 +2481,7 @@ def handle_postback(event):
                 flex_msg = build_grid_flex_message(target_spot_name, weather_data, hp_url, hp2_url, map_url, tel, x_url, fb_url, insta_url, blog_url, yt_url, is_favorite=is_fav)
                 line_bot_api.reply_message(event.reply_token, flex_msg)
             else:
-                line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"⚠️ 【{target_spot_name}】の天気データの取得に失敗しました。"))
+                line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"⚠️ 【{target_spot_name}】の天気データの取得に失敗しました。少し時間を置いてから再度お試しください。"))
             return
 
         elif action == "fav_add_and_list":
