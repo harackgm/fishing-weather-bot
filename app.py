@@ -1053,37 +1053,29 @@ BASS_SPOT_WEATHER_DATA = {
         "search_name": "栄町", "tel": "",
         "aliases": ["栄町", "さかえまち"]
     },
-    # ★ 琵琶湖長浜 を追加 ★
-    "琵琶湖長浜": {
-        "url": "https://weathernews.jp/onebox/35.481/136.112/",
-        "tenki_url": "https://tenki.jp/forecast/6/28/6020/25203/1hour.html",
+    # ★ 榛名湖 を追加 ★
+    "榛名湖": {
+        "url": "https://weathernews.jp/onebox/36.473/138.860/",
+        "tenki_url": "https://tenki.jp/forecast/3/13/4210/10202/1hour.html",
         "hp_url": "", "hp2_url": "",
         "hide_default_map": True,
         "custom_button_rows": [
             [
-                {"label": "🌐ボート", "url": "https://fomarina-shiga.com/"},
-                {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%96%E3%82%AA%E3%83%BC%E3%82%B7%E3%83%A3%E3%83%B3%E3%83%9E%E3%83%AA%E3%83%BC%E3%83%8A/@35.4810202,136.1078288,15.96z/data=!4m6!3m5!1s0x60018cc07d7e9a49:0xc52809c4fc614823!8m2!3d35.4810412!4d136.1123604!16s%2Fg%2F1tf3z8n_"}
-            ]
-        ],
-        "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "",
-        "search_name": "琵琶湖長浜", "tel": "",
-        "aliases": ["琵琶湖長浜", "長浜", "琵琶湖", "ながはま", "びわこ"]
-    },
-    # ★ 琵琶湖守山 を追加 ★
-    "琵琶湖守山": {
-        "url": "https://weathernews.jp/onebox/35.080/135.949/",
-        "tenki_url": "https://tenki.jp/forecast/6/28/6010/25211/1hour.html",
-        "hp_url": "", "hp2_url": "",
-        "hide_default_map": True,
-        "custom_button_rows": [
+                {"label": "🌐ロマンス亭", "url": "http://www12.wind.ne.jp/romansutei/pc/index.html"},
+                {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E3%83%AD%E3%83%9E%E3%83%B3%E3%82%B9%E4%BA%AD/@36.473049,138.8586534,17.5z/data=!4m6!3m5!1s0x601e7ca2824b9055:0x2ae307817006b42c!8m2!3d36.4729583!4d138.8601111!16s%2Fg%2F1tjt204s"}
+            ],
             [
-                {"label": "🌐ボート", "url": "https://www.mlbc3066.com/"},
-                {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E3%83%9E%E3%82%B6%E3%83%BC%E3%83%AC%E3%82%A4%E3%82%AF%E3%83%9C%E3%83%BC%E3%83%88%E3%82%AF%E3%83%A9%E3%83%96/@35.0797941,135.9320807,14z/data=!4m6!3m5!1s0x60017465cbd9b487:0xe122d5af00f491a7!8m2!3d35.0795444!4d135.9494978!16s%2Fg%2F11rvw7bh0"}
+                {"label": "🌐水月", "url": "https://harunako.net/"},
+                {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E6%A6%9B%E5%90%8D%E8%A6%B3%E5%85%89%E3%83%9C%E3%83%BC%E3%83%88%EF%BC%86Cafe%E6%B0%B4%E6%9C%88/@36.4705322,138.859402,17.25z/data=!4m6!3m5!1s0x601e7cbcfb5b6df3:0xa5fd05a64bdf51e7!8m2!3d36.4706058!4d138.8615294!16s%2Fg%2F11bbt46vdc"}
+            ],
+            [
+                {"label": "🌐甲子亭", "url": "http://www.haruna-kinoene.co.jp/"},
+                {"label": "🗺️地図", "url": "https://www.google.com/maps/search/%E6%A6%9B%E5%90%8D%E6%B9%96+%E7%94%B2%E5%AD%90%E4%BA%AD/@36.4691783,138.8643834,18.75z"}
             ]
         ],
         "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "",
-        "search_name": "琵琶湖守山", "tel": "",
-        "aliases": ["琵琶湖守山", "守山", "マザーレイクボート", "もりやま"]
+        "search_name": "榛名湖", "tel": "",
+        "aliases": ["榛名湖", "はるなこ"]
     }
 }
 
@@ -1129,7 +1121,7 @@ BASS_COLOR_GROUPS = [
         "title": "📍 関東（千葉・埼玉・神奈川・群馬・茨城・栃木）",
         "header_bg": "#2e7d32",
         "sub_groups": [
-            {"bg": "#e8f5e9", "spots": ["亀山湖", "高滝湖", "片倉ダム", "三島湖", "豊英ダム"]},
+            {"bg": "#e8f5e9", "spots": ["亀山湖", "高滝湖", "片倉ダム", "三島湖", "豊英ダム", "榛名湖"]},
             {"bg": "#e3f2fd", "spots": ["GGD", "柴山沼", "城沼", "近藤沼", "多々良沼", "新利根川", "霞ケ浦柏崎", "土浦港", "大田原", "那須鳥山", "潮来", "佐原", "栄町"]},
             {"bg": "#f3e5f5", "spots": ["相模湖", "津久井湖"]}
         ]
@@ -1139,14 +1131,6 @@ BASS_COLOR_GROUPS = [
         "header_bg": "#6a1b9a",
         "sub_groups": [
             {"bg": "#e1bee7", "spots": ["東山ダム", "羽鳥湖", "桧原湖", "猪苗代湖"]}
-        ]
-    },
-    {
-        "title": "📍 関西（滋賀）",
-        "header_bg": "#e65100",
-        "sub_groups": [
-            # ★ 琵琶湖守山 を追加 ★
-            {"bg": "#ffe0b2", "spots": ["琵琶湖長浜", "琵琶湖守山"]}
         ]
     }
 ]
@@ -1910,7 +1894,7 @@ def get_cached_weather(spot_name):
         if now - updated_time <= timedelta(hours=1):
             if isinstance(data, dict):
                 weekly = data.get("__weekly__", [])
-                if data.get("_version") != "settings_shortcut_v70": return None
+                if data.get("_version") != "settings_shortcut_v71": return None
                 if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-": return None
             return data
             
@@ -1927,7 +1911,7 @@ def get_cached_weather(spot_name):
                         weather_data = row.get('weather_data')
                         if isinstance(weather_data, dict):
                             weekly = weather_data.get("__weekly__", [])
-                            if weather_data.get("_version") != "settings_shortcut_v70": return None
+                            if weather_data.get("_version") != "settings_shortcut_v71": return None
                             if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-": return None
                         MEMORY_CACHE[spot_name] = (weather_data, updated_time)
                         return weather_data
@@ -1939,7 +1923,7 @@ def get_cached_weather(spot_name):
 
 def save_cached_weather(spot_name, weather_data):
     now = datetime.now(timezone.utc)
-    weather_data["_version"] = "settings_shortcut_v70"
+    weather_data["_version"] = "settings_shortcut_v71"
     MEMORY_CACHE[spot_name] = (weather_data, now)
     if not supabase: return
     try:
