@@ -1182,10 +1182,10 @@ BASS_SPOT_WEATHER_DATA = {
         "search_name": "弥栄湖", "tel": "",
         "aliases": ["弥栄湖", "弥栄ダム", "やさかこ", "やさかだむ", "やさか"]
     },
-    # ★ 遠賀川 のURLを代表地点に修正 ★
+    # ★ 遠賀川 のURLを修正 ★
     "遠賀川": {
         "url": "https://weathernews.jp/onebox/33.82/130.70/",
-        "tenki_url": "https://tenki.jp/forecast/9/43/8210/40215/1hour.html",
+        "tenki_url": "https://tenki.jp/forecast/9/43/8220/40384/1hour.html",
         "hp_url": "", "hp2_url": "",
         "hide_default_map": True,
         "custom_button_rows": [
@@ -2054,7 +2054,7 @@ def get_cached_weather(spot_name):
         if now - updated_time <= timedelta(hours=1):
             if isinstance(data, dict):
                 weekly = data.get("__weekly__", [])
-                if data.get("_version") != "settings_shortcut_v79": return None
+                if data.get("_version") != "settings_shortcut_v80": return None
                 if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-": return None
                 # 1時間天気が入っているかチェック
                 dates = [d for d in data.keys() if d != "__weekly__" and d != "_version"]
@@ -2074,7 +2074,7 @@ def get_cached_weather(spot_name):
                         weather_data = row.get('weather_data')
                         if isinstance(weather_data, dict):
                             weekly = weather_data.get("__weekly__", [])
-                            if weather_data.get("_version") != "settings_shortcut_v79": return None
+                            if weather_data.get("_version") != "settings_shortcut_v80": return None
                             if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-": return None
                             dates = [d for d in weather_data.keys() if d != "__weekly__" and d != "_version"]
                             if not dates: return None
@@ -2088,7 +2088,7 @@ def get_cached_weather(spot_name):
 
 def save_cached_weather(spot_name, weather_data):
     now = datetime.now(timezone.utc)
-    weather_data["_version"] = "settings_shortcut_v79"
+    weather_data["_version"] = "settings_shortcut_v80"
     MEMORY_CACHE[spot_name] = (weather_data, now)
     if not supabase: return
     try:
