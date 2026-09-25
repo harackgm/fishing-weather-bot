@@ -1068,6 +1068,22 @@ BASS_SPOT_WEATHER_DATA = {
         "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "",
         "search_name": "琵琶湖長浜", "tel": "",
         "aliases": ["琵琶湖長浜", "長浜", "琵琶湖", "ながはま", "びわこ"]
+    },
+    # ★ 琵琶湖守山 を追加 ★
+    "琵琶湖守山": {
+        "url": "https://weathernews.jp/onebox/35.080/135.949/",
+        "tenki_url": "https://tenki.jp/forecast/6/28/6010/25211/1hour.html",
+        "hp_url": "", "hp2_url": "",
+        "hide_default_map": True,
+        "custom_button_rows": [
+            [
+                {"label": "🌐ボート", "url": "https://www.mlbc3066.com/"},
+                {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E3%83%9E%E3%82%B6%E3%83%BC%E3%83%AC%E3%82%A4%E3%82%AF%E3%83%9C%E3%83%BC%E3%83%88%E3%82%AF%E3%83%A9%E3%83%96/@35.0797941,135.9320807,14z/data=!4m6!3m5!1s0x60017465cbd9b487:0xe122d5af00f491a7!8m2!3d35.0795444!4d135.9494978!16s%2Fg%2F11rvw7bh0"}
+            ]
+        ],
+        "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "",
+        "search_name": "琵琶湖守山", "tel": "",
+        "aliases": ["琵琶湖守山", "守山", "マザーレイクボート", "もりやま"]
     }
 }
 
@@ -1125,12 +1141,12 @@ BASS_COLOR_GROUPS = [
             {"bg": "#e1bee7", "spots": ["東山ダム", "羽鳥湖", "桧原湖", "猪苗代湖"]}
         ]
     },
-    # ★ 関西（滋賀）グループを追加 ★
     {
         "title": "📍 関西（滋賀）",
         "header_bg": "#e65100",
         "sub_groups": [
-            {"bg": "#ffe0b2", "spots": ["琵琶湖長浜"]}
+            # ★ 琵琶湖守山 を追加 ★
+            {"bg": "#ffe0b2", "spots": ["琵琶湖長浜", "琵琶湖守山"]}
         ]
     }
 ]
@@ -1894,7 +1910,7 @@ def get_cached_weather(spot_name):
         if now - updated_time <= timedelta(hours=1):
             if isinstance(data, dict):
                 weekly = data.get("__weekly__", [])
-                if data.get("_version") != "settings_shortcut_v69": return None
+                if data.get("_version") != "settings_shortcut_v70": return None
                 if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-": return None
             return data
             
@@ -1911,7 +1927,7 @@ def get_cached_weather(spot_name):
                         weather_data = row.get('weather_data')
                         if isinstance(weather_data, dict):
                             weekly = weather_data.get("__weekly__", [])
-                            if weather_data.get("_version") != "settings_shortcut_v69": return None
+                            if weather_data.get("_version") != "settings_shortcut_v70": return None
                             if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-": return None
                         MEMORY_CACHE[spot_name] = (weather_data, updated_time)
                         return weather_data
@@ -1923,7 +1939,7 @@ def get_cached_weather(spot_name):
 
 def save_cached_weather(spot_name, weather_data):
     now = datetime.now(timezone.utc)
-    weather_data["_version"] = "settings_shortcut_v69"
+    weather_data["_version"] = "settings_shortcut_v70"
     MEMORY_CACHE[spot_name] = (weather_data, now)
     if not supabase: return
     try:
