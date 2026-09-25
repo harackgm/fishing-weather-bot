@@ -1023,7 +1023,6 @@ BASS_SPOT_WEATHER_DATA = {
         "search_name": "潮来", "tel": "",
         "aliases": ["潮来", "いたこ"]
     },
-    # ★ 佐原を追加 ★
     "佐原": {
         "url": "https://weathernews.jp/onebox/35.904/140.493/",
         "tenki_url": "https://tenki.jp/forecast/3/15/4520/12236/1hour.html",
@@ -1038,6 +1037,37 @@ BASS_SPOT_WEATHER_DATA = {
         "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "",
         "search_name": "佐原", "tel": "",
         "aliases": ["佐原", "さわら"]
+    },
+    "栄町": {
+        "url": "https://weathernews.jp/onebox/35.850/140.239/",
+        "tenki_url": "https://tenki.jp/forecast/3/15/4520/12409/1hour.html",
+        "hp_url": "", "hp2_url": "",
+        "hide_default_map": True,
+        "custom_button_rows": [
+            [
+                {"label": "🚷陸っぱり", "url": ""},
+                {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E9%B0%BB%E3%81%95%E3%81%8B%E3%81%9F/@35.8502556,140.2391889,16z/data=!4m6!3m5!1s0x602263bbe8ec82c3:0x54e592e7b5ca888c!8m2!3d35.8502556!4d140.2391889!16s%2Fg%2F1tcy8_q4"}
+            ]
+        ],
+        "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "",
+        "search_name": "栄町", "tel": "",
+        "aliases": ["栄町", "さかえまち"]
+    },
+    # ★ 琵琶湖長浜 を追加 ★
+    "琵琶湖長浜": {
+        "url": "https://weathernews.jp/onebox/35.481/136.112/",
+        "tenki_url": "https://tenki.jp/forecast/6/28/6020/25203/1hour.html",
+        "hp_url": "", "hp2_url": "",
+        "hide_default_map": True,
+        "custom_button_rows": [
+            [
+                {"label": "🌐ボート", "url": "https://fomarina-shiga.com/"},
+                {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%96%E3%82%AA%E3%83%BC%E3%82%B7%E3%83%A3%E3%83%B3%E3%83%9E%E3%83%AA%E3%83%BC%E3%83%8A/@35.4810202,136.1078288,15.96z/data=!4m6!3m5!1s0x60018cc07d7e9a49:0xc52809c4fc614823!8m2!3d35.4810412!4d136.1123604!16s%2Fg%2F1tf3z8n_"}
+            ]
+        ],
+        "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "",
+        "search_name": "琵琶湖長浜", "tel": "",
+        "aliases": ["琵琶湖長浜", "長浜", "琵琶湖", "ながはま", "びわこ"]
     }
 }
 
@@ -1084,7 +1114,7 @@ BASS_COLOR_GROUPS = [
         "header_bg": "#2e7d32",
         "sub_groups": [
             {"bg": "#e8f5e9", "spots": ["亀山湖", "高滝湖", "片倉ダム", "三島湖", "豊英ダム"]},
-            {"bg": "#e3f2fd", "spots": ["GGD", "柴山沼", "城沼", "近藤沼", "多々良沼", "新利根川", "霞ケ浦柏崎", "土浦港", "大田原", "那須鳥山", "潮来", "佐原"]},
+            {"bg": "#e3f2fd", "spots": ["GGD", "柴山沼", "城沼", "近藤沼", "多々良沼", "新利根川", "霞ケ浦柏崎", "土浦港", "大田原", "那須鳥山", "潮来", "佐原", "栄町"]},
             {"bg": "#f3e5f5", "spots": ["相模湖", "津久井湖"]}
         ]
     },
@@ -1093,6 +1123,14 @@ BASS_COLOR_GROUPS = [
         "header_bg": "#6a1b9a",
         "sub_groups": [
             {"bg": "#e1bee7", "spots": ["東山ダム", "羽鳥湖", "桧原湖", "猪苗代湖"]}
+        ]
+    },
+    # ★ 関西（滋賀）グループを追加 ★
+    {
+        "title": "📍 関西（滋賀）",
+        "header_bg": "#e65100",
+        "sub_groups": [
+            {"bg": "#ffe0b2", "spots": ["琵琶湖長浜"]}
         ]
     }
 ]
@@ -1856,7 +1894,7 @@ def get_cached_weather(spot_name):
         if now - updated_time <= timedelta(hours=1):
             if isinstance(data, dict):
                 weekly = data.get("__weekly__", [])
-                if data.get("_version") != "settings_shortcut_v67": return None
+                if data.get("_version") != "settings_shortcut_v69": return None
                 if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-": return None
             return data
             
@@ -1873,7 +1911,7 @@ def get_cached_weather(spot_name):
                         weather_data = row.get('weather_data')
                         if isinstance(weather_data, dict):
                             weekly = weather_data.get("__weekly__", [])
-                            if weather_data.get("_version") != "settings_shortcut_v67": return None
+                            if weather_data.get("_version") != "settings_shortcut_v69": return None
                             if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-": return None
                         MEMORY_CACHE[spot_name] = (weather_data, updated_time)
                         return weather_data
@@ -1885,7 +1923,7 @@ def get_cached_weather(spot_name):
 
 def save_cached_weather(spot_name, weather_data):
     now = datetime.now(timezone.utc)
-    weather_data["_version"] = "settings_shortcut_v67"
+    weather_data["_version"] = "settings_shortcut_v69"
     MEMORY_CACHE[spot_name] = (weather_data, now)
     if not supabase: return
     try:
