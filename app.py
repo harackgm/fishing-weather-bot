@@ -531,211 +531,6 @@ SPOT_WEATHER_DATA = {
         "search_name": "あずみ野フィッシングセンター", "tel": "0263-82-8280",
         "aliases": ["あずみ野", "あずみ野FC", "あずみの"]
     },
-
-    # --- 群馬県 ---
-    "川場": {
-        "url": "https://weathernews.jp/onebox/36.690767/139.121662/",
-        "tenki_url": "https://tenki.jp/forecast/3/13/4220/10444/1hour.html",
-        "hp_url": "http://www.kawaba-fp.jp/",
-        "x_url": "", "fb_url": "", "insta_url": "https://www.instagram.com/kawaba.numata.fishingplaza/?utm_source=ig_embed", "blog_url": "", "yt_url": "",
-        "search_name": "川場フィッシングプラザ", "tel": "0278-52-3200",
-        "aliases": ["川場", "川場FP", "かわば", "カワバ"]
-    },
-    "キングダム": {
-        "url": "https://weathernews.jp/onebox/36.754213/139.142256/",
-        "tenki_url": "https://tenki.jp/forecast/3/13/4220/10444/1hour.html",
-        "hp_url": "http://kawaba-kingdomfishing.com/",
-        "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "",
-        "search_name": "川場キングダムフィッシング", "tel": "0278-52-2002",
-        "aliases": ["きんぐだむ", "キングダム", "かわばきんぐだむ", "川場キングダム"]
-    },
-    "おくとね": {
-        "url": "https://weathernews.jp/onebox/36.663005/139.163750/",
-        "tenki_url": "https://tenki.jp/forecast/3/13/4220/10206/1hour.html",
-        "hp_url": "http://www7.wind.ne.jp/okutone/",
-        "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "",
-        "search_name": "おくとねフィッシングパーク", "tel": "0278-53-3802",
-        "aliases": ["おくとね", "おくとねFP"]
-    },
-    "イワセン": {
-        "url": "https://weathernews.jp/onebox/36.610095/139.243740/",
-        "tenki_url": "https://tenki.jp/forecast/3/13/4220/10206/1hour.html",
-        "hp_url": "http://www7.wind.ne.jp/okutone/",
-        "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "",
-        "search_name": "日本イワナセンター", "tel": "0278-54-8433",
-        "aliases": ["いわなせんたー", "イワナセンター", "いわせん", "イワセン", "イワナ", "いわな"]
-    },
-    "黒保根": {
-        "url": "https://weathernews.jp/onebox/36.515041/139.252324/",
-        "tenki_url": "https://tenki.jp/forecast/3/13/4210/10203/1hour.html",
-        "hp_url": "https://www.kurohone-fishing.com/",
-        "x_url": "https://twitter.com/kurohoneKF", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "",
-        "search_name": "黒保根渓流フィッシング", "tel": "0277-96-2091",
-        "aliases": ["黒保根", "くろほね"]
-    },
-    "迦葉山": {
-        "url": "https://weathernews.jp/onebox/36.685419/139.071387/",
-        "tenki_url": "https://tenki.jp/forecast/3/13/4220/10206/1hour.html",
-        "hp_url": "http://www.fp-berrys.net/",
-        "x_url": "", "fb_url": "", "insta_url": "https://ameblo.jp/fp-berrys2006/", "yt_url": "",
-        "search_name": "ベリーズ迦葉山", "tel": "0278-23-9333",
-        "aliases": ["迦葉山", "ベリーズ迦葉山", "かしょうざん", "ベリーズ"]
-    },
-    "片品": {
-        "url": "https://weathernews.jp/onebox/36.624564/139.046703/",
-        "tenki_url": "https://tenki.jp/forecast/3/13/4220/10206/1hour.html",
-        "hp_url": "https://www.turinavi.info/gunma/katashinagawakokusai/",
-        "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "",
-        "search_name": "片品川国際マス釣り場", "tel": "0278-24-1188",
-        "aliases": ["片品", "片品川国際", "かたしな"]
-    },
-    "中之沢": {
-        "url": "https://weathernews.jp/onebox/36.492057/139.195293/",
-        "tenki_url": "https://tenki.jp/forecast/3/13/4210/10201/1hour.html",
-        "hp_url": "http://gfc.sakura.ne.jp/index.htm",
-        "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "",
-        "search_name": "GFC中之沢", "tel": "027-283-3532",
-        "aliases": ["中之沢", "GFC中之沢", "なかのさわ"]
-    },
-    "宮城": {
-        "url": "https://weathernews.jp/onebox/36.483735/139.188251/",
-        "tenki_url": "https://tenki.jp/forecast/3/13/4210/10201/1hour.html",
-        "hp_url": "http://www.anglers-village.com/index2.html",
-        "x_url": "", "fb_url": "https://www.facebook.com/people/%E5%AE%AE%E5%9F%8E%E3%82%A2%E3%83%B3%E3%82%B0%E3%83%A9%E3%83%BC%E3%82%BA%E3%83%B4%E3%82%A3%E3%83%AC%E3%83%83%E3%82%B8/100049219011936/#", "insta_url": "", "blog_url": "", "yt_url": "",
-        "search_name": "宮城アングラーズヴィレッジ", "tel": "027-283-0035",
-        "aliases": ["マブ", "まぶ", "みやぎ", "ミヤギ", "宮城", "アンビレ", "ＭＡＶ", "宮城AV", "みやぎあんぐらーず", "MAV", "mav"]
-    },
-    "大崎・赤城": {
-        "url": "https://weathernews.jp/onebox/36.463209/139.164867/",
-        "tenki_url": "https://tenki.jp/forecast/3/13/4210/10201/1hour.html",
-        "hp_url": "https://nijimasu.com/", "hp2_url": "https://anglers-base.com/",  
-        "search_name": "大崎つりぼり", "tel": "027-283-2945",
-        "aliases": ["大崎・赤城", "大崎", "赤城", "大崎つりぼり", "アングラーズベース", "アングラーズベース赤城山", "おおさき", "あかぎ", "オオサキ", "アカギ", "ABA", "大崎釣り堀"]
-    },
-    "けん太": {
-        "url": "https://weathernews.jp/onebox/36.386648/138.960021/",
-        "tenki_url": "https://tenki.jp/forecast/3/13/4210/10202/1hour.html",
-        "hp_url": "http://www.tsurikichikenta.com/index.htm",
-        "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "",
-        "search_name": "釣りキチけん太", "tel": "027-371-3312",
-        "aliases": ["けん太", "釣りキチけん太", "けんた"]
-    },
-    "フック": {
-        "url": "https://weathernews.jp/onebox/36.457699/139.173191/",
-        "tenki_url": "https://tenki.jp/forecast/3/13/4210/10201/1hour.html",
-        "hp_url": "https://aa-hook.jp/",
-        "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "",
-        "search_name": "アングラーズエリアHOOK", "tel": "027-283-0535",
-        "aliases": ["フック", "HOOK", "ふっく"]
-    },
-    "赤久縄": {
-        "url": "https://weathernews.jp/onebox/36.160894/138.895355/",
-        "tenki_url": "https://tenki.jp/forecast/3/13/4210/10209/1hour.html",
-        "hp_url": "https://www.akaguna.net/",
-        "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "",
-        "search_name": "赤久縄", "tel": "0274-56-0230",
-        "aliases": ["赤久縄", "あかぐな"]
-    },
-    "太田": {
-        "url": "https://weathernews.jp/onebox/36.357774/139.330830/",
-        "tenki_url": "https://tenki.jp/forecast/3/13/4210/10205/1hour.html",
-        "hp_url": "https://www.facebook.com/otafishingclub/",
-        "x_url": "", "fb_url": "https://www.facebook.com/otafishingclub/", "insta_url": "", "blog_url": "", "yt_url": "",
-        "search_name": "太田フィッシングクラブ", "tel": "0276-32-1230",
-        "aliases": ["太田", "太田FC", "おおた"]
-    },
-    "東山道": {
-        "url": "https://weathernews.jp/onebox/36.323047/139.280989/",
-        "tenki_url": "https://tenki.jp/forecast/3/13/4210/10205/1hour.html",
-        "hp_url": "https://emrp-fishing.com/",
-        "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "",
-        "search_name": "東山道公園フィッシングエリア", "tel": "0276-56-1180",
-        "aliases": ["東山道", "東山道FA", "とうさんどう"]
-    },
-    "榛名": {
-        "url": "https://weathernews.jp/onebox/36.443570/138.898498/",
-        "tenki_url": "https://tenki.jp/forecast/3/13/4210/10202/1hour.html",
-        "hp_url": "https://haruna-turibori.com/",
-        "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "",
-        "search_name": "榛名高原つり堀センター", "tel": "027-374-2228",
-        "aliases": ["榛名", "榛名高原", "はるな"]
-    },
-
-    # --- 茨城県 ---
-    "水戸南": {
-        "url": "https://weathernews.jp/onebox/36.326377/140.501362/",
-        "tenki_url": "https://tenki.jp/forecast/3/11/4020/8230/1hour.html",
-        "hp_url": "http://www.mitominami-fa.jp/index.html",
-        "x_url": "https://x.com/TSURIBORIMITO?lang=ja", "fb_url": "", "insta_url": "https://www.instagram.com/tsuriborimitominami/", "blog_url": "", "yt_url": "",
-        "search_name": "水戸南フィッシングエリア", "tel": "029-246-1233",
-        "aliases": ["水戸南", "水戸南FA", "みとみなみ"]
-    },
-    "高萩": {
-        "url": "https://weathernews.jp/onebox/36.788035/140.577243/",
-        "tenki_url": "https://tenki.jp/forecast/3/11/4010/8214/1hour.html",
-        "hp_url": "https://takahagifureainosato.web.fc2.com/",
-        "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "",
-        "search_name": "高萩ふれあいの里フィッシングエリア", "tel": "0293-24-1888",
-        "aliases": ["高萩", "高萩ふれあいの里", "たかはぎ"]
-    },
-    "つくば園": {
-        "url": "https://weathernews.jp/onebox/36.224122/140.144261/",
-        "tenki_url": "https://tenki.jp/forecast/3/11/4020/8205/1hour.html",
-        "hp_url": "http://tsukuba-en.jp/",
-        "x_url": "", "fb_url": "https://www.facebook.com/tsukubaen5355/?ref=page_internal", "insta_url": "", "blog_url": "", "yt_url": "",
-        "search_name": "フィッシングパークつくば園", "tel": "0299-43-6111",
-        "aliases": ["つくば園", "つくばえん"]
-    },
-    "Ｊ": {
-        "url": "https://weathernews.jp/onebox/36.081494/140.164360/",
-        "tenki_url": "https://tenki.jp/forecast/3/11/4020/8203/1hour.html",
-        "hp_url": "https://sites.google.com/view/fishing-area-j/",
-        "x_url": "https://x.com/madara_area_j", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "",
-        "search_name": "フィッシングエリアJ", "tel": "029-842-1698",
-        "aliases": ["Ｊ", "J", "FAJ", "フィッシングエリアJ", "ふぃっしんぐえりあじぇい", "じぇー", "じぇい", "ジェー"]
-    },
-    "ユザキ": {
-        "url": "https://weathernews.jp/onebox/36.314550/140.335285/",
-        "tenki_url": "https://tenki.jp/forecast/3/11/4010/8216/1hour.html",
-        "hp_url": "https://yuzakiko.com/",
-        "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "",
-        "search_name": "レイクユザキ", "tel": "0296-77-8500",
-        "aliases": ["ユザキ", "レイクユザキ", "ゆざき"]
-    },
-    "笠間": {
-        "url": "https://weathernews.jp/onebox/36.412866/140.208145/",
-        "tenki_url": "https://tenki.jp/forecast/3/11/4010/8216/1hour.html",
-        "hp_url": "http://www.leisure-park-kasama.jp/",
-        "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "",
-        "search_name": "レジャーパーク笠間", "tel": "0296-72-8888",
-        "aliases": ["笠間", "LP笠間", "かさま"]
-    },
-    "DoDoo": {
-        "url": "https://weathernews.jp/onebox/36.187994/140.216734/",
-        "tenki_url": "https://tenki.jp/forecast/3/11/4020/8230/1hour.html",
-        "hp_url": "http://www.fishing-dodoo.com/",
-        "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "",
-        "search_name": "フィッシングDoDoo", "tel": "0299-59-7052",
-        "aliases": ["DoDoo", "ドゥドゥー", "どぅどぅー"]
-    },
-    "若栗": {
-        "url": "https://weathernews.jp/onebox/36.779644/140.633185/",
-        "tenki_url": "https://tenki.jp/forecast/3/11/4010/8214/1hour.html",
-        "hp_url": "http://wakagurinomori.ina-ka.com/",
-        "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "",
-        "search_name": "若栗フィッシングの森", "tel": "0293-23-3882",
-        "aliases": ["若栗", "若栗フィッシングの森", "わかぐり"]
-    },
-    "ミッドクリーク": {
-        "url": "https://weathernews.jp/onebox/36.192975/140.164058/",
-        "tenki_url": "https://tenki.jp/forecast/3/11/4020/8205/1hour.html",
-        "hp_url": "http://midcreek.jp/",
-        "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "",
-        "search_name": "ミッドクリークフィッシングエリア", "tel": "0299-42-4578",
-        "aliases": ["ミッドクリーク", "みっどくりーく"]
-    },
-
-    # --- 東北・東海・関西 ---
     "Lost Lures": {
         "url": "https://weathernews.jp/onebox/37.081688/139.680305/",
         "tenki_url": "https://tenki.jp/forecast/2/10/3630/7368/1hour.html",
@@ -990,7 +785,6 @@ BASS_SPOT_WEATHER_DATA = {
         "search_name": "新利根川", "tel": "",
         "aliases": ["新利根川", "しんとねがわ", "しんとね", "新利根", "松屋ボート", "水神屋"]
     },
-    # ★ 霞ケ浦柏崎 に変更 ★
     "霞ケ浦柏崎": {
         "url": "https://weathernews.jp/onebox/36.104/140.379/",
         "tenki_url": "https://tenki.jp/forecast/3/11/4020/8230/1hour.html",
@@ -1042,7 +836,7 @@ BASS_SPOT_WEATHER_DATA = {
         ],
         "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "",
         "search_name": "片倉ダム", "tel": "",
-        "aliases": ["片倉ダム", "笹川湖", "かたくらだむ", "かたくら", "片仓", "片仓ダム"]
+        "aliases": ["片仓ダム", "笹川湖", "かたくらだむ", "かたくら", "片仓", "片倉ダム"]
     },
     "三島湖": {
         "url": "https://weathernews.jp/onebox/35.211/140.033/",
@@ -1184,7 +978,6 @@ BASS_SPOT_WEATHER_DATA = {
         "search_name": "猪苗代湖", "tel": "",
         "aliases": ["猪苗代湖", "いなわしろこ", "いなわしろ", "猪苗代"]
     },
-    # ★ 大田原を修正（途切れていたコードを補完） ★
     "大田原": {
         "url": "https://weathernews.jp/onebox/36.868/140.119/",
         "tenki_url": "https://tenki.jp/forecast/3/12/4120/9210/1hour.html",
@@ -1214,6 +1007,22 @@ BASS_SPOT_WEATHER_DATA = {
         "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "",
         "search_name": "那須鳥山", "tel": "",
         "aliases": ["那須鳥山", "那須烏山", "なすからすやま", "からすやま"]
+    },
+    # ★ 潮来 を追加 ★
+    "潮来": {
+        "url": "https://weathernews.jp/onebox/35.937/140.542/",
+        "tenki_url": "https://tenki.jp/forecast/3/11/4020/8232/1hour.html",
+        "hp_url": "", "hp2_url": "",
+        "hide_default_map": True,
+        "custom_button_rows": [
+            [
+                {"label": "🚷陸っぱり", "url": ""},
+                {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E6%BD%AE%E6%9D%A5%E6%B8%AF/@35.9377446,140.5399971,17z/data=!3m1!4b1!4m6!3m5!1s0x60225722fad43dc7:0x780faf7d5d78f1fd!8m2!3d35.9377403!4d140.542572!16s%2Fg%2F11g0j02tq5"}
+            ]
+        ],
+        "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "",
+        "search_name": "潮来", "tel": "",
+        "aliases": ["潮来", "いたこ"]
     }
 }
 
@@ -1247,7 +1056,7 @@ COLOR_GROUPS = [
         "title": "📍 甲信・東北・東海・関西",
         "header_bg": "#6a1b9a",
         "sub_groups": [
-            {"bg": "#f3e5f5", "spots": ["鹿留", "小菅", "奈良子", "シルフ", "ツガネ", "竜華池", "平谷湖", "ハーブ", "ニレ池", "鹿島やり", "つきの池", "あずみ野"]},
+            {"bg": "#f3e5f5", "spots": ["鹿留", "小菅", "奈良子", "シルフ", "ツガネ", "竜华池", "平谷湖", "ハーブ", "ニレ池", "鹿島やり", "つきの池", "あずみ野"]},
             {"bg": "#e1bee7", "spots": ["Lost Lures", "不忘", "白河", "ほのぼの", "WaDoNa", "鶴沼川", "オーパ", "あいづ", "上浜", "GOZU"]},
             {"bg": "#d1c4e9", "spots": ["FCE瑞浪", "３９", "醒井", "高島の泉", "千早川"]}
         ]
@@ -1260,7 +1069,7 @@ BASS_COLOR_GROUPS = [
         "header_bg": "#2e7d32",
         "sub_groups": [
             {"bg": "#e8f5e9", "spots": ["亀山湖", "高滝湖", "片倉ダム", "三島湖", "豊英ダム"]},
-            {"bg": "#e3f2fd", "spots": ["GGD", "柴山沼", "城沼", "近藤沼", "多々良沼", "新利根川", "霞ケ浦柏崎", "霞ケ浦西浦", "大田原", "那須鳥山"]},
+            {"bg": "#e3f2fd", "spots": ["GGD", "柴山沼", "城沼", "近藤沼", "多々良沼", "新利根川", "霞ケ浦柏崎", "霞ケ浦西浦", "大田原", "那須鳥山", "潮来"]},
             {"bg": "#f3e5f5", "spots": ["相模湖", "津久井湖"]}
         ]
     },
@@ -2031,7 +1840,7 @@ def get_cached_weather(spot_name):
         if now - updated_time <= timedelta(hours=1):
             if isinstance(data, dict):
                 weekly = data.get("__weekly__", [])
-                if data.get("_version") != "settings_shortcut_v64": return None
+                if data.get("_version") != "settings_shortcut_v65": return None
                 if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-": return None
             return data
             
@@ -2048,7 +1857,7 @@ def get_cached_weather(spot_name):
                         weather_data = row.get('weather_data')
                         if isinstance(weather_data, dict):
                             weekly = weather_data.get("__weekly__", [])
-                            if weather_data.get("_version") != "settings_shortcut_v64": return None
+                            if weather_data.get("_version") != "settings_shortcut_v65": return None
                             if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-": return None
                         MEMORY_CACHE[spot_name] = (weather_data, updated_time)
                         return weather_data
@@ -2060,7 +1869,7 @@ def get_cached_weather(spot_name):
 
 def save_cached_weather(spot_name, weather_data):
     now = datetime.now(timezone.utc)
-    weather_data["_version"] = "settings_shortcut_v64"
+    weather_data["_version"] = "settings_shortcut_v65"
     MEMORY_CACHE[spot_name] = (weather_data, now)
     if not supabase: return
     try:
