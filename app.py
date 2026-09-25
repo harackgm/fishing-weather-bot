@@ -1020,6 +1020,25 @@ BASS_SPOT_WEATHER_DATA = {
         "search_name": "霞ケ浦西浦", "tel": "",
         "aliases": ["霞ケ浦西浦", "霞ヶ浦", "かすみがうら", "西浦", "のぐち", "バスターのぐち"]
     },
+    "津久井湖": {
+        "url": "https://weathernews.jp/onebox/35.593/139.261/",
+        "tenki_url": "https://tenki.jp/forecast/3/17/4620/14151/1hour.html",
+        "hp_url": "", "hp2_url": "",
+        "hide_default_map": True,
+        "custom_button_rows": [
+            [
+                {"label": "🌐津久井", "url": "https://tsukuikankou.com/"},
+                {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E6%B4%A5%E4%B9%85%E4%BA%95%E8%A6%B3%E5%85%89/@35.5933101,139.2610632,17z/data=!4m6!3m5!1s0x60191ba0f6c723d1:0x55900793ecc12ace!8m2!3d35.5933101!4d139.2610632!16s%2Fg%2F1tdnwyyd"}
+            ],
+            [
+                {"label": "🌐沼本", "url": "https://numamotoboat.main.jp/"},
+                {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E6%B2%BC%E6%9C%AC%E3%83%9C%E3%83%BC%E3%83%88/@35.5962023,139.2252871,17z/data=!4m6!3m5!1s0x60191a40afd70001:0xc29b5803b334e706!8m2!3d35.5960163!4d139.2278989!16s%2Fg%2F11c0r5nz9n"}
+            ]
+        ],
+        "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "",
+        "search_name": "津久井湖", "tel": "",
+        "aliases": ["津久井湖", "つくいこ", "つくい", "津久井"]
+    },
     "片倉ダム": {
         "url": "https://weathernews.jp/onebox/35.198/140.070/",
         "tenki_url": "https://tenki.jp/forecast/3/15/4530/12225/1hour.html",
@@ -1104,40 +1123,81 @@ BASS_SPOT_WEATHER_DATA = {
         "search_name": "相模湖", "tel": "",
         "aliases": ["相模湖", "さがみこ", "さがみ"]
     },
-    "津久井湖": {
-        "url": "https://weathernews.jp/onebox/35.593/139.261/",
-        "tenki_url": "https://tenki.jp/forecast/3/17/4620/14151/1hour.html",
-        "hp_url": "", "hp2_url": "",
-        "hide_default_map": True,
-        "custom_button_rows": [
-            [
-                {"label": "🌐津久井", "url": "https://tsukuikankou.com/"},
-                {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E6%B4%A5%E4%B9%85%E4%BA%95%E8%A6%B3%E5%85%89/@35.5933101,139.2610632,17z/data=!4m6!3m5!1s0x60191ba0f6c723d1:0x55900793ecc12ace!8m2!3d35.5933101!4d139.2610632!16s%2Fg%2F1tdnwyyd"}
-            ],
-            [
-                {"label": "🌐沼本", "url": "https://numamotoboat.main.jp/"},
-                {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E6%B2%BC%E6%9C%AC%E3%83%9C%E3%83%BC%E3%83%88/@35.5962023,139.2252871,17z/data=!4m6!3m5!1s0x60191a40afd70001:0xc29b5803b334e706!8m2!3d35.5960163!4d139.2278989!16s%2Fg%2F11c0r5nz9n"}
-            ]
-        ],
-        "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "",
-        "search_name": "津久井湖", "tel": "",
-        "aliases": ["津久井湖", "つくいこ", "つくい", "津久井"]
-    },
-    # ★ 大田原 を追加 ★
-    "大田原": {
-        "url": "https://weathernews.jp/onebox/36.868/140.119/",
-        "tenki_url": "https://tenki.jp/forecast/3/12/4120/9210/1hour.html",
+    "東山ダム": {
+        "url": "https://weathernews.jp/onebox/37.460705/139.965895/",
+        "tenki_url": "https://tenki.jp/forecast/2/10/3630/7202/1hour.html",
         "hp_url": "", "hp2_url": "",
         "hide_default_map": True,
         "custom_button_rows": [
             [
                 {"label": "🚷陸っぱり", "url": ""},
-                {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E9%AE%8E%E3%81%AE%E9%87%8C%E5%85%AC%E5%9C%92/@36.8686588,140.1174822,17.5z/data=!4m6!3m5!1s0x6021d37eb8161f63:0x638de546bc2916df!8m2!3d36.8686804!4d140.1192635!16s%2Fg%2F11lgzk8qqq"}
+                {"label": "🗺️地図", "url": "https://www.google.com/maps/search/%E6%9D%B1%E5%B1%B1%E3%83%80%E3%83%A0/@37.4607054,139.9658954,17z"}
             ]
         ],
         "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "",
-        "search_name": "大田原", "tel": "",
-        "aliases": ["大田原", "おおたわら"]
+        "search_name": "東山ダム", "tel": "",
+        "aliases": ["東山ダム", "ひがしやまだむ", "ひがしやま"]
+    },
+    "羽鳥湖": {
+        "url": "https://weathernews.jp/onebox/37.261/140.079/",
+        "tenki_url": "https://tenki.jp/forecast/2/10/3610/7461/1hour.html",
+        "hp_url": "", "hp2_url": "",
+        "hide_default_map": True,
+        "custom_button_rows": [
+            [
+                {"label": "🚷陸っぱり", "url": ""},
+                {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E7%BE%BD%E9%B3%A5%E3%83%80%E3%83%A0/@37.2715954,140.0769915,17.25z/data=!4m14!1m7!3m6!1s0x60201e92da9ad8eb:0xad0e8032ff7d73cc!2z57696bOl5rmW!8m2!3d37.2613577!4d140.0791107!16s%2Fg%2F1yl491l68!3m5!1s0x60201c21470050c1:0x591eec4fb9db922e!8m2!3d37.2715547!4d140.0760678!16s%2Fm%2F04n1yk0"}
+            ]
+        ],
+        "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "",
+        "search_name": "羽鳥湖", "tel": "",
+        "aliases": ["羽鳥湖", "羽鳥ダム", "はとりこ", "はとり"]
+    },
+    "桧原湖": {
+        "url": "https://weathernews.jp/onebox/37.652/140.062/",
+        "tenki_url": "https://tenki.jp/forecast/2/10/3630/7402/1hour.html",
+        "hp_url": "", "hp2_url": "",
+        "hide_default_map": True,
+        "custom_button_rows": [
+            [
+                {"label": "🌐ゴールドH", "url": "https://gmeguro.com/"},
+                {"label": "🗺️地図", "url": "https://www.google.co.jp/maps/place/%E3%80%92969-2701+%E7%A6%8F%E5%B3%B6%E7%9C%8C%E8%80%B6%E9%BA%BB%E9%83%A1%E5%8C%97%E5%A1%A9%E5%8E%9F%E6%9D%91%E6%AA%9C%E5%8E%9F%E5%A4%A7%E5%BA%9C%E5%B9%B3%E5%8E%9F%EF%BC%91%EF%BC%91%EF%BC%97%EF%BC%92%E2%88%92%EF%BC%94/@37.6529382,140.0621476,17z/data=!3m1!4b1!4m6!3m5!1s0x5f8abb0db874825d:0x68d33e5c0fb7e72d!8m2!3d37.6529382!4d140.0647225!16s%2Fg%2F11ggzdspy0"}
+            ]
+        ],
+        "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "",
+        "search_name": "桧原湖", "tel": "",
+        "aliases": ["桧原湖", "ひばらこ", "ひばら", "桧原", "裏磐梯"]
+    },
+    "猪苗代湖": {
+        "url": "https://weathernews.jp/onebox/37.423/140.077/",
+        "tenki_url": "https://tenki.jp/forecast/2/10/3630/7408/1hour.html",
+        "hp_url": "", "hp2_url": "",
+        "hide_default_map": True,
+        "custom_button_rows": [
+            [
+                {"label": "🌐M'sShop", "url": "https://www.ms-shop-fukushima.com/"},
+                {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E3%82%A8%E3%83%A0%E3%82%BA%E3%82%B7%E3%83%A7%E3%83%83%E3%83%97%E3%83%AC%E3%83%B3%E3%82%BF%E3%83%AB%E3%83%9C%E3%83%BC%E3%83%88%E6%A1%9F%E6%A9%8B/@37.4236252,140.0730426,16z/data=!4m6!3m5!1s0x60200168e30d7511:0x43669e9726edabe2!8m2!3d37.4238756!4d140.0770589!16s%2Fg%2F11g8wcs3ys"}
+            ]
+        ],
+        "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "",
+        "search_name": "猪苗代湖", "tel": "",
+        "aliases": ["猪苗代湖", "いなわしろこ", "いなわしろ", "猪苗代"]
+    },
+    # ★ 那須鳥山 を追加 ★
+    "那須鳥山": {
+        "url": "https://weathernews.jp/onebox/36.660/140.176/",
+        "tenki_url": "https://tenki.jp/forecast/3/12/4110/9206/1hour.html",
+        "hp_url": "", "hp2_url": "",
+        "hide_default_map": True,
+        "custom_button_rows": [
+            [
+                {"label": "🚷陸っぱり", "url": ""},
+                {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E5%A2%83%E6%A9%8B/@36.6607046,140.1728663,16z/data=!4m6!3m5!1s0x6021dd514009cc87:0x8cd0acdcbf0f7436!8m2!3d36.6609585!4d140.1768216!16s%2Fg%2F11bzsz5f62"}
+            ]
+        ],
+        "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "",
+        "search_name": "那須鳥山", "tel": "",
+        "aliases": ["那須鳥山", "那須烏山", "なすからすやま", "からすやま"]
     }
 }
 
@@ -1146,7 +1206,7 @@ COLOR_GROUPS = [
         "title": "📍 静岡・神奈川・東京・千葉",
         "header_bg": "#0066cc",
         "sub_groups": [
-            {"bg": "#e6f0fa", "spots": ["東山湖", "すその", "須川", "アルクス焼津", "浜名湖"]},
+            {"bg": "#e6f0fa", "spots": ["東山湖", "すそノ", "須川", "アルクス焼津", "浜名湖"]},
             {"bg": "#d4e6f1", "spots": ["足柄", "中津川", "早戸川", "王禅寺", "開成", "浅川国際"]},
             {"bg": "#cce5ff", "spots": ["座間", "ジョイバレー", "ウォルトン", "NOIKE", "釣パラダイス"]}
         ]
@@ -1184,7 +1244,8 @@ BASS_COLOR_GROUPS = [
         "header_bg": "#2e7d32",
         "sub_groups": [
             {"bg": "#e8f5e9", "spots": ["亀山湖", "高滝湖", "片倉ダム", "三島湖", "豊英ダム"]},
-            {"bg": "#e3f2fd", "spots": ["GGD", "柴山沼", "城沼", "近藤沼", "多々良沼", "新利根川", "柏崎", "霞ケ浦西浦", "大田原"]},
+            # ★ 那須鳥山 を追加 ★
+            {"bg": "#e3f2fd", "spots": ["GGD", "柴山沼", "城沼", "近藤沼", "多々良沼", "新利根川", "柏崎", "霞ケ浦西浦", "大田原", "那須鳥山"]},
             {"bg": "#f3e5f5", "spots": ["相模湖", "津久井湖"]}
         ]
     },
@@ -1586,7 +1647,8 @@ def get_user_setting(user_id):
                 "JF in Tsugane": "ツガネ", "川場キングダム": "キングダム", "イワナセンター": "イワセン", "鹿島槍": "鹿島やり",
                 "アルクス宇宇都宮": "アルクス宇都宮",
                 "片仓ダム": "片倉ダム",
-                "多田良沼": "多々良沼"
+                "多田良沼": "多々良沼",
+                "那須烏山": "那須鳥山"
             }
             
             raw_favs = [s.strip() for s in favs.split(',')]
@@ -1953,7 +2015,7 @@ def get_cached_weather(spot_name):
         if now - updated_time <= timedelta(hours=1):
             if isinstance(data, dict):
                 weekly = data.get("__weekly__", [])
-                if data.get("_version") != "settings_shortcut_v62": return None
+                if data.get("_version") != "settings_shortcut_v63": return None
                 if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-": return None
             return data
             
@@ -1970,7 +2032,7 @@ def get_cached_weather(spot_name):
                         weather_data = row.get('weather_data')
                         if isinstance(weather_data, dict):
                             weekly = weather_data.get("__weekly__", [])
-                            if weather_data.get("_version") != "settings_shortcut_v62": return None
+                            if weather_data.get("_version") != "settings_shortcut_v63": return None
                             if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-": return None
                         MEMORY_CACHE[spot_name] = (weather_data, updated_time)
                         return weather_data
@@ -1982,7 +2044,7 @@ def get_cached_weather(spot_name):
 
 def save_cached_weather(spot_name, weather_data):
     now = datetime.now(timezone.utc)
-    weather_data["_version"] = "settings_shortcut_v62"
+    weather_data["_version"] = "settings_shortcut_v63"
     MEMORY_CACHE[spot_name] = (weather_data, now)
     if not supabase: return
     try:
