@@ -481,7 +481,7 @@ SPOT_WEATHER_DATA = {
         "hp_url": "https://fishingmarketbear.wixsite.com/ryugaike",
         "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "",
         "search_name": "フィッシングパーク竜華池", "tel": "055-252-0938",
-        "aliases": ["竜華池", "りゅうがいけ", "竜华池"]
+        "aliases": ["竜華池", "りゅうがいけ", "竜华池", "竜华池"]
     },
     "平谷湖": {
         "url": "https://weathernews.jp/onebox/35.332243/137.632213/",
@@ -1095,6 +1095,26 @@ BASS_SPOT_WEATHER_DATA = {
         "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "",
         "search_name": "桧原湖", "tel": "",
         "aliases": ["桧原湖", "ひばらこ", "ひばら", "桧原", "裏磐梯"]
+    },
+    # ★ 新利根川を追加 ★
+    "新利根川": {
+        "url": "https://weathernews.jp/onebox/35.943/140.445/",
+        "tenki_url": "https://tenki.jp/forecast/3/11/4020/8232/1hour.html",
+        "hp_url": "", "hp2_url": "",
+        "hide_default_map": True,
+        "custom_button_rows": [
+            [
+                {"label": "🌐松屋", "url": "https://matsuya-boat.com/"},
+                {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E6%9D%BE%E5%B1%8B%E3%83%9C%E3%83%BC%E3%83%88/@35.9432042,140.4449447,17z/data=!4m6!3m5!1s0x6022594442b8f65d:0x7774965e76ad6221!8m2!3d35.9432042!4d140.4449447!16s%2Fg%2F1tkv9wm8"}
+            ],
+            [
+                {"label": "🌐水神屋", "url": "https://suizinyaboatten.webnode.jp/"},
+                {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E6%B0%B4%E7%A5%9E%E5%B1%8B%E9%A3%9F%E5%A0%82(%E3%83%9C%E3%83%BC%E3%83%88%E5%BA%97)/@35.9443457,140.4455585,17z/data=!3m1!4b1!4m6!3m5!1s0x602259448dd69385:0x2bd2c732d85efccb!8m2!3d35.9443457!4d140.4455585!16s%2Fg%2F1wf21znb"}
+            ]
+        ],
+        "x_url": "https://x.com/matsuyaboat", "fb_url": "", "insta_url": "", "blog_url": "https://ameblo.jp/matsuyaboat/", "yt_url": "",
+        "search_name": "新利根川", "tel": "",
+        "aliases": ["新利根川", "しんとねがわ", "しんとね", "新利根", "松屋ボート", "水神屋"]
     }
 }
 
@@ -1137,11 +1157,11 @@ COLOR_GROUPS = [
 
 BASS_COLOR_GROUPS = [
     {
-        "title": "📍 関東（千葉・埼玉・神奈川・群馬）",
+        "title": "📍 関東（千葉・埼玉・神奈川・群馬・茨城）",
         "header_bg": "#2e7d32",
         "sub_groups": [
             {"bg": "#e8f5e9", "spots": ["亀山湖", "高滝湖", "片倉ダム", "三島湖", "豊英ダム"]},
-            {"bg": "#e3f2fd", "spots": ["GGD", "柴山沼", "城沼", "近藤沼", "多々良沼"]},
+            {"bg": "#e3f2fd", "spots": ["GGD", "柴山沼", "城沼", "近藤沼", "多々良沼", "新利根川"]},
             {"bg": "#f3e5f5", "spots": ["相模湖"]}
         ]
     },
@@ -1910,7 +1930,7 @@ def get_cached_weather(spot_name):
         if now - updated_time <= timedelta(hours=1):
             if isinstance(data, dict):
                 weekly = data.get("__weekly__", [])
-                if data.get("_version") != "settings_shortcut_v56": return None
+                if data.get("_version") != "settings_shortcut_v57": return None
                 if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-": return None
             return data
             
@@ -1927,7 +1947,7 @@ def get_cached_weather(spot_name):
                         weather_data = row.get('weather_data')
                         if isinstance(weather_data, dict):
                             weekly = weather_data.get("__weekly__", [])
-                            if weather_data.get("_version") != "settings_shortcut_v56": return None
+                            if weather_data.get("_version") != "settings_shortcut_v57": return None
                             if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-": return None
                         MEMORY_CACHE[spot_name] = (weather_data, updated_time)
                         return weather_data
@@ -1939,7 +1959,7 @@ def get_cached_weather(spot_name):
 
 def save_cached_weather(spot_name, weather_data):
     now = datetime.now(timezone.utc)
-    weather_data["_version"] = "settings_shortcut_v56"
+    weather_data["_version"] = "settings_shortcut_v57"
     MEMORY_CACHE[spot_name] = (weather_data, now)
     if not supabase: return
     try:
@@ -2418,17 +2438,22 @@ def handle_postback(event):
         print(f"Postback Error: {e}")
         traceback.print_exc()
 
-def get_top_favorite_spots(limit=24):
-    if not supabase: return []
+def get_top_favorite_spots(trout_limit=24, bass_limit=12):
+    if not supabase: return [], []
     try:
         res = supabase.table('user_settings').select('favorite_spots').execute()
         trout_counts = {}
+        bass_counts = {}
         
-        # ★ トラウト用の釣り場リストのみを抽出 ★
         trout_spots_list = []
         for g in COLOR_GROUPS:
             for sg in g["sub_groups"]:
                 trout_spots_list.extend(sg["spots"])
+
+        bass_spots_list = []
+        for g in BASS_COLOR_GROUPS:
+            for sg in g["sub_groups"]:
+                bass_spots_list.extend(sg["spots"])
                 
         if res.data:
             for row in res.data:
@@ -2436,44 +2461,72 @@ def get_top_favorite_spots(limit=24):
                 if not favs: continue
                 spots = [s.strip() for s in favs.split(',') if s.strip()]
                 for s in spots: 
-                    # ★ トラウト釣り場のみカウントする ★
                     if s in trout_spots_list:
                         trout_counts[s] = trout_counts.get(s, 0) + 1
+                    elif s in bass_spots_list:
+                        bass_counts[s] = bass_counts.get(s, 0) + 1
                         
         sorted_trout = sorted(trout_counts.items(), key=lambda x: x[1], reverse=True)
-        top_trout = [spot for spot, count in sorted_trout[:limit]]
+        top_trout = [spot for spot, count in sorted_trout[:trout_limit]]
         
-        return top_trout
+        sorted_bass = sorted(bass_counts.items(), key=lambda x: x[1], reverse=True)
+        top_bass = [spot for spot, count in sorted_bass[:bass_limit]]
+        
+        return top_trout, top_bass
     except Exception as e:
         print(f"[Top Favs Error] {e}")
-        return []
+        return [], []
 
 def run_background_update():
     if not supabase: return
     try:
-        # トラウトの上位24カ所のみを取得
-        top_spots = get_top_favorite_spots(limit=24)
-        if not top_spots: return
-        cache_times = {}
-        for spot in top_spots:
-            res = supabase.table('weather_cache').select('updated_at').eq('spot_name', spot).execute()
-            if res.data and len(res.data) > 0:
-                updated_at_str = res.data[0].get('updated_at')
-                try: cache_times[spot] = datetime.fromisoformat(updated_at_str.replace('Z', '+00:00'))
-                except: cache_times[spot] = datetime.min.replace(tzinfo=timezone.utc)
-            else: cache_times[spot] = datetime.min.replace(tzinfo=timezone.utc)
-                
-        sorted_by_oldest = sorted(cache_times.items(), key=lambda x: x[1])
-        target_spots = [spot for spot, time in sorted_by_oldest[:4]]
+        top_trout, top_bass = get_top_favorite_spots(trout_limit=24, bass_limit=12)
         
-        for spot_name in target_spots:
+        trout_targets = []
+        if top_trout:
+            trout_cache_times = {}
+            for spot in top_trout:
+                res = supabase.table('weather_cache').select('updated_at').eq('spot_name', spot).execute()
+                if res.data and len(res.data) > 0:
+                    try: trout_cache_times[spot] = datetime.fromisoformat(res.data[0].get('updated_at').replace('Z', '+00:00'))
+                    except: trout_cache_times[spot] = datetime.min.replace(tzinfo=timezone.utc)
+                else: trout_cache_times[spot] = datetime.min.replace(tzinfo=timezone.utc)
+            sorted_trout = sorted(trout_cache_times.items(), key=lambda x: x[1])
+            trout_targets = [spot for spot, time in sorted_trout[:4]]
+
+        bass_targets = []
+        if top_bass:
+            bass_cache_times = {}
+            for spot in top_bass:
+                res = supabase.table('weather_cache').select('updated_at').eq('spot_name', spot).execute()
+                if res.data and len(res.data) > 0:
+                    try: bass_cache_times[spot] = datetime.fromisoformat(res.data[0].get('updated_at').replace('Z', '+00:00'))
+                    except: bass_cache_times[spot] = datetime.min.replace(tzinfo=timezone.utc)
+                else: bass_cache_times[spot] = datetime.min.replace(tzinfo=timezone.utc)
+            sorted_bass = sorted(bass_cache_times.items(), key=lambda x: x[1])
+            bass_targets = [spot for spot, time in sorted_bass[:2]]
+
+        for spot_name in trout_targets:
             data = ALL_SPOT_DATA.get(spot_name)
             if not data: continue
             url = data["url"]
             tenki_url = convert_to_10days_url(data.get("tenki_url"))
             weather_data = fetch_spot_1hour_data(url, tenki_url)
             if weather_data: save_cached_weather(spot_name, weather_data)
-            time.sleep(random.uniform(2.0, 3.5))
+            time.sleep(random.uniform(2.5, 4.0))
+
+        if bass_targets:
+            time.sleep(random.uniform(5.0, 10.0))
+            
+            for spot_name in bass_targets:
+                data = ALL_SPOT_DATA.get(spot_name)
+                if not data: continue
+                url = data["url"]
+                tenki_url = convert_to_10days_url(data.get("tenki_url"))
+                weather_data = fetch_spot_1hour_data(url, tenki_url)
+                if weather_data: save_cached_weather(spot_name, weather_data)
+                time.sleep(random.uniform(2.5, 4.0))
+
     except Exception as e:
         print(f"[Cron Background Error] {e}")
 
