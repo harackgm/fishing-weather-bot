@@ -1121,7 +1121,6 @@ BASS_SPOT_WEATHER_DATA = {
         "search_name": "弥栄湖", "tel": "",
         "aliases": ["弥栄湖", "弥栄ダム", "やさかこ", "やさかだむ", "やさか"]
     },
-    # ★ 雄蛇ヶ池 を追加 ★
     "雄蛇ヶ池": {
         "url": "https://weathernews.jp/onebox/35.561/140.330/",
         "tenki_url": "https://tenki.jp/forecast/3/15/4510/12213/1hour.html",
@@ -1136,6 +1135,30 @@ BASS_SPOT_WEATHER_DATA = {
         "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "",
         "search_name": "雄蛇ヶ池", "tel": "",
         "aliases": ["雄蛇ヶ池", "おじゃがいけ", "おじゃが", "雄蛇が池"]
+    },
+    # ★ 七色ダム を追加 ★
+    "七色ダム": {
+        "url": "https://weathernews.jp/onebox/34.015/135.998/",
+        "tenki_url": "https://tenki.jp/forecast/6/29/6420/29452/1hour.html",
+        "hp_url": "", "hp2_url": "",
+        "hide_default_map": True,
+        "custom_button_rows": [
+            [
+                {"label": "🌐ドリーム", "url": "http://www.dream70.com/index.htm"},
+                {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E6%B1%A0%E5%8E%9F%E3%83%89%E3%83%AA%E3%83%BC%E3%83%A0/@34.0514302,135.9710921,17.75z/data=!4m6!3m5!1s0x60068bb9ea33b549:0xceb44d70f6f99a96!8m2!3d34.0517061!4d135.972806!16s%2Fg%2F11sk848pn1"}
+            ],
+            [
+                {"label": "🌐Ts-ON", "url": "https://www.ts-on.co.jp/"},
+                {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E3%83%86%E3%82%A3%E3%83%BC%E3%82%BA%E3%82%AA%E3%83%B3/@34.0153776,135.9884889,14.75z/data=!4m6!3m5!1s0x60068990236b225d:0xfdc44cf6715f8ce0!8m2!3d34.0153868!4d135.9988469!16s%2Fg%2F11q1v2mszb"}
+            ],
+            [
+                {"label": "🌐ひさや", "url": "http://www.hisaya.rif.jp/"},
+                {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E3%83%AC%E3%83%B3%E3%82%BF%E3%83%AB%E3%83%9C%E3%83%BC%E3%83%88+%E3%81%B2%E3%81%95%E3%82%84/@33.9994586,136.0133379,15.5z/data=!4m6!3m5!1s0x6006625870c3569d:0x6dc20b31ddb85994!8m2!3d33.9982816!4d136.0178336!16s%2Fg%2F11bw22kq_l"}
+            ]
+        ],
+        "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "",
+        "search_name": "七色ダム", "tel": "",
+        "aliases": ["七色ダム", "なないろだむ", "なないろ"]
     }
 }
 
@@ -1205,6 +1228,14 @@ BASS_COLOR_GROUPS = [
         "header_bg": "#e65100",
         "sub_groups": [
             {"bg": "#ffe0b2", "spots": ["琵琶湖長浜", "琵琶湖守山"]}
+        ]
+    },
+    # ★ 関西・紀伊（奈良・三重）グループを新設 ★
+    {
+        "title": "📍 関西・紀伊（奈良・三重）",
+        "header_bg": "#f57c00",
+        "sub_groups": [
+            {"bg": "#ffe0b2", "spots": ["七色ダム"]}
         ]
     },
     {
@@ -1975,7 +2006,7 @@ def get_cached_weather(spot_name):
         if now - updated_time <= timedelta(hours=1):
             if isinstance(data, dict):
                 weekly = data.get("__weekly__", [])
-                if data.get("_version") != "settings_shortcut_v74": return None
+                if data.get("_version") != "settings_shortcut_v75": return None
                 if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-": return None
             return data
             
@@ -1992,7 +2023,7 @@ def get_cached_weather(spot_name):
                         weather_data = row.get('weather_data')
                         if isinstance(weather_data, dict):
                             weekly = weather_data.get("__weekly__", [])
-                            if weather_data.get("_version") != "settings_shortcut_v74": return None
+                            if weather_data.get("_version") != "settings_shortcut_v75": return None
                             if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-": return None
                         MEMORY_CACHE[spot_name] = (weather_data, updated_time)
                         return weather_data
@@ -2004,7 +2035,7 @@ def get_cached_weather(spot_name):
 
 def save_cached_weather(spot_name, weather_data):
     now = datetime.now(timezone.utc)
-    weather_data["_version"] = "settings_shortcut_v74"
+    weather_data["_version"] = "settings_shortcut_v75"
     MEMORY_CACHE[spot_name] = (weather_data, now)
     if not supabase: return
     try:
