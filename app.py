@@ -1144,7 +1144,8 @@ BASS_SPOT_WEATHER_DATA = {
         "search_name": "雄蛇ヶ池", "tel": "",
         "aliases": ["雄蛇ヶ池", "おじゃがいけ", "おじゃが", "雄蛇が池"]
     },
-    "七色ダム": {
+    # ★ 「七色ダム」から「池原七色ダム」に名称変更し、エイリアスも追加 ★
+    "池原七色ダム": {
         "url": "https://weathernews.jp/onebox/34.03/135.98/",
         "tenki_url": "https://tenki.jp/forecast/6/32/6420/29450/1hour.html",
         "hp_url": "", "hp2_url": "",
@@ -1164,8 +1165,8 @@ BASS_SPOT_WEATHER_DATA = {
             ]
         ],
         "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "",
-        "search_name": "七色ダム", "tel": "",
-        "aliases": ["七色ダム", "なないろだむ", "なないろ"]
+        "search_name": "池原七色ダム", "tel": "",
+        "aliases": ["七色ダム", "なないろだむ", "なないろ", "池原七色ダム", "池原ダム", "いけはら", "池原", "池原七色"]
     },
     "弥栄湖": {
         "url": "https://weathernews.jp/onebox/34.16/132.22/",
@@ -1182,7 +1183,7 @@ BASS_SPOT_WEATHER_DATA = {
         "search_name": "弥栄湖", "tel": "",
         "aliases": ["弥栄湖", "弥栄ダム", "やさかこ", "やさかだむ", "やさか"]
     },
-    # ★ 遠賀川 のURLを修正 ★
+    # ★ 遠賀川 のURL（地域コード）を修正 ★
     "遠賀川": {
         "url": "https://weathernews.jp/onebox/33.82/130.70/",
         "tenki_url": "https://tenki.jp/forecast/9/43/8220/40384/1hour.html",
@@ -1268,11 +1269,12 @@ BASS_COLOR_GROUPS = [
             {"bg": "#ffe0b2", "spots": ["琵琶湖長浜", "琵琶湖守山"]}
         ]
     },
+    # ★ メニュー表示も 池原七色ダム に変更 ★
     {
         "title": "📍 関西・紀伊（奈良・三重）",
         "header_bg": "#f57c00",
         "sub_groups": [
-            {"bg": "#ffe0b2", "spots": ["七色ダム"]}
+            {"bg": "#ffe0b2", "spots": ["池原七色ダム"]}
         ]
     },
     {
@@ -1671,6 +1673,7 @@ def get_user_setting(user_id):
             except KeyError:
                 fishing_mode = 'trout'
             
+            # ★ 七色ダムを登録済みの場合、自動で池原七色ダムに変換する ★
             rename_map = {
                 "五頭": "GOZU", "竜华池": "竜華池", "ハーブの里": "ハーブ", "サンクチュアリ": "３９",
                 "高島": "高島の泉", "瑞浪": "FCE瑞浪", "槻の池": "つきの池", "川越": "川越パーク",
@@ -1683,7 +1686,8 @@ def get_user_setting(user_id):
                 "多田良沼": "多々良沼",
                 "那須烏山": "那須鳥山",
                 "柏崎": "霞ケ浦柏崎",
-                "霞ケ浦西浦": "土浦港"
+                "霞ケ浦西浦": "土浦港",
+                "七色ダム": "池原七色ダム"
             }
             
             raw_favs = [s.strip() for s in favs.split(',')]
@@ -2054,7 +2058,7 @@ def get_cached_weather(spot_name):
         if now - updated_time <= timedelta(hours=1):
             if isinstance(data, dict):
                 weekly = data.get("__weekly__", [])
-                if data.get("_version") != "settings_shortcut_v80": return None
+                if data.get("_version") != "settings_shortcut_v81": return None
                 if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-": return None
                 # 1時間天気が入っているかチェック
                 dates = [d for d in data.keys() if d != "__weekly__" and d != "_version"]
@@ -2074,7 +2078,7 @@ def get_cached_weather(spot_name):
                         weather_data = row.get('weather_data')
                         if isinstance(weather_data, dict):
                             weekly = weather_data.get("__weekly__", [])
-                            if weather_data.get("_version") != "settings_shortcut_v80": return None
+                            if weather_data.get("_version") != "settings_shortcut_v81": return None
                             if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-": return None
                             dates = [d for d in weather_data.keys() if d != "__weekly__" and d != "_version"]
                             if not dates: return None
@@ -2088,7 +2092,7 @@ def get_cached_weather(spot_name):
 
 def save_cached_weather(spot_name, weather_data):
     now = datetime.now(timezone.utc)
-    weather_data["_version"] = "settings_shortcut_v80"
+    weather_data["_version"] = "settings_shortcut_v81"
     MEMORY_CACHE[spot_name] = (weather_data, now)
     if not supabase: return
     try:
