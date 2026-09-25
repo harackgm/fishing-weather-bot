@@ -967,6 +967,30 @@ BASS_SPOT_WEATHER_DATA = {
         "search_name": "多々良沼", "tel": "",
         "aliases": ["多々良沼", "多田良沼", "たたらぬま", "たたら"]
     },
+    # ★ 新利根川を追加（水神屋→松屋→Blog/X の順） ★
+    "新利根川": {
+        "url": "https://weathernews.jp/onebox/35.943/140.445/",
+        "tenki_url": "https://tenki.jp/forecast/3/11/4020/8232/1hour.html",
+        "hp_url": "", "hp2_url": "",
+        "hide_default_map": True,
+        "custom_button_rows": [
+            [
+                {"label": "🌐水神屋", "url": "https://suizinyaboatten.webnode.jp/"},
+                {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E6%B0%B4%E7%A5%9E%E5%B1%8B%E9%A3%9F%E5%A0%82(%E3%83%9C%E3%83%BC%E3%83%88%E5%BA%97)/@35.9443457,140.4455585,17z/data=!3m1!4b1!4m6!3m5!1s0x602259448dd69385:0x2bd2c732d85efccb!8m2!3d35.9443457!4d140.4455585!16s%2Fg%2F1wf21znb"}
+            ],
+            [
+                {"label": "🌐松屋", "url": "https://matsuya-boat.com/"},
+                {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E6%9D%BE%E5%B1%8B%E3%83%9C%E3%83%BC%E3%83%88/@35.9432042,140.4449447,17z/data=!4m6!3m5!1s0x6022594442b8f65d:0x7774965e76ad6221!8m2!3d35.9432042!4d140.4449447!16s%2Fg%2F1tkv9wm8"}
+            ],
+            [
+                {"label": "📝 Blog", "url": "https://ameblo.jp/matsuyaboat/"},
+                {"label": "𝕏", "url": "https://x.com/matsuyaboat"}
+            ]
+        ],
+        "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "",
+        "search_name": "新利根川", "tel": "",
+        "aliases": ["新利根川", "しんとねがわ", "しんとね", "新利根", "松屋ボート", "水神屋"]
+    },
     "片倉ダム": {
         "url": "https://weathernews.jp/onebox/35.198/140.070/",
         "tenki_url": "https://tenki.jp/forecast/3/15/4530/12225/1hour.html",
@@ -1095,26 +1119,6 @@ BASS_SPOT_WEATHER_DATA = {
         "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "",
         "search_name": "桧原湖", "tel": "",
         "aliases": ["桧原湖", "ひばらこ", "ひばら", "桧原", "裏磐梯"]
-    },
-    # ★ 新利根川を追加 ★
-    "新利根川": {
-        "url": "https://weathernews.jp/onebox/35.943/140.445/",
-        "tenki_url": "https://tenki.jp/forecast/3/11/4020/8232/1hour.html",
-        "hp_url": "", "hp2_url": "",
-        "hide_default_map": True,
-        "custom_button_rows": [
-            [
-                {"label": "🌐松屋", "url": "https://matsuya-boat.com/"},
-                {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E6%9D%BE%E5%B1%8B%E3%83%9C%E3%83%BC%E3%83%88/@35.9432042,140.4449447,17z/data=!4m6!3m5!1s0x6022594442b8f65d:0x7774965e76ad6221!8m2!3d35.9432042!4d140.4449447!16s%2Fg%2F1tkv9wm8"}
-            ],
-            [
-                {"label": "🌐水神屋", "url": "https://suizinyaboatten.webnode.jp/"},
-                {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E6%B0%B4%E7%A5%9E%E5%B1%8B%E9%A3%9F%E5%A0%82(%E3%83%9C%E3%83%BC%E3%83%88%E5%BA%97)/@35.9443457,140.4455585,17z/data=!3m1!4b1!4m6!3m5!1s0x602259448dd69385:0x2bd2c732d85efccb!8m2!3d35.9443457!4d140.4455585!16s%2Fg%2F1wf21znb"}
-            ]
-        ],
-        "x_url": "https://x.com/matsuyaboat", "fb_url": "", "insta_url": "", "blog_url": "https://ameblo.jp/matsuyaboat/", "yt_url": "",
-        "search_name": "新利根川", "tel": "",
-        "aliases": ["新利根川", "しんとねがわ", "しんとね", "新利根", "松屋ボート", "水神屋"]
     }
 }
 
@@ -1930,7 +1934,7 @@ def get_cached_weather(spot_name):
         if now - updated_time <= timedelta(hours=1):
             if isinstance(data, dict):
                 weekly = data.get("__weekly__", [])
-                if data.get("_version") != "settings_shortcut_v57": return None
+                if data.get("_version") != "settings_shortcut_v58": return None
                 if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-": return None
             return data
             
@@ -1947,7 +1951,7 @@ def get_cached_weather(spot_name):
                         weather_data = row.get('weather_data')
                         if isinstance(weather_data, dict):
                             weekly = weather_data.get("__weekly__", [])
-                            if weather_data.get("_version") != "settings_shortcut_v57": return None
+                            if weather_data.get("_version") != "settings_shortcut_v58": return None
                             if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-": return None
                         MEMORY_CACHE[spot_name] = (weather_data, updated_time)
                         return weather_data
@@ -1959,7 +1963,7 @@ def get_cached_weather(spot_name):
 
 def save_cached_weather(spot_name, weather_data):
     now = datetime.now(timezone.utc)
-    weather_data["_version"] = "settings_shortcut_v57"
+    weather_data["_version"] = "settings_shortcut_v58"
     MEMORY_CACHE[spot_name] = (weather_data, now)
     if not supabase: return
     try:
