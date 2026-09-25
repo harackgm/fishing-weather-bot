@@ -1144,7 +1144,6 @@ BASS_SPOT_WEATHER_DATA = {
         "search_name": "雄蛇ヶ池", "tel": "",
         "aliases": ["雄蛇ヶ池", "おじゃがいけ", "おじゃが", "雄蛇が池"]
     },
-    # ★ 「七色ダム」から「池原七色ダム」に名称変更し、エイリアスも追加 ★
     "池原七色ダム": {
         "url": "https://weathernews.jp/onebox/34.03/135.98/",
         "tenki_url": "https://tenki.jp/forecast/6/32/6420/29450/1hour.html",
@@ -1183,7 +1182,7 @@ BASS_SPOT_WEATHER_DATA = {
         "search_name": "弥栄湖", "tel": "",
         "aliases": ["弥栄湖", "弥栄ダム", "やさかこ", "やさかだむ", "やさか"]
     },
-    # ★ 遠賀川 のURL（地域コード）を修正 ★
+    # ★ 遠賀川 の tenki.jp URLを正しい地域に修正 ★
     "遠賀川": {
         "url": "https://weathernews.jp/onebox/33.82/130.70/",
         "tenki_url": "https://tenki.jp/forecast/9/43/8220/40384/1hour.html",
@@ -1269,7 +1268,6 @@ BASS_COLOR_GROUPS = [
             {"bg": "#ffe0b2", "spots": ["琵琶湖長浜", "琵琶湖守山"]}
         ]
     },
-    # ★ メニュー表示も 池原七色ダム に変更 ★
     {
         "title": "📍 関西・紀伊（奈良・三重）",
         "header_bg": "#f57c00",
@@ -1673,7 +1671,6 @@ def get_user_setting(user_id):
             except KeyError:
                 fishing_mode = 'trout'
             
-            # ★ 七色ダムを登録済みの場合、自動で池原七色ダムに変換する ★
             rename_map = {
                 "五頭": "GOZU", "竜华池": "竜華池", "ハーブの里": "ハーブ", "サンクチュアリ": "３９",
                 "高島": "高島の泉", "瑞浪": "FCE瑞浪", "槻の池": "つきの池", "川越": "川越パーク",
@@ -2055,10 +2052,11 @@ def get_cached_weather(spot_name):
     now = datetime.now(timezone.utc)
     if spot_name in MEMORY_CACHE:
         data, updated_time = MEMORY_CACHE[spot_name]
-        if now - updated_time <= timedelta(hours=1):
+        # キャッシュの有効期限を1時間から「2時間」に変更
+        if now - updated_time <= timedelta(hours=2):
             if isinstance(data, dict):
                 weekly = data.get("__weekly__", [])
-                if data.get("_version") != "settings_shortcut_v81": return None
+                if data.get("_version") != "settings_shortcut_v82": return None
                 if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-": return None
                 # 1時間天気が入っているかチェック
                 dates = [d for d in data.keys() if d != "__weekly__" and d != "_version"]
@@ -2074,11 +2072,12 @@ def get_cached_weather(spot_name):
             if updated_at_str:
                 try:
                     updated_time = datetime.fromisoformat(updated_at_str.replace('Z', '+00:00'))
-                    if now - updated_time <= timedelta(hours=1):
+                    # キャッシュの有効期限を1時間から「2時間」に変更
+                    if now - updated_time <= timedelta(hours=2):
                         weather_data = row.get('weather_data')
                         if isinstance(weather_data, dict):
                             weekly = weather_data.get("__weekly__", [])
-                            if weather_data.get("_version") != "settings_shortcut_v81": return None
+                            if weather_data.get("_version") != "settings_shortcut_v82": return None
                             if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-": return None
                             dates = [d for d in weather_data.keys() if d != "__weekly__" and d != "_version"]
                             if not dates: return None
@@ -2092,7 +2091,7 @@ def get_cached_weather(spot_name):
 
 def save_cached_weather(spot_name, weather_data):
     now = datetime.now(timezone.utc)
-    weather_data["_version"] = "settings_shortcut_v81"
+    weather_data["_version"] = "settings_shortcut_v82"
     MEMORY_CACHE[spot_name] = (weather_data, now)
     if not supabase: return
     try:
@@ -2625,7 +2624,8 @@ def run_background_update():
                     except: trout_cache_times[spot] = datetime.min.replace(tzinfo=timezone.utc)
                 else: trout_cache_times[spot] = datetime.min.replace(tzinfo=timezone.utc)
             sorted_trout = sorted(trout_cache_times.items(), key=lambda x: x[1])
-            trout_targets = [spot for spot, time in sorted_trout[:4]]
+            # トラウトのバックグラウンド更新を5件に変更
+            trout_targets = [spot for spot, time in sorted_trout[:5]]
 
         bass_targets = []
         if top_bass:
@@ -2637,7 +2637,8 @@ def run_background_update():
                     except: bass_cache_times[spot] = datetime.min.replace(tzinfo=timezone.utc)
                 else: bass_cache_times[spot] = datetime.min.replace(tzinfo=timezone.utc)
             sorted_bass = sorted(bass_cache_times.items(), key=lambda x: x[1])
-            bass_targets = [spot for spot, time in sorted_bass[:2]]
+            # バスのバックグラウンド更新を3件に変更
+            bass_targets = [spot for spot, time in sorted_bass[:3]]
 
         for spot_name in trout_targets:
             data = ALL_SPOT_DATA.get(spot_name)
