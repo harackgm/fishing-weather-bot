@@ -184,7 +184,7 @@ BASS_SPOT_WEATHER_DATA = {
 COLOR_GROUPS = [
     {"title": "📍 静岡・神奈川・東京・千葉", "header_bg": "#0066cc", "sub_groups": [{"bg": "#e6f0fa", "spots": ["東山湖", "すその", "須川", "アルクス焼津", "浜名湖"]}, {"bg": "#d4e6f1", "spots": ["足柄", "中津川", "早戸川", "王禅寺", "開成", "浅川国際"]}, {"bg": "#cce5ff", "spots": ["座間・amaz", "ジョイバレー", "ウォルトン", "NOIKE", "釣パラダイス"]}]},
     {"title": "📍 埼玉・群馬", "header_bg": "#2e7d32", "sub_groups": [{"bg": "#e8f5e9", "spots": ["長瀞", "彩の国", "朝霞Ｇ", "しらこばと", "川越パーク", "加須はなさき", "中里", "伊古の里"]}, {"bg": "#c8e6c9", "spots": ["川場", "川場キングダム", "おくとね", "イワナセンター", "黒保根", "迦葉山", "片品", "中之沢", "宮城", "大崎・赤城", "けん太", "フック", "赤久縄", "太田", "東山道", "榛名"]}]},
-    {"title": "📍 栃木・茨城", "header_bg": "#e65100", "sub_groups": [{"bg": "#fff3e0", "spots": ["キングフィッシャー", "みどり", "那須高原", "尚仁沢", "つり天国", "関根養魚場", "408", "308", "蛇尾（さび）川", "レイクウッド", "なら山沼", "大芦川", "加賀", "発光路", "上永野", "柏仓", "遊水園", "アルクス宇都宮", "エリア21", "ベアーズパーク", "鬼怒川", "名草"]}, {"bg": "#ffe0b2", "spots": ["水戸南", "高萩", "つくば園", "Ｊ", "ユザキ", "笠間", "DoDoo", "若栗", "ミッドクリーク"]}]},
+    {"title": "📍 栃木・茨城", "header_bg": "#e65100", "sub_groups": [{"bg": "#fff3e0", "spots": ["キングフィッシャー", "みどり", "那須高原", "尚仁沢", "つり天国", "関根養魚場", "408", "308", "蛇尾（さび）川", "レイクウッド", "なら山沼", "大芦川", "加賀", "発光路", "上永野", "柏倉", "遊水園", "アルクス宇都宮", "エリア21", "ベアーズパーク", "鬼怒川", "名草"]}, {"bg": "#ffe0b2", "spots": ["水戸南", "高萩", "つくば園", "Ｊ", "ユザキ", "笠間", "DoDoo", "若栗", "ミッドクリーク"]}]},
     {"title": "📍 甲信・東北・東海・関西", "header_bg": "#6a1b9a", "sub_groups": [{"bg": "#f3e5f5", "spots": ["鹿留", "小菅", "奈良子", "シルフ", "ツガネ", "竜華池", "平谷湖", "ハーブの里", "ニレ池", "鹿島やり", "つきの池", "あずみ野"]}, {"bg": "#e1bee7", "spots": ["Lost Lures", "不忘", "白河", "ほのぼの", "WaDoNa", "鶴沼川", "オーパ", "あいづ", "上浜", "GOZU"]}, {"bg": "#d1c4e9", "spots": ["瑞浪", "３９", "醒井", "高島の泉", "千早川"]}]}
 ]
 
@@ -199,7 +199,6 @@ BASS_COLOR_GROUPS = [
 ]
 
 ALL_SPOT_DATA = {**SPOT_WEATHER_DATA, **BASS_SPOT_WEATHER_DATA}
-
 def normalize_name(name_str):
     if not name_str: return ""
     return unicodedata.normalize('NFKC', name_str).lower()
@@ -217,7 +216,6 @@ def convert_to_10days_url(url_str):
     if '1hour.html' in cleaned: return cleaned.replace('1hour.html', '10days.html')
     if cleaned.endswith('/'): return cleaned + '10days.html'
     return cleaned
-
 def get_spot_details(spot_key):
     data = ALL_SPOT_DATA.get(spot_key)
     if not data: return spot_key, None, "", "", "", "", "", "", "", "", "", None
@@ -333,8 +331,10 @@ def build_settings_flex_message(fav_list, mode="trout"):
     for i in range(0, len(filtered_favs), chunk_size):
         chunk = filtered_favs[i:i + chunk_size]
         rows = []
+        
         rows.append(switch_btn)
         rows.append({"type": "separator", "margin": "md"})
+        
         rows.append({
             "type": "box", "layout": "horizontal", "spacing": "xs", "paddingTop": "10px", "paddingBottom": "10px",
             "contents": [
@@ -461,7 +461,7 @@ def get_user_setting(user_id):
                 "七色ダム": "池原七色ダム", "キング": "キングフィッシャー", "ツガネ": "JF in Tsugane",
                 "キングダム": "川場キングダム", "イワセン": "イワナセンター", "鹿島やり": "鹿島槍",
                 "アルクス宇宇都宮": "アルクス宇都宮", "片仓ダム": "片倉ダム", "多田良沼": "多々良沼",
-                "那須烏山": "那須鳥山", "柏崎": "霞ケ浦柏崎", "霞ケ浦西浦": "土浦港", "ＭＡＶ": "宮城"
+                "那須烏山": "那須鳥山", "柏崎": "霞ケ浦柏崎", "霞ケ浦西浦": "土浦港", "ＭＡＶ": "宮城", "GP不忘": "不忘"
             }
             
             raw_favs = [s.strip() for s in favs.split(',')]
@@ -648,11 +648,6 @@ def move_favorite_spot(user_id, spot_name, direction, mode="trout"):
     except Exception as e:
         return False, f"移動失敗: DB設定をご確認ください。詳細:{e}"
 
-def extract_lat_lon(url):
-    m = re.search(r'onebox/([0-9.]+)/([0-9.]+)', url)
-    if m: return m.group(1), m.group(2)
-    return None, None
-
 def fetch_weekly_data_from_api(lat, lon, raw_exclude_dates):
     try:
         api_url = f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&daily=weathercode,temperature_2m_max,temperature_2m_min&timezone=Asia%2FTokyo&forecast_days=14"
@@ -831,7 +826,7 @@ def get_cached_weather(spot_name):
         if now - updated_time <= timedelta(hours=2):
             if isinstance(data, dict):
                 weekly = data.get("__weekly__", [])
-                if data.get("_version") != "settings_shortcut_v89": return None
+                if data.get("_version") != "settings_shortcut_v90": return None
                 if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-": return None
                 dates = [d for d in data.keys() if d != "__weekly__" and d != "_version"]
                 if not dates: return None
@@ -850,7 +845,7 @@ def get_cached_weather(spot_name):
                         weather_data = row.get('weather_data')
                         if isinstance(weather_data, dict):
                             weekly = weather_data.get("__weekly__", [])
-                            if weather_data.get("_version") != "settings_shortcut_v89": return None
+                            if weather_data.get("_version") != "settings_shortcut_v90": return None
                             if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-": return None
                             dates = [d for d in weather_data.keys() if d != "__weekly__" and d != "_version"]
                             if not dates: return None
@@ -864,7 +859,7 @@ def get_cached_weather(spot_name):
 
 def save_cached_weather(spot_name, weather_data):
     now = datetime.now(timezone.utc)
-    weather_data["_version"] = "settings_shortcut_v89"
+    weather_data["_version"] = "settings_shortcut_v90"
     MEMORY_CACHE[spot_name] = (weather_data, now)
     if not supabase: return
     try:
