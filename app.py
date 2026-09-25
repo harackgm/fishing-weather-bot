@@ -1053,6 +1053,36 @@ BASS_SPOT_WEATHER_DATA = {
         "search_name": "栄町", "tel": "",
         "aliases": ["栄町", "さかえまち"]
     },
+    "琵琶湖長浜": {
+        "url": "https://weathernews.jp/onebox/35.481/136.112/",
+        "tenki_url": "https://tenki.jp/forecast/6/28/6020/25203/1hour.html",
+        "hp_url": "", "hp2_url": "",
+        "hide_default_map": True,
+        "custom_button_rows": [
+            [
+                {"label": "🌐ボート", "url": "https://fomarina-shiga.com/"},
+                {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%96%E3%82%AA%E3%83%BC%E3%82%B7%E3%83%A3%E3%83%B3%E3%83%9E%E3%83%AA%E3%83%BC%E3%83%8A/@35.4810202,136.1078288,15.96z/data=!4m6!3m5!1s0x60018cc07d7e9a49:0xc52809c4fc614823!8m2!3d35.4810412!4d136.1123604!16s%2Fg%2F1tf3z8n_"}
+            ]
+        ],
+        "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "",
+        "search_name": "琵琶湖長浜", "tel": "",
+        "aliases": ["琵琶湖長浜", "長浜", "琵琶湖", "ながはま", "びわこ"]
+    },
+    "琵琶湖守山": {
+        "url": "https://weathernews.jp/onebox/35.080/135.949/",
+        "tenki_url": "https://tenki.jp/forecast/6/28/6010/25211/1hour.html",
+        "hp_url": "", "hp2_url": "",
+        "hide_default_map": True,
+        "custom_button_rows": [
+            [
+                {"label": "🌐ボート", "url": "https://www.mlbc3066.com/"},
+                {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E3%83%9E%E3%82%B6%E3%83%BC%E3%83%AC%E3%82%A4%E3%82%AF%E3%83%9C%E3%83%BC%E3%83%88%E3%82%AF%E3%83%A9%E3%83%96/@35.0797941,135.9320807,14z/data=!4m6!3m5!1s0x60017465cbd9b487:0xe122d5af00f491a7!8m2!3d35.0795444!4d135.9494978!16s%2Fg%2F11rvw7bh0"}
+            ]
+        ],
+        "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "",
+        "search_name": "琵琶湖守山", "tel": "",
+        "aliases": ["琵琶湖守山", "守山", "マザーレイクボート", "もりやま"]
+    },
     # ★ 榛名湖 を追加 ★
     "榛名湖": {
         "url": "https://weathernews.jp/onebox/36.473/138.860/",
@@ -1076,6 +1106,30 @@ BASS_SPOT_WEATHER_DATA = {
         "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "",
         "search_name": "榛名湖", "tel": "",
         "aliases": ["榛名湖", "はるなこ"]
+    },
+    # ★ 入鹿池 を追加 ★
+    "入鹿池": {
+        "url": "https://weathernews.jp/onebox/35.338/136.991/",
+        "tenki_url": "https://tenki.jp/forecast/5/26/5110/23215/1hour.html",
+        "hp_url": "", "hp2_url": "",
+        "hide_default_map": True,
+        "custom_button_rows": [
+            [
+                {"label": "🌐見晴茶屋", "url": "https://miharashichaya.com/"},
+                {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E8%A6%8B%E6%99%B4%E8%8C%B6%E5%B1%8B/@35.3385091,136.9900064,17.75z/data=!4m6!3m5!1s0x600312979bb10869:0xf79af085c79012cd!8m2!3d35.3384583!4d136.9910368!16s%2Fg%2F1tdclwnc"}
+            ],
+            [
+                {"label": "🌐百軒亭", "url": "https://hyakkentei.nakamura-ceramics.jp/"},
+                {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E7%99%BE%E8%BB%92%E4%BA%AD/@35.3377684,136.9902628,17.5z/data=!4m6!3m5!1s0x60031297c56caedf:0xd3f4c48328fa3f71!8m2!3d35.3376955!4d136.9919584!16s%2Fg%2F1th5zqk9"}
+            ],
+            [
+                {"label": "🌐入鹿亭", "url": "https://irukatei.com/"},
+                {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E5%85%A5%E9%B9%BF%E4%BA%AD/@35.3351773,136.9919127,18z/data=!4m6!3m5!1s0x600312bdaa34eeb1:0xf5f3c38707001fa1!8m2!3d35.3353869!4d136.9928552!16s%2Fg%2F1tm1qcw5"}
+            ]
+        ],
+        "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "",
+        "search_name": "入鹿池", "tel": "",
+        "aliases": ["入鹿池", "いるかいけ", "いるか"]
     }
 }
 
@@ -1131,6 +1185,21 @@ BASS_COLOR_GROUPS = [
         "header_bg": "#6a1b9a",
         "sub_groups": [
             {"bg": "#e1bee7", "spots": ["東山ダム", "羽鳥湖", "桧原湖", "猪苗代湖"]}
+        ]
+    },
+    # ★ 東海（愛知）グループを新設 ★
+    {
+        "title": "📍 東海（愛知）",
+        "header_bg": "#1565c0",
+        "sub_groups": [
+            {"bg": "#e3f2fd", "spots": ["入鹿池"]}
+        ]
+    },
+    {
+        "title": "📍 関西（滋賀）",
+        "header_bg": "#e65100",
+        "sub_groups": [
+            {"bg": "#ffe0b2", "spots": ["琵琶湖長浜", "琵琶湖守山"]}
         ]
     }
 ]
@@ -1894,7 +1963,7 @@ def get_cached_weather(spot_name):
         if now - updated_time <= timedelta(hours=1):
             if isinstance(data, dict):
                 weekly = data.get("__weekly__", [])
-                if data.get("_version") != "settings_shortcut_v71": return None
+                if data.get("_version") != "settings_shortcut_v72": return None
                 if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-": return None
             return data
             
@@ -1911,7 +1980,7 @@ def get_cached_weather(spot_name):
                         weather_data = row.get('weather_data')
                         if isinstance(weather_data, dict):
                             weekly = weather_data.get("__weekly__", [])
-                            if weather_data.get("_version") != "settings_shortcut_v71": return None
+                            if weather_data.get("_version") != "settings_shortcut_v72": return None
                             if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-": return None
                         MEMORY_CACHE[spot_name] = (weather_data, updated_time)
                         return weather_data
@@ -1923,7 +1992,7 @@ def get_cached_weather(spot_name):
 
 def save_cached_weather(spot_name, weather_data):
     now = datetime.now(timezone.utc)
-    weather_data["_version"] = "settings_shortcut_v71"
+    weather_data["_version"] = "settings_shortcut_v72"
     MEMORY_CACHE[spot_name] = (weather_data, now)
     if not supabase: return
     try:
