@@ -1106,7 +1106,6 @@ BASS_SPOT_WEATHER_DATA = {
         "search_name": "榛名湖", "tel": "",
         "aliases": ["榛名湖", "はるなこ"]
     },
-    # ★ 入鹿池 のURLを代表地点に修正 ★
     "入鹿池": {
         "url": "https://weathernews.jp/onebox/35.38/136.94/",
         "tenki_url": "https://tenki.jp/forecast/5/26/5110/23215/1hour.html",
@@ -1145,7 +1144,6 @@ BASS_SPOT_WEATHER_DATA = {
         "search_name": "雄蛇ヶ池", "tel": "",
         "aliases": ["雄蛇ヶ池", "おじゃがいけ", "おじゃが", "雄蛇が池"]
     },
-    # ★ 七色ダム のURLを代表地点に修正 ★
     "七色ダム": {
         "url": "https://weathernews.jp/onebox/34.03/135.98/",
         "tenki_url": "https://tenki.jp/forecast/6/32/6420/29450/1hour.html",
@@ -1169,7 +1167,6 @@ BASS_SPOT_WEATHER_DATA = {
         "search_name": "七色ダム", "tel": "",
         "aliases": ["七色ダム", "なないろだむ", "なないろ"]
     },
-    # ★ 弥栄湖 のURLを代表地点に修正 ★
     "弥栄湖": {
         "url": "https://weathernews.jp/onebox/34.16/132.22/",
         "tenki_url": "https://tenki.jp/forecast/7/38/8130/35208/1hour.html",
@@ -1184,6 +1181,22 @@ BASS_SPOT_WEATHER_DATA = {
         "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "",
         "search_name": "弥栄湖", "tel": "",
         "aliases": ["弥栄湖", "弥栄ダム", "やさかこ", "やさかだむ", "やさか"]
+    },
+    # ★ 遠賀川 を追加 ★
+    "遠賀川": {
+        "url": "https://weathernews.jp/onebox/33.826/130.703/",
+        "tenki_url": "https://tenki.jp/forecast/9/43/8210/40215/1hour.html",
+        "hp_url": "", "hp2_url": "",
+        "hide_default_map": True,
+        "custom_button_rows": [
+            [
+                {"label": "🌐RODMAN", "url": "https://www.rod-man.jp/"},
+                {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E3%83%AD%E3%83%83%E3%83%89%E3%83%9E%E3%83%B3/@33.8255333,130.7015963,17.71z/data=!4m6!3m5!1s0x3543cdce54b35d5d:0xc21fd59bb7a86607!8m2!3d33.82556!4d130.703444!16s%2Fg%2F1vp6x_1x"}
+            ]
+        ],
+        "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "",
+        "search_name": "遠賀川", "tel": "",
+        "aliases": ["遠賀川", "おんががわ", "おんが"]
     }
 }
 
@@ -1267,6 +1280,14 @@ BASS_COLOR_GROUPS = [
         "header_bg": "#c62828",
         "sub_groups": [
             {"bg": "#ffcdd2", "spots": ["弥栄湖"]}
+        ]
+    },
+    # ★ 九州（福岡）グループを新設 ★
+    {
+        "title": "📍 九州（福岡）",
+        "header_bg": "#d81b60",
+        "sub_groups": [
+            {"bg": "#f8bbd0", "spots": ["遠賀川"]}
         ]
     }
 ]
@@ -2034,7 +2055,7 @@ def get_cached_weather(spot_name):
         if now - updated_time <= timedelta(hours=1):
             if isinstance(data, dict):
                 weekly = data.get("__weekly__", [])
-                if data.get("_version") != "settings_shortcut_v77": return None
+                if data.get("_version") != "settings_shortcut_v78": return None
                 if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-": return None
                 # 1時間天気が入っているかチェック
                 dates = [d for d in data.keys() if d != "__weekly__" and d != "_version"]
@@ -2054,7 +2075,7 @@ def get_cached_weather(spot_name):
                         weather_data = row.get('weather_data')
                         if isinstance(weather_data, dict):
                             weekly = weather_data.get("__weekly__", [])
-                            if weather_data.get("_version") != "settings_shortcut_v77": return None
+                            if weather_data.get("_version") != "settings_shortcut_v78": return None
                             if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-": return None
                             dates = [d for d in weather_data.keys() if d != "__weekly__" and d != "_version"]
                             if not dates: return None
@@ -2068,7 +2089,7 @@ def get_cached_weather(spot_name):
 
 def save_cached_weather(spot_name, weather_data):
     now = datetime.now(timezone.utc)
-    weather_data["_version"] = "settings_shortcut_v77"
+    weather_data["_version"] = "settings_shortcut_v78"
     MEMORY_CACHE[spot_name] = (weather_data, now)
     if not supabase: return
     try:
