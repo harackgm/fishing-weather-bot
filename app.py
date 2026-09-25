@@ -199,6 +199,9 @@ BASS_COLOR_GROUPS = [
 ]
 
 ALL_SPOT_DATA = {**SPOT_WEATHER_DATA, **BASS_SPOT_WEATHER_DATA}
+
+
+
 def normalize_name(name_str):
     if not name_str: return ""
     return unicodedata.normalize('NFKC', name_str).lower()
@@ -216,6 +219,7 @@ def convert_to_10days_url(url_str):
     if '1hour.html' in cleaned: return cleaned.replace('1hour.html', '10days.html')
     if cleaned.endswith('/'): return cleaned + '10days.html'
     return cleaned
+
 def get_spot_details(spot_key):
     data = ALL_SPOT_DATA.get(spot_key)
     if not data: return spot_key, None, "", "", "", "", "", "", "", "", "", None
