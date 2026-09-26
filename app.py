@@ -87,12 +87,12 @@ SPOT_WEATHER_DATA = {
 
     # --- 山梨・長野 ---
     "鹿留": {"url": "https://weathernews.jp/onebox/35.512350/138.887160/", "tenki_url": "https://tenki.jp/forecast/3/22/4920/19204/1hour.html", "hp_url": "http://www.sisidome.jp/", "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "ベリーパーク in 鹿留", "tel": "0554-43-0082", "aliases": ["鹿留", "シシドメ", "ししどめ", "ベリーパーク"]},
-    "小菅": {"url": "https://weathernews.jp/onebox/35.760330/138.940529/", "tenki_url": "https://tenki.jp/forecast/3/22/4920/19442/1hour.html", "hp_url": "http://kosuge-tg.com/", "x_url": "", "fb_url": "", "insta_url": "https://kosugetg.jugem.jp/", "blog_url": "", "yt_url": "", "search_name": "小菅トラウトガーデン", "tel": "0428-87-0373", "aliases": ["小菅", "小菅TG", "こすげ"]},
+    "小菅": {"url": "https://weathernews.jp/onebox/35.760330/138.940529/", "tenki_url": "https://tenki.jp/forecast/3/22/4920/19442/1hour.html", "hp_url": "http://kosuge-tg.com/", "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "https://kosugetg.jugem.jp/", "yt_url": "", "search_name": "小菅トラウトガーデン", "tel": "0428-87-0373", "aliases": ["小菅", "小菅TG", "こすげ"]},
     "奈良子": {"url": "https://weathernews.jp/onebox/35.672184/138.917831/", "tenki_url": "https://tenki.jp/forecast/3/22/4920/19206/1hour.html", "hp_url": "https://www.narago.jp/index.html", "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "奈良子釣りセンター", "tel": "0554-24-7636", "aliases": ["奈良子", "奈良子釣りセンター", "ならこ", "ならご", "ナラコ", "ナラゴ", "ならごつりせんたー", "ナラゴツリセンター"]},
     "シルフ": {"url": "https://weathernews.jp/onebox/35.778458/138.316489/", "tenki_url": "https://tenki.jp/forecast/3/22/4910/19209/1hour.html", "hp_url": "https://shylph.boy.jp/", "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "白州トラウトフィッシングエリア", "tel": "0551-35-4308", "aliases": ["シルフ", "Shylph", "しるふ"]},
     "ツガネ": {"url": "https://weathernews.jp/onebox/35.866755/138.451406/", "tenki_url": "https://tenki.jp/forecast/3/22/4910/19209/1hour.html", "hp_url": "http://www6.nns.ne.jp/~joy-field/index.html", "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "ジョイフィールド in Tsugane", "tel": "0551-20-7888", "aliases": ["ツガネ", "JF in Tsugane", "Tsugane", "ジョイフィールド", "つがね", "じょいふぃーるど"]},
     "竜華池": {"url": "https://weathernews.jp/onebox/35.681978/138.576164/", "tenki_url": "https://tenki.jp/forecast/3/22/4910/19201/1hour.html", "hp_url": "https://fishingmarketbear.wixsite.com/ryugaike", "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "フィッシングパーク竜華池", "tel": "055-252-0938", "aliases": ["竜華池", "りゅうがいけ", "竜华池"]},
-    "平谷湖": {"url": "https://weathernews.jp/onebox/35.332243/137.632213/", "tenki_url": "https://tenki.jp/forecast/3/23/4830/20409/1hour.html", "hp_url": "https://hirayako.com/", "x_url": "", "fb_url": "", "insta_url": "https://ameblo.jp/hirayakobakucho/", "blog_url": "", "yt_url": "", "search_name": "平谷湖フィッシングスポット", "tel": "0265-48-1127", "aliases": ["平谷湖", "平谷湖フィッシングスポット", "ひらやこ"]},
+    "平谷湖": {"url": "https://weathernews.jp/onebox/35.332243/137.632213/", "tenki_url": "https://tenki.jp/forecast/3/23/4830/20409/1hour.html", "hp_url": "https://hirayako.com/", "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "https://ameblo.jp/hirayakobakucho/", "yt_url": "", "search_name": "平谷湖フィッシングスポット", "tel": "0265-48-1127", "aliases": ["平谷湖", "平谷湖フィッシングスポット", "ひらやこ"]},
     "ハーブの里": {"url": "https://weathernews.jp/onebox/36.403436/137.890526/", "tenki_url": "https://tenki.jp/forecast/3/23/4810/20485/1hour.html", "hp_url": "https://herbfa1995.kikirara.jp/", "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "ハーブの里フィッシングエリア", "tel": "0261-62-6322", "aliases": ["ハーブの里", "ハーブ", "はーぶ"]},
     "ニレ池": {"url": "https://weathernews.jp/onebox/36.712669/137.845826/", "tenki_url": "https://tenki.jp/forecast/3/23/4810/20485/1hour.html", "hp_url": "http://www.nireike.com/", "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "白馬八方ニレ池フィッシングセンター", "tel": "0261-72-5086", "aliases": ["ニレ池", "にれいけ"]},
     "鹿島やり": {"url": "https://weathernews.jp/onebox/36.548940/137.809757/", "tenki_url": "https://tenki.jp/forecast/3/23/4810/20212/1hour.html", "hp_url": "https://www.kashimayari-garden.com/", "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "鹿島槍ガーデン", "tel": "0261-22-2253", "aliases": ["鹿島やり", "鹿島槍", "鹿島槍ガーデン", "かしまやり", "鹿島", "カシマヤリ"]},
@@ -134,7 +134,7 @@ SPOT_WEATHER_DATA = {
     "白河": {"url": "https://weathernews.jp/onebox/37.127955/140.081827/", "tenki_url": "https://tenki.jp/forecast/2/10/3610/7461/1hour.html", "hp_url": "https://shirakawa.forest-springs.com/", "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "白河フォレストスプリングス", "tel": "0248-25-3535", "aliases": ["白河", "白河フォレストスプリングス", "白河FS", "しらかわ"]},
     "ほのぼの": {"url": "https://weathernews.jp/onebox/36.837687/140.472433/", "tenki_url": "https://tenki.jp/forecast/2/10/3610/7482/1hour.html", "hp_url": "https://sites.google.com/view/fa-honobono", "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "ほのぼのフィッシングエリア", "tel": "0247-46-3200", "aliases": ["ほのぼの", "ほのぼのプール"]},
     "WaDoNa": {"url": "https://weathernews.jp/onebox/36.877372/140.540954/", "tenki_url": "https://tenki.jp/forecast/2/10/3610/7483/1hour.html", "hp_url": "https://www.wadonanikko.com/", "x_url": "https://x.com/wadonanikko", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "WaDoNa 釣り場", "tel": "090-3121-6677", "aliases": ["WaDoNa", "ワドナ", "わどな"]},
-    "鶴沼川": {"url": "https://weathernews.jp/onebox/37.255460/139.872256/", "tenki_url": "https://tenki.jp/forecast/2/10/3630/7362/1hour.html", "hp_url": "https://aizuiwanacenter.com/", "x_url": "https://x.com/4knL7KqJ86Iu9Ya", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "鶴沼川フィッシングパーク", "tel": "0241-67-2708", "aliases": ["鶴沼川", "つるぬまがわ", "鶴沼"]},
+    "鶴沼川": {"url": "https://weathernews.jp/onebox/37.255460/139.872256/", "tenki_url": "https://tenki.jp/forecast/2/10/3630/7362/1hour.html", "hp_url": "https://aizuiwanacenter.com/", "custom_button_rows": [[{"label": "🌐道の駅", "url": "https://michinoeki-tajima.jp/"}, {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E9%81%93%E3%81%AE%E9%A7%85+%E3%81%9F%E3%81%98%E3%81%BE/@37.0865116,139.724984,17z/data=!3m1!4b1!4m6!3m5!1s0x601feafea67a47c9:0x525dc76cf54bba6b!8m2!3d37.0865073!4d139.7275589!16s%2Fg%2F121z_8n3?entry=ttu&g_ep=EgoyMDI2MDkyMy4wIKXMDSoASAFQAw%3D%3D"}]], "x_url": "https://x.com/4knL7KqJ86Iu9Ya", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "鶴沼川フィッシングパーク", "tel": "0241-67-2708", "aliases": ["鶴沼川", "つるぬまがわ", "鶴沼"]},
     "オーパ": {"url": "https://weathernews.jp/onebox/37.314342/140.449245/", "tenki_url": "https://tenki.jp/forecast/2/10/3610/7203/1hour.html", "hp_url": "https://welcomeohpa.com/", "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "ウエルカムオーパ", "tel": "024-954-2007", "aliases": ["オーパ", "ウエルカムオーパ", "おーぱ"]},
     "あいづ": {"url": "https://weathernews.jp/onebox/37.204977/139.729681/", "tenki_url": "https://tenki.jp/forecast/2/10/3630/7368/1hour.html", "hp_url": "https://aizufishing.jp/", "x_url": "https://x.com/aizufishing", "fb_url": "", "insta_url": "", "blog_url": "https://ameblo.jp/aizu2024/", "yt_url": "", "search_name": "あいづフィッシングエリア", "tel": "0241-64-2101", "aliases": ["あいづ", "あいず", "あいづFA"]},
     "上浜": {"url": "https://weathernews.jp/onebox/39.142616/139.945938/", "tenki_url": "https://tenki.jp/forecast/2/8/3210/5214/1hour.html", "hp_url": "", "map_url": "https://www.google.com/maps/place/%E4%B8%8A%E6%B5%9C%E3%81%A4%E3%82%8A%E5%A0%80%E3%82%BB%E3%83%B3%E3%82%BF%E3%83%BC/@39.1621616,139.9055515,17.5z/data=!4m6!3m5!1s0x5f8e8adc20520b0b:0xbeeef1a2b5b9473c!8m2!3d39.162272!4d139.907289!16s%2Fg%2F1tl8kjmt?entry=ttu&g_ep=EgoyMDI2MDkyMi4wIKXMDSoASAFQAw%3D%3D", "x_url": "", "fb_url": "", "insta_url": "https://www.instagram.com/explore/locations/1013726462/shang-bang-diaori-kusenta/", "blog_url": "", "yt_url": "", "search_name": "上浜釣り場", "tel": "0184-38-3488", "aliases": ["上浜", "上浜釣り場", "かみはま"]},
@@ -340,8 +340,10 @@ def build_settings_flex_message(fav_list, mode="trout"):
     for i in range(0, len(filtered_favs), chunk_size):
         chunk = filtered_favs[i:i + chunk_size]
         rows = []
+        
         rows.append(switch_btn)
         rows.append({"type": "separator", "margin": "md"})
+        
         rows.append({
             "type": "box", "layout": "horizontal", "spacing": "xs", "paddingTop": "10px", "paddingBottom": "10px",
             "contents": [
@@ -838,7 +840,7 @@ def get_cached_weather(spot_name):
         if now - updated_time <= timedelta(hours=2):
             if isinstance(data, dict):
                 weekly = data.get("__weekly__", [])
-                if data.get("_version") != "settings_shortcut_v91": return None
+                if data.get("_version") != "settings_shortcut_v92": return None
                 if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-": return None
                 dates = [d for d in data.keys() if d != "__weekly__" and d != "_version"]
                 if not dates: return None
@@ -857,7 +859,7 @@ def get_cached_weather(spot_name):
                         weather_data = row.get('weather_data')
                         if isinstance(weather_data, dict):
                             weekly = weather_data.get("__weekly__", [])
-                            if weather_data.get("_version") != "settings_shortcut_v91": return None
+                            if weather_data.get("_version") != "settings_shortcut_v92": return None
                             if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-": return None
                             dates = [d for d in weather_data.keys() if d != "__weekly__" and d != "_version"]
                             if not dates: return None
@@ -871,7 +873,7 @@ def get_cached_weather(spot_name):
 
 def save_cached_weather(spot_name, weather_data):
     now = datetime.now(timezone.utc)
-    weather_data["_version"] = "settings_shortcut_v91"
+    weather_data["_version"] = "settings_shortcut_v92"
     MEMORY_CACHE[spot_name] = (weather_data, now)
     if not supabase: return
     try:
