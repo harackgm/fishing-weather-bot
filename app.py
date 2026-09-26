@@ -832,21 +832,6 @@ def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_
             
         all_rows.append(top_buttons)
 
-        header_buttons_bottom = []
-        if hp_url:
-            label_text = "🌐 大崎HP" if spot_name == "大崎・赤城" else "🌐 HP"
-            header_buttons_bottom.append({"type": "button", "action": {"type": "uri", "label": label_text, "uri": hp_url}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
-        if hp2_url:
-            label_text2 = "🌐 赤城HP" if spot_name == "大崎・赤城" else "🌐 HP2"
-            header_buttons_bottom.append({"type": "button", "action": {"type": "uri", "label": label_text2, "uri": hp2_url}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
-        if x_url: header_buttons_bottom.append({"type": "button", "action": {"type": "uri", "label": "𝕏", "uri": x_url}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
-        if fb_url: header_buttons_bottom.append({"type": "button", "action": {"type": "uri", "label": "📘 FB", "uri": fb_url}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
-        if insta_url: header_buttons_bottom.append({"type": "button", "action": {"type": "uri", "label": "📷 Insta", "uri": insta_url}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
-        if blog_url: header_buttons_bottom.append({"type": "button", "action": {"type": "uri", "label": "📝 Blog", "uri": blog_url}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
-        if yt_url: header_buttons_bottom.append({"type": "button", "action": {"type": "uri", "label": "▶️ YouTube", "uri": yt_url}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
-            
-        if header_buttons_bottom: all_rows.append(header_buttons_bottom)
-
         custom_button_rows = spot_data.get("custom_button_rows", [])
         for row_links in custom_button_rows:
             row_buttons = []
@@ -857,6 +842,22 @@ def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_
                     action_data = {"type": "postback", "label": link["label"], "data": "action=dummy"}
                 row_buttons.append({"type": "button", "action": action_data, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
             if row_buttons: all_rows.append(row_buttons)
+
+        header_buttons_bottom = []
+        if not custom_button_rows:
+            if hp_url:
+                label_text = "🌐 大崎HP" if spot_name == "大崎・赤城" else "🌐 HP"
+                header_buttons_bottom.append({"type": "button", "action": {"type": "uri", "label": label_text, "uri": hp_url}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
+            if hp2_url:
+                label_text2 = "🌐 赤城HP" if spot_name == "大崎・赤城" else "🌐 HP2"
+                header_buttons_bottom.append({"type": "button", "action": {"type": "uri", "label": label_text2, "uri": hp2_url}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
+            if x_url: header_buttons_bottom.append({"type": "button", "action": {"type": "uri", "label": "𝕏", "uri": x_url}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
+            if fb_url: header_buttons_bottom.append({"type": "button", "action": {"type": "uri", "label": "📘 FB", "uri": fb_url}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
+            if insta_url: header_buttons_bottom.append({"type": "button", "action": {"type": "uri", "label": "📷 Insta", "uri": insta_url}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
+            if blog_url: header_buttons_bottom.append({"type": "button", "action": {"type": "uri", "label": "📝 Blog", "uri": blog_url}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
+            if yt_url: header_buttons_bottom.append({"type": "button", "action": {"type": "uri", "label": "▶️ YouTube", "uri": yt_url}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
+            
+        if header_buttons_bottom: all_rows.append(header_buttons_bottom)
 
         if len(all_rows) > 2:
             mid = (len(all_rows) + 1) // 2
