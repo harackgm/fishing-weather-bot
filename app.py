@@ -302,7 +302,7 @@ def get_user_setting(user_id):
             rename_map = {
                 "七色ダム": "池原七色ダム", "キング": "キングフィッシャー", "ツガネ": "JF in Tsugane",
                 "キングダム": "川場キングダム", "イワセン": "イワナセンター", "鹿島やり": "鹿島槍",
-                "アルクス宇宇都宮": "アルクス宇都宮", "片仓ダム": "片倉ダム", "多田良沼": "多々良沼",
+                "アルクス宇宇都宮": "アルクス宇宇都宮", "片仓ダム": "片倉ダム", "多田良沼": "多々良沼",
                 "那須烏山": "那須鳥山", "柏崎": "霞ケ浦柏崎", "霞ケ浦西浦": "土浦港", "ＭＡＶ": "宮城", "GP不忘": "不忘"
             }
             
@@ -510,50 +510,62 @@ def fetch_weekly_data_from_jma(tenki_url, raw_exclude_dates):
         res.raise_for_status()
         data = res.json()
 
-        if not data or not isinstance(data, list): return []
-
-        # ★ 長さチェックなど余計な条件を全て廃止し、確実に週間予報のブロック（data[1]）を狙い撃つ
-        weekly_part = data[1] if len(data) > 1 else data[0]
-        time_series = weekly_part.get('timeSeries', [])
-        if not time_series: return []
-
         forecast_dict = {}
 
-        # ★ どんな形の配列で来ても絶対に拾い集める最強の合体ループ
-        for ts in time_series:
-            times = ts.get('timeDefines', [])
-            areas = ts.get('areas', [])
-            if not times or not areas: continue
+        # ★ 全結合パース：気象庁のあらゆるデータを「日付」で絶対に合流させる
+        for part in data:
+            for ts in part.get('timeSeries', []):
+                times = ts.get('timeDefines', [])
+                areas = ts.get('areas', [])
+                if not times or not areas: continue
 
-            # 釣り場のエリアを正確に指定（北部優先）
-            target_area = areas[0]
-            for a in areas:
-                name = a.get("area", {}).get("name", "")
-                if name in ["北部", "大田原", "北部山沿い", "秩父", "西部", "長野", "松本"]:
-                    target_area = a
-                    break
+                target_area = areas[0]
+                for a in areas:
+                    name = a.get("area", {}).get("name", "")
+                    if name in ["北部", "大田原", "西部", "秩父", "北部の山沿い", "飛騨地方", "長野", "塩尻", "松本"]:
+                        target_area = a
+                        break
 
-            for i, dt_str in enumerate(times):
-                try: dt = datetime.fromisoformat(dt_str).date()
-                except: continue
+                for i, dt_str in enumerate(times):
+                    # ★ 致命的バグ修正：fromisoformatを使わず、最初の10文字（YYYY-MM-DD）だけで安全に日付化する
+                    dt_only = dt_str[:10]
+                    try: 
+                        dt = datetime.strptime(dt_only, "%Y-%m-%d").date()
+                    except: 
+                        continue
 
-                if dt not in forecast_dict:
-                    forecast_dict[dt] = {"code": 100, "pop": "-", "t_min": "-", "t_max": "-"}
+                    if dt not in forecast_dict:
+                        forecast_dict[dt] = {"code": 100, "pop": "-", "t_min": "-", "t_max": "-"}
 
-                if "weatherCodes" in target_area and i < len(target_area["weatherCodes"]):
-                    if target_area["weatherCodes"][i]:
+                    if "weatherCodes" in target_area and i < len(target_area["weatherCodes"]) and target_area["weatherCodes"][i]:
                         forecast_dict[dt]["code"] = target_area["weatherCodes"][i]
-                if "pops" in target_area and i < len(target_area["pops"]):
-                    val = target_area["pops"][i]
-                    if val not in ["", None]:
-                        val_str = str(val).replace('%','')
-                        if val_str.isdigit(): forecast_dict[dt]["pop"] = f"{val_str}%"
-                if "tempsMin" in target_area and i < len(target_area["tempsMin"]):
-                    val = target_area["tempsMin"][i]
-                    if val not in ["", None]: forecast_dict[dt]["t_min"] = str(val)
-                if "tempsMax" in target_area and i < len(target_area["tempsMax"]):
-                    val = target_area["tempsMax"][i]
-                    if val not in ["", None]: forecast_dict[dt]["t_max"] = str(val)
+                    
+                    if "pops" in target_area and i < len(target_area["pops"]):
+                        val = target_area["pops"][i]
+                        if val not in ["", None]:
+                            val_str = str(val).replace('%','')
+                            if val_str.isdigit(): forecast_dict[dt]["pop"] = f"{val_str}%"
+                    
+                    if "tempsMin" in target_area and i < len(target_area["tempsMin"]):
+                        val = target_area["tempsMin"][i]
+                        if val not in ["", None]: forecast_dict[dt]["t_min"] = str(val)
+                        
+                    if "tempsMax" in target_area and i < len(target_area["tempsMax"]):
+                        val = target_area["tempsMax"][i]
+                        if val not in ["", None]: forecast_dict[dt]["t_max"] = str(val)
+                        
+                    if "temps" in target_area and i < len(target_area["temps"]):
+                        val = target_area["temps"][i]
+                        if val not in ["", None]:
+                            try:
+                                temp_val = int(val)
+                                c_min = forecast_dict[dt]["t_min"]
+                                c_max = forecast_dict[dt]["t_max"]
+                                if c_min == "-" or temp_val < int(c_min):
+                                    forecast_dict[dt]["t_min"] = str(temp_val)
+                                if c_max == "-" or temp_val > int(c_max):
+                                    forecast_dict[dt]["t_max"] = str(temp_val)
+                            except: pass
 
         now_jst_date = datetime.now(timezone(timedelta(hours=9))).date()
         last_wn_date = guess_date_from_string(raw_exclude_dates[-1], now_jst_date) if raw_exclude_dates else None
@@ -574,7 +586,7 @@ def fetch_weekly_data_from_jma(tenki_url, raw_exclude_dates):
             elif code < 400: final_img = "https://gvs.weathernews.jp/onebox/img/wxicon/300.png"
             else: final_img = "https://gvs.weathernews.jp/onebox/img/wxicon/400.png"
 
-            # ★ 気温がなくても絶対にスキップしない
+            # ★ 気温がなくても絶対に捨てない。取れたデータは全て「weekly_data」に入れる
             weekly_data.append({
                 "date": date_label,
                 "img_url": final_img,
@@ -648,7 +660,7 @@ def fetch_spot_1hour_data(url, tenki_url=None):
         if tenki_url:
             weekly_data = fetch_weekly_data_from_jma(tenki_url, raw_exclude_dates)
 
-        # ★ 日数が足りない分はハイフンで埋める（全体をダミーにしない）
+        # ★ 日数が足りない分はハイフンで埋める（1日でも取れたら全体をダミーにしない）
         if not weekly_data:
             now_dt = datetime.now(timezone(timedelta(hours=9)))
             start_date = now_dt.date()
@@ -683,7 +695,7 @@ def get_cached_weather(spot_name):
         if now - updated_time <= timedelta(hours=2):
             if isinstance(data, dict):
                 weekly = data.get("__weekly__", [])
-                if data.get("_version") != "settings_shortcut_v117": return None
+                if data.get("_version") != "settings_shortcut_v118": return None
                 if not weekly: return None
                 dates = [d for d in data.keys() if d != "__weekly__" and d != "_version" and d != "__is_dummy__"]
                 if not dates: return None
@@ -702,7 +714,7 @@ def get_cached_weather(spot_name):
                         weather_data = row.get('weather_data')
                         if isinstance(weather_data, dict):
                             weekly = weather_data.get("__weekly__", [])
-                            if weather_data.get("_version") != "settings_shortcut_v117": return None
+                            if weather_data.get("_version") != "settings_shortcut_v118": return None
                             if not weekly: return None
                             dates = [d for d in weather_data.keys() if d != "__weekly__" and d != "_version" and d != "__is_dummy__"]
                             if not dates: return None
@@ -719,7 +731,7 @@ def save_cached_weather(spot_name, weather_data):
         return
     
     now = datetime.now(timezone.utc)
-    weather_data["_version"] = "settings_shortcut_v117"
+    weather_data["_version"] = "settings_shortcut_v118"
     MEMORY_CACHE[spot_name] = (weather_data, now)
     if not supabase: return
     try:
