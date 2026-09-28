@@ -81,16 +81,38 @@ def guess_date_from_string(date_str, now_date):
     if not m: return now_date
     month_str, day_str = m.group(1), m.group(2)
     day = int(day_str)
-    month = int(month_str) if month_str else now_date.month
-    try: target = now_date.replace(month=month, day=day)
-    except ValueError: return now_date
-    if (now_date - target).days > 15:
-        try: target = target.replace(year=now_date.year + 1)
-        except ValueError: pass
-    elif (target - now_date).days > 15:
-        try: target = target.replace(year=now_date.year - 1)
-        except ValueError: pass
-    return target
+    
+    # ★ バグ修正：月が省略されている場合、現在・翌月・前月の中から最も近い日付を自動判定する
+    if month_str:
+        month = int(month_str)
+        try: target = now_date.replace(month=month, day=day)
+        except ValueError: return now_date
+        
+        if (now_date - target).days > 180:
+            try: target = target.replace(year=now_date.year + 1)
+            except ValueError: pass
+        elif (target - now_date).days > 180:
+            try: target = target.replace(year=now_date.year - 1)
+            except ValueError: pass
+        return target
+    else:
+        candidates = []
+        for m_offset in [-1, 0, 1]:
+            y = now_date.year
+            m_val = now_date.month + m_offset
+            if m_val < 1:
+                m_val += 12
+                y -= 1
+            elif m_val > 12:
+                m_val -= 12
+                y += 1
+            try:
+                candidates.append(datetime(y, m_val, day).date())
+            except ValueError:
+                pass
+        if not candidates: return now_date
+        target = min(candidates, key=lambda d: abs((d - now_date).days))
+        return target
 
 def build_delete_confirm_message(spot_name, source):
     execute_action = f"fav_del_execute_and_{source}"
@@ -512,7 +534,6 @@ def fetch_weekly_data_from_jma(tenki_url, raw_exclude_dates):
 
         forecast_dict = {}
 
-        # ★ 全結合パース：気象庁のあらゆるデータを「日付」で絶対に合流させる
         for part in data:
             for ts in part.get('timeSeries', []):
                 times = ts.get('timeDefines', [])
@@ -527,7 +548,6 @@ def fetch_weekly_data_from_jma(tenki_url, raw_exclude_dates):
                         break
 
                 for i, dt_str in enumerate(times):
-                    # ★ 致命的バグ修正：fromisoformatを使わず、最初の10文字（YYYY-MM-DD）だけで安全に日付化する
                     dt_only = dt_str[:10]
                     try: 
                         dt = datetime.strptime(dt_only, "%Y-%m-%d").date()
@@ -537,8 +557,9 @@ def fetch_weekly_data_from_jma(tenki_url, raw_exclude_dates):
                     if dt not in forecast_dict:
                         forecast_dict[dt] = {"code": 100, "pop": "-", "t_min": "-", "t_max": "-"}
 
-                    if "weatherCodes" in target_area and i < len(target_area["weatherCodes"]) and target_area["weatherCodes"][i]:
-                        forecast_dict[dt]["code"] = target_area["weatherCodes"][i]
+                    if "weatherCodes" in target_area and i < len(target_area["weatherCodes"]):
+                        if target_area["weatherCodes"][i]:
+                            forecast_dict[dt]["code"] = target_area["weatherCodes"][i]
                     
                     if "pops" in target_area and i < len(target_area["pops"]):
                         val = target_area["pops"][i]
@@ -586,7 +607,6 @@ def fetch_weekly_data_from_jma(tenki_url, raw_exclude_dates):
             elif code < 400: final_img = "https://gvs.weathernews.jp/onebox/img/wxicon/300.png"
             else: final_img = "https://gvs.weathernews.jp/onebox/img/wxicon/400.png"
 
-            # ★ 気温がなくても絶対に捨てない。取れたデータは全て「weekly_data」に入れる
             weekly_data.append({
                 "date": date_label,
                 "img_url": final_img,
@@ -656,11 +676,9 @@ def fetch_spot_1hour_data(url, tenki_url=None):
         raw_exclude_dates = list(weather_by_date.keys())
         weekly_data = []
 
-        # ★ 気象庁公式データのみを絶対実行（Open-Meteoは完全削除済み）
         if tenki_url:
             weekly_data = fetch_weekly_data_from_jma(tenki_url, raw_exclude_dates)
 
-        # ★ 日数が足りない分はハイフンで埋める（1日でも取れたら全体をダミーにしない）
         if not weekly_data:
             now_dt = datetime.now(timezone(timedelta(hours=9)))
             start_date = now_dt.date()
@@ -695,7 +713,7 @@ def get_cached_weather(spot_name):
         if now - updated_time <= timedelta(hours=2):
             if isinstance(data, dict):
                 weekly = data.get("__weekly__", [])
-                if data.get("_version") != "settings_shortcut_v118": return None
+                if data.get("_version") != "settings_shortcut_v119": return None
                 if not weekly: return None
                 dates = [d for d in data.keys() if d != "__weekly__" and d != "_version" and d != "__is_dummy__"]
                 if not dates: return None
@@ -714,7 +732,7 @@ def get_cached_weather(spot_name):
                         weather_data = row.get('weather_data')
                         if isinstance(weather_data, dict):
                             weekly = weather_data.get("__weekly__", [])
-                            if weather_data.get("_version") != "settings_shortcut_v118": return None
+                            if weather_data.get("_version") != "settings_shortcut_v119": return None
                             if not weekly: return None
                             dates = [d for d in weather_data.keys() if d != "__weekly__" and d != "_version" and d != "__is_dummy__"]
                             if not dates: return None
@@ -731,7 +749,7 @@ def save_cached_weather(spot_name, weather_data):
         return
     
     now = datetime.now(timezone.utc)
-    weather_data["_version"] = "settings_shortcut_v118"
+    weather_data["_version"] = "settings_shortcut_v119"
     MEMORY_CACHE[spot_name] = (weather_data, now)
     if not supabase: return
     try:
