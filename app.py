@@ -33,6 +33,7 @@ if SUPABASE_URL and SUPABASE_KEY:
 
 MEMORY_CACHE = {}
 
+# 都道府県コードから気象庁APIのコードへの変換用辞書
 PREF_TO_JMA = {
     "4": "040000", "5": "050000", "7": "070000", "8": "080000", "12": "090000",
     "13": "100000", "14": "110000", "15": "120000", "16": "130000", "17": "140000",
@@ -494,7 +495,7 @@ def extract_lat_lon(url):
     if m: return m.group(1), m.group(2)
     return None, None
 
-def fetch_weekly_data_from_jma(tenki_url):
+def fetch_weekly_data_from_jma(tenki_url, raw_exclude_dates):
     if not tenki_url: return []
     m = re.search(r'forecast/\d+/(\d+)/', tenki_url)
     if not m: return []
@@ -504,73 +505,81 @@ def fetch_weekly_data_from_jma(tenki_url):
 
     try:
         url = f"https://www.jma.go.jp/bosai/forecast/data/forecast/{jma_code}.json"
-        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}
+        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
         res = requests.get(url, headers=headers, timeout=5.0)
         res.raise_for_status()
         data = res.json()
-        
-        weekly_part = None
-        for part in data:
-            if "timeSeries" in part:
-                for ts in part["timeSeries"]:
-                    if len(ts.get("timeDefines", [])) >= 5:
-                        weekly_part = part
-                        break
-            if weekly_part: break
-            
-        if not weekly_part: return []
-        
-        time_series = weekly_part.get('timeSeries', [])
+
         forecast_dict = {}
-        
-        for ts in time_series:
-            times = ts.get('timeDefines', [])
-            areas = ts.get('areas', [])
-            if not times or not areas: continue
-            
-            target_area = areas[0]
-            for a in areas:
-                name = a.get("area", {}).get("name", "")
-                if "北部" in name or "大田原" in name:
-                    target_area = a
-                    break
-            
-            for i, dt_str in enumerate(times):
-                try: dt = datetime.fromisoformat(dt_str).date()
-                except: continue
-                
-                if dt not in forecast_dict:
-                    forecast_dict[dt] = {"code": 100, "pop": "-", "t_min": "-", "t_max": "-"}
-                
-                if "weatherCodes" in target_area and i < len(target_area["weatherCodes"]):
-                    forecast_dict[dt]["code"] = target_area["weatherCodes"][i]
-                if "pops" in target_area and i < len(target_area["pops"]):
-                    val = target_area["pops"][i]
-                    if val not in ["", None]: forecast_dict[dt]["pop"] = f"{val}%"
-                if "tempsMin" in target_area and i < len(target_area["tempsMin"]):
-                    val = target_area["tempsMin"][i]
-                    if val not in ["", None]: forecast_dict[dt]["t_min"] = str(val)
-                if "tempsMax" in target_area and i < len(target_area["tempsMax"]):
-                    val = target_area["tempsMax"][i]
-                    if val not in ["", None]: forecast_dict[dt]["t_max"] = str(val)
+
+        # ★ すべてのtimeSeriesを総ざらいし、日付キーで完全に結合する
+        for part in data:
+            for ts in part.get('timeSeries', []):
+                times = ts.get('timeDefines', [])
+                areas = ts.get('areas', [])
+                if not times or not areas: continue
+
+                target_area = areas[0]
+                for a in areas:
+                    name = a.get("area", {}).get("name", "")
+                    if name in ["北部", "大田原", "西部", "秩父", "北部の山沿い", "飛騨地方", "長野", "塩尻", "松本"]:
+                        target_area = a
+                        break
+
+                for i, dt_str in enumerate(times):
+                    try: dt = datetime.fromisoformat(dt_str).date()
+                    except: continue
+
+                    if dt not in forecast_dict:
+                        forecast_dict[dt] = {"code": None, "pop": None, "t_min": None, "t_max": None}
+
+                    if "weatherCodes" in target_area and i < len(target_area["weatherCodes"]) and target_area["weatherCodes"][i]:
+                        forecast_dict[dt]["code"] = target_area["weatherCodes"][i]
+                    if "pops" in target_area and i < len(target_area["pops"]) and target_area["pops"][i]:
+                        val = str(target_area["pops"][i]).replace('%','')
+                        if val.isdigit(): forecast_dict[dt]["pop"] = f"{val}%"
+                    if "tempsMin" in target_area and i < len(target_area["tempsMin"]) and target_area["tempsMin"][i]:
+                        forecast_dict[dt]["t_min"] = str(target_area["tempsMin"][i])
+                    if "tempsMax" in target_area and i < len(target_area["tempsMax"]) and target_area["tempsMax"][i]:
+                        forecast_dict[dt]["t_max"] = str(target_area["tempsMax"][i])
+                    if "temps" in target_area and i < len(target_area["temps"]) and target_area["temps"][i]:
+                        try:
+                            temp_val = int(target_area["temps"][i])
+                            c_min = forecast_dict[dt]["t_min"]
+                            c_max = forecast_dict[dt]["t_max"]
+                            if c_min is None or temp_val < int(c_min):
+                                forecast_dict[dt]["t_min"] = str(temp_val)
+                            if c_max is None or temp_val > int(c_max):
+                                forecast_dict[dt]["t_max"] = str(temp_val)
+                        except: pass
+
+        now_jst_date = datetime.now(timezone(timedelta(hours=9))).date()
+        last_wn_date = guess_date_from_string(raw_exclude_dates[-1], now_jst_date) if raw_exclude_dates else None
 
         weekly_data = []
         for dt in sorted(forecast_dict.keys()):
+            if last_wn_date and dt <= last_wn_date: continue
+
             day_data = forecast_dict[dt]
             w_str = ["(月)", "(火)", "(水)", "(木)", "(金)", "(土)", "(日)"][dt.weekday()]
             date_label = f"{dt.day}{w_str}"
-            
+
             try: code = int(day_data["code"])
             except: code = 100
-            
+
             if code < 200: final_img = "https://gvs.weathernews.jp/onebox/img/wxicon/100.png"
             elif code < 300: final_img = "https://gvs.weathernews.jp/onebox/img/wxicon/200.png"
             elif code < 400: final_img = "https://gvs.weathernews.jp/onebox/img/wxicon/300.png"
             else: final_img = "https://gvs.weathernews.jp/onebox/img/wxicon/400.png"
-                
+
+            t_max = day_data["t_max"] if day_data["t_max"] is not None else "-"
+            t_min = day_data["t_min"] if day_data["t_min"] is not None else "-"
+            r_prob = day_data["pop"] if day_data["pop"] is not None else "-"
+
+            # 気温がなくても捨てない
             weekly_data.append({
-                "date": date_label, "img_url": final_img, 
-                "temp_max": day_data["t_max"], "temp_min": day_data["t_min"], "rain_prob": day_data["pop"]
+                "date": date_label, "img_url": final_img,
+                "temp_max": t_max, "temp_min": t_min, "rain_prob": r_prob
             })
             if len(weekly_data) >= 8: break
 
@@ -631,17 +640,20 @@ def fetch_spot_1hour_data(url, tenki_url=None):
         if not weather_by_date:
             return None
 
+        raw_exclude_dates = list(weather_by_date.keys())
         weekly_data = []
 
-        # ★ 気象庁公式APIのみを使用（無理な日付除外を完全撤廃）
+        # ★ 気象庁公式APIのみを使用
         if tenki_url:
-            weekly_data = fetch_weekly_data_from_jma(tenki_url)
+            weekly_data = fetch_weekly_data_from_jma(tenki_url, raw_exclude_dates)
 
-        # ★ 取れた日数はすべて順に並べ、8日分に満たない枠のみ末尾を「-」で綺麗に穴埋めする
+        # ★ 8日に満たない場合は、残りの枠を「-」で綺麗に埋める（絶対ダミーにしない）
         if not weekly_data:
             now_dt = datetime.now(timezone(timedelta(hours=9)))
             start_date = now_dt.date()
-            weekly_data = []
+            if raw_exclude_dates:
+                last_wn = guess_date_from_string(raw_exclude_dates[-1], now_dt.date())
+                start_date = last_wn + timedelta(days=1)
             for i in range(8):
                 day_dt = start_date + timedelta(days=i)
                 w_str = ["(月)", "(火)", "(水)", "(木)", "(金)", "(土)", "(日)"][day_dt.weekday()]
@@ -670,7 +682,7 @@ def get_cached_weather(spot_name):
         if now - updated_time <= timedelta(hours=2):
             if isinstance(data, dict):
                 weekly = data.get("__weekly__", [])
-                if data.get("_version") != "settings_shortcut_v115": return None
+                if data.get("_version") != "settings_shortcut_v116": return None
                 if not weekly: return None
                 dates = [d for d in data.keys() if d != "__weekly__" and d != "_version" and d != "__is_dummy__"]
                 if not dates: return None
@@ -689,7 +701,7 @@ def get_cached_weather(spot_name):
                         weather_data = row.get('weather_data')
                         if isinstance(weather_data, dict):
                             weekly = weather_data.get("__weekly__", [])
-                            if weather_data.get("_version") != "settings_shortcut_v115": return None
+                            if weather_data.get("_version") != "settings_shortcut_v116": return None
                             if not weekly: return None
                             dates = [d for d in weather_data.keys() if d != "__weekly__" and d != "_version" and d != "__is_dummy__"]
                             if not dates: return None
@@ -706,7 +718,7 @@ def save_cached_weather(spot_name, weather_data):
         return
     
     now = datetime.now(timezone.utc)
-    weather_data["_version"] = "settings_shortcut_v115"
+    weather_data["_version"] = "settings_shortcut_v116"
     MEMORY_CACHE[spot_name] = (weather_data, now)
     if not supabase: return
     try:
