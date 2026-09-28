@@ -53,17 +53,18 @@ def convert_to_10days_url(url_str):
 
 def get_spot_details(spot_key):
     data = ALL_SPOT_DATA.get(spot_key)
-    if not data: return spot_key, None, "", "", "", "", "", "", "", "", "", None
+    if not data: return spot_key, None, "", "", "", "", "", "", "", "", "", None, None
     map_url = data.get("map_url")
     if not map_url:
         search_q = data.get('search_name', spot_key)
         map_url = f"https://www.google.com/maps/search/?api=1&query={quote(search_q)}"
     tenki_10days_url = convert_to_10days_url(data.get("tenki_url"))
+    yahoo_url = data.get("yahoo_url", "")
     return (
         spot_key, data["url"], clean_url(data.get("hp_url", "")), clean_url(data.get("hp2_url", "")), 
         map_url, data.get("tel", ""), clean_url(data.get("x_url", "")), clean_url(data.get("fb_url", "")),
         clean_url(data.get("insta_url", "")), clean_url(data.get("blog_url", "")), clean_url(data.get("yt_url", "")),
-        tenki_10days_url
+        tenki_10days_url, yahoo_url
     )
 
 def guess_date_from_string(date_str, now_date):
@@ -486,7 +487,6 @@ def extract_lat_lon(url):
     if m: return m.group(1), m.group(2)
     return None, None
 
-
 def fetch_weekly_data_from_api(lat, lon, raw_exclude_dates):
     for attempt in range(2):
         try:
@@ -532,7 +532,134 @@ def fetch_weekly_data_from_api(lat, lon, raw_exclude_dates):
             time.sleep(1)
     return []
 
-def fetch_spot_1hour_data(url, tenki_url=None):
+def fetch_weekly_data_from_yahoo(yahoo_url, raw_exclude_dates):
+    try:
+        # ★ サーバー負荷軽減のためのランダム待機（1〜2秒）
+        time.sleep(random.uniform(1.0, 2.0))
+        # ★ ブラウザからのアクセスを完全に偽装
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+            'Accept-Language': 'ja,en-US;q=0.9,en;q=0.8',
+            'Referer': 'https://weather.yahoo.co.jp/weather/'
+        }
+        res = requests.get(yahoo_url, headers=headers, timeout=5.0)
+        res.raise_for_status()
+        soup = BeautifulSoup(res.text, 'html.parser')
+
+        weekly_data = []
+        now_jst_date = datetime.now(timezone(timedelta(hours=9))).date()
+        last_wn_date = guess_date_from_string(raw_exclude_dates[-1], now_jst_date) if raw_exclude_dates else None
+
+        # Yahoo天気の週間予報テーブルを取得
+        week_table = soup.select_one('#yjw_week table')
+        if not week_table: return []
+        trs = week_table.select('tr')
+        if len(trs) < 4: return []
+
+        # 0行目:日付, 1行目:天気, 2行目:気温, 3行目:降水確率 (0列目はラベルなのでスキップ)
+        date_tds = trs[0].select('td')[1:]
+        weather_tds = trs[1].select('td')[1:]
+        temp_tds = trs[2].select('td')[1:]
+        prob_tds = trs[3].select('td')[1:]
+
+        for i in range(len(date_tds)):
+            raw_date = date_tds[i].get_text(strip=True)
+            # 例: "9月30日(水)" -> "30(水)"
+            m = re.search(r'(\d{1,2})月(\d{1,2})日', raw_date)
+            if m:
+                target_date = guess_date_from_string(f"{m.group(1)}月{m.group(2)}日", now_jst_date)
+                w_str = ["(月)", "(火)", "(水)", "(木)", "(金)", "(土)", "(日)"][target_date.weekday()]
+                date_label = f"{target_date.day}{w_str}"
+            else:
+                date_label = raw_date
+                target_date = guess_date_from_string(raw_date, now_jst_date)
+
+            if last_wn_date and target_date <= last_wn_date: continue
+
+            w_text = ""
+            img_tag = weather_tds[i].select_one('img')
+            if img_tag and 'alt' in img_tag.attrs: w_text = img_tag['alt']
+
+            # 既存の1時間天気（Weathernews）のアイコン体系にマッピング
+            if '雨' in w_text: final_img = "https://gvs.weathernews.jp/onebox/img/wxicon/300.png"
+            elif '雪' in w_text: final_img = "https://gvs.weathernews.jp/onebox/img/wxicon/400.png"
+            elif '曇' in w_text: final_img = "https://gvs.weathernews.jp/onebox/img/wxicon/200.png"
+            else: final_img = "https://gvs.weathernews.jp/onebox/img/wxicon/100.png"
+
+            high_font = temp_tds[i].select_one('font[color="#ff3300"]')
+            low_font = temp_tds[i].select_one('font[color="#0066ff"]')
+            t_max = high_font.get_text(strip=True) if high_font else "-"
+            t_min = low_font.get_text(strip=True) if low_font else "-"
+
+            prob_text = prob_tds[i].get_text(strip=True)
+            r_prob = f"{prob_text}%" if prob_text.isdigit() else "-"
+
+            weekly_data.append({"date": date_label, "img_url": final_img, "temp_max": t_max, "temp_min": t_min, "rain_prob": r_prob})
+            if len(weekly_data) >= 8: break
+
+        return weekly_data
+    except Exception as e:
+        print(f"[Yahoo Weather Extract Error] {e}")
+        return []
+
+def fetch_weekly_data_from_tenki(tenki_url, raw_exclude_dates):
+    try:
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+            'Accept-Language': 'ja,en-US;q=0.9,en;q=0.8',
+            'Referer': 'https://tenki.jp/'
+        }
+        response = requests.get(tenki_url, headers=headers, timeout=5.0)
+        response.raise_for_status()
+        soup = BeautifulSoup(response.text, 'html.parser')
+        
+        weekly_data = []
+        now_jst_date = datetime.now(timezone(timedelta(hours=9))).date()
+        last_wn_date = guess_date_from_string(raw_exclude_dates[-1], now_jst_date) if raw_exclude_dates else None
+            
+        elems = soup.select('.forecast10days-actab, .forecast14days-actab')
+        for elem in elems:
+            days_elem = elem.find('div', class_='days')
+            forecast_elem = elem.find('div', class_='forecast')
+            temp_elem = elem.find('div', class_='temp')
+            prob_elem = elem.find('div', class_='prob-precip')
+            
+            if not (days_elem and temp_elem): continue
+            raw_days = days_elem.get_text(strip=True) 
+            tenki_date = guess_date_from_string(raw_days, now_jst_date)
+            if last_wn_date and tenki_date <= last_wn_date: continue
+
+            m = re.search(r'(\d{1,2})[月/](\d{1,2})日?\((.+?)\)', raw_days)
+            if m:
+                date_label = f"{m.group(2)}({m.group(3)})"
+            else:
+                date_label = raw_days
+                
+            high_elem = temp_elem.find('span', class_='high-temp')
+            low_elem = temp_elem.find('span', class_='low-temp')
+            t_max = high_elem.get_text(strip=True).replace('℃', '').strip() if high_elem else "-"
+            t_min = low_elem.get_text(strip=True).replace('℃', '').strip() if low_elem else "-"
+            r_prob = prob_elem.get_text(strip=True) if prob_elem else "-"
+            
+            img_tag = forecast_elem.find('img') if forecast_elem else None
+            img_src = img_tag['src'] if img_tag and 'src' in img_tag.attrs else ""
+            
+            if '01' in img_src or '02' in img_src or '100' in img_src: final_img = "https://gvs.weathernews.jp/onebox/img/wxicon/100.png"
+            elif '08' in img_src or '09' in img_src or '12' in img_src or '200' in img_src: final_img = "https://gvs.weathernews.jp/onebox/img/wxicon/200.png"
+            elif '雨' in img_src or 'rain' in img_src or '300' in img_src or '20' in img_src or '46' in img_src: final_img = "https://gvs.weathernews.jp/onebox/img/wxicon/300.png"
+            elif 'snow' in img_src or '400' in img_src: final_img = "https://gvs.weathernews.jp/onebox/img/wxicon/400.png"
+            else: final_img = "https://gvs.weathernews.jp/onebox/img/wxicon/200.png"
+                
+            weekly_data.append({"date": date_label, "img_url": final_img, "temp_max": t_max, "temp_min": t_min, "rain_prob": r_prob})
+            if len(weekly_data) >= 8: break
+        return weekly_data
+    except Exception as e:
+        print(f"[tenki.jp Extract Error] {e}")
+        return []
+
+def fetch_spot_1hour_data(url, tenki_url=None, yahoo_url=None):
     try:
         headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}
         response = requests.get(url, headers=headers, timeout=3.8)
@@ -586,11 +713,20 @@ def fetch_spot_1hour_data(url, tenki_url=None):
 
         raw_exclude_dates = list(weather_by_date.keys())
         weekly_data = []
-        
-        # ★ tenki.jpのスクレイピングを完全廃止し、安定したOpen-Meteo APIに一本化
-        lat, lon = extract_lat_lon(url)
-        if lat and lon:
-            weekly_data = fetch_weekly_data_from_api(lat, lon, raw_exclude_dates)
+
+        # ★ Yahoo!天気のURLがあれば最優先で取得（キングフィッシャー等テスト用）
+        if yahoo_url:
+            weekly_data = fetch_weekly_data_from_yahoo(yahoo_url, raw_exclude_dates)
+
+        # Yahooが設定されていない、または失敗した場合は従来のtenki.jpへ
+        if not weekly_data and tenki_url:
+            weekly_data = fetch_weekly_data_from_tenki(tenki_url, raw_exclude_dates)
+
+        # 全て失敗した場合はOpen-Meteo API へフォールバック
+        if not weekly_data:
+            lat, lon = extract_lat_lon(url)
+            if lat and lon:
+                weekly_data = fetch_weekly_data_from_api(lat, lon, raw_exclude_dates)
 
         if not weekly_data or len(weekly_data) < 4:
             now_dt = datetime.now(timezone(timedelta(hours=9)))
@@ -603,7 +739,7 @@ def fetch_spot_1hour_data(url, tenki_url=None):
                 day_dt = start_date + timedelta(days=i)
                 w_str = ["(月)", "(火)", "(水)", "(木)", "(金)", "(土)", "(日)"][day_dt.weekday()]
                 weekly_data.append({"date": f"{day_dt.day}{w_str}", "img_url": "https://gvs.weathernews.jp/onebox/img/wxicon/200.png", "temp_max": "-", "temp_min": "-", "rain_prob": "-"})
-            # ★ APIエラー時の一時的なダミーはキャッシュに保存させないための安全フラグ
+            # APIエラー時の一時的なダミーはキャッシュに保存させない
             weather_by_date["__is_dummy__"] = True
 
         weather_by_date["__weekly__"] = weekly_data
@@ -620,7 +756,7 @@ def get_cached_weather(spot_name):
         if now - updated_time <= timedelta(hours=2):
             if isinstance(data, dict):
                 weekly = data.get("__weekly__", [])
-                if data.get("_version") != "settings_shortcut_v101": return None
+                if data.get("_version") != "settings_shortcut_v103": return None
                 if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-": return None
                 dates = [d for d in data.keys() if d != "__weekly__" and d != "_version" and d != "__is_dummy__"]
                 if not dates: return None
@@ -639,7 +775,7 @@ def get_cached_weather(spot_name):
                         weather_data = row.get('weather_data')
                         if isinstance(weather_data, dict):
                             weekly = weather_data.get("__weekly__", [])
-                            if weather_data.get("_version") != "settings_shortcut_v101": return None
+                            if weather_data.get("_version") != "settings_shortcut_v103": return None
                             if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-": return None
                             dates = [d for d in weather_data.keys() if d != "__weekly__" and d != "_version" and d != "__is_dummy__"]
                             if not dates: return None
@@ -652,12 +788,11 @@ def get_cached_weather(spot_name):
         return None
 
 def save_cached_weather(spot_name, weather_data):
-    # ★ エラーでダミー状態になったデータをキャッシュに閉じ込めない安全装置
     if weather_data.get("__is_dummy__"):
         return
     
     now = datetime.now(timezone.utc)
-    weather_data["_version"] = "settings_shortcut_v101"
+    weather_data["_version"] = "settings_shortcut_v103"
     MEMORY_CACHE[spot_name] = (weather_data, now)
     if not supabase: return
     try:
@@ -940,7 +1075,7 @@ def handle_message(event):
             elif raw_msg == "お気に入り2" and len(fav_list) > 1: target_spot = fav_list[1]
                 
             if target_spot:
-                target_spot_name, target_url, hp_url, hp2_url, map_url, tel, x_url, fb_url, insta_url, blog_url, yt_url, tenki_url = get_spot_details(target_spot)
+                target_spot_name, target_url, hp_url, hp2_url, map_url, tel, x_url, fb_url, insta_url, blog_url, yt_url, tenki_url, yahoo_url = get_spot_details(target_spot)
                 if not target_url:
                     line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"⚠️ 【{target_spot}】のデータが見つかりません。"))
                     return
@@ -948,7 +1083,7 @@ def handle_message(event):
                 is_fav = True
                 weather_data = get_cached_weather(target_spot_name)
                 if not weather_data:
-                    weather_data = fetch_spot_1hour_data(target_url, tenki_url)
+                    weather_data = fetch_spot_1hour_data(target_url, tenki_url, yahoo_url)
                     if weather_data: save_cached_weather(target_spot_name, weather_data)
 
                 if weather_data:
@@ -1087,14 +1222,14 @@ def handle_postback(event):
             return
 
         elif action == "show_weather":
-            target_spot_name, target_url, hp_url, hp2_url, map_url, tel, x_url, fb_url, insta_url, blog_url, yt_url, tenki_url = get_spot_details(spot_name)
+            target_spot_name, target_url, hp_url, hp2_url, map_url, tel, x_url, fb_url, insta_url, blog_url, yt_url, tenki_url, yahoo_url = get_spot_details(spot_name)
             if not target_url: return
             fav_list = [s.strip() for s in favorites.split(',') if s.strip()]
             is_fav = target_spot_name in fav_list
 
             weather_data = get_cached_weather(target_spot_name)
             if not weather_data:
-                weather_data = fetch_spot_1hour_data(target_url, tenki_url)
+                weather_data = fetch_spot_1hour_data(target_url, tenki_url, yahoo_url)
                 if weather_data: save_cached_weather(target_spot_name, weather_data)
 
             if weather_data:
@@ -1240,7 +1375,8 @@ def run_background_update():
             if not data: continue
             url = data["url"]
             tenki_url = convert_to_10days_url(data.get("tenki_url"))
-            weather_data = fetch_spot_1hour_data(url, tenki_url)
+            yahoo_url = data.get("yahoo_url")
+            weather_data = fetch_spot_1hour_data(url, tenki_url, yahoo_url)
             if weather_data: save_cached_weather(spot_name, weather_data)
             time.sleep(random.uniform(2.5, 4.0))
 
@@ -1252,7 +1388,8 @@ def run_background_update():
                 if not data: continue
                 url = data["url"]
                 tenki_url = convert_to_10days_url(data.get("tenki_url"))
-                weather_data = fetch_spot_1hour_data(url, tenki_url)
+                yahoo_url = data.get("yahoo_url")
+                weather_data = fetch_spot_1hour_data(url, tenki_url, yahoo_url)
                 if weather_data: save_cached_weather(spot_name, weather_data)
                 time.sleep(random.uniform(2.5, 4.0))
 
