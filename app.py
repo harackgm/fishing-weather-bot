@@ -33,6 +33,32 @@ if SUPABASE_URL and SUPABASE_KEY:
 
 MEMORY_CACHE = {}
 
+PREF_TO_JMA = {
+    "4": "040000",   # 宮城
+    "5": "050000",   # 秋田
+    "7": "070000",   # 福島
+    "8": "080000",   # 茨城
+    "12": "090000",  # 栃木
+    "13": "100000",  # 群馬
+    "14": "110000",  # 埼玉
+    "15": "120000",  # 千葉
+    "16": "130000",  # 東京
+    "17": "140000",  # 神奈川
+    "18": "150000",  # 新潟
+    "22": "190000",  # 山梨
+    "23": "200000",  # 長野
+    "24": "210000",  # 岐阜
+    "25": "220000",  # 静岡
+    "26": "230000",  # 愛知
+    "27": "240000",  # 三重
+    "28": "250000",  # 滋賀
+    "30": "270000",  # 大阪
+    "31": "290000",  # 奈良
+    "32": "300000",  # 和歌山
+    "38": "350000",  # 山口
+    "43": "400000",  # 福岡
+}
+
 def normalize_name(name_str):
     if not name_str: return ""
     return unicodedata.normalize('NFKC', name_str).lower()
@@ -486,61 +512,119 @@ def extract_lat_lon(url):
     if m: return m.group(1), m.group(2)
     return None, None
 
-def fetch_weekly_data_from_api(lat, lon, raw_exclude_dates):
-    # ★ 日本の気象庁(JMA)モデルを指定して乖離をなくす安全なAPI呼び出し
-    base_url = f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&timezone=Asia%2FTokyo&forecast_days=14&models=jma_seamless"
-    
-    # ルート1: 降水確率ありのフルデータ取得を試みる
+def fetch_weekly_data_from_jma(tenki_url, raw_exclude_dates):
+    if not tenki_url: return []
+    m = re.search(r'forecast/\d+/(\d+)/', tenki_url)
+    if not m: return []
+    pref_id = m.group(1)
+    jma_code = PREF_TO_JMA.get(pref_id)
+    if not jma_code: return []
+
+    # ★ 日本の気象庁(JMA)公式防災データJSONを直接読み込み
     try:
-        api_url = base_url + "&daily=weathercode,temperature_2m_max,temperature_2m_min,precipitation_probability_max"
-        res = requests.get(api_url, timeout=7.0)
+        url = f"https://www.jma.go.jp/bosai/forecast/data/forecast/{jma_code}.json"
+        res = requests.get(url, timeout=5.0)
         res.raise_for_status()
         data = res.json()
-    except Exception as e:
-        print(f"[Open-Meteo API Full Request Error] {e}")
-        # ルート2: 失敗した場合は降水確率を省いた安全ルートで確実に取得する
-        try:
-            api_url_safe = base_url + "&daily=weathercode,temperature_2m_max,temperature_2m_min"
-            res_safe = requests.get(api_url_safe, timeout=7.0)
-            res_safe.raise_for_status()
-            data = res_safe.json()
-        except Exception as e2:
-            print(f"[Open-Meteo API Safe Request Error] {e2}")
-            return []
+        if len(data) < 2: return []
+        
+        weekly_series = data[1].get('timeSeries', [])
+        if not weekly_series: return []
 
-    daily = data.get("daily", {})
-    times = daily.get("time", [])
-    weathercodes = daily.get("weathercode", [])
-    temp_max = daily.get("temperature_2m_max", [])
-    temp_min = daily.get("temperature_2m_min", [])
-    rain_probs = daily.get("precipitation_probability_max", []) # なければ空リストになる
-    
-    weekly_data = []
-    now_jst_date = datetime.now(timezone(timedelta(hours=9))).date()
-    last_wn_date = guess_date_from_string(raw_exclude_dates[-1], now_jst_date) if raw_exclude_dates else None
+        times0 = weekly_series[0].get('timeDefines', [])
+        codes = weekly_series[0]['areas'][0].get('weatherCodes', [])
 
-    for i in range(min(len(times), 14)):
-        dt = datetime.strptime(times[i], "%Y-%m-%d").date()
-        if last_wn_date and dt <= last_wn_date: continue
+        pops = []
+        if len(weekly_series) > 1 and 'areas' in weekly_series[1] and len(weekly_series[1]['areas']) > 0:
+            pops = weekly_series[1]['areas'][0].get('pops', [])
+
+        temps_min = []
+        temps_max = []
+        if len(weekly_series) > 2 and 'areas' in weekly_series[2] and len(weekly_series[2]['areas']) > 0:
+            area_temp = weekly_series[2]['areas'][0]
+            temps_min = area_temp.get('tempsMin', [])
+            temps_max = area_temp.get('tempsMax', [])
+
+        now_jst_date = datetime.now(timezone(timedelta(hours=9))).date()
+        last_wn_date = guess_date_from_string(raw_exclude_dates[-1], now_jst_date) if raw_exclude_dates else None
+
+        weekly_data = []
+        for i in range(len(times0)):
+            dt_str = times0[i]
+            dt = datetime.fromisoformat(dt_str).date()
+            if last_wn_date and dt <= last_wn_date: continue
+
+            w_str = ["(月)", "(火)", "(水)", "(木)", "(金)", "(土)", "(日)"][dt.weekday()]
+            date_label = f"{dt.day}{w_str}"
+
+            code = int(codes[i]) if i < len(codes) and codes[i] else 100
+            if code == 100: final_img = "https://gvs.weathernews.jp/onebox/img/wxicon/100.png"
+            elif code < 300: final_img = "https://gvs.weathernews.jp/onebox/img/wxicon/200.png"
+            elif code < 400: final_img = "https://gvs.weathernews.jp/onebox/img/wxicon/300.png"
+            else: final_img = "https://gvs.weathernews.jp/onebox/img/wxicon/400.png"
+
+            t_max = str(temps_max[i]) if i < len(temps_max) and temps_max[i] != "" and temps_max[i] is not None else "-"
+            t_min = str(temps_min[i]) if i < len(temps_min) and temps_min[i] != "" and temps_min[i] is not None else "-"
             
-        w_str = ["(月)", "(火)", "(水)", "(木)", "(金)", "(土)", "(日)"][dt.weekday()]
-        date_label = f"{dt.day}{w_str}"
-        
-        code = weathercodes[i] if i < len(weathercodes) and weathercodes[i] is not None else 0
-        if code in [0, 1]: img_url = "https://gvs.weathernews.jp/onebox/img/wxicon/100.png"
-        elif code in [2, 3, 45, 48]: img_url = "https://gvs.weathernews.jp/onebox/img/wxicon/200.png"
-        elif code in [71, 73, 75, 77, 85, 86]: img_url = "https://gvs.weathernews.jp/onebox/img/wxicon/400.png"
-        else: img_url = "https://gvs.weathernews.jp/onebox/img/wxicon/300.png"
-        
-        t_max = str(round(temp_max[i])) if i < len(temp_max) and temp_max[i] is not None else "-"
-        t_min = str(round(temp_min[i])) if i < len(temp_min) and temp_min[i] is not None else "-"
-        
-        # 安全ルートを通った場合はrain_probsが空なので "-" になる
-        r_prob = f"{round(rain_probs[i])}%" if rain_probs and i < len(rain_probs) and rain_probs[i] is not None else "-"
-        
-        weekly_data.append({"date": date_label, "img_url": img_url, "temp_max": t_max, "temp_min": t_min, "rain_prob": r_prob})
-        if len(weekly_data) >= 8: break
-    return weekly_data
+            p_val = pops[i] if i < len(pops) and pops[i] != "" and pops[i] is not None else "-"
+            r_prob = f"{p_val}%" if p_val != "-" else "-"
+
+            weekly_data.append({"date": date_label, "img_url": final_img, "temp_max": t_max, "temp_min": t_min, "rain_prob": r_prob})
+            if len(weekly_data) >= 8: break
+
+        return weekly_data
+    except Exception as e:
+        print(f"[JMA API Error] {e}")
+        return []
+
+def fetch_weekly_data_from_api(lat, lon, raw_exclude_dates):
+    base_url = f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&timezone=Asia%2FTokyo&forecast_days=14&models=jma_seamless"
+    
+    api_url_full = base_url + "&daily=weathercode,temperature_2m_max,temperature_2m_min,precipitation_probability_max"
+    api_url_safe = base_url + "&daily=weathercode,temperature_2m_max,temperature_2m_min"
+    
+    for url_to_try in [api_url_full, api_url_safe]:
+        try:
+            res = requests.get(url_to_try, timeout=7.0)
+            res.raise_for_status()
+            data = res.json()
+            
+            daily = data.get("daily", {})
+            times = daily.get("time", [])
+            weathercodes = daily.get("weathercode", [])
+            temp_max = daily.get("temperature_2m_max", [])
+            temp_min = daily.get("temperature_2m_min", [])
+            rain_probs = daily.get("precipitation_probability_max", [])
+            
+            weekly_data = []
+            now_jst_date = datetime.now(timezone(timedelta(hours=9))).date()
+            last_wn_date = guess_date_from_string(raw_exclude_dates[-1], now_jst_date) if raw_exclude_dates else None
+
+            for i in range(min(len(times), 14)):
+                dt = datetime.strptime(times[i], "%Y-%m-%d").date()
+                if last_wn_date and dt <= last_wn_date: continue
+                    
+                w_str = ["(月)", "(火)", "(水)", "(木)", "(金)", "(土)", "(日)"][dt.weekday()]
+                date_label = f"{dt.day}{w_str}"
+                
+                code = weathercodes[i] if i < len(weathercodes) and weathercodes[i] is not None else 0
+                if code in [0, 1]: img_url = "https://gvs.weathernews.jp/onebox/img/wxicon/100.png"
+                elif code in [2, 3, 45, 48]: img_url = "https://gvs.weathernews.jp/onebox/img/wxicon/200.png"
+                elif code in [71, 73, 75, 77, 85, 86]: img_url = "https://gvs.weathernews.jp/onebox/img/wxicon/400.png"
+                else: img_url = "https://gvs.weathernews.jp/onebox/img/wxicon/300.png"
+                
+                t_max = str(round(temp_max[i])) if i < len(temp_max) and temp_max[i] is not None else "-"
+                t_min = str(round(temp_min[i])) if i < len(temp_min) and temp_min[i] is not None else "-"
+                
+                r_prob = f"{round(rain_probs[i])}%" if rain_probs and i < len(rain_probs) and rain_probs[i] is not None else "-"
+                
+                weekly_data.append({"date": date_label, "img_url": img_url, "temp_max": t_max, "temp_min": t_min, "rain_prob": r_prob})
+                if len(weekly_data) >= 8: break
+            return weekly_data
+        except Exception as e:
+            print(f"[Open-Meteo API Error] {e}")
+            time.sleep(1)
+    return []
 
 def fetch_spot_1hour_data(url, tenki_url=None):
     try:
@@ -597,10 +681,15 @@ def fetch_spot_1hour_data(url, tenki_url=None):
         raw_exclude_dates = list(weather_by_date.keys())
         weekly_data = []
 
-        # ★ tenkiやYahooの不安定なスクレイピングを廃止し、公式API（気象庁モデル）で確実・高精度に取得する
-        lat, lon = extract_lat_lon(url)
-        if lat and lon:
-            weekly_data = fetch_weekly_data_from_api(lat, lon, raw_exclude_dates)
+        # ★ 最優先：気象庁公式のJSONデータを直接取得（ブロックなし・高精度）
+        if tenki_url:
+            weekly_data = fetch_weekly_data_from_jma(tenki_url, raw_exclude_dates)
+
+        # 予備：万が一気象庁データの取得で失敗した場合は Open-Meteo API へ
+        if not weekly_data:
+            lat, lon = extract_lat_lon(url)
+            if lat and lon:
+                weekly_data = fetch_weekly_data_from_api(lat, lon, raw_exclude_dates)
 
         if not weekly_data or len(weekly_data) < 4:
             now_dt = datetime.now(timezone(timedelta(hours=9)))
@@ -613,7 +702,7 @@ def fetch_spot_1hour_data(url, tenki_url=None):
                 day_dt = start_date + timedelta(days=i)
                 w_str = ["(月)", "(火)", "(水)", "(木)", "(金)", "(土)", "(日)"][day_dt.weekday()]
                 weekly_data.append({"date": f"{day_dt.day}{w_str}", "img_url": "https://gvs.weathernews.jp/onebox/img/wxicon/200.png", "temp_max": "-", "temp_min": "-", "rain_prob": "-"})
-            # APIが万が一全滅した際の一時的なダミーはキャッシュに保存させない
+            # APIエラー時の一時的なダミーはキャッシュに保存させない
             weather_by_date["__is_dummy__"] = True
 
         weather_by_date["__weekly__"] = weekly_data
@@ -630,7 +719,7 @@ def get_cached_weather(spot_name):
         if now - updated_time <= timedelta(hours=2):
             if isinstance(data, dict):
                 weekly = data.get("__weekly__", [])
-                if data.get("_version") != "settings_shortcut_v106": return None
+                if data.get("_version") != "settings_shortcut_v107": return None
                 if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-": return None
                 dates = [d for d in data.keys() if d != "__weekly__" and d != "_version" and d != "__is_dummy__"]
                 if not dates: return None
@@ -649,7 +738,7 @@ def get_cached_weather(spot_name):
                         weather_data = row.get('weather_data')
                         if isinstance(weather_data, dict):
                             weekly = weather_data.get("__weekly__", [])
-                            if weather_data.get("_version") != "settings_shortcut_v106": return None
+                            if weather_data.get("_version") != "settings_shortcut_v107": return None
                             if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-": return None
                             dates = [d for d in weather_data.keys() if d != "__weekly__" and d != "_version" and d != "__is_dummy__"]
                             if not dates: return None
@@ -666,7 +755,7 @@ def save_cached_weather(spot_name, weather_data):
         return
     
     now = datetime.now(timezone.utc)
-    weather_data["_version"] = "settings_shortcut_v106"
+    weather_data["_version"] = "settings_shortcut_v107"
     MEMORY_CACHE[spot_name] = (weather_data, now)
     if not supabase: return
     try:
@@ -949,7 +1038,7 @@ def handle_message(event):
             elif raw_msg == "お気に入り2" and len(fav_list) > 1: target_spot = fav_list[1]
                 
             if target_spot:
-                target_spot_name, target_url, hp_url, hp2_url, map_url, tel, x_url, fb_url, insta_url, blog_url, yt_url, tenki_url, yahoo_url = get_spot_details(target_spot)
+                target_spot_name, target_url, hp_url, hp2_url, map_url, tel, x_url, fb_url, insta_url, blog_url, yt_url, tenki_url = get_spot_details(target_spot)
                 if not target_url:
                     line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"⚠️ 【{target_spot}】のデータが見つかりません。"))
                     return
@@ -1096,7 +1185,7 @@ def handle_postback(event):
             return
 
         elif action == "show_weather":
-            target_spot_name, target_url, hp_url, hp2_url, map_url, tel, x_url, fb_url, insta_url, blog_url, yt_url, tenki_url, yahoo_url = get_spot_details(spot_name)
+            target_spot_name, target_url, hp_url, hp2_url, map_url, tel, x_url, fb_url, insta_url, blog_url, yt_url, tenki_url = get_spot_details(spot_name)
             if not target_url: return
             fav_list = [s.strip() for s in favorites.split(',') if s.strip()]
             is_fav = target_spot_name in fav_list
