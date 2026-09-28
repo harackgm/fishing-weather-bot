@@ -42,6 +42,15 @@ PREF_TO_JMA = {
     "32": "300000", "38": "350000", "43": "400000"
 }
 
+# JMAコードから都道府県名への変換用辞書（フィルタリング用）
+PREF_NAMES = {
+    "040000": "宮城", "050000": "秋田", "070000": "福島", "080000": "茨城", "090000": "栃木",
+    "100000": "群馬", "110000": "埼玉", "120000": "千葉", "130000": "東京", "140000": "神奈川",
+    "150000": "新潟", "190000": "山梨", "200000": "長野", "210000": "岐阜", "220000": "静岡",
+    "230000": "愛知", "240000": "三重", "250000": "滋賀", "270000": "大阪", "290000": "奈良",
+    "300000": "和歌山", "350000": "山口", "400000": "福岡"
+}
+
 def normalize_name(name_str):
     if not name_str: return ""
     return unicodedata.normalize('NFKC', name_str).lower()
@@ -323,7 +332,7 @@ def get_user_setting(user_id):
             rename_map = {
                 "七色ダム": "池原七色ダム", "キング": "キングフィッシャー", "ツガネ": "JF in Tsugane",
                 "キングダム": "川場キングダム", "イワセン": "イワナセンター", "鹿島やり": "鹿島槍",
-                "アルクス宇宇都宮": "アルクス宇都宮", "片仓ダム": "片倉ダム", "多田良沼": "多々良沼",
+                "アルクス宇宇都宮": "アルクス宇宇都宮", "片仓ダム": "片倉ダム", "多田良沼": "多々良沼",
                 "那須烏山": "那須鳥山", "柏崎": "霞ケ浦柏崎", "霞ケ浦西浦": "土浦港", "ＭＡＶ": "宮城", "GP不忘": "不忘"
             }
             
@@ -620,6 +629,7 @@ def fetch_weekly_data_from_jma(tenki_url, raw_exclude_dates):
         print(f"[JMA API Error] {e}")
         return []
 
+# ★ 地域限定（釣り場と同一都道府県）の防災情報抽出関数
 def fetch_disaster_info(tenki_url):
     if not tenki_url: return {}
     m = re.search(r'forecast/\d+/(\d+)/', tenki_url)
@@ -628,12 +638,15 @@ def fetch_disaster_info(tenki_url):
     jma_code = PREF_TO_JMA.get(pref_id)
     if not jma_code: return {}
 
+    pref_name = PREF_NAMES.get(jma_code, "") # 対象の都道府県名（例: "長野"）
+
     warnings_list = []
     quake_str = None
     volcano_str = None
 
     headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
 
+    # 1. 警報・注意報（元々対象都道府県に限定）
     try:
         url = f"https://www.jma.go.jp/bosai/warning/data/warning/{jma_code}.json"
         res = requests.get(url, headers=headers, timeout=2.0)
@@ -659,39 +672,47 @@ def fetch_disaster_info(tenki_url):
             warnings_list = list(dict.fromkeys(warnings_list))
     except: pass
 
+    # 2. 地震情報（同一都道府県に関連する地震のみ抽出）
     try:
         url = "https://www.jma.go.jp/bosai/quake/data/list.json"
         res = requests.get(url, headers=headers, timeout=2.0)
         if res.status_code == 200:
             data = res.json()
-            if data and len(data) > 0:
-                latest = data[0]
-                dt_str = latest.get("at", latest.get("rdt", ""))
-                if dt_str:
-                    dt = datetime.fromisoformat(dt_str)
-                    dt_formatted = f"{dt.month}/{dt.day} {dt.hour}:{dt.minute:02d}"
-                    place = latest.get("anm", "不明")
-                    mag = latest.get("mag", "")
-                    maxi = latest.get("maxi", "")
-                    quake_str = f"{dt_formatted} {place} (震度{maxi}/M{mag})"
+            for eq in data:
+                # 震央地名(anm)または詳細テキスト内に都道府県名が含まれるか確認
+                anm = eq.get("anm", "")
+                full_text = str(eq)
+                if pref_name and (pref_name in anm or pref_name in full_text):
+                    dt_str = eq.get("at", eq.get("rdt", ""))
+                    if dt_str:
+                        dt = datetime.fromisoformat(dt_str)
+                        dt_formatted = f"{dt.month}/{dt.day} {dt.hour}:{dt.minute:02d}"
+                        mag = eq.get("mag", "")
+                        maxi = eq.get("maxi", "")
+                        quake_str = f"{dt_formatted} {anm} (震度{maxi}/M{mag})"
+                        break # 該当する最新の1件を取得したら終了
     except: pass
 
+    # 3. 火山情報（同一都道府県内の火山のみ抽出）
     try:
         url = "https://www.jma.go.jp/bosai/volcano/data/list.json"
         res = requests.get(url, headers=headers, timeout=2.0)
         if res.status_code == 200:
             data = res.json()
-            if data and len(data) > 0:
-                latest = data[0]
-                volcano_str = latest.get("tit", "")
-                if len(volcano_str) > 15: volcano_str = volcano_str[:14] + "…"
+            for v in data:
+                tit = v.get("tit", "")
+                full_text = str(v)
+                if pref_name and (pref_name in tit or pref_name in full_text):
+                    volcano_str = tit
+                    if len(volcano_str) > 15: volcano_str = volcano_str[:14] + "…"
+                    break
     except: pass
 
     return {"warnings": warnings_list, "quake": quake_str, "volcano": volcano_str}
 
 def fetch_spot_1hour_data(url, tenki_url=None):
     try:
-        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}
+        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
         response = requests.get(url, headers=headers, timeout=3.8)
         response.raise_for_status()
         soup = BeautifulSoup(response.text, 'html.parser')
@@ -762,7 +783,7 @@ def get_cached_weather(spot_name):
         if now - updated_time <= timedelta(hours=2):
             if isinstance(data, dict):
                 weekly = data.get("__weekly__", [])
-                if data.get("_version") != "settings_shortcut_v124": return None
+                if data.get("_version") != "settings_shortcut_v125": return None
                 if not weekly: return None
                 dates = [d for d in data.keys() if d != "__weekly__" and d != "_version" and d != "__is_dummy__" and d != "__disaster__"]
                 if not dates: return None
@@ -781,7 +802,7 @@ def get_cached_weather(spot_name):
                         weather_data = row.get('weather_data')
                         if isinstance(weather_data, dict):
                             weekly = weather_data.get("__weekly__", [])
-                            if weather_data.get("_version") != "settings_shortcut_v124": return None
+                            if weather_data.get("_version") != "settings_shortcut_v125": return None
                             if not weekly: return None
                             dates = [d for d in weather_data.keys() if d != "__weekly__" and d != "_version" and d != "__is_dummy__" and d != "__disaster__"]
                             if not dates: return None
@@ -798,7 +819,7 @@ def save_cached_weather(spot_name, weather_data):
         return
     
     now = datetime.now(timezone.utc)
-    weather_data["_version"] = "settings_shortcut_v124"
+    weather_data["_version"] = "settings_shortcut_v125"
     MEMORY_CACHE[spot_name] = (weather_data, now)
     if not supabase: return
     try:
