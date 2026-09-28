@@ -486,6 +486,7 @@ def extract_lat_lon(url):
     if m: return m.group(1), m.group(2)
     return None, None
 
+
 def fetch_weekly_data_from_api(lat, lon, raw_exclude_dates):
     for attempt in range(2):
         try:
@@ -619,9 +620,9 @@ def get_cached_weather(spot_name):
         if now - updated_time <= timedelta(hours=2):
             if isinstance(data, dict):
                 weekly = data.get("__weekly__", [])
-                if data.get("_version") != "settings_shortcut_v100": return None
+                if data.get("_version") != "settings_shortcut_v101": return None
                 if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-": return None
-                dates = [d for d in data.keys() if d != "__weekly__" and d != "_version"]
+                dates = [d for d in data.keys() if d != "__weekly__" and d != "_version" and d != "__is_dummy__"]
                 if not dates: return None
             return data
             
@@ -638,9 +639,9 @@ def get_cached_weather(spot_name):
                         weather_data = row.get('weather_data')
                         if isinstance(weather_data, dict):
                             weekly = weather_data.get("__weekly__", [])
-                            if weather_data.get("_version") != "settings_shortcut_v100": return None
+                            if weather_data.get("_version") != "settings_shortcut_v101": return None
                             if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-": return None
-                            dates = [d for d in weather_data.keys() if d != "__weekly__" and d != "_version"]
+                            dates = [d for d in weather_data.keys() if d != "__weekly__" and d != "_version" and d != "__is_dummy__"]
                             if not dates: return None
                         MEMORY_CACHE[spot_name] = (weather_data, updated_time)
                         return weather_data
@@ -656,7 +657,7 @@ def save_cached_weather(spot_name, weather_data):
         return
     
     now = datetime.now(timezone.utc)
-    weather_data["_version"] = "settings_shortcut_v100"
+    weather_data["_version"] = "settings_shortcut_v101"
     MEMORY_CACHE[spot_name] = (weather_data, now)
     if not supabase: return
     try:
