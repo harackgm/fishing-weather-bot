@@ -33,7 +33,6 @@ if SUPABASE_URL and SUPABASE_KEY:
 
 MEMORY_CACHE = {}
 
-# 都道府県コードから気象庁APIのコードへの変換用辞書
 PREF_TO_JMA = {
     "4": "040000", "5": "050000", "7": "070000", "8": "080000", "12": "090000",
     "13": "100000", "14": "110000", "15": "120000", "16": "130000", "17": "140000",
@@ -495,7 +494,7 @@ def extract_lat_lon(url):
     if m: return m.group(1), m.group(2)
     return None, None
 
-def fetch_weekly_data_from_jma(tenki_url, raw_exclude_dates):
+def fetch_weekly_data_from_jma(tenki_url):
     if not tenki_url: return []
     m = re.search(r'forecast/\d+/(\d+)/', tenki_url)
     if not m: return []
@@ -555,13 +554,8 @@ def fetch_weekly_data_from_jma(tenki_url, raw_exclude_dates):
                     val = target_area["tempsMax"][i]
                     if val not in ["", None]: forecast_dict[dt]["t_max"] = str(val)
 
-        now_jst_date = datetime.now(timezone(timedelta(hours=9))).date()
-        last_wn_date = guess_date_from_string(raw_exclude_dates[-1], now_jst_date) if raw_exclude_dates else None
-
         weekly_data = []
         for dt in sorted(forecast_dict.keys()):
-            if last_wn_date and dt <= last_wn_date: continue
-            
             day_data = forecast_dict[dt]
             w_str = ["(月)", "(火)", "(水)", "(木)", "(金)", "(土)", "(日)"][dt.weekday()]
             date_label = f"{dt.day}{w_str}"
@@ -574,7 +568,6 @@ def fetch_weekly_data_from_jma(tenki_url, raw_exclude_dates):
             elif code < 400: final_img = "https://gvs.weathernews.jp/onebox/img/wxicon/300.png"
             else: final_img = "https://gvs.weathernews.jp/onebox/img/wxicon/400.png"
                 
-            # ★【最重要修正】気温がなくてもスキップしない！取れたデータは全て表示する
             weekly_data.append({
                 "date": date_label, "img_url": final_img, 
                 "temp_max": day_data["t_max"], "temp_min": day_data["t_min"], "rain_prob": day_data["pop"]
@@ -638,29 +631,23 @@ def fetch_spot_1hour_data(url, tenki_url=None):
         if not weather_by_date:
             return None
 
-        raw_exclude_dates = list(weather_by_date.keys())
         weekly_data = []
 
-        # ★ 気象庁公式APIのみを使用（Open-Meteoは完全排除）
+        # ★ 気象庁公式APIのみを使用（無理な日付除外を完全撤廃）
         if tenki_url:
-            weekly_data = fetch_weekly_data_from_jma(tenki_url, raw_exclude_dates)
+            weekly_data = fetch_weekly_data_from_jma(tenki_url)
 
-        # ★ 【最重要修正】少しでもデータが取れていればダミー化しない
+        # ★ 取れた日数はすべて順に並べ、8日分に満たない枠のみ末尾を「-」で綺麗に穴埋めする
         if not weekly_data:
             now_dt = datetime.now(timezone(timedelta(hours=9)))
             start_date = now_dt.date()
-            if raw_exclude_dates:
-                last_wn = guess_date_from_string(raw_exclude_dates[-1], now_dt.date())
-                start_date = last_wn + timedelta(days=1)
             weekly_data = []
             for i in range(8):
                 day_dt = start_date + timedelta(days=i)
                 w_str = ["(月)", "(火)", "(水)", "(木)", "(金)", "(土)", "(日)"][day_dt.weekday()]
                 weekly_data.append({"date": f"{day_dt.day}{w_str}", "img_url": "https://gvs.weathernews.jp/onebox/img/wxicon/200.png", "temp_max": "-", "temp_min": "-", "rain_prob": "-"})
-            # エラー時の一時的なダミーはキャッシュに保存させない
             weather_by_date["__is_dummy__"] = True
         else:
-            # ★ 取得できたが8日分に満たない場合（例:3日分しかない）、残りの枠をハイフンで埋めて綺麗に表示する
             last_date_str = weekly_data[-1]["date"]
             now_dt = datetime.now(timezone(timedelta(hours=9)))
             last_dt = guess_date_from_string(last_date_str, now_dt.date())
@@ -683,8 +670,7 @@ def get_cached_weather(spot_name):
         if now - updated_time <= timedelta(hours=2):
             if isinstance(data, dict):
                 weekly = data.get("__weekly__", [])
-                if data.get("_version") != "settings_shortcut_v114": return None
-                # 【修正】1日目が未定でもキャッシュを破棄しないように緩和
+                if data.get("_version") != "settings_shortcut_v115": return None
                 if not weekly: return None
                 dates = [d for d in data.keys() if d != "__weekly__" and d != "_version" and d != "__is_dummy__"]
                 if not dates: return None
@@ -703,7 +689,7 @@ def get_cached_weather(spot_name):
                         weather_data = row.get('weather_data')
                         if isinstance(weather_data, dict):
                             weekly = weather_data.get("__weekly__", [])
-                            if weather_data.get("_version") != "settings_shortcut_v114": return None
+                            if weather_data.get("_version") != "settings_shortcut_v115": return None
                             if not weekly: return None
                             dates = [d for d in weather_data.keys() if d != "__weekly__" and d != "_version" and d != "__is_dummy__"]
                             if not dates: return None
@@ -720,7 +706,7 @@ def save_cached_weather(spot_name, weather_data):
         return
     
     now = datetime.now(timezone.utc)
-    weather_data["_version"] = "settings_shortcut_v114"
+    weather_data["_version"] = "settings_shortcut_v115"
     MEMORY_CACHE[spot_name] = (weather_data, now)
     if not supabase: return
     try:
