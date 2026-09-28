@@ -32,8 +32,10 @@ if SUPABASE_URL and SUPABASE_KEY:
     except Exception as e: print(f"[Supabase初期化エラー] {e}")
 
 MEMORY_CACHE = {}
+# ★ 連打防止用：ユーザーごとの最終リクエスト時刻保持メモリ
+USER_LAST_REQUEST = {}
 
-# ★ バグ修正：全国47都道府県のコードを1件の漏れもなく完全にマッピング
+# 全国47都道府県のコードマッピング
 PREF_TO_JMA = {
     "1": "016000", "2": "014100", "3": "012000", "4": "011000",
     "5": "020000", "6": "030000", "7": "040000", "8": "050000", "9": "060000", "10": "070000",
@@ -46,7 +48,6 @@ PREF_TO_JMA = {
     "48": "450000", "49": "460100", "50": "471000"
 }
 
-# ★ 防災情報のフィルタリング用辞書も全国分を完全網羅
 PREF_NAMES = {
     "011000": "北海道", "012000": "北海道", "014100": "北海道", "016000": "北海道",
     "020000": "青森", "030000": "岩手", "040000": "宮城", "050000": "秋田", "060000": "山形", "070000": "福島",
@@ -56,7 +57,7 @@ PREF_NAMES = {
     "250000": "滋賀", "260000": "京都", "270000": "大阪", "280000": "兵庫", "290000": "奈良", "300000": "和歌山",
     "310000": "鳥取", "320000": "島根", "330000": "岡山", "340000": "広島", "350000": "山口",
     "360000": "徳島", "370000": "香川", "380000": "愛媛", "390000": "高知",
-    "400000": "福岡", "410000": "佐賀", "420000": "長崎", "430000": "熊本", "440000": "大分", "450000": "宮崎", "460100": "鹿児島",
+    "400000": "福岡", "410000": "佐賀", "420000": "長崎", "430000": "大分", "450000": "宮崎", "460100": "鹿児島",
     "471000": "沖縄"
 }
 
@@ -341,7 +342,7 @@ def get_user_setting(user_id):
             rename_map = {
                 "七色ダム": "池原七色ダム", "キング": "キングフィッシャー", "ツガネ": "JF in Tsugane",
                 "キングダム": "川場キングダム", "イワセン": "イワナセンター", "鹿島やり": "鹿島槍",
-                "アルクス宇宇都宮": "アルクス宇都宮", "片仓ダム": "片倉ダム", "多田良沼": "多々良沼",
+                "アルクス宇宇都宮": "アルクス宇宇都宮", "片仓ダム": "片倉ダム", "多田良沼": "多々良沼",
                 "那須烏山": "那須鳥山", "柏崎": "霞ケ浦柏崎", "霞ケ浦西浦": "土浦港", "ＭＡＶ": "宮城", "GP不忘": "不忘"
             }
             
@@ -716,7 +717,7 @@ def fetch_disaster_info(tenki_url):
 
 def fetch_spot_1hour_data(url, tenki_url=None):
     try:
-        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}
+        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
         response = requests.get(url, headers=headers, timeout=3.8)
         response.raise_for_status()
         soup = BeautifulSoup(response.text, 'html.parser')
@@ -787,7 +788,7 @@ def get_cached_weather(spot_name):
         if now - updated_time <= timedelta(hours=2):
             if isinstance(data, dict):
                 weekly = data.get("__weekly__", [])
-                if data.get("_version") != "settings_shortcut_v126": return None
+                if data.get("_version") != "settings_shortcut_v127": return None
                 if not weekly: return None
                 dates = [d for d in data.keys() if d != "__weekly__" and d != "_version" and d != "__is_dummy__" and d != "__disaster__"]
                 if not dates: return None
@@ -806,7 +807,7 @@ def get_cached_weather(spot_name):
                         weather_data = row.get('weather_data')
                         if isinstance(weather_data, dict):
                             weekly = weather_data.get("__weekly__", [])
-                            if weather_data.get("_version") != "settings_shortcut_v126": return None
+                            if weather_data.get("_version") != "settings_shortcut_v127": return None
                             if not weekly: return None
                             dates = [d for d in weather_data.keys() if d != "__weekly__" and d != "_version" and d != "__is_dummy__" and d != "__disaster__"]
                             if not dates: return None
@@ -823,7 +824,7 @@ def save_cached_weather(spot_name, weather_data):
         return
     
     now = datetime.now(timezone.utc)
-    weather_data["_version"] = "settings_shortcut_v126"
+    weather_data["_version"] = "settings_shortcut_v127"
     MEMORY_CACHE[spot_name] = (weather_data, now)
     if not supabase: return
     try:
@@ -1083,7 +1084,6 @@ def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_
 
     body_2_contents = [{"type": "box", "layout": "horizontal", "spacing": "sm", "contents": [create_day_column(dates[2] if len(dates)>2 else None), {"type": "separator"}, create_day_column(dates[3] if len(dates)>3 else None)]}]
     
-    # ★ 常に防災パネルを表示し、高さを安定させる
     body_2_contents.append({"type": "separator", "margin": "md", "color": "#00000000"})
     body_2_contents.append(create_disaster_box(disaster_data))
 
@@ -1154,6 +1154,18 @@ def handle_message(event):
     try:
         raw_msg = event.message.text.strip()
         user_id = event.source.user_id
+
+        # ★【新機能】2秒間の連打抑制（スロットリング）判定
+        now_ts = time.time()
+        is_list_cmd = raw_msg in ["一覧", "リスト", "釣り場一覧", "エリア", "📋 一覧", "📋一覧"]
+        
+        if not is_list_cmd:
+            last_ts = USER_LAST_REQUEST.get(user_id, 0)
+            if now_ts - last_ts < 2.0:
+                print(f"[Throttle] User {user_id} throttled (message)")
+                return # 2秒以内の連打はサイレントに無視
+            USER_LAST_REQUEST[user_id] = now_ts
+
         source, favorites, fishing_mode = get_user_setting(user_id)
 
         if raw_msg in ["お気に入り1", "お気に入り2"]:
@@ -1251,6 +1263,18 @@ def handle_postback(event):
         user_id = event.source.user_id
         data_dict = dict(parse_qsl(event.postback.data))
         action = data_dict.get("action")
+
+        # ★【新機能】2秒間の連打抑制（スロットリング）判定
+        now_ts = time.time()
+        is_list_action = (action == "show_list")
+        
+        if not is_list_action:
+            last_ts = USER_LAST_REQUEST.get(user_id, 0)
+            if now_ts - last_ts < 2.0:
+                print(f"[Throttle] User {user_id} throttled (postback)")
+                return # 2秒以内の連打はサイレントに無視
+            USER_LAST_REQUEST[user_id] = now_ts
+
         spot_name = data_dict.get("spot")
         source, favorites, fishing_mode = get_user_setting(user_id)
         
