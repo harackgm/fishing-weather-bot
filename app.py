@@ -66,7 +66,7 @@ def get_spot_details(spot_key):
     map_url = data.get("map_url")
     if not map_url:
         search_q = data.get('search_name', spot_key)
-        map_url = f"https://www.google.com/maps/search/?api=1&query={quote(search_q)}"
+        map_url = f"[https://www.google.com/maps/search/?api=1&query=](https://www.google.com/maps/search/?api=1&query=){quote(search_q)}"
     tenki_10days_url = convert_to_10days_url(data.get("tenki_url"))
     return (
         spot_key, data["url"], clean_url(data.get("hp_url", "")), clean_url(data.get("hp2_url", "")), 
@@ -303,7 +303,7 @@ def build_spot_list_carousel_horizontal(user_id=None, mode="trout"):
         bubble = {"type": "bubble", "size": "giga", "header": {"type": "box", "layout": "vertical", "backgroundColor": group["header_bg"], "paddingAll": "10px", "contents": [{"type": "text", "text": group["title"], "color": "#ffffff", "weight": "bold", "size": "md"}]}, "body": {"type": "box", "layout": "vertical", "paddingAll": "6px", "contents": rows}}
         bubbles.append(bubble)
 
-    guide_bubble = {"type": "bubble", "size": "giga", "header": {"type": "box", "layout": "vertical", "backgroundColor": "#888888", "paddingAll": "10px", "contents": [{"type": "text", "text": "📖 使い方ガイド", "color": "#ffffff", "weight": "bold", "size": "md"}]}, "body": {"type": "box", "layout": "vertical", "spacing": "md", "paddingAll": "15px", "contents": [{"type": "box", "layout": "vertical", "spacing": "sm", "contents": [{"type": "text", "text": "👇 基本の操作", "weight": "bold", "size": "sm", "color": "#333333"}, {"type": "text", "text": "・一覧のボタンをタップで天気予報を表示", "wrap": True, "size": "xs", "color": "#666666"}]}, {"type": "separator", "margin": "md"}, {"type": "box", "layout": "vertical", "spacing": "sm", "contents": [{"type": "text", "text": "💬 テキストコマンド", "weight": "bold", "size": "sm", "color": "#333333"}, {"type": "text", "text": "【まとめて追加】", "weight": "bold", "size": "xs", "color": "#333333", "margin": "sm"}, {"type": "text", "text": "例：「追加 東山湖 す national すその 足柄 座間 醒井」\n※釣り場と釣り場の名前の間にスペースを入れてください。", "wrap": True, "size": "xs", "color": "#666666"}, {"type": "text", "text": "【まとめて削除】", "weight": "bold", "size": "xs", "color": "#333333", "margin": "sm"}, {"type": "text", "text": "例：「削除 東山湖 すその 足柄」\n※追加と同じく、名前の間にスペースを入れて複数同時に解除できます。", "wrap": True, "size": "xs", "color": "#666666"}, {"type": "text", "text": "【設定】", "weight": "bold", "size": "sm", "color": "#333333", "margin": "sm"}, {"type": "text", "text": "「設定」と送信すると、並び替え・全削除パネルが出ます。", "wrap": True, "size": "xs", "color": "#666666"}, {"type": "text", "text": "【一覧（メニュー）の出し方】", "weight": "bold", "size": "xs", "color": "#333333", "margin": "sm"}, {"type": "text", "text": "「一覧」という言葉や、それ以外の適当な文字（「あ」「1」「a」など）を送信すると、この一覧表が表示されます。", "wrap": True, "size": "xs", "color": "#666666"}]}, {"type": "separator", "margin": "md"}, {"type": "box", "layout": "vertical", "spacing": "sm", "contents": [{"type": "text", "text": "⭐ お気に入り機能とリッチメニュー", "weight": "bold", "size": "sm", "color": "#333333"}, {"type": "text", "text": "【一番お気に入り（メニュー左）】", "weight": "bold", "size": "xs", "color": "#333333", "margin": "sm"}, {"type": "text", "text": "現在のモードにおけるお気に入りリストの「1番目（一番上）」の釣り場の天気を瞬時に表示します。", "wrap": True, "size": "xs", "color": "#666666"}]}, {"type": "separator", "margin": "md"}, {"type": "box", "layout": "vertical", "spacing": "sm", "contents": [{"type": "text", "text": "🛑 配信停止・解除", "weight": "bold", "size": "sm", "color": "#333333"}, {"type": "text", "text": "このBotの利用を停止したい場合は、トーク画面右上のメニュー「≡」から「ブロック」を行ってください。", "wrap": True, "size": "xs", "color": "#666666"}, {"type": "text", "text": "完全に消去する場合", "weight": "bold", "size": "xs", "color": "#333333", "margin": "md"}, {"type": "text", "text": "「トーク一覧」画面に戻り、このBotのトークを長押し（iPhoneは左スワイプ）して「削除」してください。", "wrap": True, "size": "xs", "color": "#666666"}]}]}}
+    guide_bubble = {"type": "bubble", "size": "giga", "header": {"type": "box", "layout": "vertical", "backgroundColor": "#888888", "paddingAll": "10px", "contents": [{"type": "text", "text": "📖 使い方ガイド", "color": "#ffffff", "weight": "bold", "size": "md"}]}, "body": {"type": "box", "layout": "vertical", "spacing": "md", "paddingAll": "15px", "contents": [{"type": "box", "layout": "vertical", "spacing": "sm", "contents": [{"type": "text", "text": "👇 基本の操作", "weight": "bold", "size": "sm", "color": "#333333"}, {"type": "text", "text": "・一覧のボタンをタップで天気予報を表示", "wrap": True, "size": "xs", "color": "#666666"}]}, {"type": "separator", "margin": "md"}, {"type": "box", "layout": "vertical", "spacing": "sm", "contents": [{"type": "text", "text": "💬 テキストコマンド", "weight": "bold", "size": "sm", "color": "#333333"}, {"type": "text", "text": "【まとめて追加】", "weight": "bold", "size": "xs", "color": "#333333", "margin": "sm"}, {"type": "text", "text": "例：「追加 東山湖 すその 足柄 座間 醒井」\n※釣り場と釣り場の名前の間にスペースを入れてください。", "wrap": True, "size": "xs", "color": "#666666"}, {"type": "text", "text": "【まとめて削除】", "weight": "bold", "size": "xs", "color": "#333333", "margin": "sm"}, {"type": "text", "text": "例：「削除 東山湖 すその 足柄」\n※追加と同じく、名前の間にスペースを入れて複数同時に解除できます。", "wrap": True, "size": "xs", "color": "#666666"}, {"type": "text", "text": "【設定】", "weight": "bold", "size": "sm", "color": "#333333", "margin": "sm"}, {"type": "text", "text": "「設定」と送信すると、並び替え・全削除パネルが出ます。", "wrap": True, "size": "xs", "color": "#666666"}, {"type": "text", "text": "【一覧（メニュー）の出し方】", "weight": "bold", "size": "xs", "color": "#333333", "margin": "sm"}, {"type": "text", "text": "「一覧」という言葉や、それ以外の適当な文字（「あ」「1」「a」など）を送信すると、この一覧表が表示されます。", "wrap": True, "size": "xs", "color": "#666666"}]}, {"type": "separator", "margin": "md"}, {"type": "box", "layout": "vertical", "spacing": "sm", "contents": [{"type": "text", "text": "⭐ お気に入り機能とリッチメニュー", "weight": "bold", "size": "sm", "color": "#333333"}, {"type": "text", "text": "【一番お気に入り（メニュー左）】", "weight": "bold", "size": "xs", "color": "#333333", "margin": "sm"}, {"type": "text", "text": "現在のモードにおけるお気に入りリストの「1番目（一番上）」の釣り場の天気を瞬時に表示します。", "wrap": True, "size": "xs", "color": "#666666"}]}, {"type": "separator", "margin": "md"}, {"type": "box", "layout": "vertical", "spacing": "sm", "contents": [{"type": "text", "text": "🛑 配信停止・解除", "weight": "bold", "size": "sm", "color": "#333333"}, {"type": "text", "text": "このBotの利用を停止したい場合は、トーク画面右上のメニュー「≡」から「ブロック」を行ってください。", "wrap": True, "size": "xs", "color": "#666666"}, {"type": "text", "text": "完全に消去する場合", "weight": "bold", "size": "xs", "color": "#333333", "margin": "md"}, {"type": "text", "text": "「トーク一覧」画面に戻り、このBotのトークを長押し（iPhoneは左スワイプ）して「削除」してください。", "wrap": True, "size": "xs", "color": "#666666"}]}]}}
     bubbles.append(guide_bubble)
 
     return FlexSendMessage(alt_text="釣り場一覧", contents={"type": "carousel", "contents": bubbles})
@@ -323,7 +323,7 @@ def get_user_setting(user_id):
             rename_map = {
                 "七色ダム": "池原七色ダム", "キング": "キングフィッシャー", "ツガネ": "JF in Tsugane",
                 "キングダム": "川場キングダム", "イワセン": "イワナセンター", "鹿島やり": "鹿島槍",
-                "アルクス宇宇都宮": "アルクス宇都宮", "片仓ダム": "片倉ダム", "多田良沼": "多々良沼",
+                "アルクス宇宇都宮": "アルクス宇宇都宮", "片仓ダム": "片倉ダム", "多田良沼": "多々良沼",
                 "那須烏山": "那須鳥山", "柏崎": "霞ケ浦柏崎", "霞ケ浦西浦": "土浦港", "ＭＡＶ": "宮城", "GP不忘": "不忘"
             }
             
@@ -525,7 +525,7 @@ def fetch_weekly_data_from_jma(tenki_url, raw_exclude_dates):
     if not jma_code: return []
 
     try:
-        url = f"https://www.jma.go.jp/bosai/forecast/data/forecast/{jma_code}.json"
+        url = f"[https://www.jma.go.jp/bosai/forecast/data/forecast/](https://www.jma.go.jp/bosai/forecast/data/forecast/){jma_code}.json"
         headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}
         res = requests.get(url, headers=headers, timeout=5.0)
         res.raise_for_status()
@@ -601,10 +601,10 @@ def fetch_weekly_data_from_jma(tenki_url, raw_exclude_dates):
             try: code = int(day_data["code"])
             except: code = 100
 
-            if code < 200: final_img = "https://gvs.weathernews.jp/onebox/img/wxicon/100.png"
-            elif code < 300: final_img = "https://gvs.weathernews.jp/onebox/img/wxicon/200.png"
-            elif code < 400: final_img = "https://gvs.weathernews.jp/onebox/img/wxicon/300.png"
-            else: final_img = "https://gvs.weathernews.jp/onebox/img/wxicon/400.png"
+            if code < 200: final_img = "[https://gvs.weathernews.jp/onebox/img/wxicon/100.png](https://gvs.weathernews.jp/onebox/img/wxicon/100.png)"
+            elif code < 300: final_img = "[https://gvs.weathernews.jp/onebox/img/wxicon/200.png](https://gvs.weathernews.jp/onebox/img/wxicon/200.png)"
+            elif code < 400: final_img = "[https://gvs.weathernews.jp/onebox/img/wxicon/300.png](https://gvs.weathernews.jp/onebox/img/wxicon/300.png)"
+            else: final_img = "[https://gvs.weathernews.jp/onebox/img/wxicon/400.png](https://gvs.weathernews.jp/onebox/img/wxicon/400.png)"
 
             weekly_data.append({
                 "date": date_label,
@@ -648,16 +648,16 @@ def fetch_spot_1hour_data(url, tenki_url=None):
                     if not (3 <= hour_int <= 20): continue
                     hour = f"{hour_int:02d}時"
                     
-                    img_url = "https://gvs.weathernews.jp/onebox/img/wxicon/200.png"
+                    img_url = "[https://gvs.weathernews.jp/onebox/img/wxicon/200.png](https://gvs.weathernews.jp/onebox/img/wxicon/200.png)"
                     weather_tag = item.find('li', class_='weather')
                     img_tag = weather_tag.find('img') if weather_tag else None
                     if img_tag and 'src' in img_tag.attrs:
                         src = img_tag['src']
                         if src.startswith('//'): img_url = "https:" + src
-                        elif src.startswith('/'): img_url = "https://weathernews.jp" + src
+                        elif src.startswith('/'): img_url = "[https://weathernews.jp](https://weathernews.jp)" + src
                         else: img_url = src
                     img_url = img_url.replace("http://", "https://")
-                    if not img_url.startswith("https://"): img_url = "https://gvs.weathernews.jp/onebox/img/wxicon/200.png"
+                    if not img_url.startswith("https://"): img_url = "[https://gvs.weathernews.jp/onebox/img/wxicon/200.png](https://gvs.weathernews.jp/onebox/img/wxicon/200.png)"
 
                     rain = item.find('li', class_='rain').text.strip().replace("ミリ", "mm") if item.find('li', class_='rain') else "-"
                     temp = item.find('li', class_='temp').text.strip() if item.find('li', class_='temp') else "-"
@@ -736,22 +736,22 @@ def save_cached_weather(spot_name, weather_data):
         supabase.table('weather_cache').upsert({'spot_name': spot_name, 'weather_data': weather_data, 'updated_at': now.isoformat()}).execute()
     except Exception as e: print(f"[Cache SAVE Error] {e}")
 
-# 段差を解消するための透明スペーサー生成関数
-def create_empty_weekly_spacer():
-    cols = []
-    for _ in range(4):
-        cols.append({
-            "type": "box", "layout": "vertical", "flex": 1, "alignItems": "center", "spacing": "xs",
-            "contents": [
-                {"type": "text", "text": " ", "size": "xxs"},
-                {"type": "image", "url": "https://scdn.line-apps.com/n/channel_devcenter/img/transparent.png", "size": "xs", "aspectMode": "fit"},
-                {"type": "text", "text": " ", "size": "xxs"},
-                {"type": "text", "text": " ", "size": "xxs"}
-            ]
-        })
-    return {"type": "box", "layout": "horizontal", "margin": "md", "spacing": "xs", "paddingAll": "8px", "contents": cols}
-
 def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_url="", tel="", x_url="", fb_url="", insta_url="", blog_url="", yt_url="", is_favorite=False):
+    
+    def create_empty_weekly_spacer():
+        cols = []
+        for _ in range(4):
+            cols.append({
+                "type": "box", "layout": "vertical", "flex": 1, "alignItems": "center", "spacing": "xs",
+                "contents": [
+                    {"type": "text", "text": " ", "size": "xxs"},
+                    {"type": "image", "url": "[https://scdn.line-apps.com/n/channel_devcenter/img/transparent.png](https://scdn.line-apps.com/n/channel_devcenter/img/transparent.png)", "size": "xs", "aspectMode": "fit"},
+                    {"type": "text", "text": " ", "size": "xxs"},
+                    {"type": "text", "text": " ", "size": "xxs"}
+                ]
+            })
+        return {"type": "box", "layout": "horizontal", "margin": "md", "spacing": "xs", "paddingAll": "8px", "contents": cols}
+
     weekly_data = weather_data.get("__weekly__", []) if isinstance(weather_data, dict) else []
     dates = [d for d in weather_data.keys() if d != "__weekly__" and d != "_version" and d != "__is_dummy__"]
     weather_by_date = weather_data
@@ -812,7 +812,7 @@ def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_
             r_val = data.get('rain', '').replace("mm", "").strip() or "-"
             w_val = data.get('wind', '').replace("m/s", "").replace("m", "").strip() or "-"
             time_str = data.get('time', '').replace("時", "").strip() or "-"
-            img_url = data.get('img_url', '') or "https://gvs.weathernews.jp/onebox/img/wxicon/200.png"
+            img_url = data.get('img_url', '') or "[https://gvs.weathernews.jp/onebox/img/wxicon/200.png](https://gvs.weathernews.jp/onebox/img/wxicon/200.png)"
             temp_color = "#ff0000" if t_val.isdigit() and int(t_val) >= 25 else "#333333"
             rain_color = "#0000ff" if r_val.isdigit() and int(r_val) > 0 else "#333333"
             if r_val == "-": rain_color = "#333333"
@@ -854,7 +854,7 @@ def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_
                 "type": "box", "layout": "vertical", "flex": 1, "alignItems": "center", "spacing": "xs",
                 "contents": [
                     {"type": "text", "text": date_str, "size": "xxs", "weight": "bold", "color": date_color, "align": "center"},
-                    {"type": "image", "url": str(w.get("img_url", "https://gvs.weathernews.jp/onebox/img/wxicon/200.png")), "size": "xs", "aspectMode": "fit"},
+                    {"type": "image", "url": str(w.get("img_url", "[https://gvs.weathernews.jp/onebox/img/wxicon/200.png](https://gvs.weathernews.jp/onebox/img/wxicon/200.png)")), "size": "xs", "aspectMode": "fit"},
                     {"type": "text", "text": f"{w.get('temp_max', '-')}/{w.get('temp_min', '-')}℃", "size": "xxs", "color": "#333333", "weight": "bold", "align": "center"},
                     {"type": "text", "text": f"{w.get('rain_prob', '-')}", "size": "xxs", "color": rain_color, "weight": "bold", "align": "center"}
                 ]
@@ -925,7 +925,8 @@ def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_
 
     weekly_box_1 = create_weekly_box(weekly_data[0:4]) if len(weekly_data) > 0 else None
     weekly_box_2 = create_weekly_box(weekly_data[4:8]) if len(weekly_data) > 4 else None
-    banner_img_url = "https://raw.githubusercontent.com/harackgm/fishing-weather-bot/main/tenkiharackbana.jpg"
+    
+    banner_img_url = "[https://raw.githubusercontent.com/harackgm/fishing-weather-bot/main/tenkiharackbana.jpg](https://raw.githubusercontent.com/harackgm/fishing-weather-bot/main/tenkiharackbana.jpg)"
 
     bottom_buttons_1 = [{"type": "box", "layout": "vertical", "flex": 1, "backgroundColor": "#fff59d", "borderWidth": "normal", "borderColor": "#d4af37", "cornerRadius": "md", "paddingAll": "0px", "contents": [{"type": "button", "action": {"type": "postback", "label": "📋 一覧", "data": "action=show_list", "displayText": "📋 一覧"}, "style": "link", "color": "#555555", "height": "sm", "margin": "none"}]}]
     bottom_buttons_2 = []
@@ -946,7 +947,7 @@ def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_
         bottom_block_contents_2.append(weekly_box_2)
     elif weekly_box_1:
         # ★ 左側だけ週間予報がある場合、右側のバナー高さを合わせるために見えないスペーサーを入れる
-        bottom_block_contents_2.append({"type": "separator", "margin": "md", "color": "#00000000"})
+        bottom_block_contents_2.append({"type": "box", "layout": "vertical", "margin": "md", "height": "1px", "contents": [{"type": "filler"}]})
         bottom_block_contents_2.append(create_empty_weekly_spacer())
         
     bottom_block_contents_2.extend([{"type": "separator", "margin": "md"}, {"type": "image", "url": banner_img_url, "size": "full", "aspectRatio": "3:1", "aspectMode": "cover", "margin": "md"}, {"type": "separator", "margin": "md"}, {"type": "box", "layout": "horizontal", "margin": "sm", "spacing": "sm", "contents": bottom_buttons_2}])
