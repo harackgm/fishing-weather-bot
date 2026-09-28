@@ -32,8 +32,20 @@ if SUPABASE_URL and SUPABASE_KEY:
     except Exception as e: print(f"[Supabase初期化エラー] {e}")
 
 MEMORY_CACHE = {}
-# ★ 連打防止用：ユーザーごとの最終リクエスト時刻保持メモリ
+
+# ★ 連打防止用：排他制御ロックとリクエスト時刻管理
 USER_LAST_REQUEST = {}
+REQUEST_LOCK = threading.Lock()
+
+def is_throttled(user_id, cooldown=2.5):
+    """高速連打（競合状態）を排他ロックで完全に防ぐ判定関数"""
+    now_ts = time.time()
+    with REQUEST_LOCK:
+        last_ts = USER_LAST_REQUEST.get(user_id, 0)
+        if now_ts - last_ts < cooldown:
+            return True
+        USER_LAST_REQUEST[user_id] = now_ts
+        return False
 
 # 全国47都道府県のコードマッピング
 PREF_TO_JMA = {
@@ -788,7 +800,7 @@ def get_cached_weather(spot_name):
         if now - updated_time <= timedelta(hours=2):
             if isinstance(data, dict):
                 weekly = data.get("__weekly__", [])
-                if data.get("_version") != "settings_shortcut_v127": return None
+                if data.get("_version") != "settings_shortcut_v128": return None
                 if not weekly: return None
                 dates = [d for d in data.keys() if d != "__weekly__" and d != "_version" and d != "__is_dummy__" and d != "__disaster__"]
                 if not dates: return None
@@ -807,7 +819,7 @@ def get_cached_weather(spot_name):
                         weather_data = row.get('weather_data')
                         if isinstance(weather_data, dict):
                             weekly = weather_data.get("__weekly__", [])
-                            if weather_data.get("_version") != "settings_shortcut_v127": return None
+                            if weather_data.get("_version") != "settings_shortcut_v128": return None
                             if not weekly: return None
                             dates = [d for d in weather_data.keys() if d != "__weekly__" and d != "_version" and d != "__is_dummy__" and d != "__disaster__"]
                             if not dates: return None
@@ -824,7 +836,7 @@ def save_cached_weather(spot_name, weather_data):
         return
     
     now = datetime.now(timezone.utc)
-    weather_data["_version"] = "settings_shortcut_v127"
+    weather_data["_version"] = "settings_shortcut_v128"
     MEMORY_CACHE[spot_name] = (weather_data, now)
     if not supabase: return
     try:
@@ -1155,16 +1167,12 @@ def handle_message(event):
         raw_msg = event.message.text.strip()
         user_id = event.source.user_id
 
-        # ★【新機能】2秒間の連打抑制（スロットリング）判定
-        now_ts = time.time()
+        # 2.5秒間の連打抑制（スロットリング）判定
         is_list_cmd = raw_msg in ["一覧", "リスト", "釣り場一覧", "エリア", "📋 一覧", "📋一覧"]
-        
         if not is_list_cmd:
-            last_ts = USER_LAST_REQUEST.get(user_id, 0)
-            if now_ts - last_ts < 2.0:
+            if is_throttled(user_id, cooldown=2.5):
                 print(f"[Throttle] User {user_id} throttled (message)")
-                return # 2秒以内の連打はサイレントに無視
-            USER_LAST_REQUEST[user_id] = now_ts
+                return
 
         source, favorites, fishing_mode = get_user_setting(user_id)
 
@@ -1264,16 +1272,12 @@ def handle_postback(event):
         data_dict = dict(parse_qsl(event.postback.data))
         action = data_dict.get("action")
 
-        # ★【新機能】2秒間の連打抑制（スロットリング）判定
-        now_ts = time.time()
+        # 2.5秒間の連打抑制（スロットリング）判定
         is_list_action = (action == "show_list")
-        
         if not is_list_action:
-            last_ts = USER_LAST_REQUEST.get(user_id, 0)
-            if now_ts - last_ts < 2.0:
+            if is_throttled(user_id, cooldown=2.5):
                 print(f"[Throttle] User {user_id} throttled (postback)")
-                return # 2秒以内の連打はサイレントに無視
-            USER_LAST_REQUEST[user_id] = now_ts
+                return
 
         spot_name = data_dict.get("spot")
         source, favorites, fishing_mode = get_user_setting(user_id)
