@@ -323,7 +323,7 @@ def get_user_setting(user_id):
             rename_map = {
                 "七色ダム": "池原七色ダム", "キング": "キングフィッシャー", "ツガネ": "JF in Tsugane",
                 "キングダム": "川場キングダム", "イワセン": "イワナセンター", "鹿島やり": "鹿島槍",
-                "アルクス宇宇都宮": "アルクス宇都宮", "片仓ダム": "片仓ダム", "多田良沼": "多々良沼",
+                "アルクス宇宇都宮": "アルクス宇都宮", "片仓ダム": "片倉ダム", "多田良沼": "多々良沼",
                 "那須烏山": "那須鳥山", "柏崎": "霞ケ浦柏崎", "霞ケ浦西浦": "土浦港", "ＭＡＶ": "宮城", "GP不忘": "不忘"
             }
             
@@ -620,7 +620,6 @@ def fetch_weekly_data_from_jma(tenki_url, raw_exclude_dates):
         print(f"[JMA API Error] {e}")
         return []
 
-# 防災情報取得関数（気象警報、地震、火山を安全に抽出）
 def fetch_disaster_info(tenki_url):
     if not tenki_url: return {}
     m = re.search(r'forecast/\d+/(\d+)/', tenki_url)
@@ -635,7 +634,6 @@ def fetch_disaster_info(tenki_url):
 
     headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
 
-    # 1. 気象警報・注意報
     try:
         url = f"https://www.jma.go.jp/bosai/warning/data/warning/{jma_code}.json"
         res = requests.get(url, headers=headers, timeout=2.0)
@@ -661,7 +659,6 @@ def fetch_disaster_info(tenki_url):
             warnings_list = list(dict.fromkeys(warnings_list))
     except: pass
 
-    # 2. 地震情報 (全国最新)
     try:
         url = "https://www.jma.go.jp/bosai/quake/data/list.json"
         res = requests.get(url, headers=headers, timeout=2.0)
@@ -679,7 +676,6 @@ def fetch_disaster_info(tenki_url):
                     quake_str = f"{dt_formatted} {place} (震度{maxi}/M{mag})"
     except: pass
 
-    # 3. 火山情報 (全国最新)
     try:
         url = "https://www.jma.go.jp/bosai/volcano/data/list.json"
         res = requests.get(url, headers=headers, timeout=2.0)
@@ -695,7 +691,7 @@ def fetch_disaster_info(tenki_url):
 
 def fetch_spot_1hour_data(url, tenki_url=None):
     try:
-        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
+        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}
         response = requests.get(url, headers=headers, timeout=3.8)
         response.raise_for_status()
         soup = BeautifulSoup(response.text, 'html.parser')
@@ -752,7 +748,6 @@ def fetch_spot_1hour_data(url, tenki_url=None):
             weekly_data = fetch_weekly_data_from_jma(tenki_url, raw_exclude_dates)
 
         weather_by_date["__weekly__"] = weekly_data
-        # ★ 防災情報を取得してキャッシュデータに含める
         weather_by_date["__disaster__"] = fetch_disaster_info(tenki_url)
         return weather_by_date
     except requests.exceptions.Timeout: return None
@@ -767,7 +762,7 @@ def get_cached_weather(spot_name):
         if now - updated_time <= timedelta(hours=2):
             if isinstance(data, dict):
                 weekly = data.get("__weekly__", [])
-                if data.get("_version") != "settings_shortcut_v123": return None
+                if data.get("_version") != "settings_shortcut_v124": return None
                 if not weekly: return None
                 dates = [d for d in data.keys() if d != "__weekly__" and d != "_version" and d != "__is_dummy__" and d != "__disaster__"]
                 if not dates: return None
@@ -786,7 +781,7 @@ def get_cached_weather(spot_name):
                         weather_data = row.get('weather_data')
                         if isinstance(weather_data, dict):
                             weekly = weather_data.get("__weekly__", [])
-                            if weather_data.get("_version") != "settings_shortcut_v123": return None
+                            if weather_data.get("_version") != "settings_shortcut_v124": return None
                             if not weekly: return None
                             dates = [d for d in weather_data.keys() if d != "__weekly__" and d != "_version" and d != "__is_dummy__" and d != "__disaster__"]
                             if not dates: return None
@@ -803,14 +798,13 @@ def save_cached_weather(spot_name, weather_data):
         return
     
     now = datetime.now(timezone.utc)
-    weather_data["_version"] = "settings_shortcut_v123"
+    weather_data["_version"] = "settings_shortcut_v124"
     MEMORY_CACHE[spot_name] = (weather_data, now)
     if not supabase: return
     try:
         supabase.table('weather_cache').upsert({'spot_name': spot_name, 'weather_data': weather_data, 'updated_at': now.isoformat()}).execute()
     except Exception as e: print(f"[Cache SAVE Error] {e}")
 
-# 防災情報を綺麗に表示し、高さを固定する関数
 def create_disaster_box(disaster_data):
     contents = []
     contents.append({
@@ -850,7 +844,7 @@ def create_disaster_box(disaster_data):
     return {
         "type": "box", "layout": "vertical", "margin": "md", "paddingAll": "8px",
         "backgroundColor": "#fffde7", "cornerRadius": "sm", "borderColor": "#ffd54f", "borderWidth": "normal",
-        "spacing": "xs", "contents": contents, "height": "90px"
+        "spacing": "xs", "contents": contents
     }
 
 def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_url="", tel="", x_url="", fb_url="", insta_url="", blog_url="", yt_url="", is_favorite=False):
@@ -1027,7 +1021,6 @@ def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_
         return {"type": "box", "layout": "vertical", "backgroundColor": header_color, "paddingAll": "10px", "contents": header_contents}
 
     weekly_box_1 = create_weekly_box(weekly_data[0:4]) if len(weekly_data) > 0 else None
-    weekly_box_2 = create_weekly_box(weekly_data[4:8]) if len(weekly_data) > 4 else None
     
     banner_img_url = "https://raw.githubusercontent.com/harackgm/fishing-weather-bot/main/tenkiharackbana.jpg"
 
@@ -1038,47 +1031,51 @@ def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_
         bottom_buttons_2.append({"type": "box", "layout": "vertical", "flex": 2, "backgroundColor": "#f8f9fa", "borderWidth": "normal", "borderColor": "#e0e0e0", "cornerRadius": "md", "paddingAll": "0px", "contents": [{"type": "button", "action": {"type": "uri", "label": "📞 電話", "uri": f"tel:{clean_tel}"}, "style": "link", "color": "#555555", "height": "sm", "margin": "none"}]})
     bottom_buttons_2.append({"type": "box", "layout": "vertical", "flex": 3 if tel else 1, "backgroundColor": "#fff59d", "borderWidth": "normal", "borderColor": "#d4af37", "cornerRadius": "md", "paddingAll": "0px", "contents": [{"type": "button", "action": {"type": "postback", "label": "📋 一覧", "data": "action=show_list", "displayText": "📋 一覧"}, "style": "link", "color": "#555555", "height": "sm", "margin": "none"}]})
 
-    bottom_block_contents_1 = []
-    if weekly_box_1:
-        bottom_block_contents_1.append({"type": "separator", "margin": "md"})
-        bottom_block_contents_1.append(weekly_box_1)
-        
-    bottom_block_contents_1.extend([
-        {"type": "separator", "margin": "md"}, 
-        {"type": "image", "url": banner_img_url, "size": "full", "aspectRatio": "3:1", "aspectMode": "cover", "margin": "md"}, 
-        {"type": "separator", "margin": "md"}, 
-        {"type": "box", "layout": "horizontal", "margin": "sm", "spacing": "sm", "contents": bottom_buttons_1}
-    ])
+    footer_1 = {
+        "type": "box", "layout": "vertical", "paddingAll": "8px", "spacing": "none",
+        "contents": [
+            {"type": "separator", "margin": "none"},
+            {"type": "image", "url": banner_img_url, "size": "full", "aspectRatio": "3:1", "aspectMode": "cover", "margin": "md"},
+            {"type": "separator", "margin": "md"},
+            {"type": "box", "layout": "horizontal", "margin": "sm", "spacing": "sm", "contents": bottom_buttons_1}
+        ]
+    }
 
-    bottom_block_contents_2 = []
-    if weekly_box_2:
-        bottom_block_contents_2.append({"type": "separator", "margin": "md"})
-        bottom_block_contents_2.append(weekly_box_2)
-    elif weekly_box_1:
-        # ★ 左側のカードに週間予報がある場合、右側の同じ位置に防災情報パネルを挿入する
-        bottom_block_contents_2.append({"type": "separator", "margin": "md", "color": "#00000000"})
-        bottom_block_contents_2.append(create_disaster_box(disaster_data))
-        
-    bottom_block_contents_2.extend([
-        {"type": "separator", "margin": "md"}, 
-        {"type": "image", "url": banner_img_url, "size": "full", "aspectRatio": "3:1", "aspectMode": "cover", "margin": "md"}, 
-        {"type": "separator", "margin": "md"}, 
-        {"type": "box", "layout": "horizontal", "margin": "sm", "spacing": "sm", "contents": bottom_buttons_2}
-    ])
+    footer_2 = {
+        "type": "box", "layout": "vertical", "paddingAll": "8px", "spacing": "none",
+        "contents": [
+            {"type": "separator", "margin": "none"},
+            {"type": "image", "url": banner_img_url, "size": "full", "aspectRatio": "3:1", "aspectMode": "cover", "margin": "md"},
+            {"type": "separator", "margin": "md"},
+            {"type": "box", "layout": "horizontal", "margin": "sm", "spacing": "sm", "contents": bottom_buttons_2}
+        ]
+    }
+
+    body_1_contents = [{"type": "box", "layout": "horizontal", "spacing": "sm", "contents": [create_day_column(dates[0] if len(dates)>0 else None), {"type": "separator"}, create_day_column(dates[1] if len(dates)>1 else None)]}]
+    if weekly_box_1:
+        body_1_contents.append({"type": "separator", "margin": "md"})
+        body_1_contents.append(weekly_box_1)
+
+    body_2_contents = [{"type": "box", "layout": "horizontal", "spacing": "sm", "contents": [create_day_column(dates[2] if len(dates)>2 else None), {"type": "separator"}, create_day_column(dates[3] if len(dates)>3 else None)]}]
+    if weekly_box_1:
+        body_2_contents.append({"type": "separator", "margin": "md", "color": "#00000000"})
+        body_2_contents.append(create_disaster_box(disaster_data))
 
     bubbles = []
     if len(dates) > 0:
-        day1 = dates[0]
-        day2 = dates[1] if len(dates) > 1 else None
-        body_contents_1 = [{"type": "box", "layout": "horizontal", "spacing": "sm", "contents": [create_day_column(day1), {"type": "separator"}, create_day_column(day2)]}]
-        body_contents_1.extend(bottom_block_contents_1) 
-        bubbles.append({"type": "bubble", "size": "giga", "header": create_header_block(0), "body": {"type": "box", "layout": "vertical", "spacing": "md", "paddingAll": "8px", "contents": body_contents_1}})
+        bubbles.append({
+            "type": "bubble", "size": "giga", 
+            "header": create_header_block(0), 
+            "body": {"type": "box", "layout": "vertical", "spacing": "md", "paddingAll": "8px", "contents": body_1_contents},
+            "footer": footer_1
+        })
     if len(dates) > 2:
-        day3 = dates[2]
-        day4 = dates[3] if len(dates) > 3 else None
-        body_contents_2 = [{"type": "box", "layout": "horizontal", "spacing": "sm", "contents": [create_day_column(day3), {"type": "separator"}, create_day_column(day4)]}]
-        body_contents_2.extend(bottom_block_contents_2) 
-        bubbles.append({"type": "bubble", "size": "giga", "header": create_header_block(1), "body": {"type": "box", "layout": "vertical", "spacing": "md", "paddingAll": "8px", "contents": body_contents_2}})
+        bubbles.append({
+            "type": "bubble", "size": "giga", 
+            "header": create_header_block(1), 
+            "body": {"type": "box", "layout": "vertical", "spacing": "md", "paddingAll": "8px", "contents": body_2_contents},
+            "footer": footer_2
+        })
 
     return FlexSendMessage(alt_text=f"{spot_name}の天気予報", contents={"type": "carousel", "contents": bubbles})
 
