@@ -82,7 +82,6 @@ def guess_date_from_string(date_str, now_date):
     month_str, day_str = m.group(1), m.group(2)
     day = int(day_str)
     
-    # ★ バグ修正：月が省略されている場合、現在・翌月・前月の中から最も近い日付を自動判定する
     if month_str:
         month = int(month_str)
         try: target = now_date.replace(month=month, day=day)
@@ -324,7 +323,7 @@ def get_user_setting(user_id):
             rename_map = {
                 "七色ダム": "池原七色ダム", "キング": "キングフィッシャー", "ツガネ": "JF in Tsugane",
                 "キングダム": "川場キングダム", "イワセン": "イワナセンター", "鹿島やり": "鹿島槍",
-                "アルクス宇宇都宮": "アルクス宇宇都宮", "片仓ダム": "片倉ダム", "多田良沼": "多々良沼",
+                "アルクス宇宇都宮": "アルクス宇都宮", "片仓ダム": "片倉ダム", "多田良沼": "多々良沼",
                 "那須烏山": "那須鳥山", "柏崎": "霞ケ浦柏崎", "霞ケ浦西浦": "土浦港", "ＭＡＶ": "宮城", "GP不忘": "不忘"
             }
             
@@ -527,7 +526,7 @@ def fetch_weekly_data_from_jma(tenki_url, raw_exclude_dates):
 
     try:
         url = f"https://www.jma.go.jp/bosai/forecast/data/forecast/{jma_code}.json"
-        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}
+        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
         res = requests.get(url, headers=headers, timeout=5.0)
         res.raise_for_status()
         data = res.json()
@@ -679,26 +678,7 @@ def fetch_spot_1hour_data(url, tenki_url=None):
         if tenki_url:
             weekly_data = fetch_weekly_data_from_jma(tenki_url, raw_exclude_dates)
 
-        if not weekly_data:
-            now_dt = datetime.now(timezone(timedelta(hours=9)))
-            start_date = now_dt.date()
-            if raw_exclude_dates:
-                last_wn = guess_date_from_string(raw_exclude_dates[-1], now_dt.date())
-                start_date = last_wn + timedelta(days=1)
-            for i in range(8):
-                day_dt = start_date + timedelta(days=i)
-                w_str = ["(月)", "(火)", "(水)", "(木)", "(金)", "(土)", "(日)"][day_dt.weekday()]
-                weekly_data.append({"date": f"{day_dt.day}{w_str}", "img_url": "https://gvs.weathernews.jp/onebox/img/wxicon/200.png", "temp_max": "-", "temp_min": "-", "rain_prob": "-"})
-            weather_by_date["__is_dummy__"] = True
-        else:
-            last_date_str = weekly_data[-1]["date"]
-            now_dt = datetime.now(timezone(timedelta(hours=9)))
-            last_dt = guess_date_from_string(last_date_str, now_dt.date())
-            while len(weekly_data) < 8:
-                last_dt += timedelta(days=1)
-                w_str = ["(月)", "(火)", "(水)", "(木)", "(金)", "(土)", "(日)"][last_dt.weekday()]
-                weekly_data.append({"date": f"{last_dt.day}{w_str}", "img_url": "https://gvs.weathernews.jp/onebox/img/wxicon/200.png", "temp_max": "-", "temp_min": "-", "rain_prob": "-"})
-
+        # 削除指示があったため残りの穴埋めは行わず、取れた分だけをそのまま返す
         weather_by_date["__weekly__"] = weekly_data
         return weather_by_date
     except requests.exceptions.Timeout: return None
@@ -713,7 +693,7 @@ def get_cached_weather(spot_name):
         if now - updated_time <= timedelta(hours=2):
             if isinstance(data, dict):
                 weekly = data.get("__weekly__", [])
-                if data.get("_version") != "settings_shortcut_v119": return None
+                if data.get("_version") != "settings_shortcut_v122": return None
                 if not weekly: return None
                 dates = [d for d in data.keys() if d != "__weekly__" and d != "_version" and d != "__is_dummy__"]
                 if not dates: return None
@@ -732,7 +712,7 @@ def get_cached_weather(spot_name):
                         weather_data = row.get('weather_data')
                         if isinstance(weather_data, dict):
                             weekly = weather_data.get("__weekly__", [])
-                            if weather_data.get("_version") != "settings_shortcut_v119": return None
+                            if weather_data.get("_version") != "settings_shortcut_v122": return None
                             if not weekly: return None
                             dates = [d for d in weather_data.keys() if d != "__weekly__" and d != "_version" and d != "__is_dummy__"]
                             if not dates: return None
@@ -749,12 +729,38 @@ def save_cached_weather(spot_name, weather_data):
         return
     
     now = datetime.now(timezone.utc)
-    weather_data["_version"] = "settings_shortcut_v119"
+    weather_data["_version"] = "settings_shortcut_v122"
     MEMORY_CACHE[spot_name] = (weather_data, now)
     if not supabase: return
     try:
         supabase.table('weather_cache').upsert({'spot_name': spot_name, 'weather_data': weather_data, 'updated_at': now.isoformat()}).execute()
     except Exception as e: print(f"[Cache SAVE Error] {e}")
+
+# 段差を解消するための透明スペーサー生成関数
+def create_empty_weekly_spacer():
+    cols = []
+    for _ in range(4):
+        cols.append({
+            "type": "box", 
+            "layout": "vertical", 
+            "flex": 1, 
+            "alignItems": "center", 
+            "spacing": "xs",
+            "contents": [
+                {"type": "text", "text": " ", "size": "xxs"},
+                {"type": "image", "url": "https://scdn.line-apps.com/n/channel_devcenter/img/transparent.png", "size": "xs", "aspectMode": "fit"},
+                {"type": "text", "text": " ", "size": "xxs"},
+                {"type": "text", "text": " ", "size": "xxs"}
+            ]
+        })
+    return {
+        "type": "box", 
+        "layout": "horizontal", 
+        "margin": "md", 
+        "spacing": "xs", 
+        "paddingAll": "8px", 
+        "contents": cols
+    }
 
 def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_url="", tel="", x_url="", fb_url="", insta_url="", blog_url="", yt_url="", is_favorite=False):
     weekly_data = weather_data.get("__weekly__", []) if isinstance(weather_data, dict) else []
@@ -930,6 +936,7 @@ def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_
 
     weekly_box_1 = create_weekly_box(weekly_data[0:4]) if len(weekly_data) > 0 else None
     weekly_box_2 = create_weekly_box(weekly_data[4:8]) if len(weekly_data) > 4 else None
+    
     banner_img_url = "https://raw.githubusercontent.com/harackgm/fishing-weather-bot/main/tenkiharackbana.jpg"
 
     bottom_buttons_1 = [{"type": "box", "layout": "vertical", "flex": 1, "backgroundColor": "#fff59d", "borderWidth": "normal", "borderColor": "#d4af37", "cornerRadius": "md", "paddingAll": "0px", "contents": [{"type": "button", "action": {"type": "postback", "label": "📋 一覧", "data": "action=show_list", "displayText": "📋 一覧"}, "style": "link", "color": "#555555", "height": "sm", "margin": "none"}]}]
@@ -943,13 +950,28 @@ def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_
     if weekly_box_1:
         bottom_block_contents_1.append({"type": "separator", "margin": "md"})
         bottom_block_contents_1.append(weekly_box_1)
-    bottom_block_contents_1.extend([{"type": "separator", "margin": "md"}, {"type": "image", "url": banner_img_url, "size": "full", "aspectRatio": "3:1", "aspectMode": "cover", "margin": "md"}, {"type": "separator", "margin": "md"}, {"type": "box", "layout": "horizontal", "margin": "sm", "spacing": "sm", "contents": bottom_buttons_1}])
+        
+    bottom_block_contents_1.extend([
+        {"type": "separator", "margin": "md"}, 
+        {"type": "image", "url": banner_img_url, "size": "full", "aspectRatio": "3:1", "aspectMode": "cover", "margin": "md"}, 
+        {"type": "separator", "margin": "md"}, 
+        {"type": "box", "layout": "horizontal", "margin": "sm", "spacing": "sm", "contents": bottom_buttons_1}
+    ])
 
     bottom_block_contents_2 = []
     if weekly_box_2:
         bottom_block_contents_2.append({"type": "separator", "margin": "md"})
         bottom_block_contents_2.append(weekly_box_2)
-    bottom_block_contents_2.extend([{"type": "separator", "margin": "md"}, {"type": "image", "url": banner_img_url, "size": "full", "aspectRatio": "3:1", "aspectMode": "cover", "margin": "md"}, {"type": "separator", "margin": "md"}, {"type": "box", "layout": "horizontal", "margin": "sm", "spacing": "sm", "contents": bottom_buttons_2}])
+    elif weekly_box_1:
+        bottom_block_contents_2.append({"type": "separator", "margin": "md", "color": "#00000000"})
+        bottom_block_contents_2.append(create_empty_weekly_spacer())
+        
+    bottom_block_contents_2.extend([
+        {"type": "separator", "margin": "md"}, 
+        {"type": "image", "url": banner_img_url, "size": "full", "aspectRatio": "3:1", "aspectMode": "cover", "margin": "md"}, 
+        {"type": "separator", "margin": "md"}, 
+        {"type": "box", "layout": "horizontal", "margin": "sm", "spacing": "sm", "contents": bottom_buttons_2}
+    ])
 
     bubbles = []
     if len(dates) > 0:
