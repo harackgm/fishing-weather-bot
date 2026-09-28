@@ -504,19 +504,16 @@ def fetch_weekly_data_from_jma(tenki_url, raw_exclude_dates):
     if not jma_code: return []
 
     try:
-        # 気象庁APIへアクセス
         url = f"https://www.jma.go.jp/bosai/forecast/data/forecast/{jma_code}.json"
         headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}
         res = requests.get(url, headers=headers, timeout=5.0)
         res.raise_for_status()
         data = res.json()
         
-        # 週間予報のブロックを確実に探す
         weekly_part = None
         for part in data:
             if "timeSeries" in part:
                 for ts in part["timeSeries"]:
-                    # 日付が5日以上あるブロックを「週間予報」とみなす
                     if len(ts.get("timeDefines", [])) >= 5:
                         weekly_part = part
                         break
@@ -527,13 +524,11 @@ def fetch_weekly_data_from_jma(tenki_url, raw_exclude_dates):
         time_series = weekly_part.get('timeSeries', [])
         forecast_dict = {}
         
-        # 全てのtimeSeriesから、日付(dt)をキーにしてデータを結合していく
         for ts in time_series:
             times = ts.get('timeDefines', [])
             areas = ts.get('areas', [])
             if not times or not areas: continue
             
-            # 北部があれば北部を、なければ先頭を採用して確実性を高める
             target_area = areas[0]
             for a in areas:
                 name = a.get("area", {}).get("name", "")
@@ -565,7 +560,6 @@ def fetch_weekly_data_from_jma(tenki_url, raw_exclude_dates):
 
         weekly_data = []
         for dt in sorted(forecast_dict.keys()):
-            # Weathernewsの1時間予報と被っている日付はスキップ
             if last_wn_date and dt <= last_wn_date: continue
             
             day_data = forecast_dict[dt]
@@ -580,11 +574,11 @@ def fetch_weekly_data_from_jma(tenki_url, raw_exclude_dates):
             elif code < 400: final_img = "https://gvs.weathernews.jp/onebox/img/wxicon/300.png"
             else: final_img = "https://gvs.weathernews.jp/onebox/img/wxicon/400.png"
                 
+            # ★【最重要修正】気温がなくてもスキップしない！取れたデータは全て表示する
             weekly_data.append({
                 "date": date_label, "img_url": final_img, 
                 "temp_max": day_data["t_max"], "temp_min": day_data["t_min"], "rain_prob": day_data["pop"]
             })
-            # 何日分でも取れた分だけ表示する
             if len(weekly_data) >= 8: break
 
         return weekly_data
@@ -651,7 +645,7 @@ def fetch_spot_1hour_data(url, tenki_url=None):
         if tenki_url:
             weekly_data = fetch_weekly_data_from_jma(tenki_url, raw_exclude_dates)
 
-        # ★ 残日数の閾値エラー撤廃: 1日でも取れたら表示し、全く取れなかった時だけダミーにする
+        # ★ 【最重要修正】少しでもデータが取れていればダミー化しない
         if not weekly_data:
             now_dt = datetime.now(timezone(timedelta(hours=9)))
             start_date = now_dt.date()
@@ -665,6 +659,15 @@ def fetch_spot_1hour_data(url, tenki_url=None):
                 weekly_data.append({"date": f"{day_dt.day}{w_str}", "img_url": "https://gvs.weathernews.jp/onebox/img/wxicon/200.png", "temp_max": "-", "temp_min": "-", "rain_prob": "-"})
             # エラー時の一時的なダミーはキャッシュに保存させない
             weather_by_date["__is_dummy__"] = True
+        else:
+            # ★ 取得できたが8日分に満たない場合（例:3日分しかない）、残りの枠をハイフンで埋めて綺麗に表示する
+            last_date_str = weekly_data[-1]["date"]
+            now_dt = datetime.now(timezone(timedelta(hours=9)))
+            last_dt = guess_date_from_string(last_date_str, now_dt.date())
+            while len(weekly_data) < 8:
+                last_dt += timedelta(days=1)
+                w_str = ["(月)", "(火)", "(水)", "(木)", "(金)", "(土)", "(日)"][last_dt.weekday()]
+                weekly_data.append({"date": f"{last_dt.day}{w_str}", "img_url": "https://gvs.weathernews.jp/onebox/img/wxicon/200.png", "temp_max": "-", "temp_min": "-", "rain_prob": "-"})
 
         weather_by_date["__weekly__"] = weekly_data
         return weather_by_date
@@ -680,8 +683,9 @@ def get_cached_weather(spot_name):
         if now - updated_time <= timedelta(hours=2):
             if isinstance(data, dict):
                 weekly = data.get("__weekly__", [])
-                if data.get("_version") != "settings_shortcut_v113": return None
-                if not weekly or weekly[0].get("temp_max") == "-": return None
+                if data.get("_version") != "settings_shortcut_v114": return None
+                # 【修正】1日目が未定でもキャッシュを破棄しないように緩和
+                if not weekly: return None
                 dates = [d for d in data.keys() if d != "__weekly__" and d != "_version" and d != "__is_dummy__"]
                 if not dates: return None
             return data
@@ -699,8 +703,8 @@ def get_cached_weather(spot_name):
                         weather_data = row.get('weather_data')
                         if isinstance(weather_data, dict):
                             weekly = weather_data.get("__weekly__", [])
-                            if weather_data.get("_version") != "settings_shortcut_v113": return None
-                            if not weekly or weekly[0].get("temp_max") == "-": return None
+                            if weather_data.get("_version") != "settings_shortcut_v114": return None
+                            if not weekly: return None
                             dates = [d for d in weather_data.keys() if d != "__weekly__" and d != "_version" and d != "__is_dummy__"]
                             if not dates: return None
                         MEMORY_CACHE[spot_name] = (weather_data, updated_time)
@@ -716,7 +720,7 @@ def save_cached_weather(spot_name, weather_data):
         return
     
     now = datetime.now(timezone.utc)
-    weather_data["_version"] = "settings_shortcut_v113"
+    weather_data["_version"] = "settings_shortcut_v114"
     MEMORY_CACHE[spot_name] = (weather_data, now)
     if not supabase: return
     try:
