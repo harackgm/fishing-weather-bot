@@ -82,7 +82,6 @@ def guess_date_from_string(date_str, now_date):
     month_str, day_str = m.group(1), m.group(2)
     day = int(day_str)
     
-    # ★ バグ修正：月が省略されている場合、現在・翌月・前月の中から最も近い日付を自動判定する
     if month_str:
         month = int(month_str)
         try: target = now_date.replace(month=month, day=day)
@@ -679,26 +678,7 @@ def fetch_spot_1hour_data(url, tenki_url=None):
         if tenki_url:
             weekly_data = fetch_weekly_data_from_jma(tenki_url, raw_exclude_dates)
 
-        if not weekly_data:
-            now_dt = datetime.now(timezone(timedelta(hours=9)))
-            start_date = now_dt.date()
-            if raw_exclude_dates:
-                last_wn = guess_date_from_string(raw_exclude_dates[-1], now_dt.date())
-                start_date = last_wn + timedelta(days=1)
-            for i in range(8):
-                day_dt = start_date + timedelta(days=i)
-                w_str = ["(月)", "(火)", "(水)", "(木)", "(金)", "(土)", "(日)"][day_dt.weekday()]
-                weekly_data.append({"date": f"{day_dt.day}{w_str}", "img_url": "https://gvs.weathernews.jp/onebox/img/wxicon/200.png", "temp_max": "-", "temp_min": "-", "rain_prob": "-"})
-            weather_by_date["__is_dummy__"] = True
-        else:
-            last_date_str = weekly_data[-1]["date"]
-            now_dt = datetime.now(timezone(timedelta(hours=9)))
-            last_dt = guess_date_from_string(last_date_str, now_dt.date())
-            while len(weekly_data) < 8:
-                last_dt += timedelta(days=1)
-                w_str = ["(月)", "(火)", "(水)", "(木)", "(金)", "(土)", "(日)"][last_dt.weekday()]
-                weekly_data.append({"date": f"{last_dt.day}{w_str}", "img_url": "https://gvs.weathernews.jp/onebox/img/wxicon/200.png", "temp_max": "-", "temp_min": "-", "rain_prob": "-"})
-
+        # ★ 【要望対応】ハイフンでの空埋め処理を完全に削除し、取れた分（気象庁の限界日数である3〜4日分）だけをそのまま返す
         weather_by_date["__weekly__"] = weekly_data
         return weather_by_date
     except requests.exceptions.Timeout: return None
@@ -713,7 +693,7 @@ def get_cached_weather(spot_name):
         if now - updated_time <= timedelta(hours=2):
             if isinstance(data, dict):
                 weekly = data.get("__weekly__", [])
-                if data.get("_version") != "settings_shortcut_v119": return None
+                if data.get("_version") != "settings_shortcut_v120": return None
                 if not weekly: return None
                 dates = [d for d in data.keys() if d != "__weekly__" and d != "_version" and d != "__is_dummy__"]
                 if not dates: return None
@@ -732,7 +712,7 @@ def get_cached_weather(spot_name):
                         weather_data = row.get('weather_data')
                         if isinstance(weather_data, dict):
                             weekly = weather_data.get("__weekly__", [])
-                            if weather_data.get("_version") != "settings_shortcut_v119": return None
+                            if weather_data.get("_version") != "settings_shortcut_v120": return None
                             if not weekly: return None
                             dates = [d for d in weather_data.keys() if d != "__weekly__" and d != "_version" and d != "__is_dummy__"]
                             if not dates: return None
@@ -749,7 +729,7 @@ def save_cached_weather(spot_name, weather_data):
         return
     
     now = datetime.now(timezone.utc)
-    weather_data["_version"] = "settings_shortcut_v119"
+    weather_data["_version"] = "settings_shortcut_v120"
     MEMORY_CACHE[spot_name] = (weather_data, now)
     if not supabase: return
     try:
@@ -929,7 +909,8 @@ def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_
         return {"type": "box", "layout": "vertical", "backgroundColor": header_color, "paddingAll": "10px", "contents": header_contents}
 
     weekly_box_1 = create_weekly_box(weekly_data[0:4]) if len(weekly_data) > 0 else None
-    weekly_box_2 = create_weekly_box(weekly_data[4:8]) if len(weekly_data) > 4 else None
+    
+    # ★ 右側のカード（週間予報枠）を完全に削除するための変更
     banner_img_url = "https://raw.githubusercontent.com/harackgm/fishing-weather-bot/main/tenkiharackbana.jpg"
 
     bottom_buttons_1 = [{"type": "box", "layout": "vertical", "flex": 1, "backgroundColor": "#fff59d", "borderWidth": "normal", "borderColor": "#d4af37", "cornerRadius": "md", "paddingAll": "0px", "contents": [{"type": "button", "action": {"type": "postback", "label": "📋 一覧", "data": "action=show_list", "displayText": "📋 一覧"}, "style": "link", "color": "#555555", "height": "sm", "margin": "none"}]}]
@@ -945,10 +926,8 @@ def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_
         bottom_block_contents_1.append(weekly_box_1)
     bottom_block_contents_1.extend([{"type": "separator", "margin": "md"}, {"type": "image", "url": banner_img_url, "size": "full", "aspectRatio": "3:1", "aspectMode": "cover", "margin": "md"}, {"type": "separator", "margin": "md"}, {"type": "box", "layout": "horizontal", "margin": "sm", "spacing": "sm", "contents": bottom_buttons_1}])
 
+    # ★ 2枚目のカードは週間予報枠を差し込まず、直接バナー等を表示する
     bottom_block_contents_2 = []
-    if weekly_box_2:
-        bottom_block_contents_2.append({"type": "separator", "margin": "md"})
-        bottom_block_contents_2.append(weekly_box_2)
     bottom_block_contents_2.extend([{"type": "separator", "margin": "md"}, {"type": "image", "url": banner_img_url, "size": "full", "aspectRatio": "3:1", "aspectMode": "cover", "margin": "md"}, {"type": "separator", "margin": "md"}, {"type": "box", "layout": "horizontal", "margin": "sm", "spacing": "sm", "contents": bottom_buttons_2}])
 
     bubbles = []
