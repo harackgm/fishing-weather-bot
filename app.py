@@ -33,22 +33,31 @@ if SUPABASE_URL and SUPABASE_KEY:
 
 MEMORY_CACHE = {}
 
-# 都道府県コードから気象庁APIのコードへの変換用辞書
+# ★ バグ修正：全国47都道府県のコードを1件の漏れもなく完全にマッピング
 PREF_TO_JMA = {
-    "4": "040000", "5": "050000", "7": "070000", "8": "080000", "12": "090000",
-    "13": "100000", "14": "110000", "15": "120000", "16": "130000", "17": "140000",
-    "18": "150000", "22": "190000", "23": "200000", "24": "210000", "25": "220000",
-    "26": "230000", "27": "240000", "28": "250000", "30": "270000", "31": "290000",
-    "32": "300000", "38": "350000", "43": "400000"
+    "1": "016000", "2": "014100", "3": "012000", "4": "011000",
+    "5": "020000", "6": "030000", "7": "040000", "8": "050000", "9": "060000", "10": "070000",
+    "11": "080000", "12": "090000", "13": "100000", "14": "110000", "15": "120000", "16": "130000", "17": "140000",
+    "18": "150000", "19": "160000", "20": "170000", "21": "180000", "22": "190000", "23": "200000",
+    "24": "210000", "25": "220000", "26": "230000", "27": "240000", "28": "250000", "29": "260000",
+    "30": "270000", "31": "280000", "32": "290000", "33": "300000", "34": "310000", "35": "320000",
+    "36": "330000", "37": "340000", "38": "350000", "39": "360000", "40": "370000", "41": "380000",
+    "42": "390000", "43": "400000", "44": "410000", "45": "420000", "46": "430000", "47": "440000",
+    "48": "450000", "49": "460100", "50": "471000"
 }
 
-# JMAコードから都道府県名への変換用辞書（フィルタリング用）
+# ★ 防災情報のフィルタリング用辞書も全国分を完全網羅
 PREF_NAMES = {
-    "040000": "宮城", "050000": "秋田", "070000": "福島", "080000": "茨城", "090000": "栃木",
-    "100000": "群馬", "110000": "埼玉", "120000": "千葉", "130000": "東京", "140000": "神奈川",
-    "150000": "新潟", "190000": "山梨", "200000": "長野", "210000": "岐阜", "220000": "静岡",
-    "230000": "愛知", "240000": "三重", "250000": "滋賀", "270000": "大阪", "290000": "奈良",
-    "300000": "和歌山", "350000": "山口", "400000": "福岡"
+    "011000": "北海道", "012000": "北海道", "014100": "北海道", "016000": "北海道",
+    "020000": "青森", "030000": "岩手", "040000": "宮城", "050000": "秋田", "060000": "山形", "070000": "福島",
+    "080000": "茨城", "090000": "栃木", "100000": "群馬", "110000": "埼玉", "120000": "千葉", "130000": "東京", "140000": "神奈川",
+    "150000": "新潟", "160000": "富山", "170000": "石川", "180000": "福井", "190000": "山梨", "200000": "長野",
+    "210000": "岐阜", "220000": "静岡", "230000": "愛知", "240000": "三重",
+    "250000": "滋賀", "260000": "京都", "270000": "大阪", "280000": "兵庫", "290000": "奈良", "300000": "和歌山",
+    "310000": "鳥取", "320000": "島根", "330000": "岡山", "340000": "広島", "350000": "山口",
+    "360000": "徳島", "370000": "香川", "380000": "愛媛", "390000": "高知",
+    "400000": "福岡", "410000": "佐賀", "420000": "長崎", "430000": "熊本", "440000": "大分", "450000": "宮崎", "460100": "鹿児島",
+    "471000": "沖縄"
 }
 
 def normalize_name(name_str):
@@ -332,7 +341,7 @@ def get_user_setting(user_id):
             rename_map = {
                 "七色ダム": "池原七色ダム", "キング": "キングフィッシャー", "ツガネ": "JF in Tsugane",
                 "キングダム": "川場キングダム", "イワセン": "イワナセンター", "鹿島やり": "鹿島槍",
-                "アルクス宇宇都宮": "アルクス宇宇都宮", "片仓ダム": "片倉ダム", "多田良沼": "多々良沼",
+                "アルクス宇宇都宮": "アルクス宇都宮", "片仓ダム": "片倉ダム", "多田良沼": "多々良沼",
                 "那須烏山": "那須鳥山", "柏崎": "霞ケ浦柏崎", "霞ケ浦西浦": "土浦港", "ＭＡＶ": "宮城", "GP不忘": "不忘"
             }
             
@@ -629,7 +638,6 @@ def fetch_weekly_data_from_jma(tenki_url, raw_exclude_dates):
         print(f"[JMA API Error] {e}")
         return []
 
-# ★ 地域限定（釣り場と同一都道府県）の防災情報抽出関数
 def fetch_disaster_info(tenki_url):
     if not tenki_url: return {}
     m = re.search(r'forecast/\d+/(\d+)/', tenki_url)
@@ -638,7 +646,7 @@ def fetch_disaster_info(tenki_url):
     jma_code = PREF_TO_JMA.get(pref_id)
     if not jma_code: return {}
 
-    pref_name = PREF_NAMES.get(jma_code, "") # 対象の都道府県名（例: "長野"）
+    pref_name = PREF_NAMES.get(jma_code, "")
 
     warnings_list = []
     quake_str = None
@@ -646,7 +654,6 @@ def fetch_disaster_info(tenki_url):
 
     headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
 
-    # 1. 警報・注意報（元々対象都道府県に限定）
     try:
         url = f"https://www.jma.go.jp/bosai/warning/data/warning/{jma_code}.json"
         res = requests.get(url, headers=headers, timeout=2.0)
@@ -672,14 +679,12 @@ def fetch_disaster_info(tenki_url):
             warnings_list = list(dict.fromkeys(warnings_list))
     except: pass
 
-    # 2. 地震情報（同一都道府県に関連する地震のみ抽出）
     try:
         url = "https://www.jma.go.jp/bosai/quake/data/list.json"
         res = requests.get(url, headers=headers, timeout=2.0)
         if res.status_code == 200:
             data = res.json()
             for eq in data:
-                # 震央地名(anm)または詳細テキスト内に都道府県名が含まれるか確認
                 anm = eq.get("anm", "")
                 full_text = str(eq)
                 if pref_name and (pref_name in anm or pref_name in full_text):
@@ -690,10 +695,9 @@ def fetch_disaster_info(tenki_url):
                         mag = eq.get("mag", "")
                         maxi = eq.get("maxi", "")
                         quake_str = f"{dt_formatted} {anm} (震度{maxi}/M{mag})"
-                        break # 該当する最新の1件を取得したら終了
+                        break
     except: pass
 
-    # 3. 火山情報（同一都道府県内の火山のみ抽出）
     try:
         url = "https://www.jma.go.jp/bosai/volcano/data/list.json"
         res = requests.get(url, headers=headers, timeout=2.0)
@@ -712,7 +716,7 @@ def fetch_disaster_info(tenki_url):
 
 def fetch_spot_1hour_data(url, tenki_url=None):
     try:
-        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
+        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}
         response = requests.get(url, headers=headers, timeout=3.8)
         response.raise_for_status()
         soup = BeautifulSoup(response.text, 'html.parser')
@@ -783,7 +787,7 @@ def get_cached_weather(spot_name):
         if now - updated_time <= timedelta(hours=2):
             if isinstance(data, dict):
                 weekly = data.get("__weekly__", [])
-                if data.get("_version") != "settings_shortcut_v125": return None
+                if data.get("_version") != "settings_shortcut_v126": return None
                 if not weekly: return None
                 dates = [d for d in data.keys() if d != "__weekly__" and d != "_version" and d != "__is_dummy__" and d != "__disaster__"]
                 if not dates: return None
@@ -802,7 +806,7 @@ def get_cached_weather(spot_name):
                         weather_data = row.get('weather_data')
                         if isinstance(weather_data, dict):
                             weekly = weather_data.get("__weekly__", [])
-                            if weather_data.get("_version") != "settings_shortcut_v125": return None
+                            if weather_data.get("_version") != "settings_shortcut_v126": return None
                             if not weekly: return None
                             dates = [d for d in weather_data.keys() if d != "__weekly__" and d != "_version" and d != "__is_dummy__" and d != "__disaster__"]
                             if not dates: return None
@@ -819,7 +823,7 @@ def save_cached_weather(spot_name, weather_data):
         return
     
     now = datetime.now(timezone.utc)
-    weather_data["_version"] = "settings_shortcut_v125"
+    weather_data["_version"] = "settings_shortcut_v126"
     MEMORY_CACHE[spot_name] = (weather_data, now)
     if not supabase: return
     try:
@@ -1078,9 +1082,10 @@ def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_
         body_1_contents.append(weekly_box_1)
 
     body_2_contents = [{"type": "box", "layout": "horizontal", "spacing": "sm", "contents": [create_day_column(dates[2] if len(dates)>2 else None), {"type": "separator"}, create_day_column(dates[3] if len(dates)>3 else None)]}]
-    if weekly_box_1:
-        body_2_contents.append({"type": "separator", "margin": "md", "color": "#00000000"})
-        body_2_contents.append(create_disaster_box(disaster_data))
+    
+    # ★ 常に防災パネルを表示し、高さを安定させる
+    body_2_contents.append({"type": "separator", "margin": "md", "color": "#00000000"})
+    body_2_contents.append(create_disaster_box(disaster_data))
 
     bubbles = []
     if len(dates) > 0:
