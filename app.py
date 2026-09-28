@@ -166,8 +166,10 @@ def build_settings_flex_message(fav_list, mode="trout"):
     for i in range(0, len(filtered_favs), chunk_size):
         chunk = filtered_favs[i:i + chunk_size]
         rows = []
+        
         rows.append(switch_btn)
         rows.append({"type": "separator", "margin": "md"})
+        
         rows.append({
             "type": "box", "layout": "horizontal", "spacing": "xs", "paddingTop": "10px", "paddingBottom": "10px",
             "contents": [
@@ -531,8 +533,14 @@ def fetch_weekly_data_from_api(lat, lon, raw_exclude_dates):
 
 def fetch_weekly_data_from_tenki(tenki_url, raw_exclude_dates):
     try:
-        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
-        response = requests.get(tenki_url, headers=headers, timeout=3.0)
+        # ★ tenki.jpのBotブロックをすり抜けるための強力なブラウザ偽装ヘッダーを追加
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+            'Accept-Language': 'ja,en-US;q=0.9,en;q=0.8',
+            'Referer': 'https://tenki.jp/'
+        }
+        response = requests.get(tenki_url, headers=headers, timeout=5.0)
         response.raise_for_status()
         soup = BeautifulSoup(response.text, 'html.parser')
         
@@ -665,7 +673,7 @@ def get_cached_weather(spot_name):
         if now - updated_time <= timedelta(hours=2):
             if isinstance(data, dict):
                 weekly = data.get("__weekly__", [])
-                if data.get("_version") != "settings_shortcut_v98": return None
+                if data.get("_version") != "settings_shortcut_v99": return None
                 if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-": return None
                 dates = [d for d in data.keys() if d != "__weekly__" and d != "_version"]
                 if not dates: return None
@@ -684,7 +692,7 @@ def get_cached_weather(spot_name):
                         weather_data = row.get('weather_data')
                         if isinstance(weather_data, dict):
                             weekly = weather_data.get("__weekly__", [])
-                            if weather_data.get("_version") != "settings_shortcut_v98": return None
+                            if weather_data.get("_version") != "settings_shortcut_v99": return None
                             if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-": return None
                             dates = [d for d in weather_data.keys() if d != "__weekly__" and d != "_version"]
                             if not dates: return None
@@ -698,7 +706,7 @@ def get_cached_weather(spot_name):
 
 def save_cached_weather(spot_name, weather_data):
     now = datetime.now(timezone.utc)
-    weather_data["_version"] = "settings_shortcut_v98"
+    weather_data["_version"] = "settings_shortcut_v99"
     MEMORY_CACHE[spot_name] = (weather_data, now)
     if not supabase: return
     try:
