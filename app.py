@@ -166,10 +166,8 @@ def build_settings_flex_message(fav_list, mode="trout"):
     for i in range(0, len(filtered_favs), chunk_size):
         chunk = filtered_favs[i:i + chunk_size]
         rows = []
-        
         rows.append(switch_btn)
         rows.append({"type": "separator", "margin": "md"})
-        
         rows.append({
             "type": "box", "layout": "horizontal", "spacing": "xs", "paddingTop": "10px", "paddingBottom": "10px",
             "contents": [
@@ -489,104 +487,49 @@ def extract_lat_lon(url):
     return None, None
 
 def fetch_weekly_data_from_api(lat, lon, raw_exclude_dates):
-    try:
-        api_url = f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&daily=weathercode,temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=Asia%2FTokyo&forecast_days=14"
-        res = requests.get(api_url, timeout=5.0)
-        res.raise_for_status()
-        data = res.json()
-        
-        daily = data.get("daily", {})
-        times = daily.get("time", [])
-        weathercodes = daily.get("weathercode", [])
-        temp_max = daily.get("temperature_2m_max", [])
-        temp_min = daily.get("temperature_2m_min", [])
-        rain_probs = daily.get("precipitation_probability_max", [])
-        
-        weekly_data = []
-        now_jst_date = datetime.now(timezone(timedelta(hours=9))).date()
-        last_wn_date = guess_date_from_string(raw_exclude_dates[-1], now_jst_date) if raw_exclude_dates else None
+    for attempt in range(2):
+        try:
+            api_url = f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&daily=weathercode,temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=Asia%2FTokyo&forecast_days=14"
+            res = requests.get(api_url, timeout=7.0)
+            res.raise_for_status()
+            data = res.json()
+            
+            daily = data.get("daily", {})
+            times = daily.get("time", [])
+            weathercodes = daily.get("weathercode", [])
+            temp_max = daily.get("temperature_2m_max", [])
+            temp_min = daily.get("temperature_2m_min", [])
+            rain_probs = daily.get("precipitation_probability_max", [])
+            
+            weekly_data = []
+            now_jst_date = datetime.now(timezone(timedelta(hours=9))).date()
+            last_wn_date = guess_date_from_string(raw_exclude_dates[-1], now_jst_date) if raw_exclude_dates else None
 
-        for i in range(min(len(times), 14)):
-            dt = datetime.strptime(times[i], "%Y-%m-%d").date()
-            if last_wn_date and dt <= last_wn_date: continue
+            for i in range(min(len(times), 14)):
+                dt = datetime.strptime(times[i], "%Y-%m-%d").date()
+                if last_wn_date and dt <= last_wn_date: continue
+                    
+                w_str = ["(月)", "(火)", "(水)", "(木)", "(金)", "(土)", "(日)"][dt.weekday()]
+                date_label = f"{dt.day}{w_str}"
                 
-            w_str = ["(月)", "(火)", "(水)", "(木)", "(金)", "(土)", "(日)"][dt.weekday()]
-            date_label = f"{dt.day}{w_str}"
-            
-            code = weathercodes[i] if i < len(weathercodes) and weathercodes[i] is not None else 0
-            if code in [0, 1]: img_url = "https://gvs.weathernews.jp/onebox/img/wxicon/100.png"
-            elif code in [2, 3, 45, 48]: img_url = "https://gvs.weathernews.jp/onebox/img/wxicon/200.png"
-            elif code in [71, 73, 75, 77, 85, 86]: img_url = "https://gvs.weathernews.jp/onebox/img/wxicon/400.png"
-            else: img_url = "https://gvs.weathernews.jp/onebox/img/wxicon/300.png"
-            
-            t_max = str(round(temp_max[i])) if i < len(temp_max) and temp_max[i] is not None else "-"
-            t_min = str(round(temp_min[i])) if i < len(temp_min) and temp_min[i] is not None else "-"
-            
-            r_prob = f"{round(rain_probs[i])}%" if i < len(rain_probs) and rain_probs[i] is not None else "-"
-            
-            weekly_data.append({"date": date_label, "img_url": img_url, "temp_max": t_max, "temp_min": t_min, "rain_prob": r_prob})
-            if len(weekly_data) >= 8: break
-        return weekly_data
-    except Exception as e:
-        print(f"[Open-Meteo API Error] {e}")
-        return []
-
-def fetch_weekly_data_from_tenki(tenki_url, raw_exclude_dates):
-    try:
-        # ★ tenki.jpのBotブロックをすり抜けるための強力なブラウザ偽装ヘッダーを追加
-        headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-            'Accept-Language': 'ja,en-US;q=0.9,en;q=0.8',
-            'Referer': 'https://tenki.jp/'
-        }
-        response = requests.get(tenki_url, headers=headers, timeout=5.0)
-        response.raise_for_status()
-        soup = BeautifulSoup(response.text, 'html.parser')
-        
-        weekly_data = []
-        now_jst_date = datetime.now(timezone(timedelta(hours=9))).date()
-        last_wn_date = guess_date_from_string(raw_exclude_dates[-1], now_jst_date) if raw_exclude_dates else None
-            
-        elems = soup.select('.forecast10days-actab, .forecast14days-actab')
-        for elem in elems:
-            days_elem = elem.find('div', class_='days')
-            forecast_elem = elem.find('div', class_='forecast')
-            temp_elem = elem.find('div', class_='temp')
-            prob_elem = elem.find('div', class_='prob-precip')
-            
-            if not (days_elem and temp_elem): continue
-            raw_days = days_elem.get_text(strip=True) 
-            tenki_date = guess_date_from_string(raw_days, now_jst_date)
-            if last_wn_date and tenki_date <= last_wn_date: continue
-
-            m = re.search(r'(\d{1,2})[月/](\d{1,2})日?\((.+?)\)', raw_days)
-            if m:
-                date_label = f"{m.group(2)}({m.group(3)})"
-            else:
-                date_label = raw_days
+                code = weathercodes[i] if i < len(weathercodes) and weathercodes[i] is not None else 0
+                if code in [0, 1]: img_url = "https://gvs.weathernews.jp/onebox/img/wxicon/100.png"
+                elif code in [2, 3, 45, 48]: img_url = "https://gvs.weathernews.jp/onebox/img/wxicon/200.png"
+                elif code in [71, 73, 75, 77, 85, 86]: img_url = "https://gvs.weathernews.jp/onebox/img/wxicon/400.png"
+                else: img_url = "https://gvs.weathernews.jp/onebox/img/wxicon/300.png"
                 
-            high_elem = temp_elem.find('span', class_='high-temp')
-            low_elem = temp_elem.find('span', class_='low-temp')
-            t_max = high_elem.get_text(strip=True).replace('℃', '').strip() if high_elem else "-"
-            t_min = low_elem.get_text(strip=True).replace('℃', '').strip() if low_elem else "-"
-            r_prob = prob_elem.get_text(strip=True) if prob_elem else "-"
-            
-            img_tag = forecast_elem.find('img') if forecast_elem else None
-            img_src = img_tag['src'] if img_tag and 'src' in img_tag.attrs else ""
-            
-            if '01' in img_src or '02' in img_src or '100' in img_src: final_img = "https://gvs.weathernews.jp/onebox/img/wxicon/100.png"
-            elif '08' in img_src or '09' in img_src or '12' in img_src or '200' in img_src: final_img = "https://gvs.weathernews.jp/onebox/img/wxicon/200.png"
-            elif '雨' in img_src or 'rain' in img_src or '300' in img_src or '20' in img_src or '46' in img_src: final_img = "https://gvs.weathernews.jp/onebox/img/wxicon/300.png"
-            elif 'snow' in img_src or '400' in img_src: final_img = "https://gvs.weathernews.jp/onebox/img/wxicon/400.png"
-            else: final_img = "https://gvs.weathernews.jp/onebox/img/wxicon/200.png"
+                t_max = str(round(temp_max[i])) if i < len(temp_max) and temp_max[i] is not None else "-"
+                t_min = str(round(temp_min[i])) if i < len(temp_min) and temp_min[i] is not None else "-"
                 
-            weekly_data.append({"date": date_label, "img_url": final_img, "temp_max": t_max, "temp_min": t_min, "rain_prob": r_prob})
-            if len(weekly_data) >= 8: break
-        return weekly_data
-    except Exception as e:
-        print(f"[tenki.jp Extract Error] {e}")
-        return []
+                r_prob = f"{round(rain_probs[i])}%" if i < len(rain_probs) and rain_probs[i] is not None else "-"
+                
+                weekly_data.append({"date": date_label, "img_url": img_url, "temp_max": t_max, "temp_min": t_min, "rain_prob": r_prob})
+                if len(weekly_data) >= 8: break
+            return weekly_data
+        except Exception as e:
+            print(f"[Open-Meteo API Error - Attempt {attempt+1}] {e}")
+            time.sleep(1)
+    return []
 
 def fetch_spot_1hour_data(url, tenki_url=None):
     try:
@@ -642,10 +585,11 @@ def fetch_spot_1hour_data(url, tenki_url=None):
 
         raw_exclude_dates = list(weather_by_date.keys())
         weekly_data = []
-        if tenki_url: weekly_data = fetch_weekly_data_from_tenki(tenki_url, raw_exclude_dates)
-        if not weekly_data:
-            lat, lon = extract_lat_lon(url)
-            if lat and lon: weekly_data = fetch_weekly_data_from_api(lat, lon, raw_exclude_dates)
+        
+        # ★ tenki.jpのスクレイピングを完全廃止し、安定したOpen-Meteo APIに一本化
+        lat, lon = extract_lat_lon(url)
+        if lat and lon:
+            weekly_data = fetch_weekly_data_from_api(lat, lon, raw_exclude_dates)
 
         if not weekly_data or len(weekly_data) < 4:
             now_dt = datetime.now(timezone(timedelta(hours=9)))
@@ -658,6 +602,8 @@ def fetch_spot_1hour_data(url, tenki_url=None):
                 day_dt = start_date + timedelta(days=i)
                 w_str = ["(月)", "(火)", "(水)", "(木)", "(金)", "(土)", "(日)"][day_dt.weekday()]
                 weekly_data.append({"date": f"{day_dt.day}{w_str}", "img_url": "https://gvs.weathernews.jp/onebox/img/wxicon/200.png", "temp_max": "-", "temp_min": "-", "rain_prob": "-"})
+            # ★ APIエラー時の一時的なダミーはキャッシュに保存させないための安全フラグ
+            weather_by_date["__is_dummy__"] = True
 
         weather_by_date["__weekly__"] = weekly_data
         return weather_by_date
@@ -673,7 +619,7 @@ def get_cached_weather(spot_name):
         if now - updated_time <= timedelta(hours=2):
             if isinstance(data, dict):
                 weekly = data.get("__weekly__", [])
-                if data.get("_version") != "settings_shortcut_v99": return None
+                if data.get("_version") != "settings_shortcut_v100": return None
                 if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-": return None
                 dates = [d for d in data.keys() if d != "__weekly__" and d != "_version"]
                 if not dates: return None
@@ -692,7 +638,7 @@ def get_cached_weather(spot_name):
                         weather_data = row.get('weather_data')
                         if isinstance(weather_data, dict):
                             weekly = weather_data.get("__weekly__", [])
-                            if weather_data.get("_version") != "settings_shortcut_v99": return None
+                            if weather_data.get("_version") != "settings_shortcut_v100": return None
                             if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-": return None
                             dates = [d for d in weather_data.keys() if d != "__weekly__" and d != "_version"]
                             if not dates: return None
@@ -705,8 +651,12 @@ def get_cached_weather(spot_name):
         return None
 
 def save_cached_weather(spot_name, weather_data):
+    # ★ エラーでダミー状態になったデータをキャッシュに閉じ込めない安全装置
+    if weather_data.get("__is_dummy__"):
+        return
+    
     now = datetime.now(timezone.utc)
-    weather_data["_version"] = "settings_shortcut_v99"
+    weather_data["_version"] = "settings_shortcut_v100"
     MEMORY_CACHE[spot_name] = (weather_data, now)
     if not supabase: return
     try:
@@ -715,7 +665,7 @@ def save_cached_weather(spot_name, weather_data):
 
 def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_url="", tel="", x_url="", fb_url="", insta_url="", blog_url="", yt_url="", is_favorite=False):
     weekly_data = weather_data.get("__weekly__", []) if isinstance(weather_data, dict) else []
-    dates = [d for d in weather_data.keys() if d != "__weekly__" and d != "_version"]
+    dates = [d for d in weather_data.keys() if d != "__weekly__" and d != "_version" and d != "__is_dummy__"]
     weather_by_date = weather_data
     jst = timezone(timedelta(hours=9))
     now_jst_date = datetime.now(jst).date()
