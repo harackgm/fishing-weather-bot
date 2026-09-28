@@ -323,7 +323,7 @@ def get_user_setting(user_id):
             rename_map = {
                 "七色ダム": "池原七色ダム", "キング": "キングフィッシャー", "ツガネ": "JF in Tsugane",
                 "キングダム": "川場キングダム", "イワセン": "イワナセンター", "鹿島やり": "鹿島槍",
-                "アルクス宇宇都宮": "アルクス宇都宮", "片仓ダム": "片倉ダム", "多田良沼": "多々良沼",
+                "アルクス宇宇都宮": "アルクス宇都宮", "片仓ダム": "片仓ダム", "多田良沼": "多々良沼",
                 "那須烏山": "那須鳥山", "柏崎": "霞ケ浦柏崎", "霞ケ浦西浦": "土浦港", "ＭＡＶ": "宮城", "GP不忘": "不忘"
             }
             
@@ -526,7 +526,7 @@ def fetch_weekly_data_from_jma(tenki_url, raw_exclude_dates):
 
     try:
         url = f"https://www.jma.go.jp/bosai/forecast/data/forecast/{jma_code}.json"
-        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
+        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
         res = requests.get(url, headers=headers, timeout=5.0)
         res.raise_for_status()
         data = res.json()
@@ -620,9 +620,82 @@ def fetch_weekly_data_from_jma(tenki_url, raw_exclude_dates):
         print(f"[JMA API Error] {e}")
         return []
 
+# 防災情報取得関数（気象警報、地震、火山を安全に抽出）
+def fetch_disaster_info(tenki_url):
+    if not tenki_url: return {}
+    m = re.search(r'forecast/\d+/(\d+)/', tenki_url)
+    if not m: return {}
+    pref_id = m.group(1)
+    jma_code = PREF_TO_JMA.get(pref_id)
+    if not jma_code: return {}
+
+    warnings_list = []
+    quake_str = None
+    volcano_str = None
+
+    headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
+
+    # 1. 気象警報・注意報
+    try:
+        url = f"https://www.jma.go.jp/bosai/warning/data/warning/{jma_code}.json"
+        res = requests.get(url, headers=headers, timeout=2.0)
+        if res.status_code == 200:
+            data = res.json()
+            code_map = {
+                "02": "暴風雪警報", "03": "大雨警報", "04": "洪水警報", "05": "暴風警報",
+                "06": "大雪警報", "07": "波浪警報", "08": "高潮警報", "10": "大雨注意報",
+                "12": "大雪注意報", "13": "風雪注意報", "14": "雷注意報", "15": "強風注意報",
+                "16": "波浪注意報", "17": "融雪注意報", "18": "洪水注意報", "19": "高潮注意報",
+                "20": "濃霧注意報", "21": "乾燥注意報", "22": "なだれ注意報", "23": "低温注意報",
+                "24": "霜注意報", "25": "着氷注意報", "26": "着雪注意報", "32": "暴風雪特別警報",
+                "33": "大雨特別警報", "35": "暴風特別警報", "36": "大雪特別警報", "37": "波浪特別警報",
+                "38": "高潮特別警報"
+            }
+            if "areaTypes" in data and len(data["areaTypes"]) > 0:
+                areas = data["areaTypes"][0].get("areas", [])
+                if areas:
+                    warnings = areas[0].get("warnings", [])
+                    for w in warnings:
+                        if w.get("status") != "解除" and w.get("code") in code_map:
+                            warnings_list.append(code_map[w["code"]])
+            warnings_list = list(dict.fromkeys(warnings_list))
+    except: pass
+
+    # 2. 地震情報 (全国最新)
+    try:
+        url = "https://www.jma.go.jp/bosai/quake/data/list.json"
+        res = requests.get(url, headers=headers, timeout=2.0)
+        if res.status_code == 200:
+            data = res.json()
+            if data and len(data) > 0:
+                latest = data[0]
+                dt_str = latest.get("at", latest.get("rdt", ""))
+                if dt_str:
+                    dt = datetime.fromisoformat(dt_str)
+                    dt_formatted = f"{dt.month}/{dt.day} {dt.hour}:{dt.minute:02d}"
+                    place = latest.get("anm", "不明")
+                    mag = latest.get("mag", "")
+                    maxi = latest.get("maxi", "")
+                    quake_str = f"{dt_formatted} {place} (震度{maxi}/M{mag})"
+    except: pass
+
+    # 3. 火山情報 (全国最新)
+    try:
+        url = "https://www.jma.go.jp/bosai/volcano/data/list.json"
+        res = requests.get(url, headers=headers, timeout=2.0)
+        if res.status_code == 200:
+            data = res.json()
+            if data and len(data) > 0:
+                latest = data[0]
+                volcano_str = latest.get("tit", "")
+                if len(volcano_str) > 15: volcano_str = volcano_str[:14] + "…"
+    except: pass
+
+    return {"warnings": warnings_list, "quake": quake_str, "volcano": volcano_str}
+
 def fetch_spot_1hour_data(url, tenki_url=None):
     try:
-        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}
+        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
         response = requests.get(url, headers=headers, timeout=3.8)
         response.raise_for_status()
         soup = BeautifulSoup(response.text, 'html.parser')
@@ -678,8 +751,9 @@ def fetch_spot_1hour_data(url, tenki_url=None):
         if tenki_url:
             weekly_data = fetch_weekly_data_from_jma(tenki_url, raw_exclude_dates)
 
-        # 削除指示があったため残りの穴埋めは行わず、取れた分だけをそのまま返す
         weather_by_date["__weekly__"] = weekly_data
+        # ★ 防災情報を取得してキャッシュデータに含める
+        weather_by_date["__disaster__"] = fetch_disaster_info(tenki_url)
         return weather_by_date
     except requests.exceptions.Timeout: return None
     except Exception as e:
@@ -693,9 +767,9 @@ def get_cached_weather(spot_name):
         if now - updated_time <= timedelta(hours=2):
             if isinstance(data, dict):
                 weekly = data.get("__weekly__", [])
-                if data.get("_version") != "settings_shortcut_v122": return None
+                if data.get("_version") != "settings_shortcut_v123": return None
                 if not weekly: return None
-                dates = [d for d in data.keys() if d != "__weekly__" and d != "_version" and d != "__is_dummy__"]
+                dates = [d for d in data.keys() if d != "__weekly__" and d != "_version" and d != "__is_dummy__" and d != "__disaster__"]
                 if not dates: return None
             return data
             
@@ -712,9 +786,9 @@ def get_cached_weather(spot_name):
                         weather_data = row.get('weather_data')
                         if isinstance(weather_data, dict):
                             weekly = weather_data.get("__weekly__", [])
-                            if weather_data.get("_version") != "settings_shortcut_v122": return None
+                            if weather_data.get("_version") != "settings_shortcut_v123": return None
                             if not weekly: return None
-                            dates = [d for d in weather_data.keys() if d != "__weekly__" and d != "_version" and d != "__is_dummy__"]
+                            dates = [d for d in weather_data.keys() if d != "__weekly__" and d != "_version" and d != "__is_dummy__" and d != "__disaster__"]
                             if not dates: return None
                         MEMORY_CACHE[spot_name] = (weather_data, updated_time)
                         return weather_data
@@ -729,42 +803,60 @@ def save_cached_weather(spot_name, weather_data):
         return
     
     now = datetime.now(timezone.utc)
-    weather_data["_version"] = "settings_shortcut_v122"
+    weather_data["_version"] = "settings_shortcut_v123"
     MEMORY_CACHE[spot_name] = (weather_data, now)
     if not supabase: return
     try:
         supabase.table('weather_cache').upsert({'spot_name': spot_name, 'weather_data': weather_data, 'updated_at': now.isoformat()}).execute()
     except Exception as e: print(f"[Cache SAVE Error] {e}")
 
-# 段差を解消するための透明スペーサー生成関数
-def create_empty_weekly_spacer():
-    cols = []
-    for _ in range(4):
-        cols.append({
-            "type": "box", 
-            "layout": "vertical", 
-            "flex": 1, 
-            "alignItems": "center", 
-            "spacing": "xs",
-            "contents": [
-                {"type": "text", "text": " ", "size": "xxs"},
-                {"type": "image", "url": "https://scdn.line-apps.com/n/channel_devcenter/img/transparent.png", "size": "xs", "aspectMode": "fit"},
-                {"type": "text", "text": " ", "size": "xxs"},
-                {"type": "text", "text": " ", "size": "xxs"}
-            ]
+# 防災情報を綺麗に表示し、高さを固定する関数
+def create_disaster_box(disaster_data):
+    contents = []
+    contents.append({
+        "type": "text", "text": "⚠️ リアルタイム防災情報", "weight": "bold", "size": "xs", "color": "#e53935"
+    })
+    
+    lines_added = 0
+    warnings = disaster_data.get("warnings", [])
+    if warnings:
+        warn_text = "・" + " / ".join(warnings)
+        contents.append({
+            "type": "text", "text": warn_text, "size": "xxs", "wrap": True, "color": "#ff9800", "weight": "bold", "maxLines": 2
         })
+        lines_added += 2
+    else:
+        contents.append({
+            "type": "text", "text": "✅ 警報・注意報の発表なし", "size": "xxs", "color": "#4caf50"
+        })
+        lines_added += 1
+        
+    contents.append({"type": "separator", "margin": "xs"})
+    
+    quake = disaster_data.get("quake")
+    if quake and lines_added < 4:
+        contents.append({
+            "type": "text", "text": f"【地震】{quake}", "size": "xxs", "wrap": True, "color": "#555555", "maxLines": 1
+        })
+        lines_added += 1
+        contents.append({"type": "separator", "margin": "xs"})
+
+    volcano = disaster_data.get("volcano")
+    if volcano and lines_added < 5:
+        contents.append({
+            "type": "text", "text": f"【火山】{volcano}", "size": "xxs", "wrap": True, "color": "#555555", "maxLines": 1
+        })
+
     return {
-        "type": "box", 
-        "layout": "horizontal", 
-        "margin": "md", 
-        "spacing": "xs", 
-        "paddingAll": "8px", 
-        "contents": cols
+        "type": "box", "layout": "vertical", "margin": "md", "paddingAll": "8px",
+        "backgroundColor": "#fffde7", "cornerRadius": "sm", "borderColor": "#ffd54f", "borderWidth": "normal",
+        "spacing": "xs", "contents": contents, "height": "90px"
     }
 
 def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_url="", tel="", x_url="", fb_url="", insta_url="", blog_url="", yt_url="", is_favorite=False):
     weekly_data = weather_data.get("__weekly__", []) if isinstance(weather_data, dict) else []
-    dates = [d for d in weather_data.keys() if d != "__weekly__" and d != "_version" and d != "__is_dummy__"]
+    disaster_data = weather_data.get("__disaster__", {}) if isinstance(weather_data, dict) else {}
+    dates = [d for d in weather_data.keys() if d != "__weekly__" and d != "_version" and d != "__is_dummy__" and d != "__disaster__"]
     weather_by_date = weather_data
     jst = timezone(timedelta(hours=9))
     now_jst_date = datetime.now(jst).date()
@@ -963,8 +1055,9 @@ def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_
         bottom_block_contents_2.append({"type": "separator", "margin": "md"})
         bottom_block_contents_2.append(weekly_box_2)
     elif weekly_box_1:
+        # ★ 左側のカードに週間予報がある場合、右側の同じ位置に防災情報パネルを挿入する
         bottom_block_contents_2.append({"type": "separator", "margin": "md", "color": "#00000000"})
-        bottom_block_contents_2.append(create_empty_weekly_spacer())
+        bottom_block_contents_2.append(create_disaster_box(disaster_data))
         
     bottom_block_contents_2.extend([
         {"type": "separator", "margin": "md"}, 
