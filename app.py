@@ -53,18 +53,17 @@ def convert_to_10days_url(url_str):
 
 def get_spot_details(spot_key):
     data = ALL_SPOT_DATA.get(spot_key)
-    if not data: return spot_key, None, "", "", "", "", "", "", "", "", "", None, None
+    if not data: return spot_key, None, "", "", "", "", "", "", "", "", "", None
     map_url = data.get("map_url")
     if not map_url:
         search_q = data.get('search_name', spot_key)
         map_url = f"https://www.google.com/maps/search/?api=1&query={quote(search_q)}"
     tenki_10days_url = convert_to_10days_url(data.get("tenki_url"))
-    yahoo_url = data.get("yahoo_url", "")
     return (
         spot_key, data["url"], clean_url(data.get("hp_url", "")), clean_url(data.get("hp2_url", "")), 
         map_url, data.get("tel", ""), clean_url(data.get("x_url", "")), clean_url(data.get("fb_url", "")),
         clean_url(data.get("insta_url", "")), clean_url(data.get("blog_url", "")), clean_url(data.get("yt_url", "")),
-        tenki_10days_url, yahoo_url
+        tenki_10days_url
     )
 
 def guess_date_from_string(date_str, now_date):
@@ -488,122 +487,62 @@ def extract_lat_lon(url):
     return None, None
 
 def fetch_weekly_data_from_api(lat, lon, raw_exclude_dates):
-    # ★ 降水確率あり（フル）のURL
-    api_url_full = f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&daily=weathercode,temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=Asia%2FTokyo&forecast_days=14"
-    # ★ 降水確率なし（安全）のURL
-    api_url_safe = f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&daily=weathercode,temperature_2m_max,temperature_2m_min&timezone=Asia%2FTokyo&forecast_days=14"
+    # ★ 日本の気象庁(JMA)モデルを指定して乖離をなくす安全なAPI呼び出し
+    base_url = f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&timezone=Asia%2FTokyo&forecast_days=14&models=jma_seamless"
     
-    for url_to_try in [api_url_full, api_url_safe]:
-        try:
-            res = requests.get(url_to_try, timeout=7.0)
-            res.raise_for_status()
-            data = res.json()
-            
-            daily = data.get("daily", {})
-            times = daily.get("time", [])
-            weathercodes = daily.get("weathercode", [])
-            temp_max = daily.get("temperature_2m_max", [])
-            temp_min = daily.get("temperature_2m_min", [])
-            rain_probs = daily.get("precipitation_probability_max", [])
-            
-            weekly_data = []
-            now_jst_date = datetime.now(timezone(timedelta(hours=9))).date()
-            last_wn_date = guess_date_from_string(raw_exclude_dates[-1], now_jst_date) if raw_exclude_dates else None
-
-            for i in range(min(len(times), 14)):
-                dt = datetime.strptime(times[i], "%Y-%m-%d").date()
-                if last_wn_date and dt <= last_wn_date: continue
-                    
-                w_str = ["(月)", "(火)", "(水)", "(木)", "(金)", "(土)", "(日)"][dt.weekday()]
-                date_label = f"{dt.day}{w_str}"
-                
-                code = weathercodes[i] if i < len(weathercodes) and weathercodes[i] is not None else 0
-                if code in [0, 1]: img_url = "https://gvs.weathernews.jp/onebox/img/wxicon/100.png"
-                elif code in [2, 3, 45, 48]: img_url = "https://gvs.weathernews.jp/onebox/img/wxicon/200.png"
-                elif code in [71, 73, 75, 77, 85, 86]: img_url = "https://gvs.weathernews.jp/onebox/img/wxicon/400.png"
-                else: img_url = "https://gvs.weathernews.jp/onebox/img/wxicon/300.png"
-                
-                t_max = str(round(temp_max[i])) if i < len(temp_max) and temp_max[i] is not None else "-"
-                t_min = str(round(temp_min[i])) if i < len(temp_min) and temp_min[i] is not None else "-"
-                
-                r_prob = f"{round(rain_probs[i])}%" if i < len(rain_probs) and rain_probs[i] is not None else "-"
-                
-                weekly_data.append({"date": date_label, "img_url": img_url, "temp_max": t_max, "temp_min": t_min, "rain_prob": r_prob})
-                if len(weekly_data) >= 8: break
-            return weekly_data
-        except Exception as e:
-            print(f"[Open-Meteo API Error] {e}")
-            time.sleep(1)
-    return []
-
-def fetch_weekly_data_from_yahoo(yahoo_url, raw_exclude_dates):
+    # ルート1: 降水確率ありのフルデータ取得を試みる
     try:
-        time.sleep(random.uniform(1.0, 2.0))
-        headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-            'Accept-Language': 'ja,en-US;q=0.9,en;q=0.8',
-            'Referer': 'https://weather.yahoo.co.jp/weather/'
-        }
-        res = requests.get(yahoo_url, headers=headers, timeout=5.0)
+        api_url = base_url + "&daily=weathercode,temperature_2m_max,temperature_2m_min,precipitation_probability_max"
+        res = requests.get(api_url, timeout=7.0)
         res.raise_for_status()
-        soup = BeautifulSoup(res.text, 'html.parser')
-
-        weekly_data = []
-        now_jst_date = datetime.now(timezone(timedelta(hours=9))).date()
-        last_wn_date = guess_date_from_string(raw_exclude_dates[-1], now_jst_date) if raw_exclude_dates else None
-
-        week_table = soup.select_one('#yjw_week table')
-        if not week_table: return []
-        trs = week_table.select('tr')
-        if len(trs) < 4: return []
-
-        date_tds = trs[0].select('td')[1:]
-        weather_tds = trs[1].select('td')[1:]
-        temp_tds = trs[2].select('td')[1:]
-        prob_tds = trs[3].select('td')[1:]
-
-        for i in range(len(date_tds)):
-            raw_date = date_tds[i].get_text(strip=True)
-            m = re.search(r'(\d{1,2})月(\d{1,2})日', raw_date)
-            if m:
-                target_date = guess_date_from_string(f"{m.group(1)}月{m.group(2)}日", now_jst_date)
-                w_str = ["(月)", "(火)", "(水)", "(木)", "(金)", "(土)", "(日)"][target_date.weekday()]
-                date_label = f"{target_date.day}{w_str}"
-            else:
-                date_label = raw_date
-                target_date = guess_date_from_string(raw_date, now_jst_date)
-
-            if last_wn_date and target_date <= last_wn_date: continue
-
-            w_text = ""
-            img_tag = weather_tds[i].select_one('img')
-            if img_tag and 'alt' in img_tag.attrs: w_text = img_tag['alt']
-
-            if '雨' in w_text: final_img = "https://gvs.weathernews.jp/onebox/img/wxicon/300.png"
-            elif '雪' in w_text: final_img = "https://gvs.weathernews.jp/onebox/img/wxicon/400.png"
-            elif '曇' in w_text: final_img = "https://gvs.weathernews.jp/onebox/img/wxicon/200.png"
-            else: final_img = "https://gvs.weathernews.jp/onebox/img/wxicon/100.png"
-
-            # ★ より柔軟な気温の取得方法（色のコードが変わっても対応）
-            t_max, t_min = "-", "-"
-            fonts = temp_tds[i].find_all('font')
-            if len(fonts) >= 2:
-                t_max = fonts[0].get_text(strip=True)
-                t_min = fonts[1].get_text(strip=True)
-
-            prob_text = prob_tds[i].get_text(strip=True)
-            r_prob = f"{prob_text}%" if prob_text.isdigit() else "-"
-
-            weekly_data.append({"date": date_label, "img_url": final_img, "temp_max": t_max, "temp_min": t_min, "rain_prob": r_prob})
-            if len(weekly_data) >= 8: break
-
-        return weekly_data
+        data = res.json()
     except Exception as e:
-        print(f"[Yahoo Weather Extract Error] {e}")
-        return []
+        print(f"[Open-Meteo API Full Request Error] {e}")
+        # ルート2: 失敗した場合は降水確率を省いた安全ルートで確実に取得する
+        try:
+            api_url_safe = base_url + "&daily=weathercode,temperature_2m_max,temperature_2m_min"
+            res_safe = requests.get(api_url_safe, timeout=7.0)
+            res_safe.raise_for_status()
+            data = res_safe.json()
+        except Exception as e2:
+            print(f"[Open-Meteo API Safe Request Error] {e2}")
+            return []
 
-def fetch_spot_1hour_data(url, tenki_url=None, yahoo_url=None):
+    daily = data.get("daily", {})
+    times = daily.get("time", [])
+    weathercodes = daily.get("weathercode", [])
+    temp_max = daily.get("temperature_2m_max", [])
+    temp_min = daily.get("temperature_2m_min", [])
+    rain_probs = daily.get("precipitation_probability_max", []) # なければ空リストになる
+    
+    weekly_data = []
+    now_jst_date = datetime.now(timezone(timedelta(hours=9))).date()
+    last_wn_date = guess_date_from_string(raw_exclude_dates[-1], now_jst_date) if raw_exclude_dates else None
+
+    for i in range(min(len(times), 14)):
+        dt = datetime.strptime(times[i], "%Y-%m-%d").date()
+        if last_wn_date and dt <= last_wn_date: continue
+            
+        w_str = ["(月)", "(火)", "(水)", "(木)", "(金)", "(土)", "(日)"][dt.weekday()]
+        date_label = f"{dt.day}{w_str}"
+        
+        code = weathercodes[i] if i < len(weathercodes) and weathercodes[i] is not None else 0
+        if code in [0, 1]: img_url = "https://gvs.weathernews.jp/onebox/img/wxicon/100.png"
+        elif code in [2, 3, 45, 48]: img_url = "https://gvs.weathernews.jp/onebox/img/wxicon/200.png"
+        elif code in [71, 73, 75, 77, 85, 86]: img_url = "https://gvs.weathernews.jp/onebox/img/wxicon/400.png"
+        else: img_url = "https://gvs.weathernews.jp/onebox/img/wxicon/300.png"
+        
+        t_max = str(round(temp_max[i])) if i < len(temp_max) and temp_max[i] is not None else "-"
+        t_min = str(round(temp_min[i])) if i < len(temp_min) and temp_min[i] is not None else "-"
+        
+        # 安全ルートを通った場合はrain_probsが空なので "-" になる
+        r_prob = f"{round(rain_probs[i])}%" if rain_probs and i < len(rain_probs) and rain_probs[i] is not None else "-"
+        
+        weekly_data.append({"date": date_label, "img_url": img_url, "temp_max": t_max, "temp_min": t_min, "rain_prob": r_prob})
+        if len(weekly_data) >= 8: break
+    return weekly_data
+
+def fetch_spot_1hour_data(url, tenki_url=None):
     try:
         headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}
         response = requests.get(url, headers=headers, timeout=3.8)
@@ -658,13 +597,10 @@ def fetch_spot_1hour_data(url, tenki_url=None, yahoo_url=None):
         raw_exclude_dates = list(weather_by_date.keys())
         weekly_data = []
 
-        if yahoo_url:
-            weekly_data = fetch_weekly_data_from_yahoo(yahoo_url, raw_exclude_dates)
-
-        if not weekly_data:
-            lat, lon = extract_lat_lon(url)
-            if lat and lon:
-                weekly_data = fetch_weekly_data_from_api(lat, lon, raw_exclude_dates)
+        # ★ tenkiやYahooの不安定なスクレイピングを廃止し、公式API（気象庁モデル）で確実・高精度に取得する
+        lat, lon = extract_lat_lon(url)
+        if lat and lon:
+            weekly_data = fetch_weekly_data_from_api(lat, lon, raw_exclude_dates)
 
         if not weekly_data or len(weekly_data) < 4:
             now_dt = datetime.now(timezone(timedelta(hours=9)))
@@ -677,7 +613,7 @@ def fetch_spot_1hour_data(url, tenki_url=None, yahoo_url=None):
                 day_dt = start_date + timedelta(days=i)
                 w_str = ["(月)", "(火)", "(水)", "(木)", "(金)", "(土)", "(日)"][day_dt.weekday()]
                 weekly_data.append({"date": f"{day_dt.day}{w_str}", "img_url": "https://gvs.weathernews.jp/onebox/img/wxicon/200.png", "temp_max": "-", "temp_min": "-", "rain_prob": "-"})
-            # ★ エラー状態を知らせるフラグ
+            # APIが万が一全滅した際の一時的なダミーはキャッシュに保存させない
             weather_by_date["__is_dummy__"] = True
 
         weather_by_date["__weekly__"] = weekly_data
@@ -726,7 +662,6 @@ def get_cached_weather(spot_name):
         return None
 
 def save_cached_weather(spot_name, weather_data):
-    # ★ エラーでダミー状態になったデータをキャッシュに閉じ込めない安全装置
     if weather_data.get("__is_dummy__"):
         return
     
@@ -1022,7 +957,7 @@ def handle_message(event):
                 is_fav = True
                 weather_data = get_cached_weather(target_spot_name)
                 if not weather_data:
-                    weather_data = fetch_spot_1hour_data(target_url, tenki_url, yahoo_url)
+                    weather_data = fetch_spot_1hour_data(target_url, tenki_url)
                     if weather_data: save_cached_weather(target_spot_name, weather_data)
 
                 if weather_data:
@@ -1168,7 +1103,7 @@ def handle_postback(event):
 
             weather_data = get_cached_weather(target_spot_name)
             if not weather_data:
-                weather_data = fetch_spot_1hour_data(target_url, tenki_url, yahoo_url)
+                weather_data = fetch_spot_1hour_data(target_url, tenki_url)
                 if weather_data: save_cached_weather(target_spot_name, weather_data)
 
             if weather_data:
@@ -1314,8 +1249,7 @@ def run_background_update():
             if not data: continue
             url = data["url"]
             tenki_url = convert_to_10days_url(data.get("tenki_url"))
-            yahoo_url = data.get("yahoo_url")
-            weather_data = fetch_spot_1hour_data(url, tenki_url, yahoo_url)
+            weather_data = fetch_spot_1hour_data(url, tenki_url)
             if weather_data: save_cached_weather(spot_name, weather_data)
             time.sleep(random.uniform(2.5, 4.0))
 
@@ -1327,8 +1261,7 @@ def run_background_update():
                 if not data: continue
                 url = data["url"]
                 tenki_url = convert_to_10days_url(data.get("tenki_url"))
-                yahoo_url = data.get("yahoo_url")
-                weather_data = fetch_spot_1hour_data(url, tenki_url, yahoo_url)
+                weather_data = fetch_spot_1hour_data(url, tenki_url)
                 if weather_data: save_cached_weather(spot_name, weather_data)
                 time.sleep(random.uniform(2.5, 4.0))
 
