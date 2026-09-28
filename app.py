@@ -488,10 +488,14 @@ def extract_lat_lon(url):
     return None, None
 
 def fetch_weekly_data_from_api(lat, lon, raw_exclude_dates):
-    for attempt in range(2):
+    # ★ 降水確率あり（フル）のURL
+    api_url_full = f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&daily=weathercode,temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=Asia%2FTokyo&forecast_days=14"
+    # ★ 降水確率なし（安全）のURL
+    api_url_safe = f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&daily=weathercode,temperature_2m_max,temperature_2m_min&timezone=Asia%2FTokyo&forecast_days=14"
+    
+    for url_to_try in [api_url_full, api_url_safe]:
         try:
-            api_url = f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&daily=weathercode,temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=Asia%2FTokyo&forecast_days=14"
-            res = requests.get(api_url, timeout=7.0)
+            res = requests.get(url_to_try, timeout=7.0)
             res.raise_for_status()
             data = res.json()
             
@@ -528,15 +532,13 @@ def fetch_weekly_data_from_api(lat, lon, raw_exclude_dates):
                 if len(weekly_data) >= 8: break
             return weekly_data
         except Exception as e:
-            print(f"[Open-Meteo API Error - Attempt {attempt+1}] {e}")
+            print(f"[Open-Meteo API Error] {e}")
             time.sleep(1)
     return []
 
 def fetch_weekly_data_from_yahoo(yahoo_url, raw_exclude_dates):
     try:
-        # ★ サーバー負荷軽減のためのランダム待機（1〜2秒）
         time.sleep(random.uniform(1.0, 2.0))
-        # ★ ブラウザからのアクセスを完全に偽装
         headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
             'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
@@ -551,13 +553,11 @@ def fetch_weekly_data_from_yahoo(yahoo_url, raw_exclude_dates):
         now_jst_date = datetime.now(timezone(timedelta(hours=9))).date()
         last_wn_date = guess_date_from_string(raw_exclude_dates[-1], now_jst_date) if raw_exclude_dates else None
 
-        # Yahoo天気の週間予報テーブルを取得
         week_table = soup.select_one('#yjw_week table')
         if not week_table: return []
         trs = week_table.select('tr')
         if len(trs) < 4: return []
 
-        # 0行目:日付, 1行目:天気, 2行目:気温, 3行目:降水確率 (0列目はラベルなのでスキップ)
         date_tds = trs[0].select('td')[1:]
         weather_tds = trs[1].select('td')[1:]
         temp_tds = trs[2].select('td')[1:]
@@ -565,11 +565,11 @@ def fetch_weekly_data_from_yahoo(yahoo_url, raw_exclude_dates):
 
         for i in range(len(date_tds)):
             raw_date = date_tds[i].get_text(strip=True)
-            # 例: "9月30日(水)" -> "30(水)"
-            m = re.search(r'(\d{1,2})月(\d{1,2})日?\((.+?)\)', raw_date)
+            m = re.search(r'(\d{1,2})月(\d{1,2})日', raw_date)
             if m:
-                date_label = f"{m.group(2)}({m.group(3)})"
                 target_date = guess_date_from_string(f"{m.group(1)}月{m.group(2)}日", now_jst_date)
+                w_str = ["(月)", "(火)", "(水)", "(木)", "(金)", "(土)", "(日)"][target_date.weekday()]
+                date_label = f"{target_date.day}{w_str}"
             else:
                 date_label = raw_date
                 target_date = guess_date_from_string(raw_date, now_jst_date)
@@ -580,16 +580,17 @@ def fetch_weekly_data_from_yahoo(yahoo_url, raw_exclude_dates):
             img_tag = weather_tds[i].select_one('img')
             if img_tag and 'alt' in img_tag.attrs: w_text = img_tag['alt']
 
-            # 既存の1時間天気（Weathernews）のアイコン体系にマッピング
             if '雨' in w_text: final_img = "https://gvs.weathernews.jp/onebox/img/wxicon/300.png"
             elif '雪' in w_text: final_img = "https://gvs.weathernews.jp/onebox/img/wxicon/400.png"
             elif '曇' in w_text: final_img = "https://gvs.weathernews.jp/onebox/img/wxicon/200.png"
             else: final_img = "https://gvs.weathernews.jp/onebox/img/wxicon/100.png"
 
-            high_font = temp_tds[i].select_one('font[color="#ff3300"]')
-            low_font = temp_tds[i].select_one('font[color="#0066ff"]')
-            t_max = high_font.get_text(strip=True) if high_font else "-"
-            t_min = low_font.get_text(strip=True) if low_font else "-"
+            # ★ より柔軟な気温の取得方法（色のコードが変わっても対応）
+            t_max, t_min = "-", "-"
+            fonts = temp_tds[i].find_all('font')
+            if len(fonts) >= 2:
+                t_max = fonts[0].get_text(strip=True)
+                t_min = fonts[1].get_text(strip=True)
 
             prob_text = prob_tds[i].get_text(strip=True)
             r_prob = f"{prob_text}%" if prob_text.isdigit() else "-"
@@ -657,11 +658,9 @@ def fetch_spot_1hour_data(url, tenki_url=None, yahoo_url=None):
         raw_exclude_dates = list(weather_by_date.keys())
         weekly_data = []
 
-        # ★ Yahoo!天気のURLがあれば最優先で取得（キングフィッシャー等テスト用）
         if yahoo_url:
             weekly_data = fetch_weekly_data_from_yahoo(yahoo_url, raw_exclude_dates)
 
-        # Yahooが失敗した場合はOpen-Meteo API へフォールバック
         if not weekly_data:
             lat, lon = extract_lat_lon(url)
             if lat and lon:
@@ -678,7 +677,7 @@ def fetch_spot_1hour_data(url, tenki_url=None, yahoo_url=None):
                 day_dt = start_date + timedelta(days=i)
                 w_str = ["(月)", "(火)", "(水)", "(木)", "(金)", "(土)", "(日)"][day_dt.weekday()]
                 weekly_data.append({"date": f"{day_dt.day}{w_str}", "img_url": "https://gvs.weathernews.jp/onebox/img/wxicon/200.png", "temp_max": "-", "temp_min": "-", "rain_prob": "-"})
-            # APIエラー時の一時的なダミーはキャッシュに保存させない
+            # ★ エラー状態を知らせるフラグ
             weather_by_date["__is_dummy__"] = True
 
         weather_by_date["__weekly__"] = weekly_data
@@ -695,7 +694,7 @@ def get_cached_weather(spot_name):
         if now - updated_time <= timedelta(hours=2):
             if isinstance(data, dict):
                 weekly = data.get("__weekly__", [])
-                if data.get("_version") != "settings_shortcut_v105": return None
+                if data.get("_version") != "settings_shortcut_v106": return None
                 if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-": return None
                 dates = [d for d in data.keys() if d != "__weekly__" and d != "_version" and d != "__is_dummy__"]
                 if not dates: return None
@@ -714,7 +713,7 @@ def get_cached_weather(spot_name):
                         weather_data = row.get('weather_data')
                         if isinstance(weather_data, dict):
                             weekly = weather_data.get("__weekly__", [])
-                            if weather_data.get("_version") != "settings_shortcut_v105": return None
+                            if weather_data.get("_version") != "settings_shortcut_v106": return None
                             if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-": return None
                             dates = [d for d in weather_data.keys() if d != "__weekly__" and d != "_version" and d != "__is_dummy__"]
                             if not dates: return None
@@ -727,11 +726,12 @@ def get_cached_weather(spot_name):
         return None
 
 def save_cached_weather(spot_name, weather_data):
+    # ★ エラーでダミー状態になったデータをキャッシュに閉じ込めない安全装置
     if weather_data.get("__is_dummy__"):
         return
     
     now = datetime.now(timezone.utc)
-    weather_data["_version"] = "settings_shortcut_v105"
+    weather_data["_version"] = "settings_shortcut_v106"
     MEMORY_CACHE[spot_name] = (weather_data, now)
     if not supabase: return
     try:
