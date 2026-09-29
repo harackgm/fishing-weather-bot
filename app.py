@@ -800,7 +800,7 @@ def get_cached_weather(spot_name):
         if now - updated_time <= timedelta(hours=2):
             if isinstance(data, dict):
                 weekly = data.get("__weekly__", [])
-                if data.get("_version") != "settings_shortcut_v129": return None
+                if data.get("_version") != "settings_shortcut_v130": return None
                 if not weekly: return None
                 dates = [d for d in data.keys() if d != "__weekly__" and d != "_version" and d != "__is_dummy__" and d != "__disaster__"]
                 if not dates: return None
@@ -819,7 +819,7 @@ def get_cached_weather(spot_name):
                         weather_data = row.get('weather_data')
                         if isinstance(weather_data, dict):
                             weekly = weather_data.get("__weekly__", [])
-                            if weather_data.get("_version") != "settings_shortcut_v129": return None
+                            if weather_data.get("_version") != "settings_shortcut_v130": return None
                             if not weekly: return None
                             dates = [d for d in weather_data.keys() if d != "__weekly__" and d != "_version" and d != "__is_dummy__" and d != "__disaster__"]
                             if not dates: return None
@@ -836,7 +836,7 @@ def save_cached_weather(spot_name, weather_data):
         return
     
     now = datetime.now(timezone.utc)
-    weather_data["_version"] = "settings_shortcut_v129"
+    weather_data["_version"] = "settings_shortcut_v130"
     MEMORY_CACHE[spot_name] = (weather_data, now)
     if not supabase: return
     try:
@@ -892,6 +892,9 @@ def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_
     weather_by_date = weather_data
     jst = timezone(timedelta(hours=9))
     now_jst_date = datetime.now(jst).date()
+
+    # ★ 月末特有の順序崩壊（文字コード順ソート）を防ぐため、実際の日付カレンダー順に強制ソート
+    dates = sorted(dates, key=lambda d: guess_date_from_string(d, now_jst_date))
 
     active_group = COLOR_GROUPS
     for group in BASS_COLOR_GROUPS:
@@ -1167,7 +1170,7 @@ def handle_message(event):
         raw_msg = event.message.text.strip()
         user_id = event.source.user_id
 
-        # ★【ご要望対応】メッセージ送信（「一覧」含む）の2.5秒連打抑制（スロットリング）判定
+        # 2.5秒間の連打抑制（スロットリング）判定
         if is_throttled(user_id, cooldown=2.5):
             print(f"[Throttle] User {user_id} throttled (message)")
             return
@@ -1269,7 +1272,7 @@ def handle_postback(event):
         user_id = event.source.user_id
         data_dict = dict(parse_qsl(event.postback.data))
 
-        # ★【ご要望対応】「📋 一覧」ボタンタップ含む全ポストバックの2.5秒連打抑制（スロットリング）判定
+        # 2.5秒間の連打抑制（スロットリング）判定
         if is_throttled(user_id, cooldown=2.5):
             print(f"[Throttle] User {user_id} throttled (postback)")
             return
