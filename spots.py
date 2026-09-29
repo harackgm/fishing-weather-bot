@@ -73,7 +73,7 @@ SPOT_WEATHER_DATA = {
 }
 
 BASS_SPOT_WEATHER_DATA = {
-    "亀山湖": {"url": "https://weathernews.jp/onebox/35.23/140.09/", "tenki_url": "https://tenki.jp/forecast/3/15/4530/12225/1hour.html", "hp_url": "", "hp2_url": "", "hide_default_map": True, "custom_button_rows": [[{"label": "🌐つばき", "url": "https://tubakimoto.com/sp/"}, {"label": "🗺️地図", "url": "https://www.google.com/maps/search/?api=1&query=" + quote("亀山湖 つばきもとボート")}], [{"label": "🌐のむら", "url": "https://nomuraboat.com/"}, {"label": "🗺️地図", "url": "https://www.google.com/maps/search/?api=1&query=" + quote("亀山湖 のむらボートハウス")}], [{"label": "🌐トキタ", "url": "http://www.tokitaboat.com/"}, {"label": "🗺️地図", "url": "https://www.google.com/maps/search/?api=1&query=" + quote("亀山湖 トキタボート")}]], "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "亀山湖", "tel": "", "aliases": ["亀山湖", "亀山ダム", "かめやまこ", "亀山"]},
+    "亀湖": {"url": "https://weathernews.jp/onebox/35.23/140.09/", "tenki_url": "https://tenki.jp/forecast/3/15/4530/12225/1hour.html", "hp_url": "", "hp2_url": "", "hide_default_map": True, "custom_button_rows": [[{"label": "🌐つばき", "url": "https://tubakimoto.com/sp/"}, {"label": "🗺️地図", "url": "https://www.google.com/maps/search/?api=1&query=" + quote("亀山湖 つばきもとボート")}], [{"label": "🌐のむら", "url": "https://nomuraboat.com/"}, {"label": "🗺️地図", "url": "https://www.google.com/maps/search/?api=1&query=" + quote("亀山湖 のむらボートハウス")}], [{"label": "🌐トキタ", "url": "http://www.tokitaboat.com/"}, {"label": "🗺️地図", "url": "https://www.google.com/maps/search/?api=1&query=" + quote("亀山湖 トキタボート")}]], "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "亀山湖", "tel": "", "aliases": ["亀山湖", "亀山ダム", "かめやまこ", "亀山"]},
     "高滝湖": {"url": "https://weathernews.jp/onebox/35.34/140.15/", "tenki_url": "https://tenki.jp/forecast/3/15/4510/12219/1hour.html", "hp_url": "", "hp2_url": "", "hide_default_map": True, "custom_button_rows": [[{"label": "🌐ボート", "url": "http://www.takatakiko.jp/"}, {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E9%AB%98%E6%BB%9D%E6%B9%96%E8%A6%B3%E5%85%89%E4%BC%81%E6%A5%AD%E7%B5%84%E5%90%88/data=!4m2!3m1!1s0x0:0xeaa9dddefc1dab6?sa=X&ved=1t:2428&ictx=111"}]], "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "高滝湖", "tel": "", "aliases": ["高滝湖", "高滝ダム", "たかたきこ", "高滝", "たかたき"]},
     "GGD": {"url": "https://weathernews.jp/onebox/36.103735/139.726303/", "tenki_url": "https://tenki.jp/forecast/3/14/4320/11232/1hour.html", "hp_url": "", "hp2_url": "", "map_url": "https://www.google.com/maps/place/36%C2%B006'13.5%22N+139%C2%B043'34.7%22E/@36.103735,139.7237281,17z/data=!3m1!4b1!4m4!3m3!8m2!3d36.103735!4d139.726303", "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "権現堂川", "tel": "", "aliases": ["GGD", "権現堂川", "権現堂", "ごんげんどう", "ggd", "権現堂公園"]},
     "柴山沼": {"url": "https://weathernews.jp/onebox/36.035/139.620/", "tenki_url": "https://tenki.jp/forecast/3/14/4310/11246/1hour.html", "hp_url": "", "hp2_url": "", "hide_default_map": True, "custom_button_rows": [[{"label": "🚷陸っぱり", "url": "https://www.city.shiraoka.lg.jp/soshiki/toshiseibibu/machizukurika/1/2/kouenshoukai/7077.html"}, {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E6%9F%B4%E5%B1%B1%E6%B2%BC%E5%85%AC%E5%9C%92/@36.0353769,139.6204098,17z/data=!4m6!3m5!1s0x6018c93793c9501b:0xd88ae95754a5a434!8m2!3d36.0353769!4d139.6204098!16s%2Fg%2F11j8gglrfy"}]], "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "柴山沼", "tel": "", "aliases": ["柴山沼", "しばやまぬま", "しばやま", "柴山", "柴山沼公園"]},
@@ -108,7 +108,7 @@ BASS_SPOT_WEATHER_DATA = {
     "弥栄湖": {"url": "https://weathernews.jp/onebox/34.16/132.22/", "tenki_url": "https://tenki.jp/forecast/7/38/8130/35208/1hour.html", "hp_url": "", "hp2_url": "", "hide_default_map": True, "custom_button_rows": [[{"label": "🌐やさか", "url": "https://lakeplaza-yasaka.com/boat.php"}, {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E5%BC%A5%E6%A0%84%E6%B9%96%E3%83%AC%E3%83%B3%E3%82%BF%E3%83%AB%E3%83%9C%E3%83%BC%E3%83%88/@34.2364533,132.1406655,17.75z/data=!4m6!3m5!1s0x354533496d5d8d75:0xca43e840519c595!8m2!3d34.2364438!4d132.1423974!16s%2Fg%2F1tf40rmt"}]], "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "弥栄湖", "tel": "", "aliases": ["弥栄湖", "弥栄ダム", "やさかこ", "やさかだむ", "やさか"]},
     "遠賀川": {"url": "https://weathernews.jp/onebox/33.82/130.70/", "tenki_url": "https://tenki.jp/forecast/9/43/8220/40384/1hour.html", "hp_url": "", "hp2_url": "", "hide_default_map": True, "custom_button_rows": [[{"label": "🌐RODMAN", "url": "https://www.rod-man.jp/"}, {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E3%83%AD%E3%83%83%E3%83%89%E3%83%9E%E3%83%B3/@33.8255333,130.7015963,17.71z/data=!4m6!3m5!1s0x3543cdce54b35d5d:0xc21fd59bb7a86607!8m2!3d35.82556!4d130.703444!16s%2Fg%2F1vp6x_1x"}]], "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "遠賀川", "tel": "", "aliases": ["遠賀川", "おんががわ", "おんが"]},
     
-    # ★ 芦ノ湖：箱根湾の地図を追加・不要なhide設定を削除し、ボタン名を地図に統一
+    # ★ 芦ノ湖（デフォルト地図復活・ボタン名「地図」統一・レイアウト維持）
     "芦ノ湖": {
         "url": "https://weathernews.jp/onebox/35.201667/139.025/",
         "tenki_url": "https://tenki.jp/forecast/3/17/4610/14382/10days.html",
@@ -128,6 +128,28 @@ BASS_SPOT_WEATHER_DATA = {
                 {"label": "🗺️ 地図", "url": "https://www.google.com/maps/place/%E8%8A%A6%E3%83%8E%E6%B9%96%E3%83%95%E3%82%A3%E3%83%83%E3%82%B7%E3%83%B3%E3%82%B0%E3%82%BB%E3%83%B3%E3%82%BF%E3%83%BC+%E3%81%8A%E3%81%8A%E3%81%B0/@35.2359404,138.9948481,17z/data=!3m1!4b1!4m6!3m5!1s0x60199ed7114418c7:0x5265a184dd5cc5c4!8m2!3d35.235936!4d138.997423!16s%2Fg%2F11bccmbjcc?authuser=0&entry=ttu&g_ep=EgoyMDI2MDkyNy4wIKXMDSoASAFQAw%3D%3D"}
             ]
         ]
+    },
+
+    # ★ 新規追加（河口湖）※左に2行、右に2行で完全に高さが揃う構成
+    "河口湖": {
+        "url": "https://weathernews.jp/onebox/35.503/138.761/",
+        "tenki_url": "https://tenki.jp/forecast/3/22/4920/19430/10days.html",
+        "aliases": ["かわぐちこ", "河口湖", "かわぐち"],
+        "map_url": "https://www.google.com/maps/place/%E5%8B%9D%E5%B1%B1%E7%84%A1%E6%96%99%E9%A7%90%E8%BB%8A%E5%A0%B4/@35.5094355,138.7388465,16.5z/data=!4m6!3m5!1s0x60195fbee888c4c3:0xb2458001d90f46c4!8m2!3d35.5093102!4d138.742046!16s%2Fg%2F11c7hfcvgy?entry=ttu&g_ep=EgoyMDI2MDkyNy4wIKXMDSoASAFQAw%3D%3D",
+        "custom_button_rows": [
+            [
+                {"label": "🌐 さかなや", "url": "https://www.sakanayaboat.com/"},
+                {"label": "🗺️ 地図", "url": "https://www.google.com/maps/place/%E3%83%9C%E3%83%BC%E3%83%88%E3%83%8F%E3%82%A6%E3%82%B9%E3%81%95%E3%81%8B%E3%81%AA%E3%82%84/@35.5095977,138.7400193,17z/data=!4m6!3m5!1s0x60195fbee47e57db:0xeb6e34d89cc7ac2c!8m2!3d35.5094056!4d138.7424011!16s%2Fg%2F11b63ff4b1?authuser=0&hl=ja&entry=ttu&g_ep=EgoyMDI2MDkyNy4wIKXMDSoASAFQAw%3D%3D"}
+            ],
+            [
+                {"label": "🌐 KBH", "url": "https://www.kawaguchiko.ne.jp/~kbh.boat/index2"},
+                {"label": "🗺️ 地図", "url": "https://www.google.com/maps/place/%E6%B2%B3%E5%8F%A3%E6%B9%96%E3%83%9C%E3%83%BC%E3%83%88%E3%83%8F%E3%82%A6%E3%82%B9+KBH/@35.5246032,138.759916,16.75z/data=!4m6!3m5!1s0x60195ef7e62f6ee7:0xb58ce1dabbbffaa1!8m2!3d35.5246823!4d138.7625384!16s%2Fg%2F1td3rk21?authuser=0&hl=ja&entry=ttu&g_ep=EgoyMDI2MDkyNy4wIKXMDSoASAFQAw%3D%3D"}
+            ],
+            [
+                {"label": "🌐 フジミ", "url": "http://f-marine.com/"},
+                {"label": "🗺️ 地図", "url": "https://www.google.com/maps/place/%E3%83%95%E3%82%B8%E3%83%9F%E3%83%9E%E3%83%AA%E3%83%B3/@35.5039111,138.768319,17.75z/data=!4m6!3m5!1s0x60195e260f5e252b:0x2948f8c9cb794cfe!8m2!3d35.503855!4d138.7699635!16s%2Fg%2F11g9q8c2hm?authuser=0&hl=ja&entry=ttu&g_ep=EgoyMDI2MDkyNy4wIKXMDSoASAFQAw%3D%3D"}
+            ]
+        ]
     }
 }
 
@@ -142,7 +164,7 @@ BASS_COLOR_GROUPS = [
     {"title": "📍 関東（千葉・埼玉・神奈川・群馬・茨城・栃木）", "header_bg": "#2e7d32", "sub_groups": [
         {"bg": "#e8f5e9", "spots": ["亀山湖", "高滝湖", "片倉ダム", "三島湖", "豊英ダム", "榛名湖"]},
         {"bg": "#e3f2fd", "spots": ["GGD", "柴山沼", "城沼", "近藤沼", "多々良沼", "新利根川", "霞ケ浦柏崎", "土浦港", "大田原", "那須鳥山", "潮来", "佐原", "栄町", "雄蛇ヶ池"]},
-        {"bg": "#f3e5f5", "spots": ["相模湖", "津久井湖", "芦ノ湖"]}
+        {"bg": "#f3e5f5", "spots": ["相模湖", "津久井湖", "芦ノ湖", "河口湖"]}
     ]},
     {"title": "📍 東北（福島）", "header_bg": "#6a1b9a", "sub_groups": [
         {"bg": "#e1bee7", "spots": ["東山ダム", "羽鳥湖", "桧原湖", "猪苗代湖"]}
