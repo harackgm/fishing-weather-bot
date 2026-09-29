@@ -33,6 +33,46 @@ if SUPABASE_URL and SUPABASE_KEY:
 
 MEMORY_CACHE = {}
 
+# 連打防止用：排他制御ロックとリクエスト時刻管理
+USER_LAST_REQUEST = {}
+REQUEST_LOCK = threading.Lock()
+
+def is_throttled(user_id, cooldown=2.5):
+    """高速連打（競合状態）を排他ロックで完全に防ぐ判定関数"""
+    now_ts = time.time()
+    with REQUEST_LOCK:
+        last_ts = USER_LAST_REQUEST.get(user_id, 0)
+        if now_ts - last_ts < cooldown:
+            return True
+        USER_LAST_REQUEST[user_id] = now_ts
+        return False
+
+# 全国47都道府県のコードマッピング
+PREF_TO_JMA = {
+    "1": "016000", "2": "014100", "3": "012000", "4": "011000",
+    "5": "020000", "6": "030000", "7": "040000", "8": "050000", "9": "060000", "10": "070000",
+    "11": "080000", "12": "090000", "13": "100000", "14": "110000", "15": "120000", "16": "130000", "17": "140000",
+    "18": "150000", "19": "160000", "20": "170000", "21": "180000", "22": "190000", "23": "200000",
+    "24": "210000", "25": "220000", "26": "230000", "27": "240000", "28": "250000", "29": "260000",
+    "30": "270000", "31": "280000", "32": "290000", "33": "300000", "34": "310000", "35": "320000",
+    "36": "330000", "37": "340000", "38": "350000", "39": "360000", "40": "370000", "41": "380000",
+    "42": "390000", "43": "400000", "44": "410000", "45": "420000", "46": "430000", "47": "440000",
+    "48": "450000", "49": "460100", "50": "471000"
+}
+
+PREF_NAMES = {
+    "011000": "北海道", "012000": "北海道", "014100": "北海道", "016000": "北海道",
+    "020000": "青森", "030000": "岩手", "040000": "宮城", "050000": "秋田", "060000": "山形", "070000": "福島",
+    "080000": "茨城", "090000": "栃木", "100000": "群馬", "110000": "埼玉", "120000": "千葉", "130000": "東京", "140000": "神奈川",
+    "150000": "新潟", "160000": "富山", "170000": "石川", "180000": "福井", "190000": "山梨", "200000": "長野",
+    "210000": "岐阜", "220000": "静岡", "230000": "愛知", "240000": "三重",
+    "250000": "滋賀", "260000": "京都", "270000": "大阪", "280000": "兵庫", "290000": "奈良", "300000": "和歌山",
+    "310000": "鳥取", "320000": "島根", "330000": "岡山", "340000": "広島", "350000": "山口",
+    "360000": "徳島", "370000": "香川", "380000": "愛媛", "390000": "高知",
+    "400000": "福岡", "410000": "佐賀", "420000": "長崎", "430000": "大分", "450000": "宮崎", "460100": "鹿児島",
+    "471000": "沖縄"
+}
+
 def normalize_name(name_str):
     if not name_str: return ""
     return unicodedata.normalize('NFKC', name_str).lower()
@@ -72,16 +112,37 @@ def guess_date_from_string(date_str, now_date):
     if not m: return now_date
     month_str, day_str = m.group(1), m.group(2)
     day = int(day_str)
-    month = int(month_str) if month_str else now_date.month
-    try: target = now_date.replace(month=month, day=day)
-    except ValueError: return now_date
-    if (now_date - target).days > 15:
-        try: target = target.replace(year=now_date.year + 1)
-        except ValueError: pass
-    elif (target - now_date).days > 15:
-        try: target = target.replace(year=now_date.year - 1)
-        except ValueError: pass
-    return target
+    
+    if month_str:
+        month = int(month_str)
+        try: target = now_date.replace(month=month, day=day)
+        except ValueError: return now_date
+        
+        if (now_date - target).days > 180:
+            try: target = target.replace(year=now_date.year + 1)
+            except ValueError: pass
+        elif (target - now_date).days > 180:
+            try: target = target.replace(year=now_date.year - 1)
+            except ValueError: pass
+        return target
+    else:
+        candidates = []
+        for m_offset in [-1, 0, 1]:
+            y = now_date.year
+            m_val = now_date.month + m_offset
+            if m_val < 1:
+                m_val += 12
+                y -= 1
+            elif m_val > 12:
+                m_val -= 12
+                y += 1
+            try:
+                candidates.append(datetime(y, m_val, day).date())
+            except ValueError:
+                pass
+        if not candidates: return now_date
+        target = min(candidates, key=lambda d: abs((d - now_date).days))
+        return target
 
 def build_delete_confirm_message(spot_name, source):
     execute_action = f"fav_del_execute_and_{source}"
@@ -293,7 +354,7 @@ def get_user_setting(user_id):
             rename_map = {
                 "七色ダム": "池原七色ダム", "キング": "キングフィッシャー", "ツガネ": "JF in Tsugane",
                 "キングダム": "川場キングダム", "イワセン": "イワナセンター", "鹿島やり": "鹿島槍",
-                "アルクス宇宇都宮": "アルクス宇都宮", "片仓ダム": "片倉ダム", "多田良沼": "多々良沼",
+                "アルクス宇宇都宮": "アルクス宇宇都宮", "片仓ダム": "片倉ダム", "多田良沼": "多々良沼",
                 "那須烏山": "那須鳥山", "柏崎": "霞ケ浦柏崎", "霞ケ浦西浦": "土浦港", "ＭＡＶ": "宮城", "GP不忘": "不忘"
             }
             
@@ -486,99 +547,185 @@ def extract_lat_lon(url):
     if m: return m.group(1), m.group(2)
     return None, None
 
-def fetch_weekly_data_from_api(lat, lon, raw_exclude_dates):
+def fetch_weekly_data_from_jma(tenki_url, raw_exclude_dates):
+    if not tenki_url: return []
+    m = re.search(r'forecast/\d+/(\d+)/', tenki_url)
+    if not m: return []
+    pref_id = m.group(1)
+    jma_code = PREF_TO_JMA.get(pref_id)
+    if not jma_code: return []
+
     try:
-        api_url = f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&daily=weathercode,temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=Asia%2FTokyo&forecast_days=14"
-        res = requests.get(api_url, timeout=5.0)
+        url = f"https://www.jma.go.jp/bosai/forecast/data/forecast/{jma_code}.json"
+        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
+        res = requests.get(url, headers=headers, timeout=5.0)
         res.raise_for_status()
         data = res.json()
-        
-        daily = data.get("daily", {})
-        times = daily.get("time", [])
-        weathercodes = daily.get("weathercode", [])
-        temp_max = daily.get("temperature_2m_max", [])
-        temp_min = daily.get("temperature_2m_min", [])
-        rain_probs = daily.get("precipitation_probability_max", [])
-        
-        weekly_data = []
+
+        forecast_dict = {}
+
+        for part in data:
+            for ts in part.get('timeSeries', []):
+                times = ts.get('timeDefines', [])
+                areas = ts.get('areas', [])
+                if not times or not areas: continue
+
+                target_area = areas[0]
+                for a in areas:
+                    name = a.get("area", {}).get("name", "")
+                    if name in ["北部", "大田原", "西部", "秩父", "北部の山沿い", "飛騨地方", "長野", "塩尻", "松本"]:
+                        target_area = a
+                        break
+
+                for i, dt_str in enumerate(times):
+                    dt_only = dt_str[:10]
+                    try: 
+                        dt = datetime.strptime(dt_only, "%Y-%m-%d").date()
+                    except: 
+                        continue
+
+                    if dt not in forecast_dict:
+                        forecast_dict[dt] = {"code": 100, "pop": "-", "t_min": "-", "t_max": "-"}
+
+                    if "weatherCodes" in target_area and i < len(target_area["weatherCodes"]):
+                        if target_area["weatherCodes"][i]:
+                            forecast_dict[dt]["code"] = target_area["weatherCodes"][i]
+                    
+                    if "pops" in target_area and i < len(target_area["pops"]):
+                        val = target_area["pops"][i]
+                        if val not in ["", None]:
+                            val_str = str(val).replace('%','')
+                            if val_str.isdigit(): forecast_dict[dt]["pop"] = f"{val_str}%"
+                    
+                    if "tempsMin" in target_area and i < len(target_area["tempsMin"]):
+                        val = target_area["tempsMin"][i]
+                        if val not in ["", None]: forecast_dict[dt]["t_min"] = str(val)
+                        
+                    if "tempsMax" in target_area and i < len(target_area["tempsMax"]):
+                        val = target_area["tempsMax"][i]
+                        if val not in ["", None]: forecast_dict[dt]["t_max"] = str(val)
+                        
+                    if "temps" in target_area and i < len(target_area["temps"]):
+                        val = target_area["temps"][i]
+                        if val not in ["", None]:
+                            try:
+                                temp_val = int(val)
+                                c_min = forecast_dict[dt]["t_min"]
+                                c_max = forecast_dict[dt]["t_max"]
+                                if c_min == "-" or temp_val < int(c_min):
+                                    forecast_dict[dt]["t_min"] = str(temp_val)
+                                if c_max == "-" or temp_val > int(c_max):
+                                    forecast_dict[dt]["t_max"] = str(temp_val)
+                            except: pass
+
         now_jst_date = datetime.now(timezone(timedelta(hours=9))).date()
         last_wn_date = guess_date_from_string(raw_exclude_dates[-1], now_jst_date) if raw_exclude_dates else None
 
-        for i in range(min(len(times), 14)):
-            dt = datetime.strptime(times[i], "%Y-%m-%d").date()
+        weekly_data = []
+        for dt in sorted(forecast_dict.keys()):
             if last_wn_date and dt <= last_wn_date: continue
-                
+
+            day_data = forecast_dict[dt]
             w_str = ["(月)", "(火)", "(水)", "(木)", "(金)", "(土)", "(日)"][dt.weekday()]
             date_label = f"{dt.day}{w_str}"
-            
-            code = weathercodes[i] if i < len(weathercodes) and weathercodes[i] is not None else 0
-            if code in [0, 1]: img_url = "https://gvs.weathernews.jp/onebox/img/wxicon/100.png"
-            elif code in [2, 3, 45, 48]: img_url = "https://gvs.weathernews.jp/onebox/img/wxicon/200.png"
-            elif code in [71, 73, 75, 77, 85, 86]: img_url = "https://gvs.weathernews.jp/onebox/img/wxicon/400.png"
-            else: img_url = "https://gvs.weathernews.jp/onebox/img/wxicon/300.png"
-            
-            t_max = str(round(temp_max[i])) if i < len(temp_max) and temp_max[i] is not None else "-"
-            t_min = str(round(temp_min[i])) if i < len(temp_min) and temp_min[i] is not None else "-"
-            
-            r_prob = f"{round(rain_probs[i])}%" if i < len(rain_probs) and rain_probs[i] is not None else "-"
-            
-            weekly_data.append({"date": date_label, "img_url": img_url, "temp_max": t_max, "temp_min": t_min, "rain_prob": r_prob})
+
+            try: code = int(day_data["code"])
+            except: code = 100
+
+            if code < 200: final_img = "https://gvs.weathernews.jp/onebox/img/wxicon/100.png"
+            elif code < 300: final_img = "https://gvs.weathernews.jp/onebox/img/wxicon/200.png"
+            elif code < 400: final_img = "https://gvs.weathernews.jp/onebox/img/wxicon/300.png"
+            else: final_img = "https://gvs.weathernews.jp/onebox/img/wxicon/400.png"
+
+            weekly_data.append({
+                "date": date_label,
+                "img_url": final_img,
+                "temp_max": day_data["t_max"],
+                "temp_min": day_data["t_min"],
+                "rain_prob": day_data["pop"]
+            })
             if len(weekly_data) >= 8: break
+
         return weekly_data
     except Exception as e:
-        print(f"[Open-Meteo API Error] {e}")
+        print(f"[JMA API Error] {e}")
         return []
 
-def fetch_weekly_data_from_tenki(tenki_url, raw_exclude_dates):
+def fetch_disaster_info(tenki_url):
+    if not tenki_url: return {}
+    m = re.search(r'forecast/\d+/(\d+)/', tenki_url)
+    if not m: return {}
+    pref_id = m.group(1)
+    jma_code = PREF_TO_JMA.get(pref_id)
+    if not jma_code: return {}
+
+    pref_name = PREF_NAMES.get(jma_code, "")
+
+    warnings_list = []
+    quake_str = None
+    volcano_str = None
+
+    headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
+
     try:
-        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
-        response = requests.get(tenki_url, headers=headers, timeout=3.0)
-        response.raise_for_status()
-        soup = BeautifulSoup(response.text, 'html.parser')
-        
-        weekly_data = []
-        now_jst_date = datetime.now(timezone(timedelta(hours=9))).date()
-        last_wn_date = guess_date_from_string(raw_exclude_dates[-1], now_jst_date) if raw_exclude_dates else None
-            
-        elems = soup.select('.forecast10days-actab, .forecast14days-actab')
-        for elem in elems:
-            days_elem = elem.find('div', class_='days')
-            forecast_elem = elem.find('div', class_='forecast')
-            temp_elem = elem.find('div', class_='temp')
-            prob_elem = elem.find('div', class_='prob-precip')
-            
-            if not (days_elem and temp_elem): continue
-            raw_days = days_elem.get_text(strip=True) 
-            tenki_date = guess_date_from_string(raw_days, now_jst_date)
-            if last_wn_date and tenki_date <= last_wn_date: continue
+        url = f"https://www.jma.go.jp/bosai/warning/data/warning/{jma_code}.json"
+        res = requests.get(url, headers=headers, timeout=2.0)
+        if res.status_code == 200:
+            data = res.json()
+            code_map = {
+                "02": "暴風雪警報", "03": "大雨警報", "04": "洪水警報", "05": "暴風警報",
+                "06": "大雪警報", "07": "波浪警報", "08": "高潮警報", "10": "大雨注意報",
+                "12": "大雪注意報", "13": "風雪注意報", "14": "雷注意報", "15": "強風注意報",
+                "16": "波浪注意報", "17": "融雪注意報", "18": "洪水注意報", "19": "高潮注意報",
+                "20": "濃霧注意報", "21": "乾燥注意報", "22": "なだれ注意報", "23": "低温注意報",
+                "24": "霜注意報", "25": "着氷注意報", "26": "着雪注意報", "32": "暴風雪特別警報",
+                "33": "大雨特別警報", "35": "暴風特別警報", "36": "大雪特別警報", "37": "波浪特別警報",
+                "38": "高潮特別警報"
+            }
+            if "areaTypes" in data and len(data["areaTypes"]) > 0:
+                areas = data["areaTypes"][0].get("areas", [])
+                if areas:
+                    warnings = areas[0].get("warnings", [])
+                    for w in warnings:
+                        if w.get("status") != "解除" and w.get("code") in code_map:
+                            warnings_list.append(code_map[w["code"]])
+            warnings_list = list(dict.fromkeys(warnings_list))
+    except: pass
 
-            m = re.search(r'(\d{1,2})[月/](\d{1,2})日?\((.+?)\)', raw_days)
-            if m:
-                date_label = f"{m.group(2)}({m.group(3)})"
-            else:
-                date_label = raw_days
-                
-            high_elem = temp_elem.find('span', class_='high-temp')
-            low_elem = temp_elem.find('span', class_='low-temp')
-            t_max = high_elem.get_text(strip=True).replace('℃', '').strip() if high_elem else "-"
-            t_min = low_elem.get_text(strip=True).replace('℃', '').strip() if low_elem else "-"
-            r_prob = prob_elem.get_text(strip=True) if prob_elem else "-"
-            
-            img_tag = forecast_elem.find('img') if forecast_elem else None
-            img_src = img_tag['src'] if img_tag and 'src' in img_tag.attrs else ""
-            
-            if '01' in img_src or '02' in img_src or '100' in img_src: final_img = "https://gvs.weathernews.jp/onebox/img/wxicon/100.png"
-            elif '08' in img_src or '09' in img_src or '12' in img_src or '200' in img_src: final_img = "https://gvs.weathernews.jp/onebox/img/wxicon/200.png"
-            elif '雨' in img_src or 'rain' in img_src or '300' in img_src or '20' in img_src or '46' in img_src: final_img = "https://gvs.weathernews.jp/onebox/img/wxicon/300.png"
-            elif 'snow' in img_src or '400' in img_src: final_img = "https://gvs.weathernews.jp/onebox/img/wxicon/400.png"
-            else: final_img = "https://gvs.weathernews.jp/onebox/img/wxicon/200.png"
-                
-            weekly_data.append({"date": date_label, "img_url": final_img, "temp_max": t_max, "temp_min": t_min, "rain_prob": r_prob})
-            if len(weekly_data) >= 8: break
-        return weekly_data
-    except Exception as e:
-        print(f"[tenki.jp Extract Error] {e}")
-        return []
+    try:
+        url = "https://www.jma.go.jp/bosai/quake/data/list.json"
+        res = requests.get(url, headers=headers, timeout=2.0)
+        if res.status_code == 200:
+            data = res.json()
+            for eq in data:
+                anm = eq.get("anm", "")
+                full_text = str(eq)
+                if pref_name and (pref_name in anm or pref_name in full_text):
+                    dt_str = eq.get("at", eq.get("rdt", ""))
+                    if dt_str:
+                        dt = datetime.fromisoformat(dt_str)
+                        dt_formatted = f"{dt.month}/{dt.day} {dt.hour}:{dt.minute:02d}"
+                        mag = eq.get("mag", "")
+                        maxi = eq.get("maxi", "")
+                        quake_str = f"{dt_formatted} {anm} (震度{maxi}/M{mag})"
+                        break
+    except: pass
+
+    try:
+        url = "https://www.jma.go.jp/bosai/volcano/data/list.json"
+        res = requests.get(url, headers=headers, timeout=2.0)
+        if res.status_code == 200:
+            data = res.json()
+            for v in data:
+                tit = v.get("tit", "")
+                full_text = str(v)
+                if pref_name and (pref_name in tit or pref_name in full_text):
+                    volcano_str = tit
+                    if len(volcano_str) > 15: volcano_str = volcano_str[:14] + "…"
+                    break
+    except: pass
+
+    return {"warnings": warnings_list, "quake": quake_str, "volcano": volcano_str}
 
 def fetch_spot_1hour_data(url, tenki_url=None):
     try:
@@ -634,28 +781,16 @@ def fetch_spot_1hour_data(url, tenki_url=None):
 
         raw_exclude_dates = list(weather_by_date.keys())
         weekly_data = []
-        if tenki_url: weekly_data = fetch_weekly_data_from_tenki(tenki_url, raw_exclude_dates)
-        if not weekly_data:
-            lat, lon = extract_lat_lon(url)
-            if lat and lon: weekly_data = fetch_weekly_data_from_api(lat, lon, raw_exclude_dates)
 
-        if not weekly_data or len(weekly_data) < 4:
-            now_dt = datetime.now(timezone(timedelta(hours=9)))
-            start_date = now_dt.date()
-            if raw_exclude_dates:
-                last_wn = guess_date_from_string(raw_exclude_dates[-1], now_dt.date())
-                start_date = last_wn + timedelta(days=1)
-            weekly_data = []
-            for i in range(8):
-                day_dt = start_date + timedelta(days=i)
-                w_str = ["(月)", "(火)", "(水)", "(木)", "(金)", "(土)", "(日)"][day_dt.weekday()]
-                weekly_data.append({"date": f"{day_dt.day}{w_str}", "img_url": "https://gvs.weathernews.jp/onebox/img/wxicon/200.png", "temp_max": "-", "temp_min": "-", "rain_prob": "-"})
+        if tenki_url:
+            weekly_data = fetch_weekly_data_from_jma(tenki_url, raw_exclude_dates)
 
         weather_by_date["__weekly__"] = weekly_data
+        weather_by_date["__disaster__"] = fetch_disaster_info(tenki_url)
         return weather_by_date
     except requests.exceptions.Timeout: return None
     except Exception as e:
-        print(f"[スクレイピング＆API エラー] {e}")
+        print(f"[1hour Data Fetch Error] {e}")
         return None
 
 def get_cached_weather(spot_name):
@@ -665,9 +800,9 @@ def get_cached_weather(spot_name):
         if now - updated_time <= timedelta(hours=2):
             if isinstance(data, dict):
                 weekly = data.get("__weekly__", [])
-                if data.get("_version") != "settings_shortcut_v98": return None
-                if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-": return None
-                dates = [d for d in data.keys() if d != "__weekly__" and d != "_version"]
+                if data.get("_version") != "settings_shortcut_v129": return None
+                if not weekly: return None
+                dates = [d for d in data.keys() if d != "__weekly__" and d != "_version" and d != "__is_dummy__" and d != "__disaster__"]
                 if not dates: return None
             return data
             
@@ -684,9 +819,9 @@ def get_cached_weather(spot_name):
                         weather_data = row.get('weather_data')
                         if isinstance(weather_data, dict):
                             weekly = weather_data.get("__weekly__", [])
-                            if weather_data.get("_version") != "settings_shortcut_v98": return None
-                            if not weekly or len(weekly) < 4 or weekly[0].get("temp_max") == "-": return None
-                            dates = [d for d in weather_data.keys() if d != "__weekly__" and d != "_version"]
+                            if weather_data.get("_version") != "settings_shortcut_v129": return None
+                            if not weekly: return None
+                            dates = [d for d in weather_data.keys() if d != "__weekly__" and d != "_version" and d != "__is_dummy__" and d != "__disaster__"]
                             if not dates: return None
                         MEMORY_CACHE[spot_name] = (weather_data, updated_time)
                         return weather_data
@@ -697,17 +832,63 @@ def get_cached_weather(spot_name):
         return None
 
 def save_cached_weather(spot_name, weather_data):
+    if weather_data.get("__is_dummy__"):
+        return
+    
     now = datetime.now(timezone.utc)
-    weather_data["_version"] = "settings_shortcut_v98"
+    weather_data["_version"] = "settings_shortcut_v129"
     MEMORY_CACHE[spot_name] = (weather_data, now)
     if not supabase: return
     try:
         supabase.table('weather_cache').upsert({'spot_name': spot_name, 'weather_data': weather_data, 'updated_at': now.isoformat()}).execute()
     except Exception as e: print(f"[Cache SAVE Error] {e}")
 
+def create_disaster_box(disaster_data):
+    contents = []
+    contents.append({
+        "type": "text", "text": "⚠️ リアルタイム防災情報", "weight": "bold", "size": "xs", "color": "#e53935"
+    })
+    
+    lines_added = 0
+    warnings = disaster_data.get("warnings", [])
+    if warnings:
+        warn_text = "・" + " / ".join(warnings)
+        contents.append({
+            "type": "text", "text": warn_text, "size": "xxs", "wrap": True, "color": "#ff9800", "weight": "bold", "maxLines": 2
+        })
+        lines_added += 2
+    else:
+        contents.append({
+            "type": "text", "text": "✅ 警報・注意報の発表なし", "size": "xxs", "color": "#4caf50"
+        })
+        lines_added += 1
+        
+    contents.append({"type": "separator", "margin": "xs"})
+    
+    quake = disaster_data.get("quake")
+    if quake and lines_added < 4:
+        contents.append({
+            "type": "text", "text": f"【地震】{quake}", "size": "xxs", "wrap": True, "color": "#555555", "maxLines": 1
+        })
+        lines_added += 1
+        contents.append({"type": "separator", "margin": "xs"})
+
+    volcano = disaster_data.get("volcano")
+    if volcano and lines_added < 5:
+        contents.append({
+            "type": "text", "text": f"【火山】{volcano}", "size": "xxs", "wrap": True, "color": "#555555", "maxLines": 1
+        })
+
+    return {
+        "type": "box", "layout": "vertical", "margin": "md", "paddingAll": "8px",
+        "backgroundColor": "#fffde7", "cornerRadius": "sm", "borderColor": "#ffd54f", "borderWidth": "normal",
+        "spacing": "xs", "contents": contents
+    }
+
 def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_url="", tel="", x_url="", fb_url="", insta_url="", blog_url="", yt_url="", is_favorite=False):
     weekly_data = weather_data.get("__weekly__", []) if isinstance(weather_data, dict) else []
-    dates = [d for d in weather_data.keys() if d != "__weekly__" and d != "_version"]
+    disaster_data = weather_data.get("__disaster__", {}) if isinstance(weather_data, dict) else {}
+    dates = [d for d in weather_data.keys() if d != "__weekly__" and d != "_version" and d != "__is_dummy__" and d != "__disaster__"]
     weather_by_date = weather_data
     jst = timezone(timedelta(hours=9))
     now_jst_date = datetime.now(jst).date()
@@ -878,7 +1059,7 @@ def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_
         return {"type": "box", "layout": "vertical", "backgroundColor": header_color, "paddingAll": "10px", "contents": header_contents}
 
     weekly_box_1 = create_weekly_box(weekly_data[0:4]) if len(weekly_data) > 0 else None
-    weekly_box_2 = create_weekly_box(weekly_data[4:8]) if len(weekly_data) > 4 else None
+    
     banner_img_url = "https://raw.githubusercontent.com/harackgm/fishing-weather-bot/main/tenkiharackbana.jpg"
 
     bottom_buttons_1 = [{"type": "box", "layout": "vertical", "flex": 1, "backgroundColor": "#fff59d", "borderWidth": "normal", "borderColor": "#d4af37", "cornerRadius": "md", "paddingAll": "0px", "contents": [{"type": "button", "action": {"type": "postback", "label": "📋 一覧", "data": "action=show_list", "displayText": "📋 一覧"}, "style": "link", "color": "#555555", "height": "sm", "margin": "none"}]}]
@@ -888,31 +1069,51 @@ def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_
         bottom_buttons_2.append({"type": "box", "layout": "vertical", "flex": 2, "backgroundColor": "#f8f9fa", "borderWidth": "normal", "borderColor": "#e0e0e0", "cornerRadius": "md", "paddingAll": "0px", "contents": [{"type": "button", "action": {"type": "uri", "label": "📞 電話", "uri": f"tel:{clean_tel}"}, "style": "link", "color": "#555555", "height": "sm", "margin": "none"}]})
     bottom_buttons_2.append({"type": "box", "layout": "vertical", "flex": 3 if tel else 1, "backgroundColor": "#fff59d", "borderWidth": "normal", "borderColor": "#d4af37", "cornerRadius": "md", "paddingAll": "0px", "contents": [{"type": "button", "action": {"type": "postback", "label": "📋 一覧", "data": "action=show_list", "displayText": "📋 一覧"}, "style": "link", "color": "#555555", "height": "sm", "margin": "none"}]})
 
-    bottom_block_contents_1 = []
-    if weekly_box_1:
-        bottom_block_contents_1.append({"type": "separator", "margin": "md"})
-        bottom_block_contents_1.append(weekly_box_1)
-    bottom_block_contents_1.extend([{"type": "separator", "margin": "md"}, {"type": "image", "url": banner_img_url, "size": "full", "aspectRatio": "3:1", "aspectMode": "cover", "margin": "md"}, {"type": "separator", "margin": "md"}, {"type": "box", "layout": "horizontal", "margin": "sm", "spacing": "sm", "contents": bottom_buttons_1}])
+    footer_1 = {
+        "type": "box", "layout": "vertical", "paddingAll": "8px", "spacing": "none",
+        "contents": [
+            {"type": "separator", "margin": "none"},
+            {"type": "image", "url": banner_img_url, "size": "full", "aspectRatio": "3:1", "aspectMode": "cover", "margin": "md"},
+            {"type": "separator", "margin": "md"},
+            {"type": "box", "layout": "horizontal", "margin": "sm", "spacing": "sm", "contents": bottom_buttons_1}
+        ]
+    }
 
-    bottom_block_contents_2 = []
-    if weekly_box_2:
-        bottom_block_contents_2.append({"type": "separator", "margin": "md"})
-        bottom_block_contents_2.append(weekly_box_2)
-    bottom_block_contents_2.extend([{"type": "separator", "margin": "md"}, {"type": "image", "url": banner_img_url, "size": "full", "aspectRatio": "3:1", "aspectMode": "cover", "margin": "md"}, {"type": "separator", "margin": "md"}, {"type": "box", "layout": "horizontal", "margin": "sm", "spacing": "sm", "contents": bottom_buttons_2}])
+    footer_2 = {
+        "type": "box", "layout": "vertical", "paddingAll": "8px", "spacing": "none",
+        "contents": [
+            {"type": "separator", "margin": "none"},
+            {"type": "image", "url": banner_img_url, "size": "full", "aspectRatio": "3:1", "aspectMode": "cover", "margin": "md"},
+            {"type": "separator", "margin": "md"},
+            {"type": "box", "layout": "horizontal", "margin": "sm", "spacing": "sm", "contents": bottom_buttons_2}
+        ]
+    }
+
+    body_1_contents = [{"type": "box", "layout": "horizontal", "spacing": "sm", "contents": [create_day_column(dates[0] if len(dates)>0 else None), {"type": "separator"}, create_day_column(dates[1] if len(dates)>1 else None)]}]
+    if weekly_box_1:
+        body_1_contents.append({"type": "separator", "margin": "md"})
+        body_1_contents.append(weekly_box_1)
+
+    body_2_contents = [{"type": "box", "layout": "horizontal", "spacing": "sm", "contents": [create_day_column(dates[2] if len(dates)>2 else None), {"type": "separator"}, create_day_column(dates[3] if len(dates)>3 else None)]}]
+    
+    body_2_contents.append({"type": "separator", "margin": "md", "color": "#00000000"})
+    body_2_contents.append(create_disaster_box(disaster_data))
 
     bubbles = []
     if len(dates) > 0:
-        day1 = dates[0]
-        day2 = dates[1] if len(dates) > 1 else None
-        body_contents_1 = [{"type": "box", "layout": "horizontal", "spacing": "sm", "contents": [create_day_column(day1), {"type": "separator"}, create_day_column(day2)]}]
-        body_contents_1.extend(bottom_block_contents_1) 
-        bubbles.append({"type": "bubble", "size": "giga", "header": create_header_block(0), "body": {"type": "box", "layout": "vertical", "spacing": "md", "paddingAll": "8px", "contents": body_contents_1}})
+        bubbles.append({
+            "type": "bubble", "size": "giga", 
+            "header": create_header_block(0), 
+            "body": {"type": "box", "layout": "vertical", "spacing": "md", "paddingAll": "8px", "contents": body_1_contents},
+            "footer": footer_1
+        })
     if len(dates) > 2:
-        day3 = dates[2]
-        day4 = dates[3] if len(dates) > 3 else None
-        body_contents_2 = [{"type": "box", "layout": "horizontal", "spacing": "sm", "contents": [create_day_column(day3), {"type": "separator"}, create_day_column(day4)]}]
-        body_contents_2.extend(bottom_block_contents_2) 
-        bubbles.append({"type": "bubble", "size": "giga", "header": create_header_block(1), "body": {"type": "box", "layout": "vertical", "spacing": "md", "paddingAll": "8px", "contents": body_contents_2}})
+        bubbles.append({
+            "type": "bubble", "size": "giga", 
+            "header": create_header_block(1), 
+            "body": {"type": "box", "layout": "vertical", "spacing": "md", "paddingAll": "8px", "contents": body_2_contents},
+            "footer": footer_2
+        })
 
     return FlexSendMessage(alt_text=f"{spot_name}の天気予報", contents={"type": "carousel", "contents": bubbles})
 
@@ -965,6 +1166,12 @@ def handle_message(event):
     try:
         raw_msg = event.message.text.strip()
         user_id = event.source.user_id
+
+        # ★【ご要望対応】メッセージ送信（「一覧」含む）の2.5秒連打抑制（スロットリング）判定
+        if is_throttled(user_id, cooldown=2.5):
+            print(f"[Throttle] User {user_id} throttled (message)")
+            return
+
         source, favorites, fishing_mode = get_user_setting(user_id)
 
         if raw_msg in ["お気に入り1", "お気に入り2"]:
@@ -1061,6 +1268,12 @@ def handle_postback(event):
     try:
         user_id = event.source.user_id
         data_dict = dict(parse_qsl(event.postback.data))
+
+        # ★【ご要望対応】「📋 一覧」ボタンタップ含む全ポストバックの2.5秒連打抑制（スロットリング）判定
+        if is_throttled(user_id, cooldown=2.5):
+            print(f"[Throttle] User {user_id} throttled (postback)")
+            return
+
         action = data_dict.get("action")
         spot_name = data_dict.get("spot")
         source, favorites, fishing_mode = get_user_setting(user_id)
