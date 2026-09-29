@@ -85,6 +85,7 @@
     "url": "https://weathernews.jp/onebox/36.438056/139.180278/",
     "tenki_url": "https://tenki.jp/forecast/3/13/4210/10201/1hour.html",
     "hp_url": "",
+    "map_url": "https://www.google.com/maps/place/%E5%A4%A7%E5%B4%8E%E3%81%A4%E3%82%8A%E3%81%BC%E3%82%8A%E3%83%BB%E5%A4%A7%E5%B4%8E%E9%A4%8A%E9%AD%9A%E5%A0%B4/@36.4679078,139.1555164,18z/data=!3m1!4b1!4m6!3m5!1s0x601ef6da0979ed29:0xeb5411d59780770b!8m2!3d36.467906!4d139.156599!16s%2Fg%2F1tdr888l?entry=ttu&g_ep=EgoyMDI2MDkyNy4wIKXMDSoASAFQAw%3D%3D",
     "custom_button_rows": [
       [
         {"label": "🌐大崎HP", "url": "https://nijimasu.com/"},
