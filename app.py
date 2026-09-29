@@ -33,7 +33,7 @@ if SUPABASE_URL and SUPABASE_KEY:
 
 MEMORY_CACHE = {}
 
-# ★ 連打防止用：排他制御ロックとリクエスト時刻管理
+# 連打防止用：排他制御ロックとリクエスト時刻管理
 USER_LAST_REQUEST = {}
 REQUEST_LOCK = threading.Lock()
 
@@ -729,7 +729,7 @@ def fetch_disaster_info(tenki_url):
 
 def fetch_spot_1hour_data(url, tenki_url=None):
     try:
-        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
+        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}
         response = requests.get(url, headers=headers, timeout=3.8)
         response.raise_for_status()
         soup = BeautifulSoup(response.text, 'html.parser')
@@ -800,7 +800,7 @@ def get_cached_weather(spot_name):
         if now - updated_time <= timedelta(hours=2):
             if isinstance(data, dict):
                 weekly = data.get("__weekly__", [])
-                if data.get("_version") != "settings_shortcut_v128": return None
+                if data.get("_version") != "settings_shortcut_v129": return None
                 if not weekly: return None
                 dates = [d for d in data.keys() if d != "__weekly__" and d != "_version" and d != "__is_dummy__" and d != "__disaster__"]
                 if not dates: return None
@@ -819,7 +819,7 @@ def get_cached_weather(spot_name):
                         weather_data = row.get('weather_data')
                         if isinstance(weather_data, dict):
                             weekly = weather_data.get("__weekly__", [])
-                            if weather_data.get("_version") != "settings_shortcut_v128": return None
+                            if weather_data.get("_version") != "settings_shortcut_v129": return None
                             if not weekly: return None
                             dates = [d for d in weather_data.keys() if d != "__weekly__" and d != "_version" and d != "__is_dummy__" and d != "__disaster__"]
                             if not dates: return None
@@ -836,7 +836,7 @@ def save_cached_weather(spot_name, weather_data):
         return
     
     now = datetime.now(timezone.utc)
-    weather_data["_version"] = "settings_shortcut_v128"
+    weather_data["_version"] = "settings_shortcut_v129"
     MEMORY_CACHE[spot_name] = (weather_data, now)
     if not supabase: return
     try:
@@ -1167,12 +1167,10 @@ def handle_message(event):
         raw_msg = event.message.text.strip()
         user_id = event.source.user_id
 
-        # 2.5秒間の連打抑制（スロットリング）判定
-        is_list_cmd = raw_msg in ["一覧", "リスト", "釣り場一覧", "エリア", "📋 一覧", "📋一覧"]
-        if not is_list_cmd:
-            if is_throttled(user_id, cooldown=2.5):
-                print(f"[Throttle] User {user_id} throttled (message)")
-                return
+        # ★【ご要望対応】メッセージ送信（「一覧」含む）の2.5秒連打抑制（スロットリング）判定
+        if is_throttled(user_id, cooldown=2.5):
+            print(f"[Throttle] User {user_id} throttled (message)")
+            return
 
         source, favorites, fishing_mode = get_user_setting(user_id)
 
@@ -1270,15 +1268,13 @@ def handle_postback(event):
     try:
         user_id = event.source.user_id
         data_dict = dict(parse_qsl(event.postback.data))
+
+        # ★【ご要望対応】「📋 一覧」ボタンタップ含む全ポストバックの2.5秒連打抑制（スロットリング）判定
+        if is_throttled(user_id, cooldown=2.5):
+            print(f"[Throttle] User {user_id} throttled (postback)")
+            return
+
         action = data_dict.get("action")
-
-        # 2.5秒間の連打抑制（スロットリング）判定
-        is_list_action = (action == "show_list")
-        if not is_list_action:
-            if is_throttled(user_id, cooldown=2.5):
-                print(f"[Throttle] User {user_id} throttled (postback)")
-                return
-
         spot_name = data_dict.get("spot")
         source, favorites, fishing_mode = get_user_setting(user_id)
         
