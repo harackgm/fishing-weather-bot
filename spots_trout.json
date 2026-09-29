@@ -81,7 +81,25 @@
   "片品": {"url": "https://weathernews.jp/onebox/36.772583/139.227222/", "tenki_url": "https://tenki.jp/forecast/3/13/4210/10443/1hour.html", "hp_url": "", "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "片品川国際渓流釣り場", "tel": "", "aliases": ["片品", "かたしな"]},
   "中之沢": {"url": "https://weathernews.jp/onebox/36.467389/139.186528/", "tenki_url": "https://tenki.jp/forecast/3/13/4210/10201/1hour.html", "hp_url": "https://gfc.sakura.ne.jp/", "map_url": "https://x.gd/M22Sb", "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "中之沢イワナ岩魚エリア", "tel": "027-283-4311", "aliases": ["中之沢", "中之沢FA", "なかのさわ"]},
   "宮城": {"url": "https://weathernews.jp/onebox/36.452889/139.184306/", "tenki_url": "https://tenki.jp/forecast/3/13/4210/10201/1hour.html", "hp_url": "https://www.miyagi-av.com/", "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "宮城アングラーズヴィレッジ", "tel": "027-283-0161", "aliases": ["宮城", "MAV", "宮城アングラーズヴィレッジ", "みやぎ"]},
-  "大崎・赤城": {"url": "https://weathernews.jp/onebox/36.438056/139.180278/", "tenki_url": "https://tenki.jp/forecast/3/13/4210/10201/1hour.html", "hp_url": "http://www.osaki-fa.jp/", "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "大崎ツリボリフィッシングエリア", "tel": "027-283-4340", "aliases": ["大崎・赤城", "大崎FA", "おおさき", "赤城"]},
+  "大崎・赤城": {
+    "url": "https://weathernews.jp/onebox/36.438056/139.180278/",
+    "tenki_url": "https://tenki.jp/forecast/3/13/4210/10201/1hour.html",
+    "hp_url": "",
+    "custom_button_rows": [
+      [
+        {"label": "🌐大崎HP", "url": "https://nijimasu.com/"},
+        {"label": "🌐赤城HP", "url": "https://anglers-base.com/"}
+      ]
+    ],
+    "x_url": "",
+    "fb_url": "",
+    "insta_url": "",
+    "blog_url": "",
+    "yt_url": "",
+    "search_name": "大崎ツリボリフィッシングエリア",
+    "tel": "027-283-4340",
+    "aliases": ["大崎・赤城", "大崎FA", "おおさき", "赤城"]
+  },
   "けん太": {"url": "https://weathernews.jp/onebox/36.388889/139.083333/", "tenki_url": "https://tenki.jp/forecast/3/13/4210/10201/1hour.html", "hp_url": "http://www.kenta-f.jp/", "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "釣掘ケン太", "tel": "027-253-3882", "aliases": ["けん太", "ケン太", "けんた"]},
   "フック": {"url": "https://weathernews.jp/onebox/36.458056/139.155833/", "tenki_url": "https://tenki.jp/forecast/3/13/4210/10201/1hour.html", "hp_url": "https://hook-fa.com/", "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "アングラーズエリアフック", "tel": "027-283-0535", "aliases": ["フック", "HOOK", "ふっく"]},
   "赤久縄": {"url": "https://weathernews.jp/onebox/36.143611/138.981944/", "tenki_url": "https://tenki.jp/forecast/3/13/4210/10367/1hour.html", "hp_url": "http://akaguna.web.fc2.com/", "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "赤久縄渓流エリア", "tel": "0274-52-6133", "aliases": ["赤久縄", "あかぐな"]},
