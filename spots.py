@@ -1,1531 +1,180 @@
-import os, time, random, requests, traceback, difflib, re, threading, unicodedata, jpholiday
-from urllib.parse import quote, urlparse, parse_qsl
-from bs4 import BeautifulSoup
-from flask import Flask, request, abort, jsonify
-from linebot import LineBotApi, WebhookHandler
-from linebot.exceptions import InvalidSignatureError, LineBotApiError
-from linebot.models import MessageEvent, TextMessage, TextSendMessage, FlexSendMessage, PostbackEvent
-from supabase import create_client, Client
-from datetime import datetime, timedelta, timezone
+from urllib.parse import quote
 
-# --- 外部ファイル(spots.py)からデータをインポート ---
-from spots import SPOT_WEATHER_DATA, BASS_SPOT_WEATHER_DATA, COLOR_GROUPS, BASS_COLOR_GROUPS, ALL_SPOT_DATA
-# --------------------------------------------------
+SPOT_WEATHER_DATA = {
+    # --- 静岡県 ---
+    "東山湖": {"url": "https://weathernews.jp/onebox/35.296739/138.955925/", "tenki_url": "https://tenki.jp/forecast/5/25/5030/22215/1hour.html", "hp_url": "http://www.higashiyamako.com/", "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "東山湖フィッシングエリア", "tel": "0550-82-2161", "aliases": ["東山湖", "東山湖フィッシングエリア", "東山湖FA", "ひがしやまこ", "ひがしやま", "東山", "がし山", "がしやま"]},
+    "すその": {"url": "https://weathernews.jp/onebox/35.166667/138.899162/", "tenki_url": "https://tenki.jp/forecast/5/25/5030/22220/1hour.html", "hp_url": "http://www.susono-f-park.com/", "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "すそのフィッシングパーク", "tel": "055-993-5514", "aliases": ["すその", "すそのフィッシングパーク", "すそぱ", "すそパ"]},
+    "須川": {"url": "https://weathernews.jp/onebox/35.359818/138.977710/", "tenki_url": "https://tenki.jp/forecast/5/25/5030/22344/1hour.html", "hp_url": "http://www.sukawa.ne.jp/", "x_url": "https://x.com/sukawafp", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "須川フィッシングパーク", "tel": "0550-75-3077", "aliases": ["須川", "須川フィッシングパーク", "須川FP", "すがわ"]},
+    "アルクス焼津": {"url": "https://weathernews.jp/onebox/34.789110/138.294771/", "tenki_url": "https://tenki.jp/forecast/5/25/5010/22212/1hour.html", "hp_url": "http://www.arcus-pond.com/", "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "アルクスポンド焼津", "tel": "054-622-7102", "aliases": ["アルクス焼津", "アルクスポンド焼津", "あるくす", "焼津"]},
+    "浜名湖": {"url": "https://weathernews.jp/onebox/34.712749/137.629457/", "tenki_url": "https://tenki.jp/forecast/5/25/5040/22133/1hour.html", "hp_url": "http://www.hamanako-fr.com/", "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "浜名湖フィッシングリゾート", "tel": "053-592-2221", "aliases": ["浜名湖", "浜名湖フィッシングリゾート", "浜名湖FR", "はまなこ"]},
+    
+    # --- 栃木県 ---
+    "キングフィッシャー": {"url": "https://weathernews.jp/onebox/36.907054/140.078650/", "tenki_url": "https://tenki.jp/forecast/3/12/4120/9210/1hour.html", "yahoo_url": "https://weather.yahoo.co.jp/weather/jp/9/4120/9210.html", "hp_url": "https://kingfisher-tochigi.com/", "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "キングフィッシャー 大田原", "tel": "0287-23-1253", "aliases": ["キングフィッシャー", "キング", "きんぐふぃっしゃー"]},
+    "みどり": {"url": "https://weathernews.jp/onebox/36.834975/140.002410/", "tenki_url": "https://tenki.jp/forecast/3/12/4120/9210/1hour.html", "hp_url": "http://www.nasu-net.or.jp/~midorifi/", "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "みどりフィッシングエリア", "tel": "0287-28-3334", "aliases": ["みどり", "みどりフィッシングエリア", "みどりFA"]},
+    "那須高原": {"url": "https://weathernews.jp/onebox/37.001929/140.104991/", "tenki_url": "https://tenki.jp/forecast/3/12/4120/9407/1hour.html", "hp_url": "http://lure-f.jp/", "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "那須高原ルアーフィールド", "tel": "0287-78-1005", "aliases": ["那須高原", "那須高原ルアーフィールド", "なすこうげん"]},
+    "尚仁沢": {"url": "https://weathernews.jp/onebox/37.001929/140.104991/", "tenki_url": "https://tenki.jp/forecast/3/12/4120/9384/1hour.html", "hp_url": "https://shojinzawa.com/", "x_url": "", "fb_url": "", "insta_url": "https://www.instagram.com/popular/%E5%B0%9A%E4%BB%81%E6%B2%A2%E3%82%A2%E3%82%A6%E3%83%88%E3%83%89%E3%82%A2%E3%83%95%E3%82%A3%E3%83%BC%E3%83%AB%E3%83%89/", "blog_url": "http://sofield.jugem.jp/", "yt_url": "", "search_name": "尚仁沢アウトドアフィールド", "tel": "0287-41-0051", "aliases": ["尚仁沢", "尚仁沢アウトドアフィールド", "しょうじんざわ"]},
+    "つり天国": {"url": "https://weathernews.jp/onebox/37.073444/140.044452/", "tenki_url": "https://tenki.jp/forecast/3/12/4120/9407/1hour.html", "hp_url": "http://www.tsuritengoku.com/", "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "つり天国 那須", "tel": "0287-64-4286", "aliases": ["つり天国", "ツリテンゴク", "つりてんごく"]},
+    "関根養魚場": {"url": "https://weathernews.jp/onebox/36.851308/139.979065/", "tenki_url": "https://tenki.jp/forecast/3/12/4120/9213/1hour.html", "hp_url": "http://sekine-fish.com/", "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "関根養魚場", "tel": "0287-35-2630", "aliases": ["関根養魚場", "関根", "せきねようぎょじょう"]},
+    "408": {"url": "https://weathernews.jp/onebox/36.763055/139.858269/", "tenki_url": "https://tenki.jp/forecast/3/12/4120/9384/1hour.html", "hp_url": "https://408club.com/", "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "408Club", "tel": "0287-43-0408", "aliases": ["408", "408クラブ", "408club"]},
+    "308": {"url": "https://weathernews.jp/onebox/36.824828/139.896229/", "tenki_url": "https://tenki.jp/forecast/3/12/4120/9211/1hour.html", "hp_url": "http://408club.com/308/index.html", "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "308Club", "tel": "0287-43-0308", "aliases": ["308", "308クラブ", "308club"]},
+    "蛇尾（さび）川": {"url": "https://weathernews.jp/onebox/36.981351/139.901534/", "tenki_url": "https://tenki.jp/forecast/3/12/4120/9213/1hour.html", "hp_url": "https://sabigawafishingpark.com/", "x_url": "https://x.com/matagi_nasu", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "蛇尾川フィッシングパーク", "tel": "0287-32-2212", "aliases": ["蛇尾川", "蛇尾（さび）川", "さびがわ", "サビガワ", "へびがわ", "蛇尾川フィッシングパーク"]},
+    "レイクウッド": {"url": "https://weathernews.jp/onebox/36.611334/139.666579/", "tenki_url": "https://tenki.jp/forecast/3/12/4110/9205/1hour.html", "hp_url": "http://lakewoodresort.info/", "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "レイクウッドリゾート 鹿沼", "tel": "0289-75-1008", "aliases": ["レイクウッド", "レイクウッドリゾート", "れいくうっど"]},
+    "なら山沼": {"url": "https://weathernews.jp/onebox/36.373741/139.802713/", "tenki_url": "https://tenki.jp/forecast/3/12/4110/9208/1hour.html", "hp_url": "http://www.shimotsuga-fc.org/index.html", "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "なら山沼漁場", "tel": "0285-25-4350", "aliases": ["なら山沼", "なら山沼漁場", "ならやま", "ならやまぬま"]},
+    "大芦川": {"url": "https://weathernews.jp/onebox/36.590732/139.693652/", "tenki_url": "https://tenki.jp/forecast/3/12/4110/9205/1hour.html", "hp_url": "http://park10.wakwak.com/~field-village/", "x_url": "", "fb_url": "https://ja-jp.facebook.com/ooashigawa.fcfv/", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "大芦川 F&C フィールドビレッジ", "tel": "0289-74-7222", "aliases": ["大芦川", "大芦川F&C", "おおあしがわ"]},
+    "加賀": {"url": "https://weathernews.jp/onebox/36.388609/139.537247/", "tenki_url": "https://tenki.jp/forecast/3/12/4110/9204/1hour.html", "hp_url": "https://kaga-fishingarea.jp/", "x_url": "", "fb_url": "", "insta_url": "https://www.instagram.com/kagafishingarea/", "blog_url": "https://ameblo.jp/kaga-fa/", "yt_url": "", "search_name": "加賀フィッシングエリア", "tel": "0283-24-1513", "aliases": ["加賀", "加賀フィッシングエリア", "加賀FA", "かが"]},
+    "発光路": {"url": "https://weathernews.jp/onebox/36.580281/139.532829/", "tenki_url": "https://tenki.jp/forecast/3/12/4110/9205/1hour.html", "hp_url": "https://ov-hokkojinomori-fa.jimdosite.com/", "x_url": "", "fb_url": "", "insta_url": "https://www.instagram.com/ov.hokkojinomori.fa/", "blog_url": "https://hokkojinomori.livedoor.blog/", "yt_url": "", "search_name": "発光路の森ファアルクス", "tel": "0289-85-3503", "aliases": ["発光路", "発光路の森", "ほっこうじ", "はっこうじ"]},
+    "上永野": {"url": "https://weathernews.jp/onebox/36.511884/139.573442/", "tenki_url": "https://tenki.jp/forecast/3/12/4110/9205/1hour.html", "hp_url": "https://kaminagano-fishing.com/", "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "フィッシングリゾート上永野", "tel": "0289-84-0335", "aliases": ["上永野", "上永野FR", "かみながの"]},
+    "柏倉": {"url": "https://weathernews.jp/onebox/36.398276/139.660428/", "tenki_url": "https://tenki.jp/forecast/3/12/4110/9203/1hour.html", "hp_url": "http://kashiwagurafishingpk.g3.xrea.com/", "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "柏倉フィッシングパーク", "tel": "0282-23-6622", "aliases": ["柏倉", "柏倉FP", "かしわぐら"]},
+    "遊水園": {"url": "https://weathernews.jp/onebox/36.342013/139.863541/", "tenki_url": "https://tenki.jp/forecast/3/12/4110/9208/1hour.html", "hp_url": "http://meiseikousan.jp/oyamawaterpark/", "x_url": "https://x.com/ParkOyama", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "Oyama Water Park 遊水園", "tel": "0285-38-8255", "aliases": ["遊水園", "OyamaWaterPark遊水園", "ゆうすいえん"]},
+    "アルクス宇都宮": {"url": "https://weathernews.jp/onebox/36.566488/139.960060/", "tenki_url": "https://tenki.jp/forecast/3/12/4110/9201/1hour.html", "hp_url": "http://www.arcus-pond.com/", "x_url": "", "fb_url": "https://www.facebook.com/p/Arcus-Pond%E3%82%A2%E3%83%AB%E3%82%AF%E3%82%B9%E3%83%9D%E3%83%B3%E3%83%89-100041638634155/", "insta_url": "", "blog_url": "https://www.arcus-pond.com/wp/category/blog/", "yt_url": "", "search_name": "アルクスポンド宇都宮", "tel": "028-652-3210", "aliases": ["アルクス宇都宮", "アルクスポンド宇都宮", "あるくすうつのみや", "うつのみや"]},
+    "エリア21": {"url": "https://weathernews.jp/onebox/36.496150/139.899522/", "tenki_url": "https://tenki.jp/forecast/3/16/4410/13201/1hour.html", "hp_url": "http://www.area21.jp/", "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "エリア21 宇都宮", "tel": "028-656-1188", "aliases": ["エリア21", "えりあ21"]},
+    "ベアーズパーク": {"url": "https://weathernews.jp/onebox/36.513221/139.956989/", "tenki_url": "https://tenki.jp/forecast/3/12/4110/9201/1hour.html", "hp_url": "https://bearspark.jp/", "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "ベアーズパーク宇都宮", "tel": "028-656-2580", "aliases": ["ベアーズパーク", "増井養魚場", "べあーずぱーく"]},
+    "鬼怒川": {"url": "https://weathernews.jp/onebox/36.617621/139.937106/", "tenki_url": "https://tenki.jp/forecast/3/12/4110/9201/1hour.html", "hp_url": "https://www.kinugawa-gyokyou.com/fa/", "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "鬼怒川フィッシングエリア", "tel": "028-672-1815", "aliases": ["鬼怒川", "鬼怒川フィッシングエリア", "きぬがわ"]},
+    "名草": {"url": "https://weathernews.jp/onebox/36.418930/139.466355/", "tenki_url": "https://tenki.jp/forecast/3/12/4110/9202/1hour.html", "hp_url": "https://ja-jp.facebook.com/nagusaturibori", "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "名草釣堀", "tel": "0284-36-2480", "aliases": ["名草", "名草釣堀", "なぐさ"]},
 
-os.environ['TZ'] = 'Asia/Tokyo'
-if hasattr(time, 'tzset'): time.tzset()
+    # --- 千葉県 ---
+    "座間・amaz": {"url": "https://weathernews.jp/onebox/35.843581/140.010676/", "tenki_url": "https://tenki.jp/forecast/3/15/4510/12217/1hour.html", "hp_url": "http://zamayougyo.com/", "x_url": "", "fb_url": "https://www.facebook.com/people/%E5%BA%A7%E9%96%93%E9%A4%8A%E9%AD%9A%E5%A0%B4-762125983928950/", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "座間養魚場", "tel": "04-7192-1080", "aliases": ["座間・amaz", "座間", "座間養魚場", "ざま", "アメイズ"]},
+    "ジョイバレー": {"url": "https://weathernews.jp/onebox/35.744779/140.417401/", "tenki_url": "https://tenki.jp/forecast/3/15/4520/12409/1hour.html", "hp_url": "http://www.joyvalley.co.jp/", "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "ジョイバレー 成田", "tel": "0479-78-1840", "aliases": ["ジョイバレー", "じょいばれー", "ジョイバ"]},
+    "ウォルトン": {"url": "https://weathernews.jp/onebox/35.863326/140.290525/", "tenki_url": "https://tenki.jp/forecast/3/15/4510/12211/1hour.html", "hp_url": "https://www.waltongarden.net/", "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "ウォルトンガーデン", "tel": "0476-37-3315", "aliases": ["ウォルトン", "ウォルトンガーデン", "うぉるとん"]},
+    "NOIKE": {"url": "https://weathernews.jp/onebox/35.576969/140.234786/", "tenki_url": "https://tenki.jp/forecast/3/15/4510/12104/1hour.html", "hp_url": "https://troutpond1089.com/", "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "trout pond NOIKE", "tel": "043-228-8283", "aliases": ["NOIKE", "ノイケ", "のいけ"]},
+    "釣パラダイス": {"url": "https://weathernews.jp/onebox/35.653330/140.338663/", "tenki_url": "https://tenki.jp/forecast/3/15/4520/12237/1hour.html", "hp_url": "https://www.tsuripara.com/", "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "釣りパラダイス 山武", "tel": "043-445-1216", "aliases": ["釣パラダイス", "パラダイス", "釣りパラダイス", "つりぱら"]},
 
-app = Flask(__name__)
+    # --- 埼玉県 ---
+    "長瀞": {"url": "https://weathernews.jp/onebox/36.084376/139.104604/", "tenki_url": "https://tenki.jp/forecast/3/14/4330/11362/1hour.html", "hp_url": "https://waterpark.jp/fishing/", "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "ウォーターパーク長瀞", "tel": "0494-66-0312", "aliases": ["長瀞", "WP長瀞", "ウォーターパーク長瀞", "ながとろ"]},
+    "彩の国": {"url": "https://weathernews.jp/onebox/35.992469/139.473372/", "tenki_url": "https://tenki.jp/forecast/3/14/4310/11346/1hour.html", "hp_url": "https://fs-sainokuni.jp/", "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "フィッシングフィールド彩の国", "tel": "049-297-7815", "aliases": ["彩の国", "FF彩の国", "さいのくに"]},
+    "朝霞Ｇ": {"url": "https://weathernews.jp/onebox/35.813481/139.604736/", "tenki_url": "https://tenki.jp/forecast/3/14/4310/11227/1hour.html", "hp_url": "http://www.a-garden.com/", "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "朝霞ガーデン", "tel": "048-456-0260", "aliases": ["朝霞Ｇ", "朝霞", "朝霞ガーデン", "アサカガーデン", "あさか", "あさかガーデン"]},
+    "しらこばと": {"url": "https://weathernews.jp/onebox/35.917970/139.752203/", "tenki_url": "https://tenki.jp/forecast/3/14/4310/11222/1hour.html", "hp_url": "https://www.parks.or.jp/shirakobatosuijo/guide/003/003811.html", "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "しらこばと水上公園", "tel": "048-977-5111", "aliases": ["しらこばと", "しらこばと水上公園"]},
+    "川越パーク": {"url": "https://weathernews.jp/onebox/35.907152/139.444046/", "tenki_url": "https://tenki.jp/forecast/3/14/4310/11201/1hour.html", "hp_url": "https://www.parks.or.jp/kawagoesuijo/", "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "川越水上公園", "tel": "049-241-2241", "aliases": ["川越パーク", "川越", "川越水上公園", "かわごえ"]},
+    "加須はなさき": {"url": "https://weathernews.jp/onebox/36.096192/139.636601/", "tenki_url": "https://tenki.jp/forecast/3/14/4320/11210/1hour.html", "hp_url": "https://www.parks.or.jp/kazohanasaki/guide/000/000031.html", "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "加須はなさき水上公園", "tel": "0480-65-7155", "aliases": ["加須はなさき", "はなさき", "はなさき公園"]},
+    "中里": {"url": "https://weathernews.jp/onebox/36.163896/139.176567/", "tenki_url": "https://tenki.jp/forecast/3/14/4320/11381/1hour.html", "hp_url": "http://fish104.in.coocan.jp/", "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "中里フィッシングクラブ", "tel": "0495-76-1120", "aliases": ["中里", "中里FC", "なかざと"]},
+    "伊古の里": {"url": "https://weathernews.jp/onebox/36.071547/139.339037/", "tenki_url": "https://tenki.jp/forecast/3/14/4320/11341/1hour.html", "hp_url": "http://www.ikonosato.jp/", "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "伊古の里フィッシングパーク", "tel": "0493-57-0505", "aliases": ["伊古", "伊古の里", "いこのさと", "伊古の里フィッシングパーク"]},
 
-LINE_CHANNEL_ACCESS_TOKEN = os.getenv('LINE_CHANNEL_ACCESS_TOKEN', '').strip()
-LINE_CHANNEL_SECRET = os.getenv('LINE_CHANNEL_SECRET', '').strip()
-line_bot_api = LineBotApi(LINE_CHANNEL_ACCESS_TOKEN)
-handler = WebhookHandler(LINE_CHANNEL_SECRET)
+    # --- 神奈川・東京 ---
+    "足柄": {"url": "https://weathernews.jp/onebox/35.319275/139.042723/", "tenki_url": "https://tenki.jp/forecast/3/17/4620/14217/1hour.html", "hp_url": "http://www.ashigara-ca.com/aca/", "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "足柄キャスティングエリア", "tel": "0465-73-2030", "aliases": ["足柄", "足柄CA", "あしがら"]},
+    "中津川": {"url": "https://weathernews.jp/onebox/35.521698/139.285609/", "tenki_url": "https://tenki.jp/forecast/3/17/4620/14401/1hour.html", "hp_url": "http://www.nakatugawa-gyokyou.jp/", "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "フィッシングフィールド中津川", "tel": "046-281-5421", "aliases": ["中津川", "FF中津川", "なかつがわ", "なかつ", "中津"]},
+    "早戸川": {"url": "https://weathernews.jp/onebox/35.543063/139.216090/", "tenki_url": "https://tenki.jp/forecast/3/17/4620/14151/1hour.html", "hp_url": "http://www.hayatogawa.com/", "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "リヴァスポット早戸", "tel": "042-785-0774", "aliases": ["早戸川", "リヴァスポット早戸", "はやとがわ"]},
+    "王禅寺": {"url": "https://weathernews.jp/onebox/35.587020/139.524309/", "tenki_url": "https://tenki.jp/forecast/3/17/4610/14137/1hour.html", "hp_url": "https://www.fishon-oz.jp/", "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "BerryPark in 王禅寺", "tel": "044-959-0037", "aliases": ["王禅寺", "ベリーパーク in 王禅寺", "おうぜんじ", "王禅寺ベリーパーク", "寺", "てら"]},
+    "開成": {"url": "https://weathernews.jp/onebox/35.334342/139.130344/", "tenki_url": "https://tenki.jp/forecast/3/17/4620/14366/1hour.html", "hp_url": "https://kaisei.forest-springs.com/", "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "開成水辺フォレストスプリングス", "tel": "0465-85-2020", "aliases": ["開成", "開成水辺フォレストスプリングス", "開成FS", "かいせい", "フォレストスプリングス"]},
+    "浅川国際": {"url": "https://weathernews.jp/onebox/35.641903/139.231262/", "tenki_url": "https://tenki.jp/forecast/3/16/4410/13201/1hour.html", "hp_url": "http://www5c.biglobe.ne.jp/~fly-lure/", "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "浅川国際マス釣り場", "tel": "042-661-2228", "aliases": ["浅川国際", "浅川", "浅川国際マス釣り場", "あさかわ", "あさかわこくさい", "あさこく", "アサコク"]},
 
-MAX_FAVORITES = 30
-SUPABASE_URL = os.getenv('SUPABASE_URL', '').strip()
-SUPABASE_KEY = os.getenv('SUPABASE_KEY', '').strip()
-
-supabase: Client = None
-if SUPABASE_URL and SUPABASE_KEY:
-    try: supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
-    except Exception as e: print(f"[Supabase初期化エラー] {e}")
-
-MEMORY_CACHE = {}
-
-# 連打防止用：排他制御ロックとリクエスト時刻管理
-USER_LAST_REQUEST = {}
-REQUEST_LOCK = threading.Lock()
-
-def is_throttled(user_id, cooldown=2.5):
-    """高速連打（競合状態）を排他ロックで完全に防ぐ判定関数"""
-    now_ts = time.time()
-    with REQUEST_LOCK:
-        last_ts = USER_LAST_REQUEST.get(user_id, 0)
-        if now_ts - last_ts < cooldown:
-            return True
-        USER_LAST_REQUEST[user_id] = now_ts
-        return False
-
-# 全国47都道府県のコードマッピング
-PREF_TO_JMA = {
-    "1": "016000", "2": "014100", "3": "012000", "4": "011000",
-    "5": "020000", "6": "030000", "7": "040000", "8": "050000", "9": "060000", "10": "070000",
-    "11": "080000", "12": "090000", "13": "100000", "14": "110000", "15": "120000", "16": "130000", "17": "140000",
-    "18": "150000", "19": "160000", "20": "170000", "21": "180000", "22": "190000", "23": "200000",
-    "24": "210000", "25": "220000", "26": "230000", "27": "240000", "28": "250000", "29": "260000",
-    "30": "270000", "31": "280000", "32": "290000", "33": "300000", "34": "310000", "35": "320000",
-    "36": "330000", "37": "340000", "38": "350000", "39": "360000", "40": "370000", "41": "380000",
-    "42": "390000", "43": "400000", "44": "410000", "45": "420000", "46": "430000", "47": "440000",
-    "48": "450000", "49": "460100", "50": "471000"
+    # --- 山梨・長野 ---
+    "鹿留": {"url": "https://weathernews.jp/onebox/35.512350/138.887160/", "tenki_url": "https://tenki.jp/forecast/3/22/4920/19204/1hour.html", "hp_url": "http://www.sisidome.jp/", "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "ベリーパーク in 鹿留", "tel": "0554-43-0082", "aliases": ["鹿留", "シシドメ", "ししどめ", "ベリーパーク"]},
+    "小菅": {"url": "https://weathernews.jp/onebox/35.760330/138.940529/", "tenki_url": "https://tenki.jp/forecast/3/22/4920/19442/1hour.html", "hp_url": "http://kosuge-tg.com/", "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "https://kosugetg.jugem.jp/", "yt_url": "", "search_name": "小菅トラウトガーデン", "tel": "0428-87-0373", "aliases": ["小菅", "小菅TG", "こすげ"]},
+    "奈良子": {"url": "https://weathernews.jp/onebox/35.672184/138.917831/", "tenki_url": "https://tenki.jp/forecast/3/22/4920/19206/1hour.html", "hp_url": "https://www.narago.jp/index.html", "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "奈良子釣りセンター", "tel": "0554-24-7636", "aliases": ["奈良子", "奈良子釣りセンター", "ならこ", "ならご", "ナラコ", "ナラゴ", "ならごつりせんたー", "ナラゴツリセンター"]},
+    "シルフ": {"url": "https://weathernews.jp/onebox/35.778458/138.316489/", "tenki_url": "https://tenki.jp/forecast/3/22/4910/19209/1hour.html", "hp_url": "https://shylph.boy.jp/", "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "白州トラウトフィッシングエリア", "tel": "0551-35-4308", "aliases": ["シルフ", "Shylph", "しるふ"]},
+    "ツガネ": {"url": "https://weathernews.jp/onebox/35.866755/138.451406/", "tenki_url": "https://tenki.jp/forecast/3/22/4910/19209/1hour.html", "hp_url": "http://www6.nns.ne.jp/~joy-field/index.html", "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "ジョイフィールド in Tsugane", "tel": "0551-20-7888", "aliases": ["ツガネ", "JF in Tsugane", "Tsugane", "ジョイフィールド", "つがね", "じょいふぃーるど"]},
+    "竜華池": {"url": "https://weathernews.jp/onebox/35.681978/138.576164/", "tenki_url": "https://tenki.jp/forecast/3/22/4910/19201/1hour.html", "hp_url": "https://fishingmarketbear.wixsite.com/ryugaike", "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "フィッシングパーク竜華池", "tel": "055-252-0938", "aliases": ["竜華池", "りゅうがいけ", "竜华池"]},
+    "平谷湖": {"url": "https://weathernews.jp/onebox/35.332243/137.632213/", "tenki_url": "https://tenki.jp/forecast/3/23/4830/20409/1hour.html", "hp_url": "https://hirayako.com/", "x_url": "", "fb_url": "", "insta_url": "https://ameblo.jp/hirayakobakucho/", "blog_url": "", "yt_url": "", "search_name": "平谷湖フィッシングスポット", "tel": "0265-48-1127", "aliases": ["平谷湖", "平谷湖フィッシングスポット", "ひらやこ"]},
+    "ハーブの里": {"url": "https://weathernews.jp/onebox/36.403436/137.890526/", "tenki_url": "https://tenki.jp/forecast/3/23/4810/20485/1hour.html", "hp_url": "https://herbfa1995.kikirara.jp/", "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "ハーブの里フィッシングエリア", "tel": "0261-62-6322", "aliases": ["ハーブの里", "ハーブ", "はーぶ"]},
+    "ニレ池": {"url": "https://weathernews.jp/onebox/36.712669/137.845826/", "tenki_url": "https://tenki.jp/forecast/3/23/4810/20485/1hour.html", "hp_url": "http://www.nireike.com/", "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "白馬八方ニレ池フィッシングセンター", "tel": "0261-72-5086", "aliases": ["ニレ池", "にれいけ"]},
+    "鹿島やり": {"url": "https://weathernews.jp/onebox/36.548940/137.809757/", "tenki_url": "https://tenki.jp/forecast/3/23/4810/20212/1hour.html", "hp_url": "https://www.kashimayari-garden.com/", "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "鹿島槍ガーデン", "tel": "0261-22-2253", "aliases": ["鹿島やり", "鹿島槍", "鹿島槍ガーデン", "かしまやり", "鹿島", "カシマヤリ"]},
+    "つきの池": {"url": "https://weathernews.jp/onebox/36.011582/138.197271/", "tenki_url": "https://tenki.jp/forecast/3/23/4820/20214/1hour.html", "hp_url": "http://www.tsukinoike.jp/", "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "槻の池フィッシングエリア", "tel": "0266-76-2280", "aliases": ["つきの池", "槻の池", "槻の池フィッシングエリア", "つきのいけ"]},
+    "あずみ野": {"url": "https://weathernews.jp/onebox/36.337699/137.885455/", "tenki_url": "https://tenki.jp/forecast/3/23/4820/20220/1hour.html", "hp_url": "http://azuminofishing.com/", "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "あずみ野フィッシングセンター", "tel": "0263-82-8280", "aliases": ["あずみ野", "あずみ野FC", "あずみの"]}
 }
 
-PREF_NAMES = {
-    "011000": "北海道", "012000": "北海道", "014100": "北海道", "016000": "北海道",
-    "020000": "青森", "030000": "岩手", "040000": "宮城", "050000": "秋田", "060000": "山形", "070000": "福島",
-    "080000": "茨城", "090000": "栃木", "100000": "群馬", "110000": "埼玉", "120000": "千葉", "130000": "東京", "140000": "神奈川",
-    "150000": "新潟", "160000": "富山", "170000": "石川", "180000": "福井", "190000": "山梨", "200000": "長野",
-    "210000": "岐阜", "220000": "静岡", "230000": "愛知", "240000": "三重",
-    "250000": "滋賀", "260000": "京都", "270000": "大阪", "280000": "兵庫", "290000": "奈良", "300000": "和歌山",
-    "310000": "鳥取", "320000": "島根", "330000": "岡山", "340000": "広島", "350000": "山口",
-    "360000": "徳島", "370000": "香川", "380000": "愛媛", "390000": "高知",
-    "400000": "福岡", "410000": "佐賀", "420000": "長崎", "430000": "大分", "450000": "宮崎", "460100": "鹿児島",
-    "471000": "沖縄"
+# ★ 亀山湖のキー名タイポを完全修正して元の状態に復元、および芦ノ湖・河口湖の追加
+BASS_SPOT_WEATHER_DATA = {
+    "亀山湖": {"url": "https://weathernews.jp/onebox/35.23/140.09/", "tenki_url": "https://tenki.jp/forecast/3/15/4530/12225/1hour.html", "hp_url": "", "hp2_url": "", "hide_default_map": True, "custom_button_rows": [[{"label": "🌐つばき", "url": "https://tubakimoto.com/sp/"}, {"label": "🗺️地図", "url": "https://www.google.com/maps/search/?api=1&query=" + quote("亀山湖 つばきもとボート")}], [{"label": "🌐のむら", "url": "https://nomuraboat.com/"}, {"label": "🗺️地図", "url": "https://www.google.com/maps/search/?api=1&query=" + quote("亀山湖 のむらボートハウス")}], [{"label": "🌐トキタ", "url": "http://www.tokitaboat.com/"}, {"label": "🗺️地図", "url": "https://www.google.com/maps/search/?api=1&query=" + quote("亀山湖 トキタボート")}]], "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "亀山湖", "tel": "", "aliases": ["亀山湖", "亀山ダム", "かめやまこ", "亀山"]},
+    "高滝湖": {"url": "https://weathernews.jp/onebox/35.34/140.15/", "tenki_url": "https://tenki.jp/forecast/3/15/4510/12219/1hour.html", "hp_url": "", "hp2_url": "", "hide_default_map": True, "custom_button_rows": [[{"label": "🌐ボート", "url": "http://www.takatakiko.jp/"}, {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E9%AB%98%E6%BB%9D%E6%B9%96%E8%A6%B3%E5%85%89%E4%BC%81%E6%A5%AD%E7%B5%84%E5%90%88/data=!4m2!3m1!1s0x0:0xeaa9dddefc1dab6?sa=X&ved=1t:2428&ictx=111"}]], "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "高滝湖", "tel": "", "aliases": ["高滝湖", "高滝ダム", "たかたきこ", "高滝", "たかたき"]},
+    "GGD": {"url": "https://weathernews.jp/onebox/36.103735/139.726303/", "tenki_url": "https://tenki.jp/forecast/3/14/4320/11232/1hour.html", "hp_url": "", "hp2_url": "", "map_url": "https://www.google.com/maps/place/36%C2%B006'13.5%22N+139%C2%B043'34.7%22E/@36.103735,139.7237281,17z/data=!3m1!4b1!4m4!3m3!8m2!3d36.103735!4d139.726303", "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "権現堂川", "tel": "", "aliases": ["GGD", "権現堂川", "権現堂", "ごんげんどう", "ggd", "権現堂公園"]},
+    "柴山沼": {"url": "https://weathernews.jp/onebox/36.035/139.620/", "tenki_url": "https://tenki.jp/forecast/3/14/4310/11246/1hour.html", "hp_url": "", "hp2_url": "", "hide_default_map": True, "custom_button_rows": [[{"label": "🚷陸っぱり", "url": "https://www.city.shiraoka.lg.jp/soshiki/toshiseibibu/machizukurika/1/2/kouenshoukai/7077.html"}, {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E6%9F%B4%E5%B1%B1%E6%B2%BC%E5%85%AC%E5%9C%92/@36.0353769,139.6204098,17z/data=!4m6!3m5!1s0x6018c93793c9501b:0xd88ae95754a5a434!8m2!3d36.0353769!4d139.6204098!16s%2Fg%2F11j8gglrfy"}]], "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "柴山沼", "tel": "", "aliases": ["柴山沼", "しばやまぬま", "しばやま", "柴山", "柴山沼公園"]},
+    "城沼": {"url": "https://weathernews.jp/onebox/36.244/139.547/", "tenki_url": "https://tenki.jp/forecast/3/13/4210/10207/1hour.html", "hp_url": "", "hp2_url": "", "hide_default_map": True, "custom_button_rows": [[{"label": "🚷陸っぱり", "url": "https://www.gunfish.jp/kumisyo/jyonumasyo.htm"}, {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E5%B0%BE%E6%9B%B3%E9%A7%90%E8%BB%8A%E5%A0%B4+%E5%9F%8E%E6%B2%BC/@36.2442399,139.5470132,17z/data=!4m6!3m5!1s0x601f30131ecc7d7d:0xf6c7e3e2ea8e7b26!8m2!3d36.2442399!4d139.5470132!16s%2Fg%2F1tmqlwq6"}]], "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "城沼", "tel": "", "aliases": ["城沼", "じょうぬま", "じょう"]},
+    "近藤沼": {"url": "https://weathernews.jp/onebox/36.226/139.504/", "tenki_url": "https://tenki.jp/forecast/3/13/4210/10207/1hour.html", "hp_url": "", "hp2_url": "", "hide_default_map": True, "custom_button_rows": [[{"label": "🚷陸っぱり", "url": "https://www.gunfish.jp/turiba/kondoba.htm"}, {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E8%BF%9近%E8%97%A4%E6%B2%BC%E5%85%AC%E5%9C%92+%E6%9D%B1%E6%B2%BC%E9%A7%90%E8%BB%8A%E5%A0%B4/@36.2267631,139.5040133,17z/data=!4m6!3m5!1s0x601f2f93b4726df5:0x314bd78c4ca70efc!8m2!3d36.2267631!4d139.5040133!16s%2Fg%2F11ddykhjqb"}]], "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "近藤沼", "tel": "", "aliases": ["近藤沼", "こんどうぬま", "こんどう"]},
+    "多々良沼": {"url": "https://weathernews.jp/onebox/36.257/139.502/", "tenki_url": "https://tenki.jp/forecast/3/13/4210/10207/1hour.html", "hp_url": "", "hp2_url": "", "hide_default_map": True, "custom_button_rows": [[{"label": "🚷陸っぱり", "url": "https://brofangst.base.shop/p/00011"}, {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E6%9D%BE%E6%B2%BC%E5%8D%97%E9%A7%90%E8%BB%8A%E5%A0%B4/@36.257169,139.5025201,18z/data=!4m14!1m7!3m6!1s0x601f250c74ed2feb:0x2a11fab532420bb1!2z5aSa44CF6Imv5rK8!8m2!3d36.2577532!4d139.4987337!16s%2Fg%2F1220_zpc!3m5!1s0x601f25149d57b007:0xb6814e41d64f6bc7!8m2!3d36.2573934!4d139.5025361!16s%2Fg%2F11c2m_3k88"}]], "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "多々良沼", "tel": "", "aliases": ["多々良沼", "多田良沼", "たたらぬま", "たたら"]},
+    "新利根川": {"url": "https://weathernews.jp/onebox/35.943/140.445/", "tenki_url": "https://tenki.jp/forecast/3/11/4020/8232/1hour.html", "hp_url": "", "hp2_url": "", "hide_default_map": True, "custom_button_rows": [[{"label": "🌐水神屋", "url": "https://suizinyaboatten.webnode.jp/"}, {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E6%B0%B4%E7%A5%9E%E5%B1%8B%E9%A3%9F%E5%A0%82(%E3%83%9C%E3%83%BC%E3%83%88%E5%BA%97)/@35.9443457,140.4455585,17z/data=!3m1!4b1!4m6!3m5!1s0x602259448dd69385:0x2bd2c732d85efccb!8m2!3d35.9443457!4d140.4455585!16s%2Fg%2F1wf21znb"}], [{"label": "🌐松屋", "url": "https://matsuya-boat.com/"}, {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E6%9D%BE%E5%B1%8B%E3%83%9C%E3%83%BC%E3%83%88/@35.9432042,140.4449447,17z/data=!4m6!3m5!1s0x6022594442b8f65d:0x7774965e76ad6221!8m2!3d35.9432042!4d140.4449447!16s%2Fg%2F1tkv9wm8"}], [{"label": "📝 Blog", "url": "https://ameblo.jp/matsuyaboat/"}, {"label": "𝕏", "url": "https://x.com/matsuyaboat"}]], "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "新利根川", "tel": "", "aliases": ["新利根川", "しんとねがわ", "しんとね", "新利根", "松屋ボート", "水神屋"]},
+    "霞ケ浦柏崎": {"url": "https://weathernews.jp/onebox/36.104/140.379/", "tenki_url": "https://tenki.jp/forecast/3/11/4020/8230/1hour.html", "hp_url": "", "hp2_url": "", "hide_default_map": True, "custom_button_rows": [[{"label": "🚷陸っぱり", "url": ""}, {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E6%9F%8F%E5%B4%8E%E8%88%B9%E6%BA%9C/@36.1018278,140.3769836,16.5z/data=!4m15!1m8!3m7!1s0x602241b724b93c45:0x2278e9f18aa62112!2z44CSMzAwLTAyMDEg6Iyo5Z-O55yM44GL44GZ44G_44GM44GG44KJ5biC5p-P5bSO!3b1!8m2!3d36.1055024!4d140.3765759!16s%2Fg%2F1yjg7xc0t!3m5!1s0x602241a9704639ad:0xd979fa7c5f2a1bb5!8m2!3d36.1047306!4d140.3798486!16s%2Fg%2F11sc24vb64"}]], "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "霞ケ浦柏崎", "tel": "", "aliases": ["霞ケ浦柏崎", "柏崎", "かしわざき", "霞ヶ浦柏崎"]},
+    "土浦港": {"url": "https://weathernews.jp/onebox/36.077/140.215/", "tenki_url": "https://tenki.jp/forecast/3/11/4020/8203/1hour.html", "hp_url": "", "hp2_url": "", "hide_default_map": True, "custom_button_rows": [[{"label": "🌐のぐち", "url": "https://bassternoguchi.com/"}, {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E3%83%90%E3%82%B9%E3%82%BF%E3%83%BC%E3%81%AE%E3%81%90%E3%81%A1%EF%BC%88%E5%8F%97%E4%BB%98%EF%BC%89/@36.0775435,140.2113308,15.71z/data=!4m6!3m5!1s0x60226d8334ba95e3:0x24617a61f9c72aa4!8m2!3d36.0779685!4d140.2156664!16s%2Fg%2F11kpghkfl0"}]], "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "土浦港", "tel": "", "aliases": ["土浦港", "つちうらこう", "つちうら", "土浦", "霞ケ浦西浦", "霞ヶ浦", "かすみがうら", "西浦", "のぐち", "バスターのぐち"]},
+    "片倉ダム": {"url": "https://weathernews.jp/onebox/35.198/140.070/", "tenki_url": "https://tenki.jp/forecast/3/15/4530/12225/1hour.html", "hp_url": "", "hp2_url": "", "hide_default_map": True, "custom_button_rows": [[{"label": "🌐笹川", "url": "http://sasagawab.xsrv.jp/index555555.htm"}, {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E3%83%AC%E3%83%B3%E3%82%BF%E3%83%AB%E3%83%9C%E3%83%BC%E3%83%88%E7%AC%B9%E5%B7%9D+%E7%AC%B9%E5%B7%9D%E3%83%9C%E3%83%BC%E3%83%88/@35.199604,140.071301,17z/data=!4m6!3m5!1s0x6022abc7ec99af2b:0xf3ec8e21fec19bac!8m2!3d35.199604!4d140.071301!16s%2Fg%2F1tfn2w38"}], [{"label": "🌐すずき", "url": "https://shop-hp.com/suzuki/"}, {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E3%83%AC%E3%83%B3%E3%82%BF%E3%83%AB%E3%83%9C%E3%83%BC%E3%83%88%E3%81%99%E3%81%9A%E3%81%8D/@35.1965734,140.0701992,17z/data=!4m6!3m5!1s0x6022abb789c73453:0x7cbbb99574db9fa!8m2!3d35.1965734!4d140.0701992!16s%2Fg%2F1t_wpgq2"}], [{"label": "🌐もとよし", "url": "https://www.kimitsu-rentalboatmotoyoshi.com/"}, {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E3%83%AC%E3%83%B3%E3%82%BF%E3%83%AB%E3%83%9C%E3%83%BC%E3%83%88%E3%82%82%E3%81%A8%E3%82%88%E3%81%97/@35.193371,140.062838,17z/data=!4m6!3m5!1s0x6022abb5ac3b3e55:0xd4e187031199a582!8m2!3d35.193371!4d140.062838!16s%2Fg%2F12hmg6w0f"}]], "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "片倉ダム", "tel": "", "aliases": ["片仓ダム", "笹川湖", "かたくらだむ", "かたくら", "片仓", "片倉ダム"]},
+    "三島湖": {"url": "https://weathernews.jp/onebox/35.211/140.033/", "tenki_url": "https://tenki.jp/forecast/3/15/4530/12225/1hour.html", "hp_url": "", "hp2_url": "", "hide_default_map": True, "custom_button_rows": [[{"label": "🌐ともえ", "url": "https://tomoeboat.jp/"}, {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E3%81%A8%E3%82%82%E3%82%91%E9%87%A3%E8%88%9F%E5%BA%97/@35.2125738,140.032063,17z/data=!4m6!3m5!1s0x6022a9ee4ef4324f:0xfcc38c1093948001!8m2!3d35.2125738!4d140.032063!16s%2Fg%2F1tg15vsm"}], [{"label": "🌐石井", "url": "https://mishimako-ishii-bass.net/"}, {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E7%9F%B3%E4%BA%95%E9%87%A3%E8%88%9F%E5%BA%97/@35.209197,140.03331,17z/data=!4m6!3m5!1s0x6022a9f1763b3519:0x994b241807e038bf!8m2!3d35.209197!4d140.03331!16s%2Fg%2F1tfn2w37"}], [{"label": "🌐ロッヂ", "url": "https://bousou60.net/"}, {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E6%88%BF%E7%B7%8F%E3%83%AD%E3%83%83%E3%83%82%E9%87%A3%E3%82%8A%E3%82%BB%E3%83%B3%E3%82%BF%E3%83%BC/@35.2114932,140.0332243,17z/data=!4m6!3m5!1s0x6022a9ee1f03983d:0x517ca52856b81f5a!8m2!3d35.2114932!4d140.0332243!16s%2Fg%2F1ts2_d6_"}]], "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "三島湖", "tel": "", "aliases": ["三島湖", "三島ダム", "みしまこ", "みしま", "三島"]},
+    "豊英ダム": {"url": "https://weathernews.jp/onebox/35.190041/140.015195/", "tenki_url": "https://tenki.jp/forecast/3/15/4530/12225/1hour.html", "hp_url": "", "hp2_url": "", "hide_default_map": True, "custom_button_rows": [[{"label": "🌐豊英湖", "url": "https://www.bassinheaven.com/toyofusa/toyofusaindex.html"}, {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E8%B1%8A%E8%8B%B1%E6%B9%96%E3%81%A4%E3%82%8A%E8%88%9F%E3%82%BB%E3%83%B3%E3%82%BF%E3%83%BC/@35.190041,140.015195,17z/data=!4m6!3m5!1s0x601800a9666e2423:0xb9b78a967c956e!8m2!3d35.190041!4d140.015195!16s%2Fg%2F1tjg_9xs"}]], "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "豊英ダム", "tel": "", "aliases": ["豊英ダム", "豊英湖", "とよふさ", "豊英", "豊栄ダム", "豊栄"]},
+    "相模湖": {"url": "https://weathernews.jp/onebox/35.6122/139.1567/", "tenki_url": "https://tenki.jp/forecast/3/17/4620/14151/1hour.html", "hp_url": "", "hp2_url": "", "hide_default_map": True, "custom_button_rows": [[{"label": "🌐日相園", "url": "https://nissoen.com/fishing.html"}, {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E6%97%A5%E7%9B%B8%E5%9C%92/@35.6122284,139.1567688,17z/data=!4m9!3m8!1s0x601916e4bc54fcd1:0xaae699bbf6f6a491!5m2!4m1!1i2!8m2!3d35.6122284!4d139.1567688!16s%2Fg%2F1tdy935d"}], [{"label": "🌐小川亭", "url": "https://www.ogawatei.info/"}, {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E5%B0%8F%E5%B7%9D%E4%BA%AD%E3%83%9C%E3%83%BC%E3%83%88%E3%8B%97%E3%82%8A%E5%A0%B4/@35.6125584,139.1929263,17z/data=!4m6!3m5!1s0x601917dc454d5fdd:0x96e49dec990ec06d!8m2!3d35.6125584!4d139.1929263!16s%2Fg%2F11ghq01q9k"}], [{"label": "🌐柴田", "url": "https://www.shibata-boat.com/"}, {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E6%9F%B4%E7%94%B0%E3%83%9C%E3%83%BC%E3%83%88/@35.6147906,139.1714628,17z/data=!4m6!3m5!1s0x60191719f57c043f:0xe8099ba9d0727d8b!8m2!3d35.6147906!4d139.1714628!16s%2Fg%2F1tvrzs4p"}]], "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "相模湖", "tel": "", "aliases": ["相模湖", "さがみこ", "さがみ"]},
+    "津久井湖": {"url": "https://weathernews.jp/onebox/35.593/139.261/", "tenki_url": "https://tenki.jp/forecast/3/17/4620/14151/1hour.html", "hp_url": "", "hp2_url": "", "hide_default_map": True, "custom_button_rows": [[{"label": "🌐津久井", "url": "https://tsukuikankou.com/"}, {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E6%B4%A5%E4%B9%85%E4%BA%95%E8%A6%B3%E5%85%89/@35.5933101,139.2610632,17z/data=!4m6!3m5!1s0x60191ba0f6c723d1:0x55900793ecc12ace!8m2!3d35.5933101!4d139.2610632!16s%2Fg%2F1tdnwyyd"}], [{"label": "🌐沼本", "url": "https://numamotoboat.main.jp/"}, {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E6%B2%BC%E6%9C%AC%E3%83%9C%E3%83%BC%E3%83%88/@35.5962023,139.2252871,17z/data=!4m6!3m5!1s0x60191a40afd70001:0xc29b5803b334e706!8m2!3d35.5960163!4d139.2278989!16s%2Fg%2F11c0r5nz9n"}]], "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "津久井湖", "tel": "", "aliases": ["津久井湖", "つくいこ", "つくい", "津久井"]},
+    "東山ダム": {"url": "https://weathernews.jp/onebox/37.460705/139.965895/", "tenki_url": "https://tenki.jp/forecast/2/10/3630/7202/1hour.html", "hp_url": "", "hp2_url": "", "hide_default_map": True, "custom_button_rows": [[{"label": "🚷陸っぱり", "url": ""}, {"label": "🗺️地図", "url": "https://www.google.com/maps/search/%E6%9D%B1%E5%B1%B1%E3%83%80%E3%83%A0/@37.4607054,139.9658954,17z"}]], "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "東山ダム", "tel": "", "aliases": ["東山ダム", "ひがしやまだむ", "ひがしやま"]},
+    "羽鳥湖": {"url": "https://weathernews.jp/onebox/37.261/140.079/", "tenki_url": "https://tenki.jp/forecast/2/10/3610/7461/1hour.html", "hp_url": "", "hp2_url": "", "hide_default_map": True, "custom_button_rows": [[{"label": "🚷陸っぱり", "url": ""}, {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E7%BE%BD%E9%B3%A5%E3%83%80%E3%83%A0/@37.2715954,140.0769915,17.25z/data=!4m14!1m7!3m6!1s0x60201e92da9ad8eb:0xad0e8032ff7d73cc!2z57696bOl5rmW!8m2!3d37.2613577!4d140.0791107!16s%2Fg%2F1yl491l68!3m5!1s0x60201c21470050c1:0x591eec4fb9db922e!8m2!3d37.2715547!4d140.0760678!16s%2Fm%2F04n1yk0"}]], "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "羽鳥湖", "tel": "", "aliases": ["羽鳥湖", "羽鳥ダム", "はとりこ", "はとり"]},
+    "桧原湖": {"url": "https://weathernews.jp/onebox/37.652/140.062/", "tenki_url": "https://tenki.jp/forecast/2/10/3630/7402/1hour.html", "hp_url": "", "hp2_url": "", "hide_default_map": True, "custom_button_rows": [[{"label": "🌐ゴールドH", "url": "https://gmeguro.com/"}, {"label": "🗺️地図", "url": "https://www.google.co.jp/maps/place/%E3%80%92969-2701+%E7%A6%8F%E5%B3%B6%E7%9C%8C%E8%80%B6%E9%BA%BB%E9%83%A1%E5%8C%97%E5%A1%A9%E5%8E%9F%E6%9D%91%E6%AA%9C%E5%8E%9F%E5%A4%A7%E5%BA%9C%E5%B9%B3%E5%8E%9F%EF%BC%91%EF%BC%91%EF%BC%97%EF%BC%92%E2%88%92%EF%BC%94/@37.6529382,140.0621476,17z/data=!3m1!4b1!4m6!3m5!1s0x5f8abb0db874825d:0x68d33e5c0fb7e72d!8m2!3d37.6529382!4d140.0647225!16s%2Fg%2F11ggzdspy0"}]], "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "桧原湖", "tel": "", "aliases": ["桧原湖", "ひばらこ", "ひばら", "桧原", "裏磐梯"]},
+    "猪苗代湖": {"url": "https://weathernews.jp/onebox/37.423/140.077/", "tenki_url": "https://tenki.jp/forecast/2/10/3630/7408/1hour.html", "hp_url": "", "hp2_url": "", "hide_default_map": True, "custom_button_rows": [[{"label": "🌐M'sShop", "url": "https://www.ms-shop-fukushima.com/"}, {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E3%82%A8%E3%83%A0%E3%82%BA%E3%82%B7%E3%83%A7%E3%83%83%E3%83%97%E3%83%AC%E3%83%B3%E3%82%BF%E3%83%AB%E3%83%9C%E3%83%BC%E3%83%88%E6%A1%9F%E6%A9%8B/@37.4236252,140.0730426,16z/data=!4m6!3m5!1s0x60200168e30d7511:0x43669e9726edabe2!8m2!3d37.4238756!4d140.0770589!16s%2Fg%2F11g8wcs3ys"}]], "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "猪苗代湖", "tel": "", "aliases": ["猪苗代湖", "いなわしろこ", "いなわしろ", "猪苗代"]},
+    "大田原": {"url": "https://weathernews.jp/onebox/36.868/140.119/", "tenki_url": "https://tenki.jp/forecast/3/12/4120/9210/1hour.html", "hp_url": "", "hp2_url": "", "hide_default_map": True, "custom_button_rows": [[{"label": "🚷陸っぱり", "url": ""}, {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E9%AE%8E%E3%81%AE%E9%87%8C%E5%85%AC%E5%9C%92/@36.8686588,140.1174822,17.5z/data=!4m6!3m5!1s0x6021d37eb8161f63:0x638de546bc2916df!8m2!3d36.8686804!4d140.1192635!16s%2Fg%2F11lgzk8qqq"}]], "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "大田原", "tel": "", "aliases": ["大田原", "おおたわら"]},
+    "那須鳥山": {"url": "https://weathernews.jp/onebox/36.660/140.176/", "tenki_url": "https://tenki.jp/forecast/3/12/4110/9206/1hour.html", "hp_url": "", "hp2_url": "", "hide_default_map": True, "custom_button_rows": [[{"label": "🚷陸っぱり", "url": ""}, {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E5%A2%83%E6%A9%8B/@36.6607046,140.1728663,16z/data=!4m6!3m5!1s0x6021dd514009cc87:0x8cd0acdcbf0f7436!8m2!3d36.6609585!4d140.1768216!16s%2Fg%2F11bzsz5f62"}]], "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "那須鳥山", "tel": "", "aliases": ["那須鳥山", "那須烏山", "なすからすやま", "からすやま"]},
+    "潮来": {"url": "https://weathernews.jp/onebox/35.937/140.542/", "tenki_url": "https://tenki.jp/forecast/3/11/4020/8232/1hour.html", "hp_url": "", "hp2_url": "", "hide_default_map": True, "custom_button_rows": [[{"label": "🚷陸っぱり", "url": ""}, {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E6%BD%AE%E6%9D%A5%E6%B8%AF/@35.9377446,140.5399971,17z/data=!3m1!4b1!4m6!3m5!1s0x60225722fad43dc7:0x780faf7d5d78f1fd!8m2!3d35.9377403!4d140.542572!16s%2Fg%2F11g0j02tq5"}]], "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "潮来", "tel": "", "aliases": ["潮来", "いたこ"]},
+    "佐原": {"url": "https://weathernews.jp/onebox/35.904/140.493/", "tenki_url": "https://tenki.jp/forecast/3/15/4520/12236/1hour.html", "hp_url": "", "hp2_url": "", "hide_default_map": True, "custom_button_rows": [[{"label": "🚷陸っぱり", "url": ""}, {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E3%83%97%E3%83%AD%E3%82%B7%E3%83%A7%E3%83%83%E3%83%97%E3%82%AA%E3%82%AA%E3%83%84%E3%82%AB+%E3%82%B1%E3%82%A4%E3%82%BA%E4%BD%90%E5%8E%9F%E5%BA%97/@35.9044088,140.4859875,15.5z/data=!4m6!3m5!1s0x60225874ca8b8321:0xc1d0c9ca245e4028!8m2!3d35.903701!4d140.4927!16s%2Fg%2F11bccmhxyw"}]], "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "佐原", "tel": "", "aliases": ["佐原", "さわら"]},
+    "栄町": {"url": "https://weathernews.jp/onebox/35.850/140.239/", "tenki_url": "https://tenki.jp/forecast/3/15/4520/12409/1hour.html", "hp_url": "", "hp2_url": "", "hide_default_map": True, "custom_button_rows": [[{"label": "🚷陸っぱり", "url": ""}, {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E9%B0%BB%E3%81%95%E3%81%8B%E3%81%9F/@35.8502556,140.2391889,16z/data=!4m6!3m5!1s0x602263bbe8ec82c3:0x54e592e7b5ca888c!8m2!3d35.8502556!4d140.2391889!16s%2Fg%2F1tcy8_q4"}]], "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "栄町", "tel": "", "aliases": ["栄町", "さかえまち"]},
+    "琵琶湖長浜": {"url": "https://weathernews.jp/onebox/35.481/136.112/", "tenki_url": "https://tenki.jp/forecast/6/28/6020/25203/1hour.html", "hp_url": "", "hp2_url": "", "hide_default_map": True, "custom_button_rows": [[{"label": "🌐ボート", "url": "https://fomarina-shiga.com/"}, {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%96%E3%82%AA%E3%83%BC%E3%82%B7%E3%83%A3%E3%83%B3%E3%83%9E%E3%83%AA%E3%83%BC%E3%83%8A/@35.4810202,136.1078288,15.96z/data=!4m6!3m5!1s0x60018cc07d7e9a49:0xc52809c4fc614823!8m2!3d35.4810412!4d136.1123604!16s%2Fg%2F1tf3z8n_"}]], "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "琵琶湖長浜", "tel": "", "aliases": ["琵琶湖長浜", "長浜", "琵琶湖", "ながはま", "びわこ"]},
+    "琵琶湖守山": {"url": "https://weathernews.jp/onebox/35.080/135.949/", "tenki_url": "https://tenki.jp/forecast/6/28/6010/25211/1hour.html", "hp_url": "", "hp2_url": "", "hide_default_map": True, "custom_button_rows": [[{"label": "🌐ボート", "url": "https://www.mlbc3066.com/"}, {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E3%83%9E%E3%82%B6%E3%83%BC%E3%83%AC%E3%82%A4%E3%82%AF%E3%83%9C%E3%83%BC%E3%83%88%E3%82%AF%E3%83%A9%E3%83%96/@35.0797941,135.9320807,14z/data=!4m6!3m5!1s0x60017465cbd9b487:0xe122d5af00f491a7!8m2!3d35.0795444!4d135.9494978!16s%2Fg%2F11rvw7bh0"}]], "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "琵琶湖守山", "tel": "", "aliases": ["琵琶湖守山", "守山", "マザーレイクボート", "もりやま"]},
+    "榛名湖": {"url": "https://weathernews.jp/onebox/36.473/138.860/", "tenki_url": "https://tenki.jp/forecast/3/13/4210/10202/1hour.html", "hp_url": "", "hp2_url": "", "hide_default_map": True, "custom_button_rows": [[{"label": "🌐ロマンス亭", "url": "http://www12.wind.ne.jp/romansutei/pc/index.html"}, {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E3%83%AD%E3%83%9E%E3%83%B3%E3%82%B9%E4%BA%AD/@36.473049,138.8586534,17.5z/data=!4m6!3m5!1s0x601e7ca2824b9055:0x2ae307817006b42c!8m2!3d36.4729583!4d138.8601111!16s%2Fg%2F1tjt204s"}], [{"label": "🌐水月", "url": "https://harunako.net/"}, {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E6%A6%9B%E5%90%8D%E8%A6%B3%E5%85%89%E3%83%9C%E3%83%BC%E3%83%88%EF%BC%86Cafe%E6%B0%B4%E6%9C%88/@36.4705322,138.859402,17.25z/data=!4m6!3m5!1s0x601e7cbcfb5b6df3:0xa5fd05a64bdf51e7!8m2!3d36.4706058!4d138.8615294!16s%2Fg%2F11bbt46vdc"}], [{"label": "🌐甲子亭", "url": "http://www.haruna-kinoene.co.jp/"}, {"label": "🗺️地図", "url": "https://www.google.com/maps/search/%E6%A6%9B%E5%90%8D%E6%B9%96+%E7%94%B2%E5%AD%90%E4%BA%AD/@36.4691783,138.8643834,18.75z"}]], "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "榛名湖", "tel": "", "aliases": ["榛名湖", "はるなこ"]},
+    "入鹿池": {"url": "https://weathernews.jp/onebox/35.38/136.94/", "tenki_url": "https://tenki.jp/forecast/5/26/5110/23215/1hour.html", "hp_url": "", "hp2_url": "", "hide_default_map": True, "custom_button_rows": [[{"label": "🌐見晴茶屋", "url": "https://miharashichaya.com/"}, {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E8%A6%8B%E6%99%B4%E8%8C%B6%E5%B1%8B/@35.3385091,136.9900064,17.75z/data=!4m6!3m5!1s0x600312979bb10869:0xf79af085c79012cd!8m2!3d35.3384583!4d136.9910368!16s%2Fg%2F1tdclwnc"}], [{"label": "🌐百軒亭", "url": "https://hyakkentei.nakamura-ceramics.jp/"}, {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E7%99%BE%E8%BB%92%E4%BA%AD/@35.3377684,136.9902628,17.5z/data=!4m6!3m5!1s0x60031297c56caedf:0xd3f4c48328fa3f71!8m2!3d35.3376955!4d136.9919584!16s%2Fg%2F1th5zqk9"}], [{"label": "🌐入鹿亭", "url": "https://irukatei.com/"}, {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E5%85%A5%E9%B9%BF%E4%BA%AD/@35.3351773,136.9919127,18z/data=!4m6!3m5!1s0x600312bdaa34eeb1:0xf5f3c38707001fa1!8m2!3d35.3353869!4d136.9928552!16s%2Fg%2F1tm1qcw5"}]], "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "入鹿池", "tel": "", "aliases": ["入鹿池", "いるかいけ", "いるか"]},
+    "雄蛇ヶ池": {"url": "https://weathernews.jp/onebox/35.561/140.330/", "tenki_url": "https://tenki.jp/forecast/3/15/4520/12213/1hour.html", "hp_url": "", "hp2_url": "", "hide_default_map": True, "custom_button_rows": [[{"label": "🌐ツカモト", "url": "https://x.com/ojagaboat"}, {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E3%83%84%E3%8AB%E3%83%A2%E3%83%88%E8%88%9F%E5%AE%BF/@35.5618373,140.3305779,17.5z/data=!4m6!3m5!1s0x6022953fd3cfc7d3:0xb5baa27d941239a7!8m2!3d35.5610758!4d140.3294775!16s%2Fg%2F121s918g"}]], "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "雄蛇ヶ池", "tel": "", "aliases": ["雄蛇ヶ池", "おじゃがいけ", "おじゃが", "雄蛇が池"]},
+    "池原七色ダム": {"url": "https://weathernews.jp/onebox/34.03/135.98/", "tenki_url": "https://tenki.jp/forecast/6/32/6420/29450/1hour.html", "hp_url": "", "hp2_url": "", "hide_default_map": True, "custom_button_rows": [[{"label": "🌐ドリーム", "url": "http://www.dream70.com/index.htm"}, {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E6%B1%A0%E5%8E%9F%E3%83%89%E3%83%AA%E3%83%BC%E3%83%A0/@34.0514302,135.9710921,17.75z/data=!4m6!3m5!1s0x60068bb9ea33b549:0xceb44d70f6f99a96!8m2!3d34.0517061!4d135.972806!16s%2Fg%2F11sk848pn1"}], [{"label": "🌐Ts-ON", "url": "https://www.ts-on.co.jp/"}, {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E3%83%86%E3%82%A3%E3%83%BC%E3%82%BA%E3%82%AA%E3%83%B3/@34.0153776,135.9884889,14.75z/data=!4m6!3m5!1s0x60068990236b225d:0xfdc44cf6715f8ce0!8m2!3d34.0153868!4d135.9988469!16s%2Fg%2F11q1v2mszb"}], [{"label": "🌐ひさや", "url": "http://www.hisaya.rif.jp/"}, {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E3%83%AC%E3%83%B3%E3%82%BF%E3%83%AB%E3%83%9C%E3%83%BC%E3%83%88+%E3%81%B2%E3%81%95%E3%82%84/@33.9994586,136.0133379,15.5z/data=!4m6!3m5!1s0x6006625870c3569d:0x6dc20b31ddb85994!8m2!3d33.9982816!4d136.0178336!16s%2Fg%2F11bw22kq_l"}]], "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "池原七色ダム", "tel": "", "aliases": ["七色ダム", "なないろだむ", "なないろ", "池原七色ダム", "池原ダム", "いけはら", "池原", "池原七色"]},
+    "河辺ワンド": {"url": "https://weathernews.jp/onebox/34.256614/135.280306/", "tenki_url": "https://tenki.jp/forecast/6/33/6510/30209/1hour.html", "hp_url": "", "hp2_url": "", "hide_default_map": True, "custom_button_rows": [[{"label": "🚷陸っぱり", "url": ""}, {"label": "🗺️地図", "url": "https://www.google.com/maps/place/34%C2%B015'23.8%22N+135%C2%B016'49.1%22E/@34.2566056,135.2785311,17.5z/data=!4m4!3m3!8m2!3d34.2566143!4d135.2803059!18m1!1e1?entry=ttu&g_ep=EgoyMDI2MDkyMy4wIKXMDSoASAFQAw%3D%3D"}]], "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "紀ノ川河辺ワンド", "tel": "", "aliases": ["河辺ワンド", "紀ノ川河辺ワンド", "紀ノ川", "きのかわ", "かわべわんど"]},
+    "津風呂湖": {"url": "https://weathernews.jp/onebox/34.398237/135.892709/", "tenki_url": "https://tenki.jp/forecast/6/32/6410/29441/1hour.html", "hp_url": "", "hp2_url": "", "hide_default_map": True, "custom_button_rows": [[{"label": "🌐ボート", "url": "http://tuburoko.net/"}, {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E6%B4%A5%E9%A2%A8%E5%91%82%E6%B9%96%E8%A6%B3%E5%85%89%EF%BC%88%E6%A0%AA%EF%BC%89/@34.3982549,135.8918404,18z/data=!4m6!3m5!1s0x6006c7e27f9d9283:0x14e7d0bdbd67f59e!8m2!3d34.3982372!4d135.8927094!16s%2Fg%2F1jmcqrppk!18m1!1e1?entry=ttu&g_ep=EgoyMDI2MDkyMy4wIKXMDSoASAFQAw%3D%3D"}]], "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "津風呂湖", "tel": "", "aliases": ["津風呂湖", "津風呂", "つぶろこ", "つぶろ"]},
+    "弥栄湖": {"url": "https://weathernews.jp/onebox/34.16/132.22/", "tenki_url": "https://tenki.jp/forecast/7/38/8130/35208/1hour.html", "hp_url": "", "hp2_url": "", "hide_default_map": True, "custom_button_rows": [[{"label": "🌐やさか", "url": "https://lakeplaza-yasaka.com/boat.php"}, {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E5%BC%A5%E6%A0%84%E6%B9%96%E3%83%AC%E3%83%B3%E3%82%BF%E3%83%AB%E3%83%9C%E3%83%BC%E3%83%88/@34.2364533,132.1406655,17.75z/data=!4m6!3m5!1s0x354533496d5d8d75:0xca43e840519c595!8m2!3d34.2364438!4d132.1423974!16s%2Fg%2F1tf40rmt"}]], "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "弥栄湖", "tel": "", "aliases": ["弥栄湖", "弥栄ダム", "やさかこ", "やさかだむ", "やさか"]},
+    "遠賀川": {"url": "https://weathernews.jp/onebox/33.82/130.70/", "tenki_url": "https://tenki.jp/forecast/9/43/8220/40384/1hour.html", "hp_url": "", "hp2_url": "", "hide_default_map": True, "custom_button_rows": [[{"label": "🌐RODMAN", "url": "https://www.rod-man.jp/"}, {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E3%83%AD%E3%83%83%E3%83%89%E3%83%9E%E3%83%B3/@33.8255333,130.7015963,17.71z/data=!4m6!3m5!1s0x3543cdce54b35d5d:0xc21fd59bb7a86607!8m2!3d35.82556!4d130.703444!16s%2Fg%2F1vp6x_1x"}]], "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "遠賀川", "tel": "", "aliases": ["遠賀川", "おんががわ", "おんが"]},
+    
+    # ★ 芦ノ湖
+    "芦ノ湖": {
+        "url": "https://weathernews.jp/onebox/35.201667/139.025/",
+        "tenki_url": "https://tenki.jp/forecast/3/17/4610/14382/10days.html",
+        "aliases": ["あしのこ", "芦の湖", "芦ノ湖"],
+        "map_url": "https://www.google.com/maps/place/%E8%8A%A6%E3%83%8E%E6%B9%96%E7%AE%B1%E6%A0%B9%E6%B9%BE%E3%83%9C%E3%83%BC%E3%83%88%E4%B9%97%E3%82%8A%E5%A0%B4/@35.1896242,139.0226231,17z/data=!4m6!3m5!1s0x60199980cae2a8f7:0xd3a435b8a23b6e04!8m2!3d35.1898555!4d139.0243183!16s%2Fg%2F11h4kth7hh?entry=ttu&g_ep=EgoyMDI2MDkyNy4wIKXMDSoASAFQAw%3D%3D",
+        "custom_button_rows": [
+            [
+                {"label": "𝕏 スズキ", "url": "https://x.com/suzuki_boat?lang=ja"},
+                {"label": "🗺️ 地図", "url": "https://www.google.com/maps/place/%E3%82%B9%E3%82%BA%E3%82%AD%E3%83%9C%E3%83%BC%E3%83%88/@35.1894254,139.020919,17z/data=!3m1!4b1!4m6!3m5!1s0x60199869a72bc963:0x752eea6af003e16e!8m2!3d35.189421!4d139.0234993!16s%2Fg%2F11c52_09gk?entry=ttu&g_ep=EgoyMDI2MDkyNy4wIKXMDSoASAFQAw%3D%3D"}
+            ],
+            [
+                {"label": "🌐 山木", "url": "https://yamaki-syouten.com/"},
+                {"label": "🗺️ 地図", "url": "https://www.google.com/maps/place/%E5%B1%B1%E6%9C%A8%E5%95%86%E5%BA%97/@35.1907701,139.0242795,17z/data=!3m1!4b1!4m6!3m5!1s0x6019986ec60a88ed:0xa5ffd2a0ab266f66!8m2!3d35.1907657!4d139.0268544!16s%2Fg%2F1tg_9k1m?authuser=0&entry=ttu&g_ep=EgoyMDI2MDkyNy4wIKXMDSoASAFQAw%3D%3D"}
+            ],
+            [
+                {"label": "🌐 おおば", "url": "https://www.ashinoko-fc.co.jp/afc/"},
+                {"label": "🗺️ 地図", "url": "https://www.google.com/maps/place/%E8%8A%A6%E3%83%8E%E6%B9%96%E3%83%95%E3%82%A3%E3%83%83%E3%82%B7%E3%83%B3%E3%82%B0%E3%82%BB%E3%83%B3%E3%82%BF%E3%83%BC+%E3%81%8A%E3%81%8A%E3%81%B0/@35.2359404,138.9948481,17z/data=!3m1!4b1!4m6!3m5!1s0x60199ed7114418c7:0x5265a184dd5cc5c4!8m2!3d35.235936!4d138.997423!16s%2Fg%2F11bccmbjcc?authuser=0&entry=ttu&g_ep=EgoyMDI2MDkyNy4wIKXMDSoASAFQAw%3D%3D"}
+            ]
+        ]
+    },
+
+    # ★ 河口湖
+    "河口湖": {
+        "url": "https://weathernews.jp/onebox/35.503/138.761/",
+        "tenki_url": "https://tenki.jp/forecast/3/22/4920/19430/10days.html",
+        "aliases": ["かわぐちこ", "河口湖", "かわぐち"],
+        "map_url": "https://www.google.com/maps/place/%E5%8B%9D%E5%B1%B1%E7%84%A1%E6%96%99%E9%A7%90%E8%BB%8A%E5%A0%B4/@35.5094355,138.7388465,16.5z/data=!4m6!3m5!1s0x60195fbee888c4c3:0xb2458001d90f46c4!8m2!3d35.5093102!4d138.742046!16s%2Fg%2F11c7hfcvgy?entry=ttu&g_ep=EgoyMDI2MDkyNy4wIKXMDSoASAFQAw%3D%3D",
+        "custom_button_rows": [
+            [
+                {"label": "🌐 さかなや", "url": "https://www.sakanayaboat.com/"},
+                {"label": "🗺️ 地図", "url": "https://www.google.com/maps/place/%E3%83%9C%E3%83%BC%E3%83%88%E3%83%8F%E3%82%A6%E3%82%B9%E3%81%95%E3%81%8B%E3%81%AA%E3%82%84/@35.5095977,138.7400193,17z/data=!4m6!3m5!1s0x60195fbee47e57db:0xeb6e34d89cc7ac2c!8m2!3d35.5094056!4d138.7424011!16s%2Fg%2F11b63ff4b1?authuser=0&hl=ja&entry=ttu&g_ep=EgoyMDI2MDkyNy4wIKXMDSoASAFQAw%3D%3D"}
+            ],
+            [
+                {"label": "🌐 KBH", "url": "https://www.kawaguchiko.ne.jp/~kbh.boat/index2"},
+                {"label": "🗺️ 地図", "url": "https://www.google.com/maps/place/%E6%B2%B3%E5%8F%A3%E6%B9%96%E3%83%9C%E3%83%BC%E3%83%88%E3%83%8F%E3%82%A6%E3%82%B9+KBH/@35.5246032,138.759916,16.75z/data=!4m6!3m5!1s0x60195ef7e62f6ee7:0xb58ce1dabbbffaa1!8m2!3d35.5246823!4d138.7625384!16s%2Fg%2F1td3rk21?authuser=0&hl=ja&entry=ttu&g_ep=EgoyMDI2MDkyNy4wIKXMDSoASAFQAw%3D%3D"}
+            ],
+            [
+                {"label": "🌐 フジミ", "url": "http://f-marine.com/"},
+                {"label": "🗺️ 地図", "url": "https://www.google.com/maps/place/%E3%83%95%E3%82%B8%E3%83%9F%E3%83%9E%E3%83%AA%E3%83%B3/@35.5039111,138.768319,17.75z/data=!4m6!3m5!1s0x60195e260f5e252b:0x2948f8c9cb794cfe!8m2!3d35.503855!4d138.7699635!16s%2Fg%2F11g9q8c2hm?authuser=0&hl=ja&entry=ttu&g_ep=EgoyMDI2MDkyNy4wIKXMDSoASAFQAw%3D%3D"}
+            ]
+        ]
+    }
 }
 
-def normalize_name(name_str):
-    if not name_str: return ""
-    return unicodedata.normalize('NFKC', name_str).lower()
-
-def clean_url(url_str):
-    if not url_str: return ""
-    cleaned = url_str.strip().replace(" ", "").replace("\t", "")
-    if not (cleaned.startswith("http://") or cleaned.startswith("https://")): return ""
-    if "#" in cleaned: cleaned = cleaned.split("#")[0]
-    return cleaned
-
-def convert_to_10days_url(url_str):
-    if not url_str: return None
-    cleaned = clean_url(url_str)
-    if '1hour.html' in cleaned: return cleaned.replace('1hour.html', '10days.html')
-    if cleaned.endswith('/'): return cleaned + '10days.html'
-    return cleaned
-
-def get_spot_details(spot_key):
-    data = ALL_SPOT_DATA.get(spot_key)
-    if not data: return spot_key, None, "", "", "", "", "", "", "", "", "", None
-    map_url = data.get("map_url")
-    if not map_url:
-        search_q = data.get('search_name', spot_key)
-        map_url = f"https://www.google.com/maps/search/?api=1&query={quote(search_q)}"
-    tenki_10days_url = convert_to_10days_url(data.get("tenki_url"))
-    return (
-        spot_key, data["url"], clean_url(data.get("hp_url", "")), clean_url(data.get("hp2_url", "")), 
-        map_url, data.get("tel", ""), clean_url(data.get("x_url", "")), clean_url(data.get("fb_url", "")),
-        clean_url(data.get("insta_url", "")), clean_url(data.get("blog_url", "")), clean_url(data.get("yt_url", "")),
-        tenki_10days_url
-    )
-
-def guess_date_from_string(date_str, now_date):
-    if not date_str: return now_date
-    m = re.search(r'(?:(\d{1,2})[月/-])?\s*(\d{1,2})日?', date_str)
-    if not m: return now_date
-    month_str, day_str = m.group(1), m.group(2)
-    day = int(day_str)
-    
-    if month_str:
-        month = int(month_str)
-        try: target = now_date.replace(month=month, day=day)
-        except ValueError: return now_date
-        
-        if (now_date - target).days > 180:
-            try: target = target.replace(year=now_date.year + 1)
-            except ValueError: pass
-        elif (target - now_date).days > 180:
-            try: target = target.replace(year=now_date.year - 1)
-            except ValueError: pass
-        return target
-    else:
-        candidates = []
-        for m_offset in [-1, 0, 1]:
-            y = now_date.year
-            m_val = now_date.month + m_offset
-            if m_val < 1:
-                m_val += 12
-                y -= 1
-            elif m_val > 12:
-                m_val -= 12
-                y += 1
-            try:
-                candidates.append(datetime(y, m_val, day).date())
-            except ValueError:
-                pass
-        if not candidates: return now_date
-        target = min(candidates, key=lambda d: abs((d - now_date).days))
-        return target
-
-def build_delete_confirm_message(spot_name, source):
-    execute_action = f"fav_del_execute_and_{source}"
-    cancel_action = f"fav_del_cancel_and_{source}"
-    bubble = {
-        "type": "bubble", "size": "kilo",
-        "body": {
-            "type": "box", "layout": "vertical", "spacing": "md", "paddingAll": "15px",
-            "contents": [
-                {"type": "text", "text": "⚠️ 削除の確認", "weight": "bold", "color": "#ff0000", "size": "md"},
-                {"type": "text", "text": f"「{spot_name}」をお気に入りから削除しますか？", "wrap": True, "size": "sm", "color": "#333333"}
-            ]
-        },
-        "footer": {
-            "type": "box", "layout": "horizontal", "spacing": "sm",
-            "contents": [
-                {"type": "button", "style": "secondary", "height": "sm", "flex": 1, "action": {"type": "postback", "label": "キャンセル", "data": f"action={cancel_action}"}},
-                {"type": "button", "style": "primary", "color": "#e53935", "height": "sm", "flex": 1, "action": {"type": "postback", "label": "削除する", "data": f"action={execute_action}&spot={spot_name}"}}
-            ]
-        }
-    }
-    return FlexSendMessage(alt_text=f"{spot_name}の削除確認", contents=bubble)
-
-def build_delete_all_confirm_message():
-    bubble = {
-        "type": "bubble", "size": "kilo",
-        "body": {
-            "type": "box", "layout": "vertical", "spacing": "md", "paddingAll": "15px",
-            "contents": [
-                {"type": "text", "text": "⚠️ 全て削除の確認", "weight": "bold", "color": "#ff0000", "size": "md"},
-                {"type": "text", "text": "表示中のすべてのお気に入りを削除しますか？\n（この操作は元に戻せません）", "wrap": True, "size": "sm", "color": "#333333"}
-            ]
-        },
-        "footer": {
-            "type": "box", "layout": "horizontal", "spacing": "sm",
-            "contents": [
-                {"type": "button", "style": "secondary", "height": "sm", "flex": 1, "action": {"type": "postback", "label": "キャンセル", "data": "action=fav_del_cancel_and_settings"}},
-                {"type": "button", "style": "primary", "color": "#e53935", "height": "sm", "flex": 1, "action": {"type": "postback", "label": "全て削除", "data": "action=fav_del_all_execute"}}
-            ]
-        }
-    }
-    return FlexSendMessage(alt_text="全て削除の確認", contents=bubble)
-
-def build_settings_flex_message(fav_list, mode="trout"):
-    active_group = COLOR_GROUPS if mode == "trout" else BASS_COLOR_GROUPS
-    active_spots = []
-    for group in active_group:
-        for sg in group["sub_groups"]:
-            active_spots.extend(sg["spots"])
-            
-    filtered_favs = [s for s in fav_list if s in active_spots]
-
-    if mode == "trout":
-        switch_btn = {"type": "button", "action": {"type": "postback", "label": "🎣 バスモードへ切替", "data": "action=switch_mode&mode=bass"}, "style": "primary", "color": "#1e88e5", "margin": "md", "height": "sm"}
-        title_text = "⚙️ お気に入り設定 (トラウト)"
-        header_color = "#d4af37"
-    else:
-        switch_btn = {"type": "button", "action": {"type": "postback", "label": "🐟 トラウトモードへ戻る", "data": "action=switch_mode&mode=trout"}, "style": "primary", "color": "#e65100", "margin": "md", "height": "sm"}
-        title_text = "⚙️ お気に入り設定 (バス)"
-        header_color = "#4caf50"
-
-    if not filtered_favs:
-        bubble = {
-            "type": "bubble", "size": "mega",
-            "header": {
-                "type": "box", "layout": "vertical", "backgroundColor": header_color, "paddingAll": "10px",
-                "contents": [{"type": "text", "text": title_text, "color": "#ffffff", "weight": "bold", "size": "md"}]
-            },
-            "body": {
-                "type": "box", "layout": "vertical", "spacing": "sm", "paddingAll": "10px",
-                "contents": [
-                    switch_btn,
-                    {"type": "separator", "margin": "md"},
-                    {"type": "text", "text": "現在お気に入りは登録されていません。\n\n釣り場を検索し、天気カード内の「⭐️ 登録」ボタンを押すだけで追加できます！", "wrap": True, "size": "sm", "color": "#555555", "margin": "md"}
-                ]
-            }
-        }
-        return FlexSendMessage(alt_text="お気に入り管理パネル", contents=bubble)
-
-    bubbles = []
-    chunk_size = 10
-    for i in range(0, len(filtered_favs), chunk_size):
-        chunk = filtered_favs[i:i + chunk_size]
-        rows = []
-        rows.append(switch_btn)
-        rows.append({"type": "separator", "margin": "md"})
-        rows.append({
-            "type": "box", "layout": "horizontal", "spacing": "xs", "paddingTop": "10px", "paddingBottom": "10px",
-            "contents": [
-                {"type": "button", "action": {"type": "postback", "label": "🥇1番", "data": "action=show_top_selector"}, "style": "secondary", "height": "sm", "flex": 1, "color": "#fff9c4"},
-                {"type": "button", "action": {"type": "postback", "label": "🔝先頭", "data": f"action=show_cell_top_selector&chunk={i}"}, "style": "secondary", "height": "sm", "flex": 1, "color": "#e3f2fd"},
-                {"type": "button", "action": {"type": "postback", "label": "⏬末尾", "data": f"action=show_cell_bottom_selector&chunk={i}"}, "style": "secondary", "height": "sm", "flex": 1, "color": "#eceff1"}
-            ]
-        })
-        rows.append({"type": "separator", "margin": "sm"})
-
-        for spot in chunk:
-            rows.append({
-                "type": "box", "layout": "horizontal", "margin": "md", "alignItems": "center",
-                "contents": [
-                    {"type": "text", "text": f"{spot}", "size": "sm", "weight": "bold", "flex": 4, "color": "#333333", "wrap": True},
-                    {"type": "button", "action": {"type": "postback", "label": "⬆️", "data": f"action=fav_up&spot={spot}"}, "style": "secondary", "flex": 2, "margin": "xs"},
-                    {"type": "button", "action": {"type": "postback", "label": "⬇️", "data": f"action=fav_down&spot={spot}"}, "style": "secondary", "flex": 2, "margin": "xs"},
-                    {"type": "button", "action": {"type": "postback", "label": "🗑️", "data": f"action=fav_del_confirm_and_settings&spot={spot}"}, "style": "secondary", "color": "#ffe6e6", "flex": 2, "margin": "xs"}
-                ]
-            })
-
-        rows.append({"type": "separator", "margin": "md"})
-        rows.append({
-            "type": "box", "layout": "horizontal", "margin": "md", "spacing": "sm",
-            "contents": [
-                {"type": "box", "layout": "vertical", "flex": 1, "backgroundColor": "#e53935", "borderWidth": "normal", "borderColor": "#e53935", "cornerRadius": "md", "paddingAll": "none", "contents": [{"type": "button", "action": {"type": "postback", "label": "🗑️ 全て削除", "data": "action=fav_del_all_confirm"}, "style": "link", "color": "#ffffff", "height": "sm", "margin": "none"}]},
-                {"type": "box", "layout": "vertical", "flex": 1, "backgroundColor": "#fff59d", "borderWidth": "normal", "borderColor": "#d4af37", "cornerRadius": "md", "paddingAll": "none", "contents": [{"type": "button", "action": {"type": "postback", "label": "📋 一覧", "data": "action=show_list", "displayText": "📋 一覧"}, "style": "link", "color": "#555555", "height": "sm", "margin": "none"}]}
-            ]
-        })
-
-        bubbles.append({
-            "type": "bubble", "size": "mega",
-            "header": {"type": "box", "layout": "vertical", "backgroundColor": header_color, "paddingAll": "10px", "contents": [{"type": "text", "text": f"{title_text} ({i+1}-{min(i+chunk_size, len(filtered_favs))}/{len(filtered_favs)}件)", "color": "#ffffff", "weight": "bold", "size": "md"}]},
-            "body": {"type": "box", "layout": "vertical", "spacing": "sm", "paddingAll": "10px", "contents": rows}
-        })
-    
-    if len(bubbles) == 1: return FlexSendMessage(alt_text="お気に入り管理パネル", contents=bubbles[0])
-    else: return FlexSendMessage(alt_text="お気に入り管理パネル", contents={"type": "carousel", "contents": bubbles})
-
-def build_spot_list_carousel_horizontal(user_id=None, mode="trout"):
-    active_group = COLOR_GROUPS if mode == "trout" else BASS_COLOR_GROUPS
-    active_spots = []
-    for group in active_group:
-        for sg in group["sub_groups"]:
-            active_spots.extend(sg["spots"])
-
-    bubbles = []
-    filtered_favs = []
-
-    if user_id:
-        _, favorites, _ = get_user_setting(user_id)
-        raw_fav_list = [s for s in favorites.split(',') if s]
-        filtered_favs = [s for s in raw_fav_list if s in active_spots]
-        
-        fav_rows = []
-        if not filtered_favs:
-            fav_rows.append({"type": "box", "layout": "vertical", "backgroundColor": "#fffde7", "cornerRadius": "md", "paddingAll": "md", "margin": "md", "contents": [{"type": "text", "text": "現在このモードでお気に入りは登録されていません。\n右へスワイプして釣り場を探し、「⭐️ 登録」ボタンを押すか、テキストで「追加 〇〇」と送信してください。", "wrap": True, "size": "sm", "color": "#555555"}]})
-        else:
-            for i in range(0, len(filtered_favs), 2):
-                pair = filtered_favs[i:i+2]
-                row_buttons = []
-                for j, spot in enumerate(pair):
-                    global_idx = i + j
-                    if global_idx < 2:
-                        row_buttons.append({"type": "box", "layout": "vertical", "backgroundColor": "#fff59d", "borderWidth": "normal", "borderColor": "#d4af37", "cornerRadius": "md", "paddingAll": "none", "margin": "xs", "contents": [{"type": "button", "action": {"type": "postback", "label": spot, "data": f"w={spot}"}, "style": "link", "color": "#555555", "height": "sm", "margin": "none"}]})
-                    else:
-                        row_buttons.append({"type": "button", "style": "secondary", "color": "#fff59d", "margin": "xs", "height": "sm", "action": {"type": "postback", "label": spot, "data": f"w={spot}"}})
-                if len(pair) == 1:
-                    row_buttons.append({"type": "filler"})
-                    
-                row_margin = "none" if i == 0 else ("md" if i % 10 == 0 else "xs")
-                row_box = {"type": "box", "layout": "horizontal", "contents": row_buttons, "margin": row_margin}
-                fav_rows.append(row_box)
-
-        fav_rows.append({"type": "separator", "margin": "md", "color": "#cccccc"})
-        fav_rows.append({"type": "box", "layout": "horizontal", "margin": "sm", "spacing": "sm", "contents": [{"type": "box", "layout": "vertical", "flex": 1, "backgroundColor": "#f8f9fa", "borderWidth": "normal", "borderColor": "#e0e0e0", "cornerRadius": "md", "paddingAll": "none", "contents": [{"type": "button", "action": {"type": "postback", "label": "⚙️ 設定/切替", "data": "action=show_settings", "displayText": "⚙️ 設定"}, "style": "link", "color": "#555555", "height": "sm", "margin": "none"}]}, {"type": "box", "layout": "vertical", "flex": 1, "backgroundColor": "#fff59d", "borderWidth": "normal", "borderColor": "#d4af37", "cornerRadius": "md", "paddingAll": "none", "contents": [{"type": "button", "action": {"type": "postback", "label": "📋 一覧更新", "data": "action=show_list", "displayText": "📋 一覧"}, "style": "link", "color": "#555555", "height": "sm", "margin": "none"}]}]})
-
-        header_color = "#d4af37" if mode == "trout" else "#4caf50"
-        header_text = "⭐ トラウトお気に入り" if mode == "trout" else "⭐ バスお気に入り"
-
-        fav_bubble = {"type": "bubble", "size": "giga", "header": {"type": "box", "layout": "horizontal", "backgroundColor": header_color, "paddingAll": "10px", "alignItems": "center", "contents": [{"type": "text", "text": header_text, "color": "#ffffff", "weight": "bold", "size": "md", "flex": 1}, {"type": "text", "text": f"({len(filtered_favs)}/{MAX_FAVORITES})", "color": "#eeeeee", "size": "xs", "align": "end", "flex": 0}]}, "body": {"type": "box", "layout": "vertical", "paddingAll": "6px", "contents": fav_rows}}
-        bubbles.append(fav_bubble)
-
-    for group in active_group:
-        rows = []
-        is_first_row = True
-        for sg in group["sub_groups"]:
-            spots = sg["spots"]
-            btn_bg = sg["bg"]
-            for i in range(0, len(spots), 2):
-                pair = spots[i:i+2]
-                row_buttons = []
-                for spot in pair:
-                    label_text = f"★ {spot}" if spot in filtered_favs else spot
-                    row_buttons.append({"type": "button", "style": "secondary", "color": btn_bg, "margin": "xs", "height": "sm", "action": {"type": "postback", "label": label_text, "data": f"w={spot}"}})
-                if len(pair) == 1:
-                    row_buttons.append({"type": "filler"})
-                    
-                row_margin = "none" if is_first_row else "xs"
-                rows.append({"type": "box", "layout": "horizontal", "contents": row_buttons, "margin": row_margin})
-                is_first_row = False
-            
-        bubble = {"type": "bubble", "size": "giga", "header": {"type": "box", "layout": "vertical", "backgroundColor": group["header_bg"], "paddingAll": "10px", "contents": [{"type": "text", "text": group["title"], "color": "#ffffff", "weight": "bold", "size": "md"}]}, "body": {"type": "box", "layout": "vertical", "paddingAll": "6px", "contents": rows}}
-        bubbles.append(bubble)
-
-    guide_bubble = {"type": "bubble", "size": "giga", "header": {"type": "box", "layout": "vertical", "backgroundColor": "#888888", "paddingAll": "10px", "contents": [{"type": "text", "text": "📖 使い方ガイド", "color": "#ffffff", "weight": "bold", "size": "md"}]}, "body": {"type": "box", "layout": "vertical", "spacing": "md", "paddingAll": "15px", "contents": [{"type": "box", "layout": "vertical", "spacing": "sm", "contents": [{"type": "text", "text": "👇 基本の操作", "weight": "bold", "size": "sm", "color": "#333333"}, {"type": "text", "text": "・一覧のボタンをタップで天気予報を表示", "wrap": True, "size": "xs", "color": "#666666"}]}, {"type": "separator", "margin": "md"}, {"type": "box", "layout": "vertical", "spacing": "sm", "contents": [{"type": "text", "text": "💬 テキストコマンド", "weight": "bold", "size": "sm", "color": "#333333"}, {"type": "text", "text": "【まとめて追加】", "weight": "bold", "size": "xs", "color": "#333333", "margin": "sm"}, {"type": "text", "text": "例：「追加 東山湖 すその 足柄 座間 醒井」\n※釣り場と釣り場の名前の間にスペースを入れてください。", "wrap": True, "size": "xs", "color": "#666666"}, {"type": "text", "text": "【まとめて削除】", "weight": "bold", "size": "xs", "color": "#333333", "margin": "sm"}, {"type": "text", "text": "例：「削除 東山湖 すその 足柄」\n※追加と同じく、名前の間にスペースを入れて複数同時に解除できます。", "wrap": True, "size": "xs", "color": "#666666"}, {"type": "text", "text": "【設定】", "weight": "bold", "size": "sm", "color": "#333333", "margin": "sm"}, {"type": "text", "text": "「設定」と送信すると、並び替え・全削除パネルが出ます。", "wrap": True, "size": "xs", "color": "#666666"}, {"type": "text", "text": "【一覧（メニュー）の出し方】", "weight": "bold", "size": "xs", "color": "#333333", "margin": "sm"}, {"type": "text", "text": "「一覧」という言葉や、それ以外の適当な文字（「あ」「1」「a」など）を送信すると、この一覧表が表示されます。", "wrap": True, "size": "xs", "color": "#666666"}]}, {"type": "separator", "margin": "md"}, {"type": "box", "layout": "vertical", "spacing": "sm", "contents": [{"type": "text", "text": "⭐ お気に入り機能とリッチメニュー", "weight": "bold", "size": "sm", "color": "#333333"}, {"type": "text", "text": "【一番お気に入り（メニュー左）】", "weight": "bold", "size": "xs", "color": "#333333", "margin": "sm"}, {"type": "text", "text": "現在のモードにおけるお気に入りリストの「1番目（一番上）」の釣り場の天気を瞬時に表示します。", "wrap": True, "size": "xs", "color": "#666666"}]}, {"type": "separator", "margin": "md"}, {"type": "box", "layout": "vertical", "spacing": "sm", "contents": [{"type": "text", "text": "🛑 配信停止・解除", "weight": "bold", "size": "sm", "color": "#333333"}, {"type": "text", "text": "このBotの利用を停止したい場合は、トーク画面右上のメニュー「≡」から「ブロック」を行ってください。", "wrap": True, "size": "xs", "color": "#666666"}, {"type": "text", "text": "完全に消去する場合", "weight": "bold", "size": "xs", "color": "#333333", "margin": "md"}, {"type": "text", "text": "「トーク一覧」画面に戻り、このBotのトークを長押し（iPhoneは左スワイプ）して「削除」してください。", "wrap": True, "size": "xs", "color": "#666666"}]}]}}
-    bubbles.append(guide_bubble)
-
-    return FlexSendMessage(alt_text="釣り場一覧", contents={"type": "carousel", "contents": bubbles})
-
-def get_user_setting(user_id):
-    if not supabase: return ('ウェザーニュース', '', 'trout')
-    try:
-        res = supabase.table('user_settings').select('*').eq('user_id', user_id).execute()
-        if res.data and len(res.data) > 0:
-            row = res.data[0]
-            favs = row.get('favorite_spots') or ''
-            try:
-                fishing_mode = row.get('fishing_mode') or 'trout'
-            except KeyError:
-                fishing_mode = 'trout'
-            
-            rename_map = {
-                "七色ダム": "池原七色ダム", "キング": "キングフィッシャー", "ツガネ": "JF in Tsugane",
-                "キングダム": "川場キングダム", "イワセン": "イワナセンター", "鹿島やり": "鹿島槍",
-                "アルクス宇宇都宮": "アルクス宇宇都宮", "片仓ダム": "片倉ダム", "多田良沼": "多々良沼",
-                "那須烏山": "那須鳥山", "柏崎": "霞ケ浦柏崎", "霞ケ浦西浦": "土浦港", "ＭＡＶ": "宮城", "GP不忘": "不忘"
-            }
-            
-            raw_favs = [s.strip() for s in favs.split(',')]
-            favs_list = []
-            for s in raw_favs:
-                if s in rename_map: s = rename_map[s]
-                if s not in ["多摩湖", "いなプー"] and s: favs_list.append(s)
-                    
-            return (row.get('weather_source', 'ウェザーニュース'), ','.join(favs_list), fishing_mode)
-        return ('ウェザーニュース', '', 'trout')
-    except Exception as e:
-        print(f"[Supabase取得エラー] {e}")
-        return ('ウェザーニュース', '', 'trout')
-
-def get_mode_fav_count(favorites, fishing_mode):
-    active_group = COLOR_GROUPS if fishing_mode == "trout" else BASS_COLOR_GROUPS
-    active_spots = []
-    for group in active_group:
-        for sg in group["sub_groups"]:
-            active_spots.extend(sg["spots"])
-    return len([s for s in favorites.split(',') if s in active_spots])
-
-def add_favorite_spots(user_id, spot_names):
-    if not supabase: return False, [], ["DB接続未完了です。"]
-    source, favorites, fishing_mode = get_user_setting(user_id)
-    fav_list = [s for s in favorites.split(',') if s]
-    
-    added = []
-    errors = []
-    for spot_name in spot_names:
-        target_name = None
-        norm_input = normalize_name(spot_name)
-        
-        for spot_key, data in ALL_SPOT_DATA.items():
-            norm_key = normalize_name(spot_key)
-            norm_aliases = [normalize_name(a) for a in data["aliases"]]
-            if norm_input == norm_key or norm_input in norm_aliases:
-                target_name = spot_key
-                break
-        
-        if not target_name:
-            errors.append(f"{spot_name}(不明)")
-            continue
-            
-        is_trout = False
-        for g in COLOR_GROUPS:
-            for sg in g["sub_groups"]:
-                if target_name in sg["spots"]:
-                    is_trout = True
-                    break
-            if is_trout: break
-            
-        target_active_group = COLOR_GROUPS if is_trout else BASS_COLOR_GROUPS
-        target_active_spots = []
-        for g in target_active_group:
-            for sg in g["sub_groups"]:
-                target_active_spots.extend(sg["spots"])
-                
-        target_mode_favs = [s for s in fav_list if s in target_active_spots]
-
-        if target_name in fav_list:
-            errors.append(f"{target_name}(登録済)")
-            continue
-        if len(target_mode_favs) >= MAX_FAVORITES:
-            errors.append(f"{target_name}(上限{MAX_FAVORITES}件超過)")
-            continue
-            
-        fav_list.append(target_name)
-        added.append(target_name)
-        
-    if added:
-        try:
-            supabase.table('user_settings').upsert({
-                'user_id': user_id, 'weather_source': source, 'favorite_spots': ','.join(fav_list), 'fishing_mode': fishing_mode
-            }).execute()
-        except Exception as e:
-            return False, [], [f"DB保存エラー: fishing_mode列の設定をご確認ください"]
-    return True, added, errors
-
-def remove_favorite_spots(user_id, spot_names):
-    if not supabase: return False, [], ["DB接続未完了です。"]
-    source, favorites, fishing_mode = get_user_setting(user_id)
-    fav_list = [s for s in favorites.split(',') if s]
-    
-    removed = []
-    errors = []
-    for spot_name in spot_names:
-        target_name = None
-        norm_input = normalize_name(spot_name)
-        
-        for spot_key, data in ALL_SPOT_DATA.items():
-            norm_key = normalize_name(spot_key)
-            norm_aliases = [normalize_name(a) for a in data["aliases"]]
-            if norm_input == norm_key or norm_input in norm_aliases:
-                target_name = spot_key
-                break
-        
-        if not target_name: target_name = spot_name 
-        if target_name not in fav_list:
-            errors.append(f"{target_name}(未登録)")
-            continue
-            
-        fav_list.remove(target_name)
-        removed.append(target_name)
-        
-    if removed:
-        try:
-            supabase.table('user_settings').upsert({
-                'user_id': user_id, 'weather_source': source, 'favorite_spots': ','.join(fav_list), 'fishing_mode': fishing_mode
-            }).execute()
-        except Exception as e:
-            return False, [], [f"DB保存エラー: fishing_mode列の設定をご確認ください"]
-    return True, removed, errors
-
-def clear_favorite_spots(user_id, mode="trout"):
-    if not supabase: return False, "DB接続未完了です。"
-    source, favorites, fishing_mode = get_user_setting(user_id)
-    raw_fav_list = [s for s in favorites.split(',') if s]
-
-    active_group = COLOR_GROUPS if mode == "trout" else BASS_COLOR_GROUPS
-    active_spots = []
-    for group in active_group:
-        for sg in group["sub_groups"]:
-            active_spots.extend(sg["spots"])
-
-    other_mode_favs = [s for s in raw_fav_list if s not in active_spots]
-
-    try:
-        supabase.table('user_settings').upsert({
-            'user_id': user_id, 'weather_source': source, 'favorite_spots': ','.join(other_mode_favs), 'fishing_mode': fishing_mode
-        }).execute()
-        return True, "表示中のすべてのお気に入りを削除しました。"
-    except Exception as e:
-        return False, f"削除に失敗しました: DB設定をご確認ください。詳細:{e}"
-
-def move_favorite_spot(user_id, spot_name, direction, mode="trout"):
-    if not supabase: return False, "DB接続未完了です。"
-    source, favorites, fishing_mode = get_user_setting(user_id)
-    raw_fav_list = [s for s in favorites.split(',') if s]
-    
-    if spot_name not in raw_fav_list:
-        return False, "登録されていません。"
-
-    active_group = COLOR_GROUPS if mode == "trout" else BASS_COLOR_GROUPS
-    active_spots = []
-    for group in active_group:
-        for sg in group["sub_groups"]:
-            active_spots.extend(sg["spots"])
-
-    current_mode_favs = [s for s in raw_fav_list if s in active_spots]
-    other_mode_favs = [s for s in raw_fav_list if s not in active_spots]
-
-    if spot_name not in current_mode_favs:
-         return False, "モードが違います。"
-
-    idx = current_mode_favs.index(spot_name)
-    
-    if direction == "up" and idx > 0:
-        current_mode_favs[idx - 1], current_mode_favs[idx] = current_mode_favs[idx], current_mode_favs[idx - 1]
-    elif direction == "down" and idx < len(current_mode_favs) - 1:
-        current_mode_favs[idx + 1], current_mode_favs[idx] = current_mode_favs[idx], current_mode_favs[idx + 1]
-    elif direction == "top" and idx > 0:
-        current_mode_favs.insert(0, current_mode_favs.pop(idx))
-    elif direction == "bottom" and idx < len(current_mode_favs) - 1:
-        current_mode_favs.append(current_mode_favs.pop(idx))
-    elif direction == "cell_top":
-        chunk_start = (idx // 10) * 10
-        if idx > chunk_start:
-            current_mode_favs.insert(chunk_start, current_mode_favs.pop(idx))
-    elif direction == "cell_bottom":
-        chunk_end = min(((idx // 10) + 1) * 10 - 1, len(current_mode_favs) - 1)
-        if idx < chunk_end:
-            current_mode_favs.insert(chunk_end, current_mode_favs.pop(idx))
-    else:
-        return True, "移動不要"
-        
-    new_fav_list = current_mode_favs + other_mode_favs
-
-    try:
-        supabase.table('user_settings').upsert({
-            'user_id': user_id, 'weather_source': source, 'favorite_spots': ','.join(new_fav_list), 'fishing_mode': fishing_mode
-        }).execute()
-        return True, "移動しました"
-    except Exception as e:
-        return False, f"移動失敗: DB設定をご確認ください。詳細:{e}"
-
-def extract_lat_lon(url):
-    m = re.search(r'onebox/([0-9.]+)/([0-9.]+)', url)
-    if m: return m.group(1), m.group(2)
-    return None, None
-
-def fetch_weekly_data_from_jma(tenki_url, raw_exclude_dates):
-    if not tenki_url: return []
-    m = re.search(r'forecast/\d+/(\d+)/', tenki_url)
-    if not m: return []
-    pref_id = m.group(1)
-    jma_code = PREF_TO_JMA.get(pref_id)
-    if not jma_code: return []
-
-    try:
-        url = f"https://www.jma.go.jp/bosai/forecast/data/forecast/{jma_code}.json"
-        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
-        res = requests.get(url, headers=headers, timeout=5.0)
-        res.raise_for_status()
-        data = res.json()
-
-        forecast_dict = {}
-
-        for part in data:
-            for ts in part.get('timeSeries', []):
-                times = ts.get('timeDefines', [])
-                areas = ts.get('areas', [])
-                if not times or not areas: continue
-
-                target_area = areas[0]
-                for a in areas:
-                    name = a.get("area", {}).get("name", "")
-                    if name in ["北部", "大田原", "西部", "秩父", "北部の山沿い", "飛騨地方", "長野", "塩尻", "松本"]:
-                        target_area = a
-                        break
-
-                for i, dt_str in enumerate(times):
-                    dt_only = dt_str[:10]
-                    try: 
-                        dt = datetime.strptime(dt_only, "%Y-%m-%d").date()
-                    except: 
-                        continue
-
-                    if dt not in forecast_dict:
-                        forecast_dict[dt] = {"code": 100, "pop": "-", "t_min": "-", "t_max": "-"}
-
-                    if "weatherCodes" in target_area and i < len(target_area["weatherCodes"]):
-                        if target_area["weatherCodes"][i]:
-                            forecast_dict[dt]["code"] = target_area["weatherCodes"][i]
-                    
-                    if "pops" in target_area and i < len(target_area["pops"]):
-                        val = target_area["pops"][i]
-                        if val not in ["", None]:
-                            val_str = str(val).replace('%','')
-                            if val_str.isdigit(): forecast_dict[dt]["pop"] = f"{val_str}%"
-                    
-                    if "tempsMin" in target_area and i < len(target_area["tempsMin"]):
-                        val = target_area["tempsMin"][i]
-                        if val not in ["", None]: forecast_dict[dt]["t_min"] = str(val)
-                        
-                    if "tempsMax" in target_area and i < len(target_area["tempsMax"]):
-                        val = target_area["tempsMax"][i]
-                        if val not in ["", None]: forecast_dict[dt]["t_max"] = str(val)
-                        
-                    if "temps" in target_area and i < len(target_area["temps"]):
-                        val = target_area["temps"][i]
-                        if val not in ["", None]:
-                            try:
-                                temp_val = int(val)
-                                c_min = forecast_dict[dt]["t_min"]
-                                c_max = forecast_dict[dt]["t_max"]
-                                if c_min == "-" or temp_val < int(c_min):
-                                    forecast_dict[dt]["t_min"] = str(temp_val)
-                                if c_max == "-" or temp_val > int(c_max):
-                                    forecast_dict[dt]["t_max"] = str(temp_val)
-                            except: pass
-
-        now_jst_date = datetime.now(timezone(timedelta(hours=9))).date()
-        last_wn_date = guess_date_from_string(raw_exclude_dates[-1], now_jst_date) if raw_exclude_dates else None
-
-        weekly_data = []
-        for dt in sorted(forecast_dict.keys()):
-            if last_wn_date and dt <= last_wn_date: continue
-
-            day_data = forecast_dict[dt]
-            w_str = ["(月)", "(火)", "(水)", "(木)", "(金)", "(土)", "(日)"][dt.weekday()]
-            date_label = f"{dt.day}{w_str}"
-
-            try: code = int(day_data["code"])
-            except: code = 100
-
-            if code < 200: final_img = "https://gvs.weathernews.jp/onebox/img/wxicon/100.png"
-            elif code < 300: final_img = "https://gvs.weathernews.jp/onebox/img/wxicon/200.png"
-            elif code < 400: final_img = "https://gvs.weathernews.jp/onebox/img/wxicon/300.png"
-            else: final_img = "https://gvs.weathernews.jp/onebox/img/wxicon/400.png"
-
-            weekly_data.append({
-                "date": date_label,
-                "img_url": final_img,
-                "temp_max": day_data["t_max"],
-                "temp_min": day_data["t_min"],
-                "rain_prob": day_data["pop"]
-            })
-            if len(weekly_data) >= 8: break
-
-        return weekly_data
-    except Exception as e:
-        print(f"[JMA API Error] {e}")
-        return []
-
-def fetch_disaster_info(tenki_url):
-    if not tenki_url: return {}
-    m = re.search(r'forecast/\d+/(\d+)/', tenki_url)
-    if not m: return {}
-    pref_id = m.group(1)
-    jma_code = PREF_TO_JMA.get(pref_id)
-    if not jma_code: return {}
-
-    pref_name = PREF_NAMES.get(jma_code, "")
-
-    warnings_list = []
-    quake_str = None
-    volcano_str = None
-
-    headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
-
-    try:
-        url = f"https://www.jma.go.jp/bosai/warning/data/warning/{jma_code}.json"
-        res = requests.get(url, headers=headers, timeout=2.0)
-        if res.status_code == 200:
-            data = res.json()
-            code_map = {
-                "02": "暴風雪警報", "03": "大雨警報", "04": "洪水警報", "05": "暴風警報",
-                "06": "大雪警報", "07": "波浪警報", "08": "高潮警報", "10": "大雨注意報",
-                "12": "大雪注意報", "13": "風雪注意報", "14": "雷注意報", "15": "強風注意報",
-                "16": "波浪注意報", "17": "融雪注意報", "18": "洪水注意報", "19": "高潮注意報",
-                "20": "濃霧注意報", "21": "乾燥注意報", "22": "なだれ注意報", "23": "低温注意報",
-                "24": "霜注意報", "25": "着氷注意報", "26": "着雪注意報", "32": "暴風雪特別警報",
-                "33": "大雨特別警報", "35": "暴風特別警報", "36": "大雪特別警報", "37": "波浪特別警報",
-                "38": "高潮特別警報"
-            }
-            if "areaTypes" in data and len(data["areaTypes"]) > 0:
-                areas = data["areaTypes"][0].get("areas", [])
-                if areas:
-                    warnings = areas[0].get("warnings", [])
-                    for w in warnings:
-                        if w.get("status") != "解除" and w.get("code") in code_map:
-                            warnings_list.append(code_map[w["code"]])
-            warnings_list = list(dict.fromkeys(warnings_list))
-    except: pass
-
-    try:
-        url = "https://www.jma.go.jp/bosai/quake/data/list.json"
-        res = requests.get(url, headers=headers, timeout=2.0)
-        if res.status_code == 200:
-            data = res.json()
-            for eq in data:
-                anm = eq.get("anm", "")
-                full_text = str(eq)
-                if pref_name and (pref_name in anm or pref_name in full_text):
-                    dt_str = eq.get("at", eq.get("rdt", ""))
-                    if dt_str:
-                        dt = datetime.fromisoformat(dt_str)
-                        dt_formatted = f"{dt.month}/{dt.day} {dt.hour}:{dt.minute:02d}"
-                        mag = eq.get("mag", "")
-                        maxi = eq.get("maxi", "")
-                        quake_str = f"{dt_formatted} {anm} (震度{maxi}/M{mag})"
-                        break
-    except: pass
-
-    try:
-        url = "https://www.jma.go.jp/bosai/volcano/data/list.json"
-        res = requests.get(url, headers=headers, timeout=2.0)
-        if res.status_code == 200:
-            data = res.json()
-            for v in data:
-                tit = v.get("tit", "")
-                full_text = str(v)
-                if pref_name and (pref_name in tit or pref_name in full_text):
-                    volcano_str = tit
-                    if len(volcano_str) > 15: volcano_str = volcano_str[:14] + "…"
-                    break
-    except: pass
-
-    return {"warnings": warnings_list, "quake": quake_str, "volcano": volcano_str}
-
-def fetch_spot_1hour_data(url, tenki_url=None):
-    try:
-        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}
-        response = requests.get(url, headers=headers, timeout=3.8)
-        response.raise_for_status()
-        soup = BeautifulSoup(response.text, 'html.parser')
-        
-        weather_by_date = {}
-        flick_list = soup.find('div', id='flick_list_1hour') or soup.find('div', id='flick_list_3hour')
-            
-        if flick_list:
-            groups = flick_list.find_all('div', class_='group')
-            for group in groups:
-                date_tag = group.find('div', class_='date')
-                if not date_tag: continue
-                date_str = date_tag.text.strip()
-                
-                daily_list = []
-                lists = group.find_all('ul', class_='list')
-                for item in lists:
-                    if 'past' in item.get('class', []): continue
-                    time_tag = item.find('li', class_='time')
-                    hour_str = time_tag.text.strip() if time_tag else ""
-                    if not hour_str.isdigit(): continue
-                    hour_int = int(hour_str)
-                    if not (3 <= hour_int <= 20): continue
-                    hour = f"{hour_int:02d}時"
-                    
-                    img_url = "https://gvs.weathernews.jp/onebox/img/wxicon/200.png"
-                    weather_tag = item.find('li', class_='weather')
-                    img_tag = weather_tag.find('img') if weather_tag else None
-                    if img_tag and 'src' in img_tag.attrs:
-                        src = img_tag['src']
-                        if src.startswith('//'): img_url = "https:" + src
-                        elif src.startswith('/'): img_url = "https://weathernews.jp" + src
-                        else: img_url = src
-                    img_url = img_url.replace("http://", "https://")
-                    if not img_url.startswith("https://"): img_url = "https://gvs.weathernews.jp/onebox/img/wxicon/200.png"
-
-                    rain = item.find('li', class_='rain').text.strip().replace("ミリ", "mm") if item.find('li', class_='rain') else "-"
-                    temp = item.find('li', class_='temp').text.strip() if item.find('li', class_='temp') else "-"
-                    wind_p = item.find('li', class_='wind').find('p') if item.find('li', class_='wind') else None
-                    wind = wind_p.text.strip() if wind_p else "-"
-
-                    daily_list.append({"time": hour, "img_url": img_url, "temp": temp, "rain": rain, "wind": wind})
-                
-                if daily_list: weather_by_date[date_str] = daily_list
-                if len(weather_by_date) >= 4: break
-
-        if not weather_by_date:
-            return None
-
-        raw_exclude_dates = list(weather_by_date.keys())
-        weekly_data = []
-
-        if tenki_url:
-            weekly_data = fetch_weekly_data_from_jma(tenki_url, raw_exclude_dates)
-
-        weather_by_date["__weekly__"] = weekly_data
-        weather_by_date["__disaster__"] = fetch_disaster_info(tenki_url)
-        return weather_by_date
-    except requests.exceptions.Timeout: return None
-    except Exception as e:
-        print(f"[1hour Data Fetch Error] {e}")
-        return None
-
-def get_cached_weather(spot_name):
-    now = datetime.now(timezone.utc)
-    if spot_name in MEMORY_CACHE:
-        data, updated_time = MEMORY_CACHE[spot_name]
-        if now - updated_time <= timedelta(hours=2):
-            if isinstance(data, dict):
-                weekly = data.get("__weekly__", [])
-                if data.get("_version") != "settings_shortcut_v130": return None
-                if not weekly: return None
-                dates = [d for d in data.keys() if d != "__weekly__" and d != "_version" and d != "__is_dummy__" and d != "__disaster__"]
-                if not dates: return None
-            return data
-            
-    if not supabase: return None
-    try:
-        res = supabase.table('weather_cache').select('*').eq('spot_name', spot_name).execute()
-        if res.data and len(res.data) > 0:
-            row = res.data[0]
-            updated_at_str = row.get('updated_at')
-            if updated_at_str:
-                try:
-                    updated_time = datetime.fromisoformat(updated_at_str.replace('Z', '+00:00'))
-                    if now - updated_time <= timedelta(hours=2):
-                        weather_data = row.get('weather_data')
-                        if isinstance(weather_data, dict):
-                            weekly = weather_data.get("__weekly__", [])
-                            if weather_data.get("_version") != "settings_shortcut_v130": return None
-                            if not weekly: return None
-                            dates = [d for d in weather_data.keys() if d != "__weekly__" and d != "_version" and d != "__is_dummy__" and d != "__disaster__"]
-                            if not dates: return None
-                        MEMORY_CACHE[spot_name] = (weather_data, updated_time)
-                        return weather_data
-                except: pass
-        return None
-    except Exception as e:
-        print(f"[Cache GET Error] {e}")
-        return None
-
-def save_cached_weather(spot_name, weather_data):
-    if weather_data.get("__is_dummy__"):
-        return
-    
-    now = datetime.now(timezone.utc)
-    weather_data["_version"] = "settings_shortcut_v130"
-    MEMORY_CACHE[spot_name] = (weather_data, now)
-    if not supabase: return
-    try:
-        supabase.table('weather_cache').upsert({'spot_name': spot_name, 'weather_data': weather_data, 'updated_at': now.isoformat()}).execute()
-    except Exception as e: print(f"[Cache SAVE Error] {e}")
-
-def create_disaster_box(disaster_data):
-    contents = []
-    contents.append({
-        "type": "text", "text": "⚠️ リアルタイム防災情報", "weight": "bold", "size": "xs", "color": "#e53935"
-    })
-    
-    lines_added = 0
-    warnings = disaster_data.get("warnings", [])
-    if warnings:
-        warn_text = "・" + " / ".join(warnings)
-        contents.append({
-            "type": "text", "text": warn_text, "size": "xxs", "wrap": True, "color": "#ff9800", "weight": "bold", "maxLines": 2
-        })
-        lines_added += 2
-    else:
-        contents.append({
-            "type": "text", "text": "✅ 警報・注意報の発表なし", "size": "xxs", "color": "#4caf50"
-        })
-        lines_added += 1
-        
-    contents.append({"type": "separator", "margin": "xs"})
-    
-    quake = disaster_data.get("quake")
-    if quake and lines_added < 4:
-        contents.append({
-            "type": "text", "text": f"【地震】{quake}", "size": "xxs", "wrap": True, "color": "#555555", "maxLines": 1
-        })
-        lines_added += 1
-        contents.append({"type": "separator", "margin": "xs"})
-
-    volcano = disaster_data.get("volcano")
-    if volcano and lines_added < 5:
-        contents.append({
-            "type": "text", "text": f"【火山】{volcano}", "size": "xxs", "wrap": True, "color": "#555555", "maxLines": 1
-        })
-
-    return {
-        "type": "box", "layout": "vertical", "margin": "md", "paddingAll": "8px",
-        "backgroundColor": "#fffde7", "cornerRadius": "sm", "borderColor": "#ffd54f", "borderWidth": "normal",
-        "spacing": "xs", "contents": contents
-    }
-
-def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_url="", tel="", x_url="", fb_url="", insta_url="", blog_url="", yt_url="", is_favorite=False):
-    weekly_data = weather_data.get("__weekly__", []) if isinstance(weather_data, dict) else []
-    disaster_data = weather_data.get("__disaster__", {}) if isinstance(weather_data, dict) else {}
-    dates = [d for d in weather_data.keys() if d != "__weekly__" and d != "_version" and d != "__is_dummy__" and d != "__disaster__"]
-    weather_by_date = weather_data
-    jst = timezone(timedelta(hours=9))
-    now_jst_date = datetime.now(jst).date()
-
-    # ★ 月末特有の順序崩壊（文字コード順ソート）を防ぐため、実際の日付カレンダー順に強制ソート
-    dates = sorted(dates, key=lambda d: guess_date_from_string(d, now_jst_date))
-
-    active_group = COLOR_GROUPS
-    for group in BASS_COLOR_GROUPS:
-        for sg in group["sub_groups"]:
-            if spot_name in sg["spots"]:
-                active_group = BASS_COLOR_GROUPS
-                break
-
-    header_color = "#0066cc"
-    for group in active_group:
-        found = False
-        for sg in group["sub_groups"]:
-            if spot_name in sg["spots"]:
-                header_color = group["header_bg"]
-                found = True
-                break
-        if found: break
-
-    def create_day_column(date_str):
-        if not date_str: return {"type": "box", "layout": "vertical", "flex": 1, "contents": [{"type": "text", "text": "-", "color": "#cccccc", "align": "center", "size": "xs"}]}
-        daily_data = weather_by_date[date_str]
-        target_date = guess_date_from_string(date_str, now_jst_date)
-        is_hol = jpholiday.is_holiday(target_date)
-        is_holiday_flag = is_hol or "(祝)" in date_str
-        display_date_str = date_str
-        header_bg_color = "#f5f5f5"
-        header_text_color = "#333333"
-
-        if is_holiday_flag or "(日)" in date_str:
-            header_bg_color = "#ffe6e6"
-            header_text_color = "#cc0000"
-            if is_holiday_flag and "🇯🇵" not in display_date_str: display_date_str = f"🇯🇵 {date_str}"
-        elif "(土)" in date_str:
-            header_bg_color = "#e6f2ff"
-            header_text_color = "#0066cc"
-
-        rows = [
-            {
-                "type": "box", "layout": "horizontal", "margin": "none",
-                "contents": [
-                    {"type": "text", "text": "時", "weight": "bold", "size": "xxs", "flex": 1, "align": "center", "color": "#888888"},
-                    {"type": "text", "text": "天", "weight": "bold", "size": "xxs", "flex": 1, "align": "center", "color": "#888888"},
-                    {"type": "text", "text": "℃", "weight": "bold", "size": "xxs", "flex": 1, "align": "center", "color": "#888888"},
-                    {"type": "text", "text": "☔", "weight": "bold", "size": "xxs", "flex": 1, "align": "center", "color": "#888888"},
-                    {"type": "text", "text": "m", "weight": "bold", "size": "xxs", "flex": 1, "align": "center", "color": "#888888"}
-                ]
-            },
-            {"type": "separator", "margin": "xs"}
-        ]
-        
-        for data in daily_data:
-            t_val = data.get('temp', '').replace("℃", "").strip() or "-"
-            r_val = data.get('rain', '').replace("mm", "").strip() or "-"
-            w_val = data.get('wind', '').replace("m/s", "").replace("m", "").strip() or "-"
-            time_str = data.get('time', '').replace("時", "").strip() or "-"
-            img_url = data.get('img_url', '') or "https://gvs.weathernews.jp/onebox/img/wxicon/200.png"
-            temp_color = "#ff0000" if t_val.isdigit() and int(t_val) >= 25 else "#333333"
-            rain_color = "#0000ff" if r_val.isdigit() and int(r_val) > 0 else "#333333"
-            if r_val == "-": rain_color = "#333333"
-
-            rows.append({
-                "type": "box", "layout": "horizontal", "margin": "xs", "alignItems": "center",
-                "contents": [
-                    {"type": "text", "text": time_str, "size": "xs", "flex": 1, "align": "center", "weight": "bold"},
-                    {"type": "image", "url": img_url, "size": "xs", "flex": 1},
-                    {"type": "text", "text": t_val, "size": "xs", "flex": 1, "align": "center", "color": temp_color},
-                    {"type": "text", "text": r_val, "size": "xs", "flex": 1, "align": "center", "color": rain_color},
-                    {"type": "text", "text": w_val, "size": "xs", "flex": 1, "align": "center"}
-                ]
-            })
-
-        return {
-            "type": "box", "layout": "vertical", "flex": 1,
-            "contents": [
-                {"type": "box", "layout": "vertical", "backgroundColor": header_bg_color, "paddingAll": "4px", "margin": "sm",
-                 "contents": [{"type": "text", "text": display_date_str, "weight": "bold", "size": "sm", "align": "center", "color": header_text_color}]}
-            ] + [{"type": "box", "layout": "vertical", "spacing": "none", "margin": "sm", "contents": rows}]
-        }
-
-    def create_weekly_box(slice_data):
-        if not slice_data: return None
-        cols = []
-        for w in slice_data:
-            rain_val = str(w.get("rain_prob", "0")).replace("%", "").strip()
-            rain_color = "#0000ff" if rain_val.isdigit() and int(rain_val) > 0 else "#555555"
-            date_str = str(w.get("date", "-"))
-            date_color = "#333333" 
-            if date_str != "-":
-                target_date = guess_date_from_string(date_str, now_jst_date)
-                is_hol = jpholiday.is_holiday(target_date)
-                if is_hol or "(日)" in date_str or "(祝)" in date_str: date_color = "#cc0000"
-                elif "(土)" in date_str: date_color = "#0066cc"
-
-            cols.append({
-                "type": "box", "layout": "vertical", "flex": 1, "alignItems": "center", "spacing": "xs",
-                "contents": [
-                    {"type": "text", "text": date_str, "size": "xxs", "weight": "bold", "color": date_color, "align": "center"},
-                    {"type": "image", "url": str(w.get("img_url", "https://gvs.weathernews.jp/onebox/img/wxicon/200.png")), "size": "xs", "aspectMode": "fit"},
-                    {"type": "text", "text": f"{w.get('temp_max', '-')}/{w.get('temp_min', '-')}℃", "size": "xxs", "color": "#333333", "weight": "bold", "align": "center"},
-                    {"type": "text", "text": f"{w.get('rain_prob', '-')}", "size": "xxs", "color": rain_color, "weight": "bold", "align": "center"}
-                ]
-            })
-        return {"type": "box", "layout": "horizontal", "margin": "md", "spacing": "xs", "backgroundColor": "#f4f4f4", "paddingAll": "8px", "cornerRadius": "sm", "contents": cols}
-
-    def create_header_block(bubble_index):
-        header_contents = [{"type": "text", "text": f"📍 {spot_name}", "color": "#ffffff", "weight": "bold", "size": "lg"}]
-        all_rows = []
-        
-        top_buttons = []
-        if is_favorite: top_buttons.append({"type": "button", "action": {"type": "postback", "label": "🗑️ 解除", "data": f"action=fav_del_confirm_and_list&spot={spot_name}"}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs", "color": "#ffcccc"})
-        else: top_buttons.append({"type": "button", "action": {"type": "postback", "label": "⭐️ 登録", "data": f"action=fav_add_and_list&spot={spot_name}"}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs", "color": "#fff59d"})
-
-        spot_data = ALL_SPOT_DATA.get(spot_name, {})
-        hide_default_map = spot_data.get("hide_default_map", False)
-
-        if map_url and not hide_default_map: top_buttons.append({"type": "button", "action": {"type": "uri", "label": "🗺️ 地図", "uri": map_url}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
-        elif len(top_buttons) == 1: top_buttons.append({"type": "box", "layout": "vertical", "flex": 1, "margin": "xs", "contents": []})
-            
-        all_rows.append(top_buttons)
-
-        header_buttons_bottom = []
-        if hp_url:
-            label_text = "🌐 大崎HP" if spot_name == "大崎・赤城" else "🌐 HP"
-            header_buttons_bottom.append({"type": "button", "action": {"type": "uri", "label": label_text, "uri": hp_url}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
-        if hp2_url:
-            label_text2 = "🌐 赤城HP" if spot_name == "大崎・赤城" else "🌐 HP2"
-            header_buttons_bottom.append({"type": "button", "action": {"type": "uri", "label": label_text2, "uri": hp2_url}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
-        if x_url: header_buttons_bottom.append({"type": "button", "action": {"type": "uri", "label": "𝕏", "uri": x_url}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
-        if fb_url: header_buttons_bottom.append({"type": "button", "action": {"type": "uri", "label": "📘 FB", "uri": fb_url}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
-        if insta_url: header_buttons_bottom.append({"type": "button", "action": {"type": "uri", "label": "📷 Insta", "uri": insta_url}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
-        if blog_url: header_buttons_bottom.append({"type": "button", "action": {"type": "uri", "label": "📝 Blog", "uri": blog_url}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
-        if yt_url: header_buttons_bottom.append({"type": "button", "action": {"type": "uri", "label": "▶️ YouTube", "uri": yt_url}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
-            
-        if header_buttons_bottom: all_rows.append(header_buttons_bottom)
-
-        custom_button_rows = spot_data.get("custom_button_rows", [])
-        for row_links in custom_button_rows:
-            row_buttons = []
-            for link in row_links:
-                if link.get("url"):
-                    action_data = {"type": "uri", "label": link["label"], "uri": link["url"]}
-                else:
-                    action_data = {"type": "postback", "label": link["label"], "data": "action=dummy"}
-                row_buttons.append({"type": "button", "action": action_data, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
-            if row_buttons: all_rows.append(row_buttons)
-
-        if len(all_rows) > 2:
-            mid = (len(all_rows) + 1) // 2
-            left_rows = all_rows[:mid]
-            right_rows = all_rows[mid:]
-        else:
-            left_rows = all_rows
-            right_rows = []
-
-        max_rows = max(len(left_rows), len(right_rows))
-        target_rows = left_rows if bubble_index == 0 else right_rows
-
-        for row_buttons in target_rows: header_contents.append({"type": "box", "layout": "horizontal", "margin": "sm", "spacing": "xs", "contents": row_buttons})
-        
-        spacer_count = max_rows - len(target_rows)
-        for _ in range(spacer_count):
-            spacer = {"type": "box", "layout": "vertical", "margin": "sm", "height": "40px", "contents": [{"type": "filler"}]}
-            header_contents.append(spacer)
-
-        return {"type": "box", "layout": "vertical", "backgroundColor": header_color, "paddingAll": "10px", "contents": header_contents}
-
-    weekly_box_1 = create_weekly_box(weekly_data[0:4]) if len(weekly_data) > 0 else None
-    
-    banner_img_url = "https://raw.githubusercontent.com/harackgm/fishing-weather-bot/main/tenkiharackbana.jpg"
-
-    bottom_buttons_1 = [{"type": "box", "layout": "vertical", "flex": 1, "backgroundColor": "#fff59d", "borderWidth": "normal", "borderColor": "#d4af37", "cornerRadius": "md", "paddingAll": "0px", "contents": [{"type": "button", "action": {"type": "postback", "label": "📋 一覧", "data": "action=show_list", "displayText": "📋 一覧"}, "style": "link", "color": "#555555", "height": "sm", "margin": "none"}]}]
-    bottom_buttons_2 = []
-    if tel:
-        clean_tel = tel.replace('-', '').strip()
-        bottom_buttons_2.append({"type": "box", "layout": "vertical", "flex": 2, "backgroundColor": "#f8f9fa", "borderWidth": "normal", "borderColor": "#e0e0e0", "cornerRadius": "md", "paddingAll": "0px", "contents": [{"type": "button", "action": {"type": "uri", "label": "📞 電話", "uri": f"tel:{clean_tel}"}, "style": "link", "color": "#555555", "height": "sm", "margin": "none"}]})
-    bottom_buttons_2.append({"type": "box", "layout": "vertical", "flex": 3 if tel else 1, "backgroundColor": "#fff59d", "borderWidth": "normal", "borderColor": "#d4af37", "cornerRadius": "md", "paddingAll": "0px", "contents": [{"type": "button", "action": {"type": "postback", "label": "📋 一覧", "data": "action=show_list", "displayText": "📋 一覧"}, "style": "link", "color": "#555555", "height": "sm", "margin": "none"}]})
-
-    footer_1 = {
-        "type": "box", "layout": "vertical", "paddingAll": "8px", "spacing": "none",
-        "contents": [
-            {"type": "separator", "margin": "none"},
-            {"type": "image", "url": banner_img_url, "size": "full", "aspectRatio": "3:1", "aspectMode": "cover", "margin": "md"},
-            {"type": "separator", "margin": "md"},
-            {"type": "box", "layout": "horizontal", "margin": "sm", "spacing": "sm", "contents": bottom_buttons_1}
-        ]
-    }
-
-    footer_2 = {
-        "type": "box", "layout": "vertical", "paddingAll": "8px", "spacing": "none",
-        "contents": [
-            {"type": "separator", "margin": "none"},
-            {"type": "image", "url": banner_img_url, "size": "full", "aspectRatio": "3:1", "aspectMode": "cover", "margin": "md"},
-            {"type": "separator", "margin": "md"},
-            {"type": "box", "layout": "horizontal", "margin": "sm", "spacing": "sm", "contents": bottom_buttons_2}
-        ]
-    }
-
-    body_1_contents = [{"type": "box", "layout": "horizontal", "spacing": "sm", "contents": [create_day_column(dates[0] if len(dates)>0 else None), {"type": "separator"}, create_day_column(dates[1] if len(dates)>1 else None)]}]
-    if weekly_box_1:
-        body_1_contents.append({"type": "separator", "margin": "md"})
-        body_1_contents.append(weekly_box_1)
-
-    body_2_contents = [{"type": "box", "layout": "horizontal", "spacing": "sm", "contents": [create_day_column(dates[2] if len(dates)>2 else None), {"type": "separator"}, create_day_column(dates[3] if len(dates)>3 else None)]}]
-    
-    body_2_contents.append({"type": "separator", "margin": "md", "color": "#00000000"})
-    body_2_contents.append(create_disaster_box(disaster_data))
-
-    bubbles = []
-    if len(dates) > 0:
-        bubbles.append({
-            "type": "bubble", "size": "giga", 
-            "header": create_header_block(0), 
-            "body": {"type": "box", "layout": "vertical", "spacing": "md", "paddingAll": "8px", "contents": body_1_contents},
-            "footer": footer_1
-        })
-    if len(dates) > 2:
-        bubbles.append({
-            "type": "bubble", "size": "giga", 
-            "header": create_header_block(1), 
-            "body": {"type": "box", "layout": "vertical", "spacing": "md", "paddingAll": "8px", "contents": body_2_contents},
-            "footer": footer_2
-        })
-
-    return FlexSendMessage(alt_text=f"{spot_name}の天気予報", contents={"type": "carousel", "contents": bubbles})
-
-@app.route("/", methods=['GET'])
-def top_page():
-    if supabase:
-        try: supabase.table('user_settings').select('user_id').limit(1).execute()
-        except Exception as e: print(f"[Supabase Wakeup Error] {e}")
-    return "LINE Reply Bot Server is running!", 200
-
-@app.route("/debug/cache", methods=['GET'])
-def debug_cache():
-    now = datetime.now(timezone.utc)
-    cache_info = {}
-    for spot, (data, updated_time) in MEMORY_CACHE.items():
-        elapsed = now - updated_time
-        remaining = timedelta(hours=2) - elapsed
-        if remaining.total_seconds() > 0:
-            remaining_str = f"{int(remaining.total_seconds() // 60)}分{int(remaining.total_seconds() % 60)}秒"
-            status = "有効"
-        else:
-            remaining_str = "期限切れ"
-            status = "無効"
-        
-        jst_time = updated_time.astimezone(timezone(timedelta(hours=9))).strftime('%Y-%m-%d %H:%M:%S')
-        
-        cache_info[spot] = {
-            "status": status,
-            "updated_at": jst_time,
-            "remaining_time": remaining_str,
-            "version": data.get("_version", "unknown") if isinstance(data, dict) else "unknown"
-        }
-    
-    return jsonify({
-        "total_cached": len(MEMORY_CACHE),
-        "active_caches": sum(1 for v in cache_info.values() if v["status"] == "有効"),
-        "details": cache_info
-    }), 200
-
-@app.route("/callback", methods=['POST'])
-def callback():
-    signature = request.headers.get('X-Line-Signature', '')
-    body = request.get_data(as_text=True)
-    try: handler.handle(body, signature)
-    except InvalidSignatureError: abort(400)
-    return 'OK', 200
-
-@handler.add(MessageEvent, message=TextMessage)
-def handle_message(event):
-    try:
-        raw_msg = event.message.text.strip()
-        user_id = event.source.user_id
-
-        # 2.5秒間の連打抑制（スロットリング）判定
-        if is_throttled(user_id, cooldown=2.5):
-            print(f"[Throttle] User {user_id} throttled (message)")
-            return
-
-        source, favorites, fishing_mode = get_user_setting(user_id)
-
-        if raw_msg in ["お気に入り1", "お気に入り2"]:
-            active_group = COLOR_GROUPS if fishing_mode == "trout" else BASS_COLOR_GROUPS
-            active_spots = []
-            for group in active_group:
-                for sg in group["sub_groups"]: active_spots.extend(sg["spots"])
-                    
-            raw_fav_list = [s.strip() for s in favorites.split(',') if s.strip()]
-            fav_list = [s for s in raw_fav_list if s in active_spots]
-            
-            target_spot = None
-            if raw_msg == "お気に入り1" and len(fav_list) > 0: target_spot = fav_list[0]
-            elif raw_msg == "お気に入り2" and len(fav_list) > 1: target_spot = fav_list[1]
-                
-            if target_spot:
-                target_spot_name, target_url, hp_url, hp2_url, map_url, tel, x_url, fb_url, insta_url, blog_url, yt_url, tenki_url = get_spot_details(target_spot)
-                if not target_url:
-                    line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"⚠️ 【{target_spot}】のデータが見つかりません。"))
-                    return
-
-                is_fav = True
-                weather_data = get_cached_weather(target_spot_name)
-                if not weather_data:
-                    weather_data = fetch_spot_1hour_data(target_url, tenki_url)
-                    if weather_data: save_cached_weather(target_spot_name, weather_data)
-
-                if weather_data:
-                    flex_msg = build_grid_flex_message(target_spot_name, weather_data, hp_url, hp2_url, map_url, tel, x_url, fb_url, insta_url, blog_url, yt_url, is_favorite=is_fav)
-                    line_bot_api.reply_message(event.reply_token, flex_msg)
-                else:
-                    line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"⚠️ 【{target_spot_name}】の天気データの取得に失敗しました。少し時間をおいてから再度お試しください。"))
-            else:
-                msg = "⚠️ お気に入りが登録されていないか、件数が足りません。\n「一覧」から釣り場を探して「⭐️ 登録」してください。"
-                flex_msg = build_spot_list_carousel_horizontal(user_id=user_id, mode=fishing_mode)
-                line_bot_api.reply_message(event.reply_token, [TextSendMessage(text=msg), flex_msg])
-            return
-
-        add_match = re.match(r'^追加[\s:：]+(.+)$', raw_msg, re.DOTALL)
-        if add_match:
-            spots_str = add_match.group(1).strip()
-            spot_names = [s for s in re.split(r'[\s,、\n]+', spots_str) if s and s not in ["追加", "削除"]]
-            success, added, errors = add_favorite_spots(user_id, spot_names)
-            _, favorites, _ = get_user_setting(user_id)
-            total_count = get_mode_fav_count(favorites, fishing_mode)
-            
-            reply_lines = []
-            if added: reply_lines.append(f"✅ {len(added)}件追加しました: {', '.join(added)}")
-            if errors: reply_lines.append(f"⚠️ スキップ・失敗: {', '.join(errors)}")
-            if added or errors: reply_lines.append(f"📊 現在の登録数: {total_count}/{MAX_FAVORITES}箇所")
-            else: reply_lines.append("⚠️ 釣り場名が認識できませんでした。")
-                
-            flex_msg = build_spot_list_carousel_horizontal(user_id=user_id, mode=fishing_mode)
-            line_bot_api.reply_message(event.reply_token, [TextSendMessage(text="\n".join(reply_lines)), flex_msg])
-            return
-
-        del_match = re.match(r'^削除[\s:：]+(.+)$', raw_msg, re.DOTALL)
-        if del_match:
-            spots_str = del_match.group(1).strip()
-            spot_names = [s for s in re.split(r'[\s,、\n]+', spots_str) if s and s not in ["追加", "削除"]]
-            success, removed, errors = remove_favorite_spots(user_id, spot_names)
-            _, favorites, _ = get_user_setting(user_id)
-            total_count = get_mode_fav_count(favorites, fishing_mode)
-            
-            reply_lines = []
-            if removed: reply_lines.append(f"✅ {len(removed)}件削除しました: {', '.join(removed)}")
-            if errors: reply_lines.append(f"⚠️ スキップ・失敗: {', '.join(errors)}")
-            if removed or errors: reply_lines.append(f"📊 現在の登録数: {total_count}/{MAX_FAVORITES}箇所")
-            else: reply_lines.append("⚠️ 釣り場名が認識できませんでした。")
-                
-            flex_msg = build_spot_list_carousel_horizontal(user_id=user_id, mode=fishing_mode)
-            line_bot_api.reply_message(event.reply_token, [TextSendMessage(text="\n".join(reply_lines)), flex_msg])
-            return
-
-        if raw_msg in ["一覧", "リスト", "釣り場一覧", "エリア", "📋 一覧", "📋一覧"]:
-            flex_msg = build_spot_list_carousel_horizontal(user_id=user_id, mode=fishing_mode)
-            line_bot_api.reply_message(event.reply_token, flex_msg)
-            return
-
-        if raw_msg in ["設定", "⚙️設定", "⚙️ 設定", "設定（並び替え・削除）", "⚙️ 設定（並び替え・削除）"]:
-            fav_list = [s.strip() for s in favorites.split(',') if s.strip()]
-            flex_msg = build_settings_flex_message(fav_list, mode=fishing_mode)
-            line_bot_api.reply_message(event.reply_token, flex_msg)
-            return
-
-        flex_msg = build_spot_list_carousel_horizontal(user_id=user_id, mode=fishing_mode)
-        line_bot_api.reply_message(event.reply_token, flex_msg)
-    except Exception as e:
-        print("\n=== システムエラー詳細 ===")
-        traceback.print_exc()
-
-@handler.add(PostbackEvent)
-def handle_postback(event):
-    try:
-        user_id = event.source.user_id
-        data_dict = dict(parse_qsl(event.postback.data))
-
-        # 2.5秒間の連打抑制（スロットリング）判定
-        if is_throttled(user_id, cooldown=2.5):
-            print(f"[Throttle] User {user_id} throttled (postback)")
-            return
-
-        action = data_dict.get("action")
-        spot_name = data_dict.get("spot")
-        source, favorites, fishing_mode = get_user_setting(user_id)
-        
-        if action == "dummy": return
-
-        if "w" in data_dict:
-            action = "show_weather"
-            spot_name = data_dict["w"]
-
-        if action == "switch_mode":
-            target_mode = data_dict.get("mode", "trout")
-            if supabase:
-                try: supabase.table('user_settings').upsert({'user_id': user_id, 'weather_source': source, 'favorite_spots': favorites, 'fishing_mode': target_mode}).execute()
-                except: pass
-            mode_name = "🐟 ブラックバス" if target_mode == "bass" else "🐟 エリアトラウト"
-            flex_msg = build_spot_list_carousel_horizontal(user_id=user_id, mode=target_mode)
-            line_bot_api.reply_message(event.reply_token, [TextSendMessage(text=f"{mode_name} モードに切り替えました！"), flex_msg])
-            return
-
-        elif action in ["show_top_selector", "show_cell_top_selector", "show_cell_bottom_selector"]:
-            fav_list = [s.strip() for s in favorites.split(',') if s.strip()]
-            active_group = COLOR_GROUPS if fishing_mode == "trout" else BASS_COLOR_GROUPS
-            active_spots = []
-            for group in active_group:
-                for sg in group["sub_groups"]: active_spots.extend(sg["spots"])
-            filtered_favs = [s for s in fav_list if s in active_spots]
-            if not filtered_favs: return
-
-            chunk_idx_str = data_dict.get("chunk")
-            is_top = (action == "show_top_selector")
-            is_cell_top = (action == "show_cell_top_selector")
-            target_action = "fav_top" if is_top else ("fav_cell_top" if is_cell_top else "fav_cell_bottom")
-            header_text = "🥇 1番目に設定する釣り場を選択" if is_top else ("🔝 枠の先頭へ移動" if is_cell_top else "⏬ 枠の最後尾へ移動")
-            bg_color = "#d4af37" if is_top else ("#64b5f6" if is_cell_top else "#78909c")
-            
-            selector_bubbles = []
-            if is_top: loop_chunks = [(i, filtered_favs[i:i+10]) for i in range(0, len(filtered_favs), 10)]
-            else:
-                c_idx = int(chunk_idx_str) if chunk_idx_str else 0
-                loop_chunks = [(c_idx, filtered_favs[c_idx:c_idx+10])]
-            
-            for start_idx, chunk in loop_chunks:
-                if not chunk: continue
-                btns = []
-                for spot in chunk:
-                    btns.append({"type": "button", "action": {"type": "postback", "label": f"{spot}", "data": f"action={target_action}&spot={spot}"}, "style": "secondary", "margin": "xs", "height": "sm", "color": "#f8f9fa"})
-                btns.append({"type": "separator", "margin": "md"})
-                btns.append({"type": "button", "action": {"type": "postback", "label": "🔙 戻る（キャンセル）", "data": "action=show_settings"}, "style": "secondary", "margin": "md", "height": "sm", "color": "#e0e0e0"})
-
-                selector_bubbles.append({"type": "bubble", "size": "kilo", "header": {"type": "box", "layout": "vertical", "backgroundColor": bg_color, "paddingAll": "10px", "contents": [{"type": "text", "text": header_text, "color": "#ffffff", "weight": "bold", "size": "sm"}]}, "body": {"type": "box", "layout": "vertical", "paddingAll": "10px", "contents": btns}})
-            flex_msg = FlexSendMessage(alt_text="移動する釣り場の選択", contents={"type": "carousel", "contents": selector_bubbles})
-            line_bot_api.reply_message(event.reply_token, flex_msg)
-            return
-
-        elif action == "show_list":
-            flex_msg = build_spot_list_carousel_horizontal(user_id=user_id, mode=fishing_mode)
-            line_bot_api.reply_message(event.reply_token, flex_msg)
-            return
-            
-        elif action == "show_settings":
-            fav_list = [s.strip() for s in favorites.split(',') if s.strip()]
-            flex_msg = build_settings_flex_message(fav_list, mode=fishing_mode)
-            line_bot_api.reply_message(event.reply_token, flex_msg)
-            return
-
-        elif action == "show_weather":
-            target_spot_name, target_url, hp_url, hp2_url, map_url, tel, x_url, fb_url, insta_url, blog_url, yt_url, tenki_url = get_spot_details(spot_name)
-            if not target_url: return
-            fav_list = [s.strip() for s in favorites.split(',') if s.strip()]
-            is_fav = target_spot_name in fav_list
-
-            weather_data = get_cached_weather(target_spot_name)
-            if not weather_data:
-                weather_data = fetch_spot_1hour_data(target_url, tenki_url)
-                if weather_data: save_cached_weather(target_spot_name, weather_data)
-
-            if weather_data:
-                flex_msg = build_grid_flex_message(target_spot_name, weather_data, hp_url, hp2_url, map_url, tel, x_url, fb_url, insta_url, blog_url, yt_url, is_favorite=is_fav)
-                line_bot_api.reply_message(event.reply_token, flex_msg)
-            else:
-                line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"⚠️ 【{target_spot_name}】の天気データの取得に失敗しました。少し時間を置いてから再度お試しください。"))
-            return
-
-        elif action == "fav_add_and_list":
-            success, added, errors = add_favorite_spots(user_id, [spot_name])
-            _, favorites, _ = get_user_setting(user_id)
-            total_count = get_mode_fav_count(favorites, fishing_mode)
-            msg = f"✅ 追加しました: {added[0]}\n📊 現在の登録数: {total_count}/{MAX_FAVORITES}箇所" if added else f"⚠️ {errors[0]}\n📊 現在の登録数: {total_count}/{MAX_FAVORITES}箇所"
-            flex_msg = build_spot_list_carousel_horizontal(user_id=user_id, mode=fishing_mode)
-            line_bot_api.reply_message(event.reply_token, [TextSendMessage(text=msg), flex_msg])
-
-        elif action == "fav_del_confirm_and_list":
-            flex_msg = build_delete_confirm_message(spot_name, "list")
-            line_bot_api.reply_message(event.reply_token, flex_msg)
-
-        elif action == "fav_del_confirm_and_settings":
-            flex_msg = build_delete_confirm_message(spot_name, "settings")
-            line_bot_api.reply_message(event.reply_token, flex_msg)
-
-        elif action == "fav_del_execute_and_list":
-            success, removed, errors = remove_favorite_spots(user_id, [spot_name])
-            _, favorites, _ = get_user_setting(user_id)
-            total_count = get_mode_fav_count(favorites, fishing_mode)
-            msg = f"✅ 削除しました: {removed[0]}\n📊 現在の登録数: {total_count}/{MAX_FAVORITES}箇所" if removed else f"⚠️ {errors[0]}\n📊 現在の登録数: {total_count}/{MAX_FAVORITES}箇所"
-            flex_msg = build_spot_list_carousel_horizontal(user_id=user_id, mode=fishing_mode)
-            line_bot_api.reply_message(event.reply_token, [TextSendMessage(text=msg), flex_msg])
-
-        elif action == "fav_del_execute_and_settings":
-            success, removed, errors = remove_favorite_spots(user_id, [spot_name])
-            _, favorites, _ = get_user_setting(user_id)
-            fav_list = [s.strip() for s in favorites.split(',') if s.strip()]
-            total_count = get_mode_fav_count(favorites, fishing_mode)
-            msg = f"✅ 削除しました: {removed[0]}\n📊 現在の登録数: {total_count}/{MAX_FAVORITES}箇所" if removed else f"⚠️ {errors[0]}\n📊 現在の登録数: {total_count}/{MAX_FAVORITES}箇所"
-            flex_msg = build_settings_flex_message(fav_list, mode=fishing_mode)
-            line_bot_api.reply_message(event.reply_token, [TextSendMessage(text=msg), flex_msg])
-
-        elif action == "fav_del_cancel_and_list":
-            flex_msg = build_spot_list_carousel_horizontal(user_id=user_id, mode=fishing_mode)
-            line_bot_api.reply_message(event.reply_token, [TextSendMessage(text="キャンセルしました。"), flex_msg])
-
-        elif action == "fav_del_cancel_and_settings":
-            fav_list = [s.strip() for s in favorites.split(',') if s.strip()]
-            flex_msg = build_settings_flex_message(fav_list, mode=fishing_mode)
-            line_bot_api.reply_message(event.reply_token, [TextSendMessage(text="キャンセルしました。"), flex_msg])
-
-        elif action == "fav_del_all_confirm":
-            flex_msg = build_delete_all_confirm_message()
-            line_bot_api.reply_message(event.reply_token, flex_msg)
-
-        elif action == "fav_del_all_execute":
-            success, msg = clear_favorite_spots(user_id, mode=fishing_mode)
-            flex_msg = build_spot_list_carousel_horizontal(user_id=user_id, mode=fishing_mode)
-            line_bot_api.reply_message(event.reply_token, [TextSendMessage(text=f"✅ {msg}"), flex_msg])
-
-        elif action in ["fav_up", "fav_down", "fav_top", "fav_bottom", "fav_cell_top", "fav_cell_bottom"]:
-            direction = action.replace("fav_", "")
-            move_favorite_spot(user_id, spot_name, direction, mode=fishing_mode)
-            _, favorites, _ = get_user_setting(user_id)
-            fav_list = [s.strip() for s in favorites.split(',') if s.strip()]
-            flex_msg = build_settings_flex_message(fav_list, mode=fishing_mode)
-            line_bot_api.reply_message(event.reply_token, flex_msg)
-            
-    except Exception as e:
-        print(f"Postback Error: {e}")
-        traceback.print_exc()
-
-def get_top_favorite_spots(trout_limit=24, bass_limit=12):
-    if not supabase: return [], []
-    try:
-        res = supabase.table('user_settings').select('favorite_spots').execute()
-        trout_counts = {}
-        bass_counts = {}
-        
-        trout_spots_list = []
-        for g in COLOR_GROUPS:
-            for sg in g["sub_groups"]:
-                trout_spots_list.extend(sg["spots"])
-
-        bass_spots_list = []
-        for g in BASS_COLOR_GROUPS:
-            for sg in g["sub_groups"]:
-                bass_spots_list.extend(sg["spots"])
-                
-        if res.data:
-            for row in res.data:
-                favs = row.get('favorite_spots', '')
-                if not favs: continue
-                spots = [s.strip() for s in favs.split(',') if s.strip()]
-                for s in spots: 
-                    if s in trout_spots_list:
-                        trout_counts[s] = trout_counts.get(s, 0) + 1
-                    elif s in bass_spots_list:
-                        bass_counts[s] = bass_counts.get(s, 0) + 1
-                        
-        sorted_trout = sorted(trout_counts.items(), key=lambda x: x[1], reverse=True)
-        top_trout = [spot for spot, count in sorted_trout[:trout_limit]]
-        
-        sorted_bass = sorted(bass_counts.items(), key=lambda x: x[1], reverse=True)
-        top_bass = [spot for spot, count in sorted_bass[:bass_limit]]
-        
-        return top_trout, top_bass
-    except Exception as e:
-        print(f"[Top Favs Error] {e}")
-        return [], []
-
-def run_background_update():
-    if not supabase: return
-    try:
-        top_trout, top_bass = get_top_favorite_spots(trout_limit=24, bass_limit=12)
-        
-        trout_targets = []
-        if top_trout:
-            trout_cache_times = {}
-            for spot in top_trout:
-                res = supabase.table('weather_cache').select('updated_at').eq('spot_name', spot).execute()
-                if res.data and len(res.data) > 0:
-                    try: trout_cache_times[spot] = datetime.fromisoformat(res.data[0].get('updated_at').replace('Z', '+00:00'))
-                    except: trout_cache_times[spot] = datetime.min.replace(tzinfo=timezone.utc)
-                else: trout_cache_times[spot] = datetime.min.replace(tzinfo=timezone.utc)
-            sorted_trout = sorted(trout_cache_times.items(), key=lambda x: x[1])
-            trout_targets = [spot for spot, time in sorted_trout[:5]]
-
-        bass_targets = []
-        if top_bass:
-            bass_cache_times = {}
-            for spot in top_bass:
-                res = supabase.table('weather_cache').select('updated_at').eq('spot_name', spot).execute()
-                if res.data and len(res.data) > 0:
-                    try: bass_cache_times[spot] = datetime.fromisoformat(res.data[0].get('updated_at').replace('Z', '+00:00'))
-                    except: bass_cache_times[spot] = datetime.min.replace(tzinfo=timezone.utc)
-                else: bass_cache_times[spot] = datetime.min.replace(tzinfo=timezone.utc)
-            sorted_bass = sorted(bass_cache_times.items(), key=lambda x: x[1])
-            bass_targets = [spot for spot, time in sorted_bass[:3]]
-
-        for spot_name in trout_targets:
-            data = ALL_SPOT_DATA.get(spot_name)
-            if not data: continue
-            url = data["url"]
-            tenki_url = convert_to_10days_url(data.get("tenki_url"))
-            weather_data = fetch_spot_1hour_data(url, tenki_url)
-            if weather_data: save_cached_weather(spot_name, weather_data)
-            time.sleep(random.uniform(2.5, 4.0))
-
-        if bass_targets:
-            time.sleep(random.uniform(5.0, 10.0))
-            
-            for spot_name in bass_targets:
-                data = ALL_SPOT_DATA.get(spot_name)
-                if not data: continue
-                url = data["url"]
-                tenki_url = convert_to_10days_url(data.get("tenki_url"))
-                weather_data = fetch_spot_1hour_data(url, tenki_url)
-                if weather_data: save_cached_weather(spot_name, weather_data)
-                time.sleep(random.uniform(2.5, 4.0))
-
-    except Exception as e:
-        print(f"[Cron Background Error] {e}")
-
-@app.route("/cron_trigger", methods=['GET', 'POST'])
-def cron_trigger():
-    if not supabase: return jsonify({"status": "error", "reason": "DB_NOT_CONNECTED"}), 500
-    try:
-        thread = threading.Thread(target=run_background_update)
-        thread.start()
-        return jsonify({"status": "success", "message": "Background update started"}), 200
-    except Exception as e:
-        traceback.print_exc()
-        return jsonify({"status": "error", "message": str(e)}), 500
-
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
+COLOR_GROUPS = [
+    {"title": "📍 静岡・神奈川・東京・千葉", "header_bg": "#0066cc", "sub_groups": [{"bg": "#e6f0fa", "spots": ["東山湖", "すその", "須川", "アルクス焼津", "浜名湖"]}, {"bg": "#d4e6f1", "spots": ["足柄", "中津川", "早戸川", "王禅寺", "開成", "浅川国際"]}, {"bg": "#cce5ff", "spots": ["座間・amaz", "ジョイバレー", "ウォルトン", "NOIKE", "釣パラダイス"]}]},
+    {"title": "📍 埼玉・群馬", "header_bg": "#2e7d32", "sub_groups": [{"bg": "#e8f5e9", "spots": ["長瀞", "彩の国", "朝霞Ｇ", "しらこばと", "川越パーク", "加須はなさき", "中里", "伊古の里"]}, {"bg": "#c8e6c9", "spots": ["川場", "川場キングダム", "おくとね", "イワナセンター", "黒保根", "迦葉山", "片品", "中之沢", "宮城", "大崎・赤城", "けん太", "フック", "赤久縄", "太田", "東山道", "榛名"]}]},
+    {"title": "📍 栃木・茨城", "header_bg": "#e65100", "sub_groups": [{"bg": "#fff3e0", "spots": ["キングフィッシャー", "みどり", "那須高原", "尚仁沢", "つり天国", "関根養魚場", "408", "308", "蛇尾（さび）川", "レイクウッド", "なら山沼", "大芦川", "加賀", "発光路", "上永野", "柏倉", "遊水園", "アルクス宇都宮", "エリア21", "ベアーズパーク", "鬼怒川", "名草"]}, {"bg": "#ffe0b2", "spots": ["水戸南", "高萩", "つくば園", "Ｊ", "ユザキ", "笠間", "DoDoo", "若栗", "ミッドクリーク"]}]},
+    {"title": "📍 甲信・東北・東海・関西", "header_bg": "#6a1b9a", "sub_groups": [{"bg": "#f3e5f5", "spots": ["鹿留", "小菅", "奈良子", "シルフ", "ツガネ", "竜華池", "平谷湖", "ハーブの里", "ニレ池", "鹿島やり", "つきの池", "あずみ野"]}, {"bg": "#e1bee7", "spots": ["Lost Lures", "不忘", "白河", "ほのぼの", "WaDoNa", "鶴沼川", "オーパ", "あいづ", "上浜", "GOZU"]}, {"bg": "#d1c4e9", "spots": ["瑞浪", "３９", "醒井", "高島の泉", "千早川"]}]}
+]
+
+BASS_COLOR_GROUPS = [
+    {"title": "📍 関東（千葉・埼玉・神奈川・群馬・茨城・栃木）", "header_bg": "#2e7d32", "sub_groups": [
+        {"bg": "#e8f5e9", "spots": ["亀山湖", "高滝湖", "片倉ダム", "三島湖", "豊英ダム", "榛名湖"]},
+        {"bg": "#e3f2fd", "spots": ["GGD", "柴山沼", "城沼", "近藤沼", "多々良沼", "新利根川", "霞ケ浦柏崎", "土浦港", "大田原", "那須鳥山", "潮来", "佐原", "栄町", "雄蛇ヶ池"]},
+        {"bg": "#f3e5f5", "spots": ["相模湖", "津久井湖", "芦ノ湖", "河口湖"]}
+    ]},
+    {"title": "📍 東北（福島）", "header_bg": "#6a1b9a", "sub_groups": [
+        {"bg": "#e1bee7", "spots": ["東山ダム", "羽鳥湖", "桧原湖", "猪苗代湖"]}
+    ]},
+    {"title": "📍 東海・関西・中国・九州", "header_bg": "#1565c0", "sub_groups": [
+        {"bg": "#e3f2fd", "spots": ["入鹿池"]},
+        {"bg": "#ffe0b2", "spots": ["琵琶湖長浜", "琵琶湖守山", "池原七色ダム", "河辺ワンド", "津風呂湖"]},
+        {"bg": "#ffcdd2", "spots": ["弥栄湖", "遠賀川"]}
+    ]}
+]
+
+ALL_SPOT_DATA = {**SPOT_WEATHER_DATA, **BASS_SPOT_WEATHER_DATA}
