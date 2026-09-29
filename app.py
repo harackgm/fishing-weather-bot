@@ -892,6 +892,7 @@ def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_
     weather_by_date = weather_data
     jst = timezone(timedelta(hours=9))
     now_jst_date = datetime.now(jst).date()
+    dates = sorted(dates, key=lambda d: guess_date_from_string(d, now_jst_date))
 
     active_group = COLOR_GROUPS
     for group in BASS_COLOR_GROUPS:
