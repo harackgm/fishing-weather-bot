@@ -57,8 +57,8 @@ MEMORY_CACHE = {}
 USER_LAST_REQUEST = {}
 REQUEST_LOCK = threading.Lock()
 
-# 快適かつ連打事故の起きない0.5秒へ安全調整
-def is_throttled(user_id, cooldown=0.5):
+# 元通りの 2.5秒 に正確に復元
+def is_throttled(user_id, cooldown=2.5):
     now_ts = time.time()
     with REQUEST_LOCK:
         last_ts = USER_LAST_REQUEST.get(user_id, 0)
@@ -283,7 +283,7 @@ def handle_message(event):
         raw_msg = event.message.text.strip()
         user_id = event.source.user_id
 
-        if is_throttled(user_id, cooldown=0.5):
+        if is_throttled(user_id, cooldown=2.5):
             return
 
         source, trout_list, bass_list, fishing_mode = get_user_setting(user_id)
@@ -439,7 +439,8 @@ def handle_postback(event):
         user_id = event.source.user_id
         data_dict = dict(parse_qsl(event.postback.data))
 
-        if is_throttled(user_id, cooldown=0.5):
+        # 2.5秒のストッパー（元の仕様通りの安全クールダウン）
+        if is_throttled(user_id, cooldown=2.5):
             return
 
         action = data_dict.get("action")
