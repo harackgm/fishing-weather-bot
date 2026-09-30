@@ -480,28 +480,36 @@ def handle_postback(event):
             if not filtered_favs: return
 
             chunk_idx_str = data_dict.get("chunk")
+            c_idx = int(chunk_idx_str) if chunk_idx_str and chunk_idx_str.isdigit() else 0
+            chunk = filtered_favs[c_idx:c_idx+10]
+            if not chunk: return
+
             is_top = (action == "show_top_selector")
             is_cell_top = (action == "show_cell_top_selector")
             target_action = "fav_top" if is_top else ("fav_cell_top" if is_cell_top else "fav_cell_bottom")
             header_text = "🥇 1番目に設定する釣り場を選択" if is_top else ("🔝 枠の先頭へ移動" if is_cell_top else "⏬ 枠の最後尾へ移動")
-            bg_color = "#d4af37" if is_top else ("#64b5f6" if is_cell_top else "#78909c")
-            
-            selector_bubbles = []
-            if is_top: loop_chunks = [(i, filtered_favs[i:i+10]) for i in range(0, len(filtered_favs), 10)]
-            else:
-                c_idx = int(chunk_idx_str) if chunk_idx_str else 0
-                loop_chunks = [(c_idx, filtered_favs[c_idx:c_idx+10])]
-            
-            for start_idx, chunk in loop_chunks:
-                if not chunk: continue
-                btns = []
-                for spot in chunk:
-                    btns.append({"type": "button", "action": {"type": "postback", "label": f"{spot}", "data": f"action={target_action}&spot={spot}"}, "style": "secondary", "margin": "xs", "height": "sm", "color": "#f8f9fa"})
-                btns.append({"type": "separator", "margin": "md"})
-                btns.append({"type": "button", "action": {"type": "postback", "label": "🔙 戻る（キャンセル）", "data": "action=show_settings"}, "style": "secondary", "margin": "md", "height": "sm", "color": "#e0e0e0"})
+            bg_color = "#d4af37" if is_top else ("#0288d1" if is_cell_top else "#78909c")
 
-                selector_bubbles.append({"type": "bubble", "size": "kilo", "header": {"type": "box", "layout": "vertical", "backgroundColor": bg_color, "paddingAll": "10px", "contents": [{"type": "text", "text": header_text, "color": "#ffffff", "weight": "bold", "size": "sm"}]}, "body": {"type": "box", "layout": "vertical", "paddingAll": "10px", "contents": btns}})
-            flex_msg = FlexSendMessage(alt_text="移動する釣り場の選択", contents={"type": "carousel", "contents": selector_bubbles})
+            btns = []
+            for spot in chunk:
+                btns.append({
+                    "type": "button",
+                    "action": {"type": "postback", "label": spot, "data": f"action={target_action}&spot={spot}"},
+                    "style": "secondary", "margin": "xs", "height": "sm", "color": "#fff59d" if is_top else "#f8f9fa"
+                })
+            btns.append({"type": "separator", "margin": "md"})
+            btns.append({
+                "type": "button",
+                "action": {"type": "postback", "label": "🔙 戻る（キャンセル）", "data": "action=show_settings"},
+                "style": "secondary", "margin": "md", "height": "sm", "color": "#e0e0e0"
+            })
+
+            bubble = {
+                "type": "bubble", "size": "kilo",
+                "header": {"type": "box", "layout": "vertical", "backgroundColor": bg_color, "paddingAll": "10px", "contents": [{"type": "text", "text": header_text, "color": "#ffffff", "weight": "bold", "size": "sm"}]},
+                "body": {"type": "box", "layout": "vertical", "paddingAll": "10px", "contents": btns}
+            }
+            flex_msg = FlexSendMessage(alt_text="移動する釣り場の選択", contents=bubble)
             line_bot_api.reply_message(event.reply_token, flex_msg)
             return
 
