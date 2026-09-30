@@ -139,12 +139,8 @@ def get_user_setting(user_id):
         return ('ウェザーニュース', '', 'trout')
 
 def get_mode_fav_count(favorites, fishing_mode):
-    active_group = COLOR_GROUPS if fishing_mode == "trout" else BASS_COLOR_GROUPS
-    active_spots = []
-    for group in active_group:
-        for sg in group["sub_groups"]:
-            active_spots.extend(sg["spots"])
-    return len([s for s in favorites.split(',') if s in active_spots])
+    # モードに関係なく共通の総登録数を返す仕様に変更
+    return len([s for s in favorites.split(',') if s.strip()])
 
 def add_favorite_spots(user_id, spot_names):
     if not supabase: return False, [], ["DB接続未完了です。"]
@@ -159,33 +155,18 @@ def add_favorite_spots(user_id, spot_names):
             errors.append(f"{spot_name}(不明)")
             continue
             
-        is_trout = False
-        for g in COLOR_GROUPS:
-            for sg in g["sub_groups"]:
-                if target_name in sg["spots"]:
-                    is_trout = True
-                    break
-            if is_trout: break
-            
-        target_active_group = COLOR_GROUPS if is_trout else BASS_COLOR_GROUPS
-        target_active_spots = []
-        for g in target_active_group:
-            for sg in g["sub_groups"]:
-                target_active_spots.extend(sg["spots"])
-                
-        target_mode_favs = [s for s in fav_list if s in target_active_spots]
-
         if target_name in fav_list:
             errors.append(f"{target_name}(登録済)")
             continue
-        if len(target_mode_favs) >= MAX_FAVORITES:
+            
+        if len(fav_list) + len(added) >= MAX_FAVORITES:
             errors.append(f"{target_name}(上限{MAX_FAVORITES}件超過)")
             continue
             
-        fav_list.append(target_name)
         added.append(target_name)
         
     if added:
+        fav_list.extend(added)
         try:
             supabase.table('user_settings').upsert({
                 'user_id': user_id, 'weather_source': source, 'favorite_spots': ','.join(fav_list), 'fishing_mode': fishing_mode
@@ -223,21 +204,13 @@ def remove_favorite_spots(user_id, spot_names):
 def clear_favorite_spots(user_id, mode="trout"):
     if not supabase: return False, "DB接続未完了です。"
     source, favorites, fishing_mode = get_user_setting(user_id)
-    raw_fav_list = [s for s in favorites.split(',') if s]
-
-    active_group = COLOR_GROUPS if mode == "trout" else BASS_COLOR_GROUPS
-    active_spots = []
-    for group in active_group:
-        for sg in group["sub_groups"]:
-            active_spots.extend(sg["spots"])
-
-    other_mode_favs = [s for s in raw_fav_list if s not in active_spots]
 
     try:
+        # モード混在になったため、すべてのお気に入りを空にする
         supabase.table('user_settings').upsert({
-            'user_id': user_id, 'weather_source': source, 'favorite_spots': ','.join(other_mode_favs), 'fishing_mode': fishing_mode
+            'user_id': user_id, 'weather_source': source, 'favorite_spots': '', 'fishing_mode': fishing_mode
         }).execute()
-        return True, "表示中のすべてのお気に入りを削除しました。"
+        return True, "すべてのお気に入りを削除しました。"
     except Exception as e:
         return False, f"削除に失敗しました: DB設定をご確認ください。詳細:{e}"
 
@@ -249,17 +222,7 @@ def move_favorite_spot(user_id, spot_name, direction, mode="trout"):
     if spot_name not in raw_fav_list:
         return False, "登録されていません。"
 
-    active_group = COLOR_GROUPS if mode == "trout" else BASS_COLOR_GROUPS
-    active_spots = []
-    for group in active_group:
-        for sg in group["sub_groups"]:
-            active_spots.extend(sg["spots"])
-
-    current_mode_favs = [s for s in raw_fav_list if s in active_spots]
-    other_mode_favs = [s for s in raw_fav_list if s not in active_spots]
-
-    if spot_name not in current_mode_favs:
-         return False, "モードが違います。"
+    current_mode_favs = raw_fav_list
 
     idx = current_mode_favs.index(spot_name)
     
@@ -281,12 +244,10 @@ def move_favorite_spot(user_id, spot_name, direction, mode="trout"):
             current_mode_favs.insert(chunk_end, current_mode_favs.pop(idx))
     else:
         return True, "移動不要"
-        
-    new_fav_list = current_mode_favs + other_mode_favs
 
     try:
         supabase.table('user_settings').upsert({
-            'user_id': user_id, 'weather_source': source, 'favorite_spots': ','.join(new_fav_list), 'fishing_mode': fishing_mode
+            'user_id': user_id, 'weather_source': source, 'favorite_spots': ','.join(current_mode_favs), 'fishing_mode': fishing_mode
         }).execute()
         return True, "移動しました"
     except Exception as e:
@@ -349,13 +310,8 @@ def handle_message(event):
         source, favorites, fishing_mode = get_user_setting(user_id)
 
         if raw_msg in ["お気に入り1", "お気に入り2"]:
-            active_group = COLOR_GROUPS if fishing_mode == "trout" else BASS_COLOR_GROUPS
-            active_spots = []
-            for group in active_group:
-                for sg in group["sub_groups"]: active_spots.extend(sg["spots"])
-                    
             raw_fav_list = [s.strip() for s in favorites.split(',') if s.strip()]
-            fav_list = [s for s in raw_fav_list if s in active_spots]
+            fav_list = raw_fav_list
             
             target_spot = None
             if raw_msg == "お気に入り1" and len(fav_list) > 0: target_spot = fav_list[0]
@@ -385,17 +341,12 @@ def handle_message(event):
                 line_bot_api.reply_message(event.reply_token, [TextSendMessage(text=msg), flex_msg])
             return
 
-        # ── 追加コマンド（モード自動判別フィルター付き） ──
+        # ── 追加コマンド ──
         add_match = re.match(r'^追加[\s:：]+(.+)$', raw_msg, re.DOTALL)
         if add_match:
             spots_str = add_match.group(1).strip()
             spot_names = [s for s in re.split(r'[\s,、\n]+', spots_str) if s and s not in ["追加", "削除"]]
             
-            active_group = COLOR_GROUPS if fishing_mode == "trout" else BASS_COLOR_GROUPS
-            active_spots = []
-            for group in active_group:
-                for sg in group["sub_groups"]: active_spots.extend(sg["spots"])
-
             # エリア一括展開ロジック
             expanded_queries = []
             for p in spot_names:
@@ -409,10 +360,8 @@ def handle_message(event):
             for q in expanded_queries:
                 formal_name = resolve_spot_name(q)
                 if formal_name:
-                    # ★ここで「ユーザーの現在のモード」に合致する釣り場だけを抽出（混入防止）
-                    if formal_name in active_spots:
-                        if formal_name not in resolved_spots:
-                            resolved_spots.append(formal_name)
+                    if formal_name not in resolved_spots:
+                        resolved_spots.append(formal_name)
                 else:
                     failed_queries.append(q)
             
@@ -449,25 +398,19 @@ def handle_message(event):
             if added or errors or failed_queries: 
                 reply_lines.append(f"📊 現在の登録数: {total_count_after}/{MAX_FAVORITES}箇所")
             else: 
-                reply_lines.append("⚠️ 対象の釣り場がありませんでした（既に登録済み、または別モードの釣り場です）。")
+                reply_lines.append("⚠️ 対象の釣り場がありませんでした（既に登録済みです）。")
                 
             fav_list_after = [s.strip() for s in favorites_after.split(',') if s.strip()]
             flex_msg = build_spot_list_carousel_horizontal(fav_list_after, mode=fishing_mode)
             line_bot_api.reply_message(event.reply_token, [TextSendMessage(text=chr(10).join(reply_lines)), flex_msg])
             return
 
-        # ── 削除コマンド（モード自動判別フィルター付き） ──
+        # ── 削除コマンド ──
         del_match = re.match(r'^削除[\s:：]+(.+)$', raw_msg, re.DOTALL)
         if del_match:
             spots_str = del_match.group(1).strip()
             spot_names = [s for s in re.split(r'[\s,、\n]+', spots_str) if s and s not in ["追加", "削除"]]
             
-            active_group = COLOR_GROUPS if fishing_mode == "trout" else BASS_COLOR_GROUPS
-            active_spots = []
-            for group in active_group:
-                for sg in group["sub_groups"]: active_spots.extend(sg["spots"])
-
-            # 削除時もエリア一括展開に対応
             expanded_queries = []
             for p in spot_names:
                 if p in AREA_MAPPING:
@@ -479,7 +422,7 @@ def handle_message(event):
             for q in expanded_queries:
                 formal_name = resolve_spot_name(q)
                 if not formal_name: formal_name = q
-                if formal_name in active_spots or not resolve_spot_name(q):
+                if formal_name not in target_to_remove:
                      target_to_remove.append(formal_name)
 
             success, removed, errors = remove_favorite_spots(user_id, target_to_remove) if target_to_remove else (True, [], [])
@@ -492,7 +435,7 @@ def handle_message(event):
             if removed or errors: 
                 reply_lines.append(f"📊 現在の登録数: {total_count}/{MAX_FAVORITES}箇所")
             else: 
-                reply_lines.append("⚠️ 対象の釣り場がありませんでした（未登録、または別モードの釣り場です）。")
+                reply_lines.append("⚠️ 対象の釣り場がありませんでした（未登録です）。")
                 
             fav_list_after = [s.strip() for s in favorites_after.split(',') if s.strip()]
             flex_msg = build_spot_list_carousel_horizontal(fav_list_after, mode=fishing_mode)
@@ -550,11 +493,7 @@ def handle_postback(event):
 
         elif action in ["show_top_selector", "show_cell_top_selector", "show_cell_bottom_selector"]:
             fav_list = [s.strip() for s in favorites.split(',') if s.strip()]
-            active_group = COLOR_GROUPS if fishing_mode == "trout" else BASS_COLOR_GROUPS
-            active_spots = []
-            for group in active_group:
-                for sg in group["sub_groups"]: active_spots.extend(sg["spots"])
-            filtered_favs = [s for s in fav_list if s in active_spots]
+            filtered_favs = fav_list
             if not filtered_favs: return
 
             chunk_idx_str = data_dict.get("chunk")
