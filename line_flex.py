@@ -103,7 +103,6 @@ def build_settings_flex_message(fav_list, mode="trout"):
             
     filtered_favs = fav_list
 
-    # ボタンを縦並びにするための定義とカラー調整
     if mode == "trout":
         add_other_btn = {"type": "button", "action": {"type": "postback", "label": "➕ バス釣り場を追加", "data": "action=show_other_mode_areas"}, "style": "primary", "color": "#0288d1", "margin": "xs", "height": "sm"}
         switch_btn = {"type": "button", "action": {"type": "postback", "label": "🎣 バスモードへ切替", "data": "action=switch_mode&mode=bass"}, "style": "secondary", "color": "#e1f5fe", "margin": "xs", "height": "sm"}
@@ -145,7 +144,7 @@ def build_settings_flex_message(fav_list, mode="trout"):
         rows.append({
             "type": "box", "layout": "horizontal", "spacing": "xs", "paddingTop": "10px", "paddingBottom": "10px",
             "contents": [
-                {"type": "button", "action": {"type": "postback", "label": "🥇1番", "data": "action=show_top_selector"}, "style": "secondary", "height": "sm", "flex": 1, "color": "#fff9c4"},
+                {"type": "button", "action": {"type": "postback", "label": "🥇1番", "data": f"action=show_top_selector&chunk={i}"}, "style": "secondary", "height": "sm", "flex": 1, "color": "#fff9c4"},
                 {"type": "button", "action": {"type": "postback", "label": "🔝先頭", "data": f"action=show_cell_top_selector&chunk={i}"}, "style": "secondary", "height": "sm", "flex": 1, "color": "#e3f2fd"},
                 {"type": "button", "action": {"type": "postback", "label": "⏬末尾", "data": f"action=show_cell_bottom_selector&chunk={i}"}, "style": "secondary", "height": "sm", "flex": 1, "color": "#eceff1"}
             ]
