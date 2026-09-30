@@ -29,8 +29,8 @@
   "入鹿池": {"url": "https://weathernews.jp/onebox/35.38/136.94/", "tenki_url": "https://tenki.jp/forecast/5/26/5110/23215/1hour.html", "hp_url": "", "hp2_url": "", "hide_default_map": true, "custom_button_rows": [[{"label": "🌐見晴茶屋", "url": "https://miharashichaya.com/"}, {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E8%A6%8B%E6%99%B4%E8%8C%B6%E5%B1%8B/@35.3385091,136.9900064,17.75z/data=!4m6!3m5!1s0x600312979bb10869:0xf79af085c79012cd!8m2!3d35.3384583!4d136.9910368!16s%2Fg%2F1tdclwnc"}], [{"label": "🌐百軒亭", "url": "https://hyakkentei.nakamura-ceramics.jp/"}, {"label": "🗺地図", "url": "https://www.google.com/maps/place/%E7%99%BE%E8%BB%92%E4%BA%AD/@35.3377684,136.9902628,17.5z/data=!4m6!3m5!1s0x60031297c56caedf:0xd3f4c48328fa3f71!8m2!3d35.3376955!4d136.9919584!16s%2Fg%2F1th5zqk9"}], [{"label": "🌐入鹿亭", "url": "https://irukatei.com/"}, {"label": "🗺地図", "url": "https://www.google.com/maps/place/%E5%85%A5%E9%B9%BF%E4%BA%AD/@35.3351773,136.9919127,18z/data=!4m6!3m5!1s0x600312bdaa34eeb1:0xf5f3c38707001fa1!8m2!3d35.3353869!4d136.9928552!16s%2Fg%2F1tm1qcw5"}]], "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "入鹿池", "tel": "", "aliases": ["入鹿池", "いるかいけ", "いるか"]},
   "雄蛇ヶ池": {"url": "https://weathernews.jp/onebox/35.561/140.330/", "tenki_url": "https://tenki.jp/forecast/3/15/4520/12213/1hour.html", "hp_url": "", "hp2_url": "", "hide_default_map": true, "custom_button_rows": [[{"label": "🌐ツカモト", "url": "https://x.com/ojagaboat"}, {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E3%83%84%E3%8AB%E3%83%A2%E3%83%88%E8%88%9F%E5%AE%BF/@35.5618373,140.3305779,17.5z/data=!4m6!3m5!1s0x6022953fd3cfc7d3:0xb5baa27d941239a7!8m2!3d35.5610758!4d140.3294775!16s%2Fg%2F121s918g"}]], "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "雄蛇ヶ池", "tel": "", "aliases": ["雄蛇ヶ池", "おじゃがいけ", "おじゃが", "雄蛇が池"]},
   "池原七色ダム": {"url": "https://weathernews.jp/onebox/34.03/135.98/", "tenki_url": "https://tenki.jp/forecast/6/32/6420/29450/1hour.html", "hp_url": "", "hp2_url": "", "hide_default_map": true, "custom_button_rows": [[{"label": "🌐ドリーム", "url": "http://www.dream70.com/index.htm"}, {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E6%B1%A0%E5%8E%9F%E3%83%89%E3%83%AA%E3%83%BC%E3%83%A0/@34.0514302,135.9710921,17.75z/data=!4m6!3m5!1s0x60068bb9ea33b549:0xceb44d70f6f99a96!8m2!3d34.0517061!4d135.972806!16s%2Fg%2F11sk848pn1"}], [{"label": "🌐Ts-ON", "url": "https://www.ts-on.co.jp/"}, {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E3%83%86%E3%82%A3%E3%83%BC%E3%82%BA%E3%82%AA%E3%83%B3/@34.0153776,135.9884889,14.75z/data=!4m6!3m5!1s0x60068990236b225d:0xfdc44cf6715f8ce0!8m2!3d34.0153868!4d135.9988469!16s%2Fg%2F11q1v2mszb"}], [{"label": "🌐ひさや", "url": "http://www.hisaya.rif.jp/"}, {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E3%83%AC%E3%83%B3%E3%82%BF%E3%83%AB%E3%83%9C%E3%83%BC%E3%83%88+%E3%81%B2%E3%81%95%E3%82%84/@33.9994586,136.0133379,15.5z/data=!4m6!3m5!1s0x6006625870c3569d:0x6dc20b31ddb85994!8m2!3d33.9982816!4d136.0178336!16s%2Fg%2F11bw22kq_l"}]], "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "池原七色ダム", "tel": "", "aliases": ["七色ダム", "なないろだむ", "なないろ", "池原七色ダム", "池原ダム", "いけはら", "池原", "池原七色"]},
-  "河辺ワンド": {"url": "https://weathernews.jp/onebox/34.256614/135.280306/", "tenki_url": "https://tenki.jp/forecast/6/33/6510/30209/1hour.html", "hp_url": "", "hp2_url": "", "hide_default_map": true, "custom_button_rows": [[{"label": "🚷陸っぱり", "url": ""}, {"label": "🗺️地図", "url": "https://www.google.com/maps/place/34%C2%B015'23.8%22N+135%C2%B016'49.1%22E/@34.2566056,135.2785311,17.5z/data=!4m4!3m3!8m2!3d34.2566143!4d135.2803059!18m1!1e1?entry=ttu&g_ep=EgoyMDI2MDkyMy4wIKXMDSoASAFQAw%3D%3D"}]], "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "紀ノ川河辺ワンド", "tel": "", "aliases": ["河辺ワンド", "紀ノ川河辺ワンド", "紀ノ川", "きのかわ", "かわべわんど"]},
-  "津風呂湖": {"url": "https://weathernews.jp/onebox/34.398237/135.892709/", "tenki_url": "https://tenki.jp/forecast/6/32/6410/29441/1hour.html", "hp_url": "", "hp2_url": "", "hide_default_map": true, "custom_button_rows": [[{"label": "🌐ボート", "url": "http://tuburoko.net/"}, {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E6%B4%A5%E9%A2%A8%E5%91%82%E6%B9%96%E8%A6%B3%E5%85%89%EF%BC%8（%E6%A0%AA%EF%BC%8）/@34.3982549,135.8918404,18z/data=!4m6!3m5!1s0x6006c7e27f9d9283:0x14e7d0bdbd67f59e!8m2!3d34.3982372!4d135.8927094!16s%2Fg%2F1jmcqrppk!18m1!1e1?entry=ttu&g_ep=EgoyMDI2MDkyMy4wIKXMDSoASAFQAw%3D%3D"}]], "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "津風呂湖", "tel": "", "aliases": ["津風呂湖", "津風呂", "つぶろこ", "つぶろ"]},
+  "河辺ワンド": {"url": "https://weathernews.jp/onebox/34.256614/135.280306/", "tenki_url": "https://tenki.jp/forecast/6/33/6510/30209/1hour.html", "hp_url": "", "hp2_url": "", "hide_default_map": true, "custom_button_rows": [[{"label": "🚷陸っぱり", "url": ""}, {"label": "🗺️地図", "url": "https://www.google.com/maps/place/34%C2%B015'23.8%22N+135%C2%B016'49.1%22E/@34.2566056,135.2785311,17.5z/data=!4m4!3m3!8m2!3d34.2566143!4d135.2803059!18m1!1e1?entry=ttu&g_ep=EgoyMDI2MDkyNy4wIKXMDSoASAFQAw%3D%3D"}]], "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "紀ノ川河辺ワンド", "tel": "", "aliases": ["河辺ワンド", "紀ノ川河辺ワンド", "紀ノ川", "きのかわ", "かわべわんど"]},
+  "津風呂湖": {"url": "https://weathernews.jp/onebox/34.398237/135.892709/", "tenki_url": "https://tenki.jp/forecast/6/32/6410/29441/1hour.html", "hp_url": "", "hp2_url": "", "hide_default_map": true, "custom_button_rows": [[{"label": "🌐ボート", "url": "http://tuburoko.net/"}, {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E6%B4%A5%E9%A2%A8%E5%91%82%E6%B9%96%E8%A6%B3%E5%85%89%EF%BC%8（%E6%A0%AA%EF%BC%8）/@34.3982549,135.8918404,18z/data=!4m6!3m5!1s0x6006c7e27f9d9283:0x14e7d0bdbd67f59e!8m2!3d34.3982372!4d135.8927094!16s%2Fg%2F1jmcqrppk!18m1!1e1?entry=ttu&g_ep=EgoyMDI2MDkyNy4wIKXMDSoASAFQAw%3D%3D"}]], "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "津風呂湖", "tel": "", "aliases": ["津風呂湖", "津風呂", "つぶろこ", "つぶろ"]},
   "弥栄湖": {"url": "https://weathernews.jp/onebox/34.16/132.22/", "tenki_url": "https://tenki.jp/forecast/7/38/8130/35208/1hour.html", "hp_url": "", "hp2_url": "", "hide_default_map": true, "custom_button_rows": [[{"label": "🌐やさか", "url": "https://lakeplaza-yasaka.com/boat.php"}, {"label": "🗺地図", "url": "https://www.google.com/maps/place/%E5%BC%A5%E6%A0%84%E6%B9%96%E3%83%AC%E3%83%B3%E3%82%BF%E3%83%AB%E3%83%9C%E3%83%BC%E3%83%88/@34.2364533,132.1406655,17.75z/data=!4m6!3m5!1s0x354533496d5d8d75:0xca43e840519c595!8m2!3d34.2364438!4d132.1423974!16s%2Fg%2F1tf40rmt"}]], "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "弥栄湖", "tel": "", "aliases": ["弥栄湖", "弥栄ダム", "やさかこ", "やさかだむ", "やさか"]},
   "遠賀川": {"url": "https://weathernews.jp/onebox/33.82/130.70/", "tenki_url": "https://tenki.jp/forecast/9/43/8220/40384/1hour.html", "hp_url": "", "hp2_url": "", "hide_default_map": true, "custom_button_rows": [[{"label": "🌐RODMAN", "url": "https://www.rod-man.jp/"}, {"label": "🗺️地図", "url": "https://www.google.com/maps/place/%E3%83%AD%E3%83%83%E3%83%89%E3%83%9E%E3%83%B3/@33.8255333,130.7015963,17.71z/data=!4m6!3m5!1s0x3543cdce54b35d5d:0xc21fd59bb7a86607!8m2!3d35.82556!4d130.703444!16s%2Fg%2F1vp6x_1x"}]], "x_url": "", "fb_url": "", "insta_url": "", "blog_url": "", "yt_url": "", "search_name": "遠賀川", "tel": "", "aliases": ["遠賀川", "おんががわ", "おんが"]},
   "芦ノ湖": {
@@ -49,7 +49,7 @@
           ],
           [
               {"label": "🌐 おおば", "url": "https://www.ashinoko-fc.co.jp/afc/"},
-              {"label": "🗺️ 地図", "url": "https://www.google.com/maps/place/%E8%8A%A6%E3%83%8E%E6%B9%96%E3%83%9C%E3%83%BC%E3%83%88%E3%83%95%E3%82%A1%E3%82%B9%E3%83%88%E3%82%AF%E3%83%A9%E3%83%96/@35.2359404,138.9948481,17z/data=!3m1!4b1!4m6!3m5!1s0x60199ed7114418c7:0x5265a184dd5cc5c4!8m2!3d35.235936!4d138.997423!16s%2Fg%2F11bccmbjcc?authuser=0&hl=ja&entry=ttu&g_ep=EgoyMDI2MDkyNy4wIKXMDSoASAFQAw%3D%3D"}
+              {"label": "🗺️ 地図", "url": "https://www.google.com/maps/place/%E8%8A%A6%E3%83%8E%E6%B9%96%E3%83%95%E3%82%A3%E3%83%83%E3%82%B7%E3%83%B3%E3%82%B0%E3%82%BB%E3%83%B3%E3%82%BF%E3%83%BC+%E3%81%8A%E3%81%8A%E3%81%B0/@35.2359404,138.9948481,17z/data=!3m1!4b1!4m6!3m5!1s0x60199ed7114418c7:0x5265a184dd5cc5c4!8m2!3d35.235936!4d138.997423!16s%2Fg%2F11bccmbjcc?authuser=0&hl=ja&entry=ttu&g_ep=EgoyMDI2MDkyNy4wIKXMDSoASAFQAw%3D%3D"}
           ]
       ]
   },
@@ -69,7 +69,7 @@
           ],
           [
               {"label": "🌐 フジミ", "url": "http://f-marine.com/"},
-              {"label": "🗺 地図", "url": "https://www.google.com/maps/place/%E3%83%95%E3%82%B8%E3%83%9F%E3%83%9E%E3%83%AA%E3%83%B3/@35.5039111,138.768319,17.75z/data=!4m6!3m5!1s0x60195e260f5e252b:0x2948f8c9cb794cfe!8m2!3d35.503855!4d138.7699635!16s%2Fg%2F11g9q8c2hm?authuser=0&hl=ja&entry=ttu&g_ep=EgoyMDI2MDkyNy4wIKXMDSoASAFQAw%3D%3D"}
+              {"label": "🗺 地図", "url": "https://www.google.com/maps/place/%E3%83%95%E3%82%A1%E3%82%B8%E3%83%9F%E3%83%9E%E3%83%AA%E3%83%B3/@35.5039111,138.768319,17.75z/data=!4m6!3m5!1s0x60195e260f5e252b:0x2948f8c9cb794cfe!8m2!3d35.503855!4d138.7699635!16s%2Fg%2F11g9q8c2hm?authuser=0&hl=ja&entry=ttu&g_ep=EgoyMDI2MDkyNy4wIKXMDSoASAFQAw%3D%3D"}
           ]
       ]
   },
@@ -183,7 +183,7 @@
   "パル佐野": {
       "url": "https://weathernews.jp/onebox/36.294/139.625/",
       "tenki_url": "https://tenki.jp/forecast/3/12/4110/9204/1hour.html",
-      "aliases": ["パル佐野", "フィッシングパル佐野", "ぱるさの", "さ record", "佐野パル"],
+      "aliases": ["パル佐野", "フィッシングパル佐野", "ぱるさの", "さの", "佐野パル"],
       "hide_default_map": true,
       "custom_button_rows": [
           [
@@ -194,7 +194,8 @@
   },
   "あずさフィッシング": {
       "url": "https://weathernews.jp/onebox/36.420/139.695/",
-      "tenki_url": "https://tenki.jp/forecast/3/12/4110/9203/1hour.html", "aliases": ["あずさフィッシング", "あずさ", "アズサ", "アズサフィッシング"],
+      "tenki_url": "https://tenki.jp/forecast/3/12/4110/9203/1hour.html",
+      "aliases": ["あずさフィッシング", "あずさ", "アズサ", "アズサフィッシング"],
       "hide_default_map": true,
       "custom_button_rows": [
           [
@@ -243,6 +244,30 @@
           ],
           [
               {"label": "🗺️ 地図", "url": "https://www.google.com/maps/place/TSURIBORI%E6%B0%B4%E6%88%B8%E5%8D%97/@36.3223832,140.4869526,17.5z/data=!4m6!3m5!1s0x60223ac1f0535ec1:0xed6d8985480e882e!8m2!3d36.3223755!4d140.4880813!16s%2Fg%2F11b6vdz1z7?entry=ttu&g_ep=EgoyMDI2MDkyNy4xIKXMDSoASAFQAw%3D%3D"}
+          ]
+      ]
+  },
+  "五三川": {
+      "url": "https://weathernews.jp/onebox/35.264/136.593/",
+      "tenki_url": "https://tenki.jp/forecast/5/24/5210/21341/1hour.html",
+      "aliases": ["五三川", "ごみがわ", "ごさいがわ", "五味川", "ごみ川"],
+      "hide_default_map": true,
+      "custom_button_rows": [
+          [
+              {"label": "🚷 陸っぱり", "url": ""},
+              {"label": "🗺️ 地図", "url": "https://www.google.com/maps/place/%E4%BA%94%E4%B8%89%E5%B7%9D/@35.2646952,136.5927719,18.75z/data=!4m6!3m5!1s0x6003bbdca7d04f93:0xb36a05cdb894855f!8m2!3d35.2646833!4d136.5933386!16s%2Fg%2F11g6ys7m_m?entry=ttu&g_ep=EgoyMDI2MDkyNy4xIKXMDSoASAFQAw%3D%3D"}
+          ]
+      ]
+  },
+  "大江川": {
+      "url": "https://weathernews.jp/onebox/35.202/136.646/",
+      "tenki_url": "https://tenki.jp/forecast/5/24/5210/21221/1hour.html",
+      "aliases": ["大江川", "おおえがわ", "おおえ"],
+      "hide_default_map": true,
+      "custom_button_rows": [
+          [
+              {"label": "🚷 陸っぱり", "url": ""},
+              {"label": "🗺️ 地図", "url": "https://www.google.com/maps/place/%E5%A4%A7%E6%B1%9F%E5%B7%9D/@35.2022901,136.6458105,17.75z/data=!4m6!3m5!1s0x6003bce28998cec3:0x62baf39ecf5daf10!8m2!3d35.2023415!4d136.6469377!16s%2Fg%2F11d_b4dywf?entry=ttu&g_ep=EgoyMDI2MDkyNy4xIKXMDSoASAFQAw%3D%3D"}
           ]
       ]
   }
