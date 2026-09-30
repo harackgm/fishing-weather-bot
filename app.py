@@ -20,7 +20,9 @@ from line_flex import (
     build_delete_all_confirm_message,
     build_settings_flex_message,
     build_spot_list_carousel_horizontal,
-    build_grid_flex_message
+    build_grid_flex_message,
+    build_other_mode_area_selector,
+    build_other_mode_spots_selector
 )
 
 # --- 天気・災害情報APIモジュール（weather_api.py）の読み込み ---
@@ -99,7 +101,7 @@ def get_user_setting(user_id):
             rename_map = {
                 "七色ダム": "池原七色ダム", "キング": "キングフィッシャー",
                 "キングダム": "川場キングダム", "イワセン": "イワナセンター",
-                "アルクス宇宇都宮": "アルクス宇都宮", "片仓ダム": "片倉ダム", "多田良沼": "多々良沼",
+                "アルクス宇宇都宮": "アルクス宇宇都宮", "片仓ダム": "片倉ダム", "多田良沼": "多々良沼",
                 "那須烏山": "那須鳥山", "柏崎": "霞ケ浦柏崎", "霞ケ浦西浦": "土浦港", "ＭＡＶ": "宮城", "GP不忘": "不忘"
             }
             
@@ -320,7 +322,6 @@ def handle_message(event):
             spots_str = add_match.group(1).strip()
             spot_names = [s for s in re.split(r'[\s,、\n]+', spots_str) if s and s not in ["追加", "削除"]]
             
-            # 現在のモードに所属するスポット一覧
             active_group = COLOR_GROUPS if fishing_mode == "trout" else BASS_COLOR_GROUPS
             active_spots = []
             for group in active_group:
@@ -331,7 +332,6 @@ def handle_message(event):
 
             for p in spot_names:
                 if p in AREA_MAPPING:
-                    # ★エリア指定時は、現在のモード（トラウト）に属するスポットのみを自動抽出
                     area_spots = AREA_MAPPING[p]
                     for s_item in area_spots:
                         formal_name = resolve_spot_name(s_item)
@@ -339,7 +339,6 @@ def handle_message(event):
                             if formal_name not in resolved_spots:
                                 resolved_spots.append(formal_name)
                 else:
-                    # 個別指定（例: 亀山湖）はモード問わずそのまま追加許可
                     formal_name = resolve_spot_name(p)
                     if formal_name:
                         if formal_name not in resolved_spots:
@@ -465,6 +464,17 @@ def handle_postback(event):
             line_bot_api.reply_message(event.reply_token, [TextSendMessage(text=f"{mode_name} モードに切り替えました！"), flex_msg])
             return
 
+        elif action == "show_other_mode_areas":
+            flex_msg = build_other_mode_area_selector(current_mode=fishing_mode)
+            line_bot_api.reply_message(event.reply_token, flex_msg)
+            return
+
+        elif action == "show_other_mode_spots":
+            g_idx = int(data_dict.get("g_idx", 0))
+            flex_msg = build_other_mode_spots_selector(g_idx, current_mode=fishing_mode)
+            line_bot_api.reply_message(event.reply_token, flex_msg)
+            return
+
         elif action in ["show_top_selector", "show_cell_top_selector", "show_cell_bottom_selector"]:
             filtered_favs = current_list
             if not filtered_favs: return
@@ -528,6 +538,14 @@ def handle_postback(event):
             current_list_after = trout_after if fishing_mode == 'trout' else bass_after
             msg = f"✅ 追加しました: {added[0]}\n📊 現在の登録数: {len(current_list_after)}/{MAX_FAVORITES}箇所" if added else f"⚠️ {errors[0]}\n📊 現在の登録数: {len(current_list_after)}/{MAX_FAVORITES}箇所"
             flex_msg = build_spot_list_carousel_horizontal(current_list_after, mode=fishing_mode)
+            line_bot_api.reply_message(event.reply_token, [TextSendMessage(text=msg), flex_msg])
+
+        elif action == "fav_add_and_settings":
+            success, added, errors = add_favorite_spots(user_id, [spot_name])
+            _, trout_after, bass_after, _ = get_user_setting(user_id)
+            current_list_after = trout_after if fishing_mode == 'trout' else bass_after
+            msg = f"✅ 追加しました: {added[0]}\n📊 現在の登録数: {len(current_list_after)}/{MAX_FAVORITES}箇所" if added else f"⚠️ {errors[0]}\n📊 現在の登録数: {len(current_list_after)}/{MAX_FAVORITES}箇所"
+            flex_msg = build_settings_flex_message(current_list_after, mode=fishing_mode)
             line_bot_api.reply_message(event.reply_token, [TextSendMessage(text=msg), flex_msg])
 
         elif action == "fav_del_confirm_and_list":
