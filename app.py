@@ -87,10 +87,6 @@ def resolve_spot_name(query):
     return None
 
 def get_user_setting(user_id):
-    """
-    DBの1つのカラムに保存されているお気に入りを
-    「トラウト用リスト」と「バス用リスト」の2つに分離して返す関数
-    """
     if not supabase: return ('ウェザーニュース', [], [], 'trout')
     try:
         res = supabase.table('user_settings').select('*').eq('user_id', user_id).execute()
@@ -100,10 +96,11 @@ def get_user_setting(user_id):
             try: fishing_mode = row.get('fishing_mode') or 'trout'
             except KeyError: fishing_mode = 'trout'
             
+            # 誤変換の原因になっていた古いrename_mapを修正・適正化
             rename_map = {
-                "七色ダム": "池原七色ダム", "キング": "キングフィッシャー", "ツガネ": "JF in Tsugane",
-                "キングダム": "川場キングダム", "イワセン": "イワナセンター", "鹿島やり": "鹿島槍",
-                "アルクス宇宇都宮": "アルクス宇宇都宮", "片仓ダム": "片倉ダム", "多田良沼": "多々良沼",
+                "七色ダム": "池原七色ダム", "キング": "キングフィッシャー",
+                "キングダム": "川場キングダム", "イワセン": "イワナセンター",
+                "アルクス宇宇都宮": "アルクス宇都宮", "片仓ダム": "片倉ダム", "多田良沼": "多々良沼",
                 "那須烏山": "那須鳥山", "柏崎": "霞ケ浦柏崎", "霞ケ浦西浦": "土浦港", "ＭＡＶ": "宮城", "GP不忘": "不忘"
             }
             
@@ -111,12 +108,10 @@ def get_user_setting(user_id):
             bass_list = []
             
             if '|' in favs:
-                # パイプ区切りの新仕様データ
                 t_str, b_str = favs.split('|', 1)
                 t_raw = [s.strip() for s in t_str.split(',') if s.strip()]
                 b_raw = [s.strip() for s in b_str.split(',') if s.strip()]
             else:
-                # 過去のカンマ区切りデータからの移行処理
                 all_raw = [s.strip() for s in favs.split(',') if s.strip()]
                 t_all = []
                 for g in COLOR_GROUPS:
@@ -134,7 +129,6 @@ def get_user_setting(user_id):
                     else:
                         t_raw.append(s_clean)
 
-            # 有効な釣り場のみをリストに追加
             for s in t_raw:
                 s_clean = rename_map.get(s, s)
                 if s_clean not in ["多摩湖", "いなプー"] and s_clean: trout_list.append(s_clean)
@@ -152,7 +146,6 @@ def add_favorite_spots(user_id, spot_names):
     if not supabase: return False, [], ["DB接続未完了です。"]
     source, trout_list, bass_list, fishing_mode = get_user_setting(user_id)
     
-    # 現在開いているモードのリストだけを操作対象にする
     current_list = trout_list if fishing_mode == 'trout' else bass_list
     
     added = []
@@ -216,7 +209,6 @@ def clear_favorite_spots(user_id):
     if not supabase: return False, "DB接続未完了です。"
     source, trout_list, bass_list, fishing_mode = get_user_setting(user_id)
 
-    # 現在のモードのリストだけを空にする
     if fishing_mode == 'trout':
         trout_list = []
     else:
@@ -289,6 +281,7 @@ def handle_message(event):
         user_id = event.source.user_id
 
         if is_throttled(user_id, cooldown=2.5):
+            print(f"[Throttle] User {user_id} throttled (message)")
             return
 
         source, trout_list, bass_list, fishing_mode = get_user_setting(user_id)
@@ -322,28 +315,38 @@ def handle_message(event):
                 line_bot_api.reply_message(event.reply_token, [TextSendMessage(text=msg), flex_msg])
             return
 
-        # ── 追加コマンド ──
+        # ── 追加コマンド（エリア指定時は現在モードの釣り場のみ抽出） ──
         add_match = re.match(r'^追加[\s:：]+(.+)$', raw_msg, re.DOTALL)
         if add_match:
             spots_str = add_match.group(1).strip()
             spot_names = [s for s in re.split(r'[\s,、\n]+', spots_str) if s and s not in ["追加", "削除"]]
             
-            expanded_queries = []
-            for p in spot_names:
-                if p in AREA_MAPPING:
-                    expanded_queries.extend(AREA_MAPPING[p])
-                else:
-                    expanded_queries.append(p)
-            
+            # 現在のモードの所属スポットを取得
+            active_group = COLOR_GROUPS if fishing_mode == "trout" else BASS_COLOR_GROUPS
+            active_spots = []
+            for group in active_group:
+                for sg in group["sub_groups"]: active_spots.extend(sg["spots"])
+
             resolved_spots = []
             failed_queries = []
-            for q in expanded_queries:
-                formal_name = resolve_spot_name(q)
-                if formal_name:
-                    if formal_name not in resolved_spots:
-                        resolved_spots.append(formal_name)
+
+            for p in spot_names:
+                if p in AREA_MAPPING:
+                    # エリア展開時は「現在のモードに属するスポット」のみ自動抽出
+                    area_spots = AREA_MAPPING[p]
+                    for s_item in area_spots:
+                        formal_name = resolve_spot_name(s_item)
+                        if formal_name and formal_name in active_spots:
+                            if formal_name not in resolved_spots:
+                                resolved_spots.append(formal_name)
                 else:
-                    failed_queries.append(q)
+                    # 個別名指定時はモードに関わらず直接解決
+                    formal_name = resolve_spot_name(p)
+                    if formal_name:
+                        if formal_name not in resolved_spots:
+                            resolved_spots.append(formal_name)
+                    else:
+                        failed_queries.append(p)
             
             to_add = [s for s in resolved_spots if s not in current_list]
             total_after_add = len(current_list) + len(to_add)
@@ -604,7 +607,6 @@ def get_top_favorite_spots(trout_limit=24, bass_limit=12):
             for row in res.data:
                 favs = row.get('favorite_spots', '')
                 if not favs: continue
-                # パイプ区切りもカンマに変換して全件抽出
                 spots = [s.strip() for s in favs.replace('|', ',').split(',') if s.strip()]
                 for s in spots: 
                     if s in trout_spots_list:
