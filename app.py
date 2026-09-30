@@ -19,6 +19,7 @@ from line_flex import (
     build_delete_confirm_message,
     build_delete_all_confirm_message,
     build_settings_flex_message,
+    build_move_selector_flex_message,
     build_spot_list_carousel_horizontal,
     build_grid_flex_message,
     build_other_mode_area_selector,
@@ -56,7 +57,8 @@ MEMORY_CACHE = {}
 USER_LAST_REQUEST = {}
 REQUEST_LOCK = threading.Lock()
 
-def is_throttled(user_id, cooldown=2.5):
+# 快適かつ連打事故の起きない0.5秒へ安全調整
+def is_throttled(user_id, cooldown=0.5):
     now_ts = time.time()
     with REQUEST_LOCK:
         last_ts = USER_LAST_REQUEST.get(user_id, 0)
@@ -239,9 +241,9 @@ def move_favorite_spot(user_id, spot_name, direction):
         current_list[idx - 1], current_list[idx] = current_list[idx], current_list[idx - 1]
     elif direction == "down" and idx < len(current_list) - 1:
         current_list[idx + 1], current_list[idx] = current_list[idx], current_list[idx + 1]
-    elif direction == "top" and idx > 0:
+    elif direction == "top":
         current_list.insert(0, current_list.pop(idx))
-    elif direction == "bottom" and idx < len(current_list) - 1:
+    elif direction == "bottom":
         current_list.append(current_list.pop(idx))
     elif direction == "cell_top":
         chunk_start = (idx // 10) * 10
@@ -281,8 +283,7 @@ def handle_message(event):
         raw_msg = event.message.text.strip()
         user_id = event.source.user_id
 
-        if is_throttled(user_id, cooldown=2.5):
-            print(f"[Throttle] User {user_id} throttled (message)")
+        if is_throttled(user_id, cooldown=0.5):
             return
 
         source, trout_list, bass_list, fishing_mode = get_user_setting(user_id)
@@ -438,7 +439,7 @@ def handle_postback(event):
         user_id = event.source.user_id
         data_dict = dict(parse_qsl(event.postback.data))
 
-        if is_throttled(user_id, cooldown=2.5):
+        if is_throttled(user_id, cooldown=0.5):
             return
 
         action = data_dict.get("action")
@@ -475,41 +476,13 @@ def handle_postback(event):
             line_bot_api.reply_message(event.reply_token, flex_msg)
             return
 
+        # ── 1番・先頭・末尾 ボタンの移動対象選択ダイアログ表示 ──
         elif action in ["show_top_selector", "show_cell_top_selector", "show_cell_bottom_selector"]:
-            filtered_favs = current_list
-            if not filtered_favs: return
-
-            chunk_idx_str = data_dict.get("chunk")
-            c_idx = int(chunk_idx_str) if chunk_idx_str and chunk_idx_str.isdigit() else 0
-            chunk = filtered_favs[c_idx:c_idx+10]
-            if not chunk: return
-
-            is_top = (action == "show_top_selector")
-            is_cell_top = (action == "show_cell_top_selector")
-            target_action = "fav_top" if is_top else ("fav_cell_top" if is_cell_top else "fav_cell_bottom")
-            header_text = "🥇 1番目に設定する釣り場を選択" if is_top else ("🔝 枠の先頭へ移動" if is_cell_top else "⏬ 枠の最後尾へ移動")
-            bg_color = "#d4af37" if is_top else ("#0288d1" if is_cell_top else "#78909c")
-
-            btns = []
-            for spot in chunk:
-                btns.append({
-                    "type": "button",
-                    "action": {"type": "postback", "label": spot, "data": f"action={target_action}&spot={spot}"},
-                    "style": "secondary", "margin": "xs", "height": "sm", "color": "#fff59d" if is_top else "#f8f9fa"
-                })
-            btns.append({"type": "separator", "margin": "md"})
-            btns.append({
-                "type": "button",
-                "action": {"type": "postback", "label": "🔙 戻る（キャンセル）", "data": "action=show_settings"},
-                "style": "secondary", "margin": "md", "height": "sm", "color": "#e0e0e0"
-            })
-
-            bubble = {
-                "type": "bubble", "size": "kilo",
-                "header": {"type": "box", "layout": "vertical", "backgroundColor": bg_color, "paddingAll": "10px", "contents": [{"type": "text", "text": header_text, "color": "#ffffff", "weight": "bold", "size": "sm"}]},
-                "body": {"type": "box", "layout": "vertical", "paddingAll": "10px", "contents": btns}
-            }
-            flex_msg = FlexSendMessage(alt_text="移動する釣り場の選択", contents=bubble)
+            chunk_idx_str = data_dict.get("chunk", "0")
+            c_idx = int(chunk_idx_str) if chunk_idx_str.isdigit() else 0
+            
+            action_type = "top" if action == "show_top_selector" else ("cell_top" if action == "show_cell_top_selector" else "cell_bottom")
+            flex_msg = build_move_selector_flex_message(current_list, chunk_idx=c_idx, action_type=action_type)
             line_bot_api.reply_message(event.reply_token, flex_msg)
             return
 
@@ -599,6 +572,7 @@ def handle_postback(event):
             flex_msg = build_spot_list_carousel_horizontal(current_list_after, mode=fishing_mode)
             line_bot_api.reply_message(event.reply_token, [TextSendMessage(text=f"✅ {msg}"), flex_msg])
 
+        # ── 釣り場の移動処理を実行 ──
         elif action in ["fav_up", "fav_down", "fav_top", "fav_bottom", "fav_cell_top", "fav_cell_bottom"]:
             direction = action.replace("fav_", "")
             move_favorite_spot(user_id, spot_name, direction)
