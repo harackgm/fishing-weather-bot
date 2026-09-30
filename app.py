@@ -9,11 +9,7 @@ from supabase import create_client, Client
 from datetime import datetime, timedelta, timezone
 
 # --- 外部ファイル(spots.py)からデータをインポート ---
-try:
-    from spots import SPOT_WEATHER_DATA, BASS_SPOT_WEATHER_DATA, COLOR_GROUPS, BASS_COLOR_GROUPS, ALL_SPOT_DATA, AREA_MAPPING
-except ImportError:
-    from spots import SPOT_WEATHER_DATA, BASS_SPOT_WEATHER_DATA, COLOR_GROUPS, BASS_COLOR_GROUPS, ALL_SPOT_DATA
-    AREA_MAPPING = {}
+from spots import SPOT_WEATHER_DATA, BASS_SPOT_WEATHER_DATA, COLOR_GROUPS, BASS_COLOR_GROUPS, ALL_SPOT_DATA
 # --------------------------------------------------
 
 os.environ['TZ'] = 'Asia/Tokyo'
@@ -177,7 +173,7 @@ def build_delete_all_confirm_message():
             "type": "box", "layout": "vertical", "spacing": "md", "paddingAll": "15px",
             "contents": [
                 {"type": "text", "text": "⚠️ 全て削除の確認", "weight": "bold", "color": "#ff0000", "size": "md"},
-                {"type": "text", "text": "表示中のすべてのお気に入りを削除しますか？" + chr(10) + "（この操作は元に戻せません）", "wrap": True, "size": "sm", "color": "#333333"}
+                {"type": "text", "text": "表示中のすべてのお気に入りを削除しますか？\n（この操作は元に戻せません）", "wrap": True, "size": "sm", "color": "#333333"}
             ]
         },
         "footer": {
@@ -220,7 +216,7 @@ def build_settings_flex_message(fav_list, mode="trout"):
                 "contents": [
                     switch_btn,
                     {"type": "separator", "margin": "md"},
-                    {"type": "text", "text": "現在お気に入りは登録されていません。" + chr(10) + chr(10) + "釣り場を検索し、天気カード内の「⭐️ 登録」ボタンを押すだけで追加できます！", "wrap": True, "size": "sm", "color": "#555555", "margin": "md"}
+                    {"type": "text", "text": "現在お気に入りは登録されていません。\n\n釣り場を検索し、天気カード内の「⭐️ 登録」ボタンを押すだけで追加できます！", "wrap": True, "size": "sm", "color": "#555555", "margin": "md"}
                 ]
             }
         }
@@ -258,7 +254,7 @@ def build_settings_flex_message(fav_list, mode="trout"):
         rows.append({
             "type": "box", "layout": "horizontal", "margin": "md", "spacing": "sm",
             "contents": [
-                {"type": "box", "layout": "vertical", "flex": 1, "backgroundColor": "#e53935", "borderWidth": "normal", "borderColor": "#e53935", "cornerRadius": "md", "paddingAll": "none", "contents": [{"type": "button", "action": {"type": "postback", "label": "🗑️️ 全て削除", "data": "action=fav_del_all_confirm"}, "style": "link", "color": "#ffffff", "height": "sm", "margin": "none"}]},
+                {"type": "box", "layout": "vertical", "flex": 1, "backgroundColor": "#e53935", "borderWidth": "normal", "borderColor": "#e53935", "cornerRadius": "md", "paddingAll": "none", "contents": [{"type": "button", "action": {"type": "postback", "label": "🗑️ 全て削除", "data": "action=fav_del_all_confirm"}, "style": "link", "color": "#ffffff", "height": "sm", "margin": "none"}]},
                 {"type": "box", "layout": "vertical", "flex": 1, "backgroundColor": "#fff59d", "borderWidth": "normal", "borderColor": "#d4af37", "cornerRadius": "md", "paddingAll": "none", "contents": [{"type": "button", "action": {"type": "postback", "label": "📋 一覧", "data": "action=show_list", "displayText": "📋 一覧"}, "style": "link", "color": "#555555", "height": "sm", "margin": "none"}]}
             ]
         })
@@ -289,7 +285,7 @@ def build_spot_list_carousel_horizontal(user_id=None, mode="trout"):
         
         fav_rows = []
         if not filtered_favs:
-            fav_rows.append({"type": "box", "layout": "vertical", "backgroundColor": "#fffde7", "cornerRadius": "md", "paddingAll": "md", "margin": "md", "contents": [{"type": "text", "text": "現在このモードでお気に入りは登録されていません。" + chr(10) + "右へスワイプして釣り場を探し、「⭐️ 登録」ボタンを押すか、テキストで「追加 〇〇」と送信してください。", "wrap": True, "size": "sm", "color": "#555555"}]})
+            fav_rows.append({"type": "box", "layout": "vertical", "backgroundColor": "#fffde7", "cornerRadius": "md", "paddingAll": "md", "margin": "md", "contents": [{"type": "text", "text": "現在このモードでお気に入りは登録されていません。\n右へスワイプして釣り場を探し、「⭐️ 登録」ボタンを押すか、テキストで「追加 〇〇」と送信してください。", "wrap": True, "size": "sm", "color": "#555555"}]})
         else:
             for i in range(0, len(filtered_favs), 2):
                 pair = filtered_favs[i:i+2]
@@ -338,7 +334,7 @@ def build_spot_list_carousel_horizontal(user_id=None, mode="trout"):
         bubble = {"type": "bubble", "size": "giga", "header": {"type": "box", "layout": "vertical", "backgroundColor": group["header_bg"], "paddingAll": "10px", "contents": [{"type": "text", "text": group["title"], "color": "#ffffff", "weight": "bold", "size": "md"}]}, "body": {"type": "box", "layout": "vertical", "paddingAll": "6px", "contents": rows}}
         bubbles.append(bubble)
 
-    guide_bubble = {"type": "bubble", "size": "giga", "header": {"type": "box", "layout": "vertical", "backgroundColor": "#888888", "paddingAll": "10px", "contents": [{"type": "text", "text": "📖 使い方ガイド", "color": "#ffffff", "weight": "bold", "size": "md"}]}, "body": {"type": "box", "layout": "vertical", "spacing": "md", "paddingAll": "15px", "contents": [{"type": "box", "layout": "vertical", "spacing": "sm", "contents": [{"type": "text", "text": "👇 基本の操作", "weight": "bold", "size": "sm", "color": "#333333"}, {"type": "text", "text": "・一覧のボタンをタップで天気予報を表示", "wrap": True, "size": "xs", "color": "#666666"}]}, {"type": "separator", "margin": "md"}, {"type": "box", "layout": "vertical", "spacing": "sm", "contents": [{"type": "text", "text": "💬 テキストコマンド", "weight": "bold", "size": "sm", "color": "#333333"}, {"type": "text", "text": "【まとめて追加】", "weight": "bold", "size": "xs", "color": "#333333", "margin": "sm"}, {"type": "text", "text": "例：「追加 東山湖 すその 足柄 座間 醒井」" + chr(10) + "※釣り場と釣り場の名前の間にスペースを入れてください。", "wrap": True, "size": "xs", "color": "#666666"}, {"type": "text", "text": "【まとめて削除】", "weight": "bold", "size": "xs", "color": "#333333", "margin": "sm"}, {"type": "text", "text": "例：「削除 東山湖 すその 足柄」" + chr(10) + "※追加と同じく、名前の間にスペースを入れて複数同時に解除できます。", "wrap": True, "size": "xs", "color": "#666666"}, {"type": "text", "text": "【設定】", "weight": "bold", "size": "sm", "color": "#333333", "margin": "sm"}, {"type": "text", "text": "「設定」と送信すると、並び替え・全削除パネルが出ます。", "wrap": True, "size": "xs", "color": "#666666"}, {"type": "text", "text": "【一覧（メニュー）の出し方】", "weight": "bold", "size": "xs", "color": "#333333", "margin": "sm"}, {"type": "text", "text": "「一覧」という言葉や、それ以外の適当な文字（「あ」「1」「a」など）を送信すると、この一覧表が表示されます。", "wrap": True, "size": "xs", "color": "#666666"}]}, {"type": "separator", "margin": "md"}, {"type": "box", "layout": "vertical", "spacing": "sm", "contents": [{"type": "text", "text": "⭐ お気に入り機能とリッチメニュー", "weight": "bold", "size": "sm", "color": "#333333"}, {"type": "text", "text": "【一番お気に入り（メニュー左）】", "weight": "bold", "size": "xs", "color": "#333333", "margin": "sm"}, {"type": "text", "text": "現在のモードにおけるお気に入りリストの「1番目（一番上）」の釣り場の天気を瞬時に表示します。", "wrap": True, "size": "xs", "color": "#666666"}]}, {"type": "separator", "margin": "md"}, {"type": "box", "layout": "vertical", "spacing": "sm", "contents": [{"type": "text", "text": "🛑 配信停止・解除", "weight": "bold", "size": "sm", "color": "#333333"}, {"type": "text", "text": "このBotの利用を停止したい場合は、トーク画面右上のメニュー「≡」から「ブロック」を行ってください。", "wrap": True, "size": "xs", "color": "#666666"}, {"type": "text", "text": "完全に消去する場合", "weight": "bold", "size": "xs", "color": "#333333", "margin": "md"}, {"type": "text", "text": "「トーク一覧」画面に戻り、このBotのトークを長押し（iPhoneは左スワイプ）して「削除」してください。", "wrap": True, "size": "xs", "color": "#666666"}]}]}}
+    guide_bubble = {"type": "bubble", "size": "giga", "header": {"type": "box", "layout": "vertical", "backgroundColor": "#888888", "paddingAll": "10px", "contents": [{"type": "text", "text": "📖 使い方ガイド", "color": "#ffffff", "weight": "bold", "size": "md"}]}, "body": {"type": "box", "layout": "vertical", "spacing": "md", "paddingAll": "15px", "contents": [{"type": "box", "layout": "vertical", "spacing": "sm", "contents": [{"type": "text", "text": "👇 基本の操作", "weight": "bold", "size": "sm", "color": "#333333"}, {"type": "text", "text": "・一覧のボタンをタップで天気予報を表示", "wrap": True, "size": "xs", "color": "#666666"}]}, {"type": "separator", "margin": "md"}, {"type": "box", "layout": "vertical", "spacing": "sm", "contents": [{"type": "text", "text": "💬 テキストコマンド", "weight": "bold", "size": "sm", "color": "#333333"}, {"type": "text", "text": "【まとめて追加】", "weight": "bold", "size": "xs", "color": "#333333", "margin": "sm"}, {"type": "text", "text": "例：「追加 東山湖 すその 足柄 座間 醒井」\n※釣り場と釣り場の名前の間にスペースを入れてください。", "wrap": True, "size": "xs", "color": "#666666"}, {"type": "text", "text": "【まとめて削除】", "weight": "bold", "size": "xs", "color": "#333333", "margin": "sm"}, {"type": "text", "text": "例：「削除 東山湖 すその 足柄」\n※追加と同じく、名前の間にスペースを入れて複数同時に解除できます。", "wrap": True, "size": "xs", "color": "#666666"}, {"type": "text", "text": "【設定】", "weight": "bold", "size": "sm", "color": "#333333", "margin": "sm"}, {"type": "text", "text": "「設定」と送信すると、並び替え・全削除パネルが出ます。", "wrap": True, "size": "xs", "color": "#666666"}, {"type": "text", "text": "【一覧（メニュー）の出し方】", "weight": "bold", "size": "xs", "color": "#333333", "margin": "sm"}, {"type": "text", "text": "「一覧」という言葉や、それ以外の適当な文字（「あ」「1」「a」など）を送信すると、この一覧表が表示されます。", "wrap": True, "size": "xs", "color": "#666666"}]}, {"type": "separator", "margin": "md"}, {"type": "box", "layout": "vertical", "spacing": "sm", "contents": [{"type": "text", "text": "⭐ お気に入り機能とリッチメニュー", "weight": "bold", "size": "sm", "color": "#333333"}, {"type": "text", "text": "【一番お気に入り（メニュー左）】", "weight": "bold", "size": "xs", "color": "#333333", "margin": "sm"}, {"type": "text", "text": "現在のモードにおけるお気に入りリストの「1番目（一番上）」の釣り場の天気を瞬時に表示します。", "wrap": True, "size": "xs", "color": "#666666"}]}, {"type": "separator", "margin": "md"}, {"type": "box", "layout": "vertical", "spacing": "sm", "contents": [{"type": "text", "text": "🛑 配信停止・解除", "weight": "bold", "size": "sm", "color": "#333333"}, {"type": "text", "text": "このBotの利用を停止したい場合は、トーク画面右上のメニュー「≡」から「ブロック」を行ってください。", "wrap": True, "size": "xs", "color": "#666666"}, {"type": "text", "text": "完全に消去する場合", "weight": "bold", "size": "xs", "color": "#333333", "margin": "md"}, {"type": "text", "text": "「トーク一覧」画面に戻り、このBotのトークを長押し（iPhoneは左スワイプ）して「削除」してください。", "wrap": True, "size": "xs", "color": "#666666"}]}]}}
     bubbles.append(guide_bubble)
 
     return FlexSendMessage(alt_text="釣り場一覧", contents={"type": "carousel", "contents": bubbles})
@@ -1210,7 +1206,7 @@ def handle_message(event):
                 else:
                     line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"⚠️ 【{target_spot_name}】の天気データの取得に失敗しました。少し時間をおいてから再度お試しください。"))
             else:
-                msg = "⚠️ お気に入りが登録されていないか、件数が足りません。" + chr(10) + "「一覧」から釣り場を探して「⭐️ 登録」してください。"
+                msg = "⚠️ お気に入りが登録されていないか、件数が足りません。\n「一覧」から釣り場を探して「⭐️ 登録」してください。"
                 flex_msg = build_spot_list_carousel_horizontal(user_id=user_id, mode=fishing_mode)
                 line_bot_api.reply_message(event.reply_token, [TextSendMessage(text=msg), flex_msg])
             return
@@ -1218,69 +1214,25 @@ def handle_message(event):
         add_match = re.match(r'^追加[\s:：]+(.+)$', raw_msg, re.DOTALL)
         if add_match:
             spots_str = add_match.group(1).strip()
-            spot_names = [s for s in re.split(r'[\s,、]+', spots_str) if s and s not in ["追加", "削除"]]
-            
-            # --- エリア一括展開ロジック ---
-            expanded_queries = []
-            for p in spot_names:
-                if p in AREA_MAPPING:
-                    expanded_queries.extend(AREA_MAPPING[p])
-                else:
-                    expanded_queries.append(p)
-            
-            resolved_spots = []
-            failed_queries = []
-            for q in expanded_queries:
-                formal_name = resolve_spot_name(q)
-                if formal_name:
-                    if formal_name not in resolved_spots:
-                        resolved_spots.append(formal_name)
-                else:
-                    failed_queries.append(q)
-            
+            spot_names = [s for s in re.split(r'[\s,、\n]+', spots_str) if s and s not in ["追加", "削除"]]
+            success, added, errors = add_favorite_spots(user_id, spot_names)
             _, favorites, _ = get_user_setting(user_id)
-            fav_list = [s for s in favorites.split(',') if s]
-            
-            to_add = [s for s in resolved_spots if s not in fav_list]
-            
-            current_count = get_mode_fav_count(favorites, fishing_mode)
-            total_after_add = current_count + len(to_add)
-
-            if total_after_add > MAX_FAVORITES:
-                msg_lines = [
-                    f"⚠️ 登録上限（{MAX_FAVORITES}箇所）を超えるため、追加処理を中断しました。",
-                    "━━━━━━━━━━━━━━━",
-                    f"現在の登録数: {current_count}/{MAX_FAVORITES}箇所",
-                    f"追加対象数: {len(to_add)}箇所",
-                    f"追加後の合計: {total_after_add}箇所（上限超え）",
-                    "━━━━━━━━━━━━━━━",
-                    "お気に入りを削除してから再度実行してください。"
-                ]
-                line_bot_api.reply_message(event.reply_token, TextSendMessage(text=chr(10).join(msg_lines)))
-                return
-            
-            success, added, errors = add_favorite_spots(user_id, expanded_queries)
-            _, favorites_after, _ = get_user_setting(user_id)
-            total_count_after = get_mode_fav_count(favorites_after, fishing_mode)
+            total_count = get_mode_fav_count(favorites, fishing_mode)
             
             reply_lines = []
             if added: reply_lines.append(f"✅ {len(added)}件追加しました: {', '.join(added)}")
-            if errors or failed_queries: 
-                all_err = errors + [f"{f}(不明)" for f in failed_queries]
-                reply_lines.append(f"⚠️ スキップ・失敗: {', '.join(all_err)}")
-            if added or errors or failed_queries: 
-                reply_lines.append(f"📊 現在の登録数: {total_count_after}/{MAX_FAVORITES}箇所")
-            else: 
-                reply_lines.append("⚠️ 釣り場名が認識できませんでした。")
+            if errors: reply_lines.append(f"⚠️ スキップ・失敗: {', '.join(errors)}")
+            if added or errors: reply_lines.append(f"📊 現在の登録数: {total_count}/{MAX_FAVORITES}箇所")
+            else: reply_lines.append("⚠️ 釣り場名が認識できませんでした。")
                 
             flex_msg = build_spot_list_carousel_horizontal(user_id=user_id, mode=fishing_mode)
-            line_bot_api.reply_message(event.reply_token, [TextSendMessage(text=chr(10).join(reply_lines)), flex_msg])
+            line_bot_api.reply_message(event.reply_token, [TextSendMessage(text="\n".join(reply_lines)), flex_msg])
             return
 
         del_match = re.match(r'^削除[\s:：]+(.+)$', raw_msg, re.DOTALL)
         if del_match:
             spots_str = del_match.group(1).strip()
-            spot_names = [s for s in re.split(r'[\s,、]+', spots_str) if s and s not in ["追加", "削除"]]
+            spot_names = [s for s in re.split(r'[\s,、\n]+', spots_str) if s and s not in ["追加", "削除"]]
             success, removed, errors = remove_favorite_spots(user_id, spot_names)
             _, favorites, _ = get_user_setting(user_id)
             total_count = get_mode_fav_count(favorites, fishing_mode)
@@ -1288,13 +1240,11 @@ def handle_message(event):
             reply_lines = []
             if removed: reply_lines.append(f"✅ {len(removed)}件削除しました: {', '.join(removed)}")
             if errors: reply_lines.append(f"⚠️ スキップ・失敗: {', '.join(errors)}")
-            if removed or errors: 
-                reply_lines.append(f"📊 現在の登録数: {total_count}/{MAX_FAVORITES}箇所")
-            else: 
-                reply_lines.append("⚠️ 釣り場名が認識できませんでした。")
+            if removed or errors: reply_lines.append(f"📊 現在の登録数: {total_count}/{MAX_FAVORITES}箇所")
+            else: reply_lines.append("⚠️ 釣り場名が認識できませんでした。")
                 
             flex_msg = build_spot_list_carousel_horizontal(user_id=user_id, mode=fishing_mode)
-            line_bot_api.reply_message(event.reply_token, [TextSendMessage(text=chr(10).join(reply_lines)), flex_msg])
+            line_bot_api.reply_message(event.reply_token, [TextSendMessage(text="\n".join(reply_lines)), flex_msg])
             return
 
         if raw_msg in ["一覧", "リスト", "釣り場一覧", "エリア", "📋 一覧", "📋一覧"]:
