@@ -51,12 +51,10 @@ if SUPABASE_URL and SUPABASE_KEY:
 
 MEMORY_CACHE = {}
 
-# 連打防止用：排他制御ロックとリクエスト時刻管理
 USER_LAST_REQUEST = {}
 REQUEST_LOCK = threading.Lock()
 
 def is_throttled(user_id, cooldown=2.5):
-    """高速連打（競合状態）を排他ロックで完全に防ぐ判定関数"""
     now_ts = time.time()
     with REQUEST_LOCK:
         last_ts = USER_LAST_REQUEST.get(user_id, 0)
@@ -65,24 +63,6 @@ def is_throttled(user_id, cooldown=2.5):
         USER_LAST_REQUEST[user_id] = now_ts
         return False
 
-def normalize_name(name_str):
-    if not name_str: return ""
-    return unicodedata.normalize('NFKC', name_str).lower()
-
-def clean_url(url_str):
-    if not url_str: return ""
-    cleaned = url_str.strip().replace(" ", "").replace("\t", "")
-    if not (cleaned.startswith("http://") or cleaned.startswith("https://")): return ""
-    if "#" in cleaned: cleaned = cleaned.split("#")[0]
-    return cleaned
-
-def convert_to_10days_url(url_str):
-    if not url_str: return None
-    cleaned = clean_url(url_str)
-    if '1hour.html' in cleaned: return cleaned.replace('1hour.html', '10days.html')
-    if cleaned.endswith('/'): return cleaned + '10days.html'
-    return cleaned
-
 def get_spot_details(spot_key):
     data = ALL_SPOT_DATA.get(spot_key)
     if not data: return spot_key, None, "", "", "", "", "", "", "", "", "", None
@@ -90,12 +70,11 @@ def get_spot_details(spot_key):
     if not map_url:
         search_q = data.get('search_name', spot_key)
         map_url = f"https://www.google.com/maps/search/?api=1&query={quote(search_q)}"
-    tenki_10days_url = convert_to_10days_url(data.get("tenki_url"))
     return (
-        spot_key, data["url"], clean_url(data.get("hp_url", "")), clean_url(data.get("hp2_url", "")), 
-        map_url, data.get("tel", ""), clean_url(data.get("x_url", "")), clean_url(data.get("fb_url", "")),
-        clean_url(data.get("insta_url", "")), clean_url(data.get("blog_url", "")), clean_url(data.get("yt_url", "")),
-        tenki_10days_url
+        spot_key, data["url"], data.get("hp_url", ""), data.get("hp2_url", ""), 
+        map_url, data.get("tel", ""), data.get("x_url", ""), data.get("fb_url", ""),
+        data.get("insta_url", ""), data.get("blog_url", ""), data.get("yt_url", ""),
+        data.get("tenki_url")
     )
 
 def resolve_spot_name(query):
@@ -108,16 +87,18 @@ def resolve_spot_name(query):
     return None
 
 def get_user_setting(user_id):
-    if not supabase: return ('ウェザーニュース', '', 'trout')
+    """
+    DBの1つのカラムに保存されているお気に入りを
+    「トラウト用リスト」と「バス用リスト」の2つに分離して返す関数
+    """
+    if not supabase: return ('ウェザーニュース', [], [], 'trout')
     try:
         res = supabase.table('user_settings').select('*').eq('user_id', user_id).execute()
         if res.data and len(res.data) > 0:
             row = res.data[0]
             favs = row.get('favorite_spots') or ''
-            try:
-                fishing_mode = row.get('fishing_mode') or 'trout'
-            except KeyError:
-                fishing_mode = 'trout'
+            try: fishing_mode = row.get('fishing_mode') or 'trout'
+            except KeyError: fishing_mode = 'trout'
             
             rename_map = {
                 "七色ダム": "池原七色ダム", "キング": "キングフィッシャー", "ツガネ": "JF in Tsugane",
@@ -126,26 +107,53 @@ def get_user_setting(user_id):
                 "那須烏山": "那須鳥山", "柏崎": "霞ケ浦柏崎", "霞ケ浦西浦": "土浦港", "ＭＡＶ": "宮城", "GP不忘": "不忘"
             }
             
-            raw_favs = [s.strip() for s in favs.split(',') if s.strip()]
-            favs_list = []
-            for s in raw_favs:
-                if s in rename_map: s = rename_map[s]
-                if s not in ["多摩湖", "いなプー"] and s: favs_list.append(s)
+            trout_list = []
+            bass_list = []
+            
+            if '|' in favs:
+                # パイプ区切りの新仕様データ
+                t_str, b_str = favs.split('|', 1)
+                t_raw = [s.strip() for s in t_str.split(',') if s.strip()]
+                b_raw = [s.strip() for s in b_str.split(',') if s.strip()]
+            else:
+                # 過去のカンマ区切りデータからの移行処理
+                all_raw = [s.strip() for s in favs.split(',') if s.strip()]
+                t_all = []
+                for g in COLOR_GROUPS:
+                    for sg in g["sub_groups"]: t_all.extend(sg["spots"])
+                b_all = []
+                for g in BASS_COLOR_GROUPS:
+                    for sg in g["sub_groups"]: b_all.extend(sg["spots"])
+                
+                t_raw = []
+                b_raw = []
+                for s in all_raw:
+                    s_clean = rename_map.get(s, s)
+                    if s_clean in b_all and s_clean not in t_all:
+                        b_raw.append(s_clean)
+                    else:
+                        t_raw.append(s_clean)
+
+            # 有効な釣り場のみをリストに追加
+            for s in t_raw:
+                s_clean = rename_map.get(s, s)
+                if s_clean not in ["多摩湖", "いなプー"] and s_clean: trout_list.append(s_clean)
+            for s in b_raw:
+                s_clean = rename_map.get(s, s)
+                if s_clean not in ["多摩湖", "いなプー"] and s_clean: bass_list.append(s_clean)
                     
-            return (row.get('weather_source', 'ウェザーニュース'), ','.join(favs_list), fishing_mode)
-        return ('ウェザーニュース', '', 'trout')
+            return (row.get('weather_source', 'ウェザーニュース'), trout_list, bass_list, fishing_mode)
+        return ('ウェザーニュース', [], [], 'trout')
     except Exception as e:
         print(f"[Supabase取得エラー] {e}")
-        return ('ウェザーニュース', '', 'trout')
-
-def get_mode_fav_count(favorites, fishing_mode):
-    # モードに関係なく共通の総登録数を返す仕様に変更
-    return len([s for s in favorites.split(',') if s.strip()])
+        return ('ウェザーニュース', [], [], 'trout')
 
 def add_favorite_spots(user_id, spot_names):
     if not supabase: return False, [], ["DB接続未完了です。"]
-    source, favorites, fishing_mode = get_user_setting(user_id)
-    fav_list = [s for s in favorites.split(',') if s]
+    source, trout_list, bass_list, fishing_mode = get_user_setting(user_id)
+    
+    # 現在開いているモードのリストだけを操作対象にする
+    current_list = trout_list if fishing_mode == 'trout' else bass_list
     
     added = []
     errors = []
@@ -155,139 +163,116 @@ def add_favorite_spots(user_id, spot_names):
             errors.append(f"{spot_name}(不明)")
             continue
             
-        if target_name in fav_list:
+        if target_name in current_list:
             errors.append(f"{target_name}(登録済)")
             continue
             
-        if len(fav_list) + len(added) >= MAX_FAVORITES:
+        if len(current_list) >= MAX_FAVORITES:
             errors.append(f"{target_name}(上限{MAX_FAVORITES}件超過)")
             continue
             
+        current_list.append(target_name)
         added.append(target_name)
         
     if added:
-        fav_list.extend(added)
+        new_favs = f"{','.join(trout_list)}|{','.join(bass_list)}"
         try:
             supabase.table('user_settings').upsert({
-                'user_id': user_id, 'weather_source': source, 'favorite_spots': ','.join(fav_list), 'fishing_mode': fishing_mode
+                'user_id': user_id, 'weather_source': source, 'favorite_spots': new_favs, 'fishing_mode': fishing_mode
             }).execute()
-        except Exception as e:
-            return False, [], [f"DB保存エラー: fishing_mode列の設定をご確認ください"]
+        except Exception:
+            return False, [], [f"DB保存エラー"]
     return True, added, errors
 
 def remove_favorite_spots(user_id, spot_names):
     if not supabase: return False, [], ["DB接続未完了です。"]
-    source, favorites, fishing_mode = get_user_setting(user_id)
-    fav_list = [s for s in favorites.split(',') if s]
+    source, trout_list, bass_list, fishing_mode = get_user_setting(user_id)
+    
+    current_list = trout_list if fishing_mode == 'trout' else bass_list
     
     removed = []
     errors = []
     for spot_name in spot_names:
         target_name = resolve_spot_name(spot_name)
         if not target_name: target_name = spot_name 
-        if target_name not in fav_list:
+        if target_name not in current_list:
             errors.append(f"{target_name}(未登録)")
             continue
             
-        fav_list.remove(target_name)
+        current_list.remove(target_name)
         removed.append(target_name)
         
     if removed:
+        new_favs = f"{','.join(trout_list)}|{','.join(bass_list)}"
         try:
             supabase.table('user_settings').upsert({
-                'user_id': user_id, 'weather_source': source, 'favorite_spots': ','.join(fav_list), 'fishing_mode': fishing_mode
+                'user_id': user_id, 'weather_source': source, 'favorite_spots': new_favs, 'fishing_mode': fishing_mode
             }).execute()
-        except Exception as e:
-            return False, [], [f"DB保存エラー: fishing_mode列の設定をご確認ください"]
+        except Exception:
+            return False, [], [f"DB保存エラー"]
     return True, removed, errors
 
-def clear_favorite_spots(user_id, mode="trout"):
+def clear_favorite_spots(user_id):
     if not supabase: return False, "DB接続未完了です。"
-    source, favorites, fishing_mode = get_user_setting(user_id)
+    source, trout_list, bass_list, fishing_mode = get_user_setting(user_id)
 
+    # 現在のモードのリストだけを空にする
+    if fishing_mode == 'trout':
+        trout_list = []
+    else:
+        bass_list = []
+
+    new_favs = f"{','.join(trout_list)}|{','.join(bass_list)}"
     try:
-        # モード混在になったため、すべてのお気に入りを空にする
         supabase.table('user_settings').upsert({
-            'user_id': user_id, 'weather_source': source, 'favorite_spots': '', 'fishing_mode': fishing_mode
+            'user_id': user_id, 'weather_source': source, 'favorite_spots': new_favs, 'fishing_mode': fishing_mode
         }).execute()
-        return True, "すべてのお気に入りを削除しました。"
+        return True, "現在開いているモードのすべてのお気に入りを削除しました。"
     except Exception as e:
-        return False, f"削除に失敗しました: DB設定をご確認ください。詳細:{e}"
+        return False, f"削除に失敗しました。詳細:{e}"
 
-def move_favorite_spot(user_id, spot_name, direction, mode="trout"):
+def move_favorite_spot(user_id, spot_name, direction):
     if not supabase: return False, "DB接続未完了です。"
-    source, favorites, fishing_mode = get_user_setting(user_id)
-    raw_fav_list = [s for s in favorites.split(',') if s]
+    source, trout_list, bass_list, fishing_mode = get_user_setting(user_id)
     
-    if spot_name not in raw_fav_list:
+    current_list = trout_list if fishing_mode == 'trout' else bass_list
+    
+    if spot_name not in current_list:
         return False, "登録されていません。"
 
-    current_mode_favs = raw_fav_list
-
-    idx = current_mode_favs.index(spot_name)
+    idx = current_list.index(spot_name)
     
     if direction == "up" and idx > 0:
-        current_mode_favs[idx - 1], current_mode_favs[idx] = current_mode_favs[idx], current_mode_favs[idx - 1]
-    elif direction == "down" and idx < len(current_mode_favs) - 1:
-        current_mode_favs[idx + 1], current_mode_favs[idx] = current_mode_favs[idx], current_mode_favs[idx + 1]
+        current_list[idx - 1], current_list[idx] = current_list[idx], current_list[idx - 1]
+    elif direction == "down" and idx < len(current_list) - 1:
+        current_list[idx + 1], current_list[idx] = current_list[idx], current_list[idx + 1]
     elif direction == "top" and idx > 0:
-        current_mode_favs.insert(0, current_mode_favs.pop(idx))
-    elif direction == "bottom" and idx < len(current_mode_favs) - 1:
-        current_mode_favs.append(current_mode_favs.pop(idx))
+        current_list.insert(0, current_list.pop(idx))
+    elif direction == "bottom" and idx < len(current_list) - 1:
+        current_list.append(current_list.pop(idx))
     elif direction == "cell_top":
         chunk_start = (idx // 10) * 10
         if idx > chunk_start:
-            current_mode_favs.insert(chunk_start, current_mode_favs.pop(idx))
+            current_list.insert(chunk_start, current_list.pop(idx))
     elif direction == "cell_bottom":
-        chunk_end = min(((idx // 10) + 1) * 10 - 1, len(current_mode_favs) - 1)
+        chunk_end = min(((idx // 10) + 1) * 10 - 1, len(current_list) - 1)
         if idx < chunk_end:
-            current_mode_favs.insert(chunk_end, current_mode_favs.pop(idx))
+            current_list.insert(chunk_end, current_list.pop(idx))
     else:
         return True, "移動不要"
-
+        
+    new_favs = f"{','.join(trout_list)}|{','.join(bass_list)}"
     try:
         supabase.table('user_settings').upsert({
-            'user_id': user_id, 'weather_source': source, 'favorite_spots': ','.join(current_mode_favs), 'fishing_mode': fishing_mode
+            'user_id': user_id, 'weather_source': source, 'favorite_spots': new_favs, 'fishing_mode': fishing_mode
         }).execute()
         return True, "移動しました"
     except Exception as e:
-        return False, f"移動失敗: DB設定をご確認ください。詳細:{e}"
+        return False, f"移動失敗。詳細:{e}"
 
 @app.route("/", methods=['GET'])
 def top_page():
-    if supabase:
-        try: supabase.table('user_settings').select('user_id').limit(1).execute()
-        except Exception as e: print(f"[Supabase Wakeup Error] {e}")
     return "LINE Reply Bot Server is running!", 200
-
-@app.route("/debug/cache", methods=['GET'])
-def debug_cache():
-    now = datetime.now(timezone.utc)
-    cache_info = {}
-    for spot, (data, updated_time) in MEMORY_CACHE.items():
-        elapsed = now - updated_time
-        remaining = timedelta(hours=2) - elapsed
-        if remaining.total_seconds() > 0:
-            remaining_str = f"{int(remaining.total_seconds() // 60)}分{int(remaining.total_seconds() % 60)}秒"
-            status = "有効"
-        else:
-            remaining_str = "期限切れ"
-            status = "無効"
-        
-        jst_time = updated_time.astimezone(timezone(timedelta(hours=9))).strftime('%Y-%m-%d %H:%M:%S')
-        
-        cache_info[spot] = {
-            "status": status,
-            "updated_at": jst_time,
-            "remaining_time": remaining_str,
-            "version": data.get("_version", "unknown") if isinstance(data, dict) else "unknown"
-        }
-    
-    return jsonify({
-        "total_cached": len(MEMORY_CACHE),
-        "active_caches": sum(1 for v in cache_info.values() if v["status"] == "有効"),
-        "details": cache_info
-    }), 200
 
 @app.route("/callback", methods=['POST'])
 def callback():
@@ -304,18 +289,15 @@ def handle_message(event):
         user_id = event.source.user_id
 
         if is_throttled(user_id, cooldown=2.5):
-            print(f"[Throttle] User {user_id} throttled (message)")
             return
 
-        source, favorites, fishing_mode = get_user_setting(user_id)
+        source, trout_list, bass_list, fishing_mode = get_user_setting(user_id)
+        current_list = trout_list if fishing_mode == 'trout' else bass_list
 
         if raw_msg in ["お気に入り1", "お気に入り2"]:
-            raw_fav_list = [s.strip() for s in favorites.split(',') if s.strip()]
-            fav_list = raw_fav_list
-            
             target_spot = None
-            if raw_msg == "お気に入り1" and len(fav_list) > 0: target_spot = fav_list[0]
-            elif raw_msg == "お気に入り2" and len(fav_list) > 1: target_spot = fav_list[1]
+            if raw_msg == "お気に入り1" and len(current_list) > 0: target_spot = current_list[0]
+            elif raw_msg == "お気に入り2" and len(current_list) > 1: target_spot = current_list[1]
                 
             if target_spot:
                 target_spot_name, target_url, hp_url, hp2_url, map_url, tel, x_url, fb_url, insta_url, blog_url, yt_url, tenki_url = get_spot_details(target_spot)
@@ -336,8 +318,7 @@ def handle_message(event):
                     line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"⚠️ 【{target_spot_name}】の天気データの取得に失敗しました。少し時間をおいてから再度お試しください。"))
             else:
                 msg = "⚠️ お気に入りが登録されていないか、件数が足りません。" + chr(10) + "「一覧」から釣り場を探して「⭐️ 登録」してください。"
-                fav_list_pass = [s.strip() for s in favorites.split(',') if s.strip()]
-                flex_msg = build_spot_list_carousel_horizontal(fav_list_pass, mode=fishing_mode)
+                flex_msg = build_spot_list_carousel_horizontal(current_list, mode=fishing_mode)
                 line_bot_api.reply_message(event.reply_token, [TextSendMessage(text=msg), flex_msg])
             return
 
@@ -347,7 +328,6 @@ def handle_message(event):
             spots_str = add_match.group(1).strip()
             spot_names = [s for s in re.split(r'[\s,、\n]+', spots_str) if s and s not in ["追加", "削除"]]
             
-            # エリア一括展開ロジック
             expanded_queries = []
             for p in spot_names:
                 if p in AREA_MAPPING:
@@ -365,19 +345,14 @@ def handle_message(event):
                 else:
                     failed_queries.append(q)
             
-            _, favorites, _ = get_user_setting(user_id)
-            fav_list = [s for s in favorites.split(',') if s]
-            
-            to_add = [s for s in resolved_spots if s not in fav_list]
-            
-            current_count = get_mode_fav_count(favorites, fishing_mode)
-            total_after_add = current_count + len(to_add)
+            to_add = [s for s in resolved_spots if s not in current_list]
+            total_after_add = len(current_list) + len(to_add)
 
             if total_after_add > MAX_FAVORITES:
                 msg_lines = [
                     f"⚠️ 登録上限（{MAX_FAVORITES}箇所）を超えるため、追加処理を中断しました。",
                     "━━━━━━━━━━━━━━━",
-                    f"現在の登録数: {current_count}/{MAX_FAVORITES}箇所",
+                    f"現在の登録数: {len(current_list)}/{MAX_FAVORITES}箇所",
                     f"追加対象数: {len(to_add)}箇所",
                     f"追加後の合計: {total_after_add}箇所（上限超え）",
                     "━━━━━━━━━━━━━━━",
@@ -387,8 +362,8 @@ def handle_message(event):
                 return
             
             success, added, errors = add_favorite_spots(user_id, to_add) if to_add else (True, [], [])
-            _, favorites_after, _ = get_user_setting(user_id)
-            total_count_after = get_mode_fav_count(favorites_after, fishing_mode)
+            _, trout_after, bass_after, _ = get_user_setting(user_id)
+            current_list_after = trout_after if fishing_mode == 'trout' else bass_after
             
             reply_lines = []
             if added: reply_lines.append(f"✅ {len(added)}件追加しました: {', '.join(added)}")
@@ -396,12 +371,11 @@ def handle_message(event):
                 all_err = errors + [f"{f}(不明)" for f in failed_queries]
                 reply_lines.append(f"⚠️ スキップ・対象外: {', '.join(all_err)}")
             if added or errors or failed_queries: 
-                reply_lines.append(f"📊 現在の登録数: {total_count_after}/{MAX_FAVORITES}箇所")
+                reply_lines.append(f"📊 現在の登録数: {len(current_list_after)}/{MAX_FAVORITES}箇所")
             else: 
                 reply_lines.append("⚠️ 対象の釣り場がありませんでした（既に登録済みです）。")
                 
-            fav_list_after = [s.strip() for s in favorites_after.split(',') if s.strip()]
-            flex_msg = build_spot_list_carousel_horizontal(fav_list_after, mode=fishing_mode)
+            flex_msg = build_spot_list_carousel_horizontal(current_list_after, mode=fishing_mode)
             line_bot_api.reply_message(event.reply_token, [TextSendMessage(text=chr(10).join(reply_lines)), flex_msg])
             return
 
@@ -426,36 +400,32 @@ def handle_message(event):
                      target_to_remove.append(formal_name)
 
             success, removed, errors = remove_favorite_spots(user_id, target_to_remove) if target_to_remove else (True, [], [])
-            _, favorites_after, _ = get_user_setting(user_id)
-            total_count = get_mode_fav_count(favorites_after, fishing_mode)
+            _, trout_after, bass_after, _ = get_user_setting(user_id)
+            current_list_after = trout_after if fishing_mode == 'trout' else bass_after
             
             reply_lines = []
             if removed: reply_lines.append(f"✅ {len(removed)}件削除しました: {', '.join(removed)}")
             if errors: reply_lines.append(f"⚠️ スキップ・失敗: {', '.join(errors)}")
             if removed or errors: 
-                reply_lines.append(f"📊 現在の登録数: {total_count}/{MAX_FAVORITES}箇所")
+                reply_lines.append(f"📊 現在の登録数: {len(current_list_after)}/{MAX_FAVORITES}箇所")
             else: 
                 reply_lines.append("⚠️ 対象の釣り場がありませんでした（未登録です）。")
                 
-            fav_list_after = [s.strip() for s in favorites_after.split(',') if s.strip()]
-            flex_msg = build_spot_list_carousel_horizontal(fav_list_after, mode=fishing_mode)
+            flex_msg = build_spot_list_carousel_horizontal(current_list_after, mode=fishing_mode)
             line_bot_api.reply_message(event.reply_token, [TextSendMessage(text=chr(10).join(reply_lines)), flex_msg])
             return
 
         if raw_msg in ["一覧", "リスト", "釣り場一覧", "エリア", "📋 一覧", "📋一覧"]:
-            fav_list_pass = [s.strip() for s in favorites.split(',') if s.strip()]
-            flex_msg = build_spot_list_carousel_horizontal(fav_list_pass, mode=fishing_mode)
+            flex_msg = build_spot_list_carousel_horizontal(current_list, mode=fishing_mode)
             line_bot_api.reply_message(event.reply_token, flex_msg)
             return
 
         if raw_msg in ["設定", "⚙️設定", "⚙️ 設定", "設定（並び替え・削除）", "⚙ 設定（並び替え・削除）"]:
-            fav_list = [s.strip() for s in favorites.split(',') if s.strip()]
-            flex_msg = build_settings_flex_message(fav_list, mode=fishing_mode)
+            flex_msg = build_settings_flex_message(current_list, mode=fishing_mode)
             line_bot_api.reply_message(event.reply_token, flex_msg)
             return
 
-        fav_list_pass = [s.strip() for s in favorites.split(',') if s.strip()]
-        flex_msg = build_spot_list_carousel_horizontal(fav_list_pass, mode=fishing_mode)
+        flex_msg = build_spot_list_carousel_horizontal(current_list, mode=fishing_mode)
         line_bot_api.reply_message(event.reply_token, flex_msg)
     except Exception as e:
         print("\n=== システムエラー詳細 ===")
@@ -472,7 +442,8 @@ def handle_postback(event):
 
         action = data_dict.get("action")
         spot_name = data_dict.get("spot")
-        source, favorites, fishing_mode = get_user_setting(user_id)
+        source, trout_list, bass_list, fishing_mode = get_user_setting(user_id)
+        current_list = trout_list if fishing_mode == 'trout' else bass_list
         
         if action == "dummy": return
 
@@ -483,17 +454,17 @@ def handle_postback(event):
         if action == "switch_mode":
             target_mode = data_dict.get("mode", "trout")
             if supabase:
-                try: supabase.table('user_settings').upsert({'user_id': user_id, 'weather_source': source, 'favorite_spots': favorites, 'fishing_mode': target_mode}).execute()
+                new_favs = f"{','.join(trout_list)}|{','.join(bass_list)}"
+                try: supabase.table('user_settings').upsert({'user_id': user_id, 'weather_source': source, 'favorite_spots': new_favs, 'fishing_mode': target_mode}).execute()
                 except: pass
             mode_name = "🐟 ブラックバス" if target_mode == "bass" else "🐟 エリアトラウト"
-            fav_list_pass = [s.strip() for s in favorites.split(',') if s.strip()]
-            flex_msg = build_spot_list_carousel_horizontal(fav_list_pass, mode=target_mode)
+            current_list_after = trout_list if target_mode == 'trout' else bass_list
+            flex_msg = build_spot_list_carousel_horizontal(current_list_after, mode=target_mode)
             line_bot_api.reply_message(event.reply_token, [TextSendMessage(text=f"{mode_name} モードに切り替えました！"), flex_msg])
             return
 
         elif action in ["show_top_selector", "show_cell_top_selector", "show_cell_bottom_selector"]:
-            fav_list = [s.strip() for s in favorites.split(',') if s.strip()]
-            filtered_favs = fav_list
+            filtered_favs = current_list
             if not filtered_favs: return
 
             chunk_idx_str = data_dict.get("chunk")
@@ -523,22 +494,19 @@ def handle_postback(event):
             return
 
         elif action == "show_list":
-            fav_list_pass = [s.strip() for s in favorites.split(',') if s.strip()]
-            flex_msg = build_spot_list_carousel_horizontal(fav_list_pass, mode=fishing_mode)
+            flex_msg = build_spot_list_carousel_horizontal(current_list, mode=fishing_mode)
             line_bot_api.reply_message(event.reply_token, flex_msg)
             return
             
         elif action == "show_settings":
-            fav_list = [s.strip() for s in favorites.split(',') if s.strip()]
-            flex_msg = build_settings_flex_message(fav_list, mode=fishing_mode)
+            flex_msg = build_settings_flex_message(current_list, mode=fishing_mode)
             line_bot_api.reply_message(event.reply_token, flex_msg)
             return
 
         elif action == "show_weather":
             target_spot_name, target_url, hp_url, hp2_url, map_url, tel, x_url, fb_url, insta_url, blog_url, yt_url, tenki_url = get_spot_details(spot_name)
             if not target_url: return
-            fav_list = [s.strip() for s in favorites.split(',') if s.strip()]
-            is_fav = target_spot_name in fav_list
+            is_fav = target_spot_name in current_list
 
             weather_data = get_cached_weather(target_spot_name, supabase, MEMORY_CACHE)
             if not weather_data:
@@ -554,11 +522,10 @@ def handle_postback(event):
 
         elif action == "fav_add_and_list":
             success, added, errors = add_favorite_spots(user_id, [spot_name])
-            _, favorites_after, _ = get_user_setting(user_id)
-            total_count = get_mode_fav_count(favorites_after, fishing_mode)
-            msg = f"✅ 追加しました: {added[0]}\n📊 現在の登録数: {total_count}/{MAX_FAVORITES}箇所" if added else f"⚠️ {errors[0]}\n📊 現在の登録数: {total_count}/{MAX_FAVORITES}箇所"
-            fav_list_pass = [s.strip() for s in favorites_after.split(',') if s.strip()]
-            flex_msg = build_spot_list_carousel_horizontal(fav_list_pass, mode=fishing_mode)
+            _, trout_after, bass_after, _ = get_user_setting(user_id)
+            current_list_after = trout_after if fishing_mode == 'trout' else bass_after
+            msg = f"✅ 追加しました: {added[0]}\n📊 現在の登録数: {len(current_list_after)}/{MAX_FAVORITES}箇所" if added else f"⚠️ {errors[0]}\n📊 現在の登録数: {len(current_list_after)}/{MAX_FAVORITES}箇所"
+            flex_msg = build_spot_list_carousel_horizontal(current_list_after, mode=fishing_mode)
             line_bot_api.reply_message(event.reply_token, [TextSendMessage(text=msg), flex_msg])
 
         elif action == "fav_del_confirm_and_list":
@@ -571,30 +538,26 @@ def handle_postback(event):
 
         elif action == "fav_del_execute_and_list":
             success, removed, errors = remove_favorite_spots(user_id, [spot_name])
-            _, favorites_after, _ = get_user_setting(user_id)
-            total_count = get_mode_fav_count(favorites_after, fishing_mode)
-            msg = f"✅ 削除しました: {removed[0]}\n📊 現在の登録数: {total_count}/{MAX_FAVORITES}箇所" if removed else f"⚠️ {errors[0]}\n📊 現在の登録数: {total_count}/{MAX_FAVORITES}箇所"
-            fav_list_pass = [s.strip() for s in favorites_after.split(',') if s.strip()]
-            flex_msg = build_spot_list_carousel_horizontal(fav_list_pass, mode=fishing_mode)
+            _, trout_after, bass_after, _ = get_user_setting(user_id)
+            current_list_after = trout_after if fishing_mode == 'trout' else bass_after
+            msg = f"✅ 削除しました: {removed[0]}\n📊 現在の登録数: {len(current_list_after)}/{MAX_FAVORITES}箇所" if removed else f"⚠️ {errors[0]}\n📊 現在の登録数: {len(current_list_after)}/{MAX_FAVORITES}箇所"
+            flex_msg = build_spot_list_carousel_horizontal(current_list_after, mode=fishing_mode)
             line_bot_api.reply_message(event.reply_token, [TextSendMessage(text=msg), flex_msg])
 
         elif action == "fav_del_execute_and_settings":
             success, removed, errors = remove_favorite_spots(user_id, [spot_name])
-            _, favorites_after, _ = get_user_setting(user_id)
-            fav_list = [s.strip() for s in favorites_after.split(',') if s.strip()]
-            total_count = get_mode_fav_count(favorites_after, fishing_mode)
-            msg = f"✅ 削除しました: {removed[0]}\n📊 現在の登録数: {total_count}/{MAX_FAVORITES}箇所" if removed else f"⚠️ {errors[0]}\n📊 現在の登録数: {total_count}/{MAX_FAVORITES}箇所"
-            flex_msg = build_settings_flex_message(fav_list, mode=fishing_mode)
+            _, trout_after, bass_after, _ = get_user_setting(user_id)
+            current_list_after = trout_after if fishing_mode == 'trout' else bass_after
+            msg = f"✅ 削除しました: {removed[0]}\n📊 現在の登録数: {len(current_list_after)}/{MAX_FAVORITES}箇所" if removed else f"⚠️ {errors[0]}\n📊 現在の登録数: {len(current_list_after)}/{MAX_FAVORITES}箇所"
+            flex_msg = build_settings_flex_message(current_list_after, mode=fishing_mode)
             line_bot_api.reply_message(event.reply_token, [TextSendMessage(text=msg), flex_msg])
 
         elif action == "fav_del_cancel_and_list":
-            fav_list_pass = [s.strip() for s in favorites_after.split(',') if s.strip()] if 'favorites_after' in locals() else [s.strip() for s in favorites.split(',') if s.strip()]
-            flex_msg = build_spot_list_carousel_horizontal(fav_list_pass, mode=fishing_mode)
+            flex_msg = build_spot_list_carousel_horizontal(current_list, mode=fishing_mode)
             line_bot_api.reply_message(event.reply_token, [TextSendMessage(text="キャンセルしました。"), flex_msg])
 
         elif action == "fav_del_cancel_and_settings":
-            fav_list = [s.strip() for s in favorites.split(',') if s.strip()]
-            flex_msg = build_settings_flex_message(fav_list, mode=fishing_mode)
+            flex_msg = build_settings_flex_message(current_list, mode=fishing_mode)
             line_bot_api.reply_message(event.reply_token, [TextSendMessage(text="キャンセルしました。"), flex_msg])
 
         elif action == "fav_del_all_confirm":
@@ -602,18 +565,18 @@ def handle_postback(event):
             line_bot_api.reply_message(event.reply_token, flex_msg)
 
         elif action == "fav_del_all_execute":
-            success, msg = clear_favorite_spots(user_id, mode=fishing_mode)
-            _, favorites_after, _ = get_user_setting(user_id)
-            fav_list_pass = [s.strip() for s in favorites_after.split(',') if s.strip()]
-            flex_msg = build_spot_list_carousel_horizontal(fav_list_pass, mode=fishing_mode)
+            success, msg = clear_favorite_spots(user_id)
+            _, trout_after, bass_after, _ = get_user_setting(user_id)
+            current_list_after = trout_after if fishing_mode == 'trout' else bass_after
+            flex_msg = build_spot_list_carousel_horizontal(current_list_after, mode=fishing_mode)
             line_bot_api.reply_message(event.reply_token, [TextSendMessage(text=f"✅ {msg}"), flex_msg])
 
         elif action in ["fav_up", "fav_down", "fav_top", "fav_bottom", "fav_cell_top", "fav_cell_bottom"]:
             direction = action.replace("fav_", "")
-            move_favorite_spot(user_id, spot_name, direction, mode=fishing_mode)
-            _, favorites_after, _ = get_user_setting(user_id)
-            fav_list = [s.strip() for s in favorites_after.split(',') if s.strip()]
-            flex_msg = build_settings_flex_message(fav_list, mode=fishing_mode)
+            move_favorite_spot(user_id, spot_name, direction)
+            _, trout_after, bass_after, _ = get_user_setting(user_id)
+            current_list_after = trout_after if fishing_mode == 'trout' else bass_after
+            flex_msg = build_settings_flex_message(current_list_after, mode=fishing_mode)
             line_bot_api.reply_message(event.reply_token, flex_msg)
             
     except Exception as e:
@@ -641,7 +604,8 @@ def get_top_favorite_spots(trout_limit=24, bass_limit=12):
             for row in res.data:
                 favs = row.get('favorite_spots', '')
                 if not favs: continue
-                spots = [s.strip() for s in favs.split(',') if s.strip()]
+                # パイプ区切りもカンマに変換して全件抽出
+                spots = [s.strip() for s in favs.replace('|', ',').split(',') if s.strip()]
                 for s in spots: 
                     if s in trout_spots_list:
                         trout_counts[s] = trout_counts.get(s, 0) + 1
