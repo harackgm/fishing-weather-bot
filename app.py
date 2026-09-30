@@ -1,10 +1,10 @@
-import os, time, random, requests, traceback, difflib, re, threading, unicodedata, jpholiday
-from urllib.parse import quote, urlparse, parse_qsl
+import os, time, random, requests, traceback, re, threading, unicodedata
+from urllib.parse import quote, parse_qsl
 from bs4 import BeautifulSoup
 from flask import Flask, request, abort, jsonify
 from linebot import LineBotApi, WebhookHandler
-from linebot.exceptions import InvalidSignatureError, LineBotApiError
-from linebot.models import MessageEvent, TextMessage, TextSendMessage, FlexSendMessage, PostbackEvent
+from linebot.exceptions import InvalidSignatureError
+from linebot.models import MessageEvent, TextMessage, TextSendMessage, PostbackEvent
 from supabase import create_client, Client
 from datetime import datetime, timedelta, timezone
 
@@ -17,14 +17,12 @@ except ImportError:
 
 # --- UIレイアウト生成モジュール（line_flex.py）の読み込み ---
 from line_flex import (
-    guess_date_from_string,
     build_delete_confirm_message,
     build_delete_all_confirm_message,
     build_settings_flex_message,
     build_spot_list_carousel_horizontal,
     build_grid_flex_message
 )
-# --------------------------------------------------
 
 os.environ['TZ'] = 'Asia/Tokyo'
 if hasattr(time, 'tzset'): time.tzset()
@@ -120,6 +118,15 @@ def get_spot_details(spot_key):
         tenki_10days_url
     )
 
+def resolve_spot_name(query):
+    query_clean = query.strip()
+    if not query_clean: return None
+    if query_clean in ALL_SPOT_DATA: return query_clean
+    for formal_name, data in ALL_SPOT_DATA.items():
+        aliases = data.get('aliases', [])
+        if query_clean.lower() in [a.lower() for a in aliases]: return formal_name
+    return None
+
 def get_user_setting(user_id):
     if not supabase: return ('ウェザーニュース', '', 'trout')
     try:
@@ -139,7 +146,7 @@ def get_user_setting(user_id):
                 "那須烏山": "那須鳥山", "柏崎": "霞ケ浦柏崎", "霞ケ浦西浦": "土浦港", "ＭＡＶ": "宮城", "GP不忘": "不忘"
             }
             
-            raw_favs = [s.strip() for s in favs.split(',')]
+            raw_favs = [s.strip() for s in favs.split(',') if s.strip()]
             favs_list = []
             for s in raw_favs:
                 if s in rename_map: s = rename_map[s]
@@ -167,16 +174,7 @@ def add_favorite_spots(user_id, spot_names):
     added = []
     errors = []
     for spot_name in spot_names:
-        target_name = None
-        norm_input = normalize_name(spot_name)
-        
-        for spot_key, data in ALL_SPOT_DATA.items():
-            norm_key = normalize_name(spot_key)
-            norm_aliases = [normalize_name(a) for a in data.get("aliases", [])]
-            if norm_input == norm_key or norm_input in norm_aliases:
-                target_name = spot_key
-                break
-        
+        target_name = resolve_spot_name(spot_name)
         if not target_name:
             errors.append(f"{spot_name}(不明)")
             continue
@@ -224,16 +222,7 @@ def remove_favorite_spots(user_id, spot_names):
     removed = []
     errors = []
     for spot_name in spot_names:
-        target_name = None
-        norm_input = normalize_name(spot_name)
-        
-        for spot_key, data in ALL_SPOT_DATA.items():
-            norm_key = normalize_name(spot_key)
-            norm_aliases = [normalize_name(a) for a in data.get("aliases", [])]
-            if norm_input == norm_key or norm_input in norm_aliases:
-                target_name = spot_key
-                break
-        
+        target_name = resolve_spot_name(spot_name)
         if not target_name: target_name = spot_name 
         if target_name not in fav_list:
             errors.append(f"{target_name}(未登録)")
@@ -399,6 +388,7 @@ def fetch_weekly_data_from_jma(tenki_url, raw_exclude_dates):
                                     forecast_dict[dt]["t_max"] = str(temp_val)
                             except: pass
 
+        from line_flex import guess_date_from_string
         now_jst_date = datetime.now(timezone(timedelta(hours=9))).date()
         last_wn_date = guess_date_from_string(raw_exclude_dates[-1], now_jst_date) if raw_exclude_dates else None
 
@@ -675,6 +665,7 @@ def handle_message(event):
         user_id = event.source.user_id
 
         if is_throttled(user_id, cooldown=2.5):
+            print(f"[Throttle] User {user_id} throttled (message)")
             return
 
         source, favorites, fishing_mode = get_user_setting(user_id)
@@ -719,7 +710,7 @@ def handle_message(event):
         add_match = re.match(r'^追加[\s:：]+(.+)$', raw_msg, re.DOTALL)
         if add_match:
             spots_str = add_match.group(1).strip()
-            spot_names = [s for s in re.split(r'[\s,、]+', spots_str) if s and s not in ["追加", "削除"]]
+            spot_names = [s for s in re.split(r'[\s,、\n]+', spots_str) if s and s not in ["追加", "削除"]]
             
             # --- エリア一括展開ロジック ---
             expanded_queries = []
@@ -782,7 +773,7 @@ def handle_message(event):
         del_match = re.match(r'^削除[\s:：]+(.+)$', raw_msg, re.DOTALL)
         if del_match:
             spots_str = del_match.group(1).strip()
-            spot_names = [s for s in re.split(r'[\s,、]+', spots_str) if s and s not in ["追加", "削除"]]
+            spot_names = [s for s in re.split(r'[\s,、\n]+', spots_str) if s and s not in ["追加", "削除"]]
             
             # --- 削除時もエリア一括展開に対応 ---
             expanded_queries = []
@@ -815,7 +806,7 @@ def handle_message(event):
             line_bot_api.reply_message(event.reply_token, flex_msg)
             return
 
-        if raw_msg in ["設定", "⚙️設定", "⚙️ 設定", "設定（並び替え・削除）", "⚙️ 設定（並び替え・削除）"]:
+        if raw_msg in ["設定", "⚙️設定", "⚙️ 設定", "設定（並び替え・削除）", "⚙️️ 設定（並び替え・削除）"]:
             fav_list = [s.strip() for s in favorites.split(',') if s.strip()]
             flex_msg = build_settings_flex_message(fav_list, mode=fishing_mode)
             line_bot_api.reply_message(event.reply_token, flex_msg)
@@ -944,7 +935,7 @@ def handle_postback(event):
             success, removed, errors = remove_favorite_spots(user_id, [spot_name])
             _, favorites_after, _ = get_user_setting(user_id)
             total_count = get_mode_fav_count(favorites_after, fishing_mode)
-            msg = f"✅ 削除しました: {removed[0]}\n📊 現在の登録数: {total_count}/{MAX_FAVORITES}箇所" if removed else f"⚠️️ {errors[0]}\n📊 現在の登録数: {total_count}/{MAX_FAVORITES}箇所"
+            msg = f"✅ 削除しました: {removed[0]}\n📊 現在の登録数: {total_count}/{MAX_FAVORITES}箇所" if removed else f"⚠️ {errors[0]}\n📊 現在の登録数: {total_count}/{MAX_FAVORITES}箇所"
             fav_list_pass = [s.strip() for s in favorites_after.split(',') if s.strip()]
             flex_msg = build_spot_list_carousel_horizontal(fav_list_pass, mode=fishing_mode)
             line_bot_api.reply_message(event.reply_token, [TextSendMessage(text=msg), flex_msg])
@@ -959,7 +950,7 @@ def handle_postback(event):
             line_bot_api.reply_message(event.reply_token, [TextSendMessage(text=msg), flex_msg])
 
         elif action == "fav_del_cancel_and_list":
-            fav_list_pass = [s.strip() for s in favorites.split(',') if s.strip()]
+            fav_list_pass = [s.strip() for s in favorites_after.split(',') if s.strip()] if 'favorites_after' in locals() else [s.strip() for s in favorites.split(',') if s.strip()]
             flex_msg = build_spot_list_carousel_horizontal(fav_list_pass, mode=fishing_mode)
             line_bot_api.reply_message(event.reply_token, [TextSendMessage(text="キャンセルしました。"), flex_msg])
 
@@ -1095,4 +1086,5 @@ def cron_trigger():
         return jsonify({"status": "error", "message": str(e)}), 500
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
