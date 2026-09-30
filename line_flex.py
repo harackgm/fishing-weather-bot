@@ -104,11 +104,13 @@ def build_settings_flex_message(fav_list, mode="trout"):
     filtered_favs = fav_list
 
     if mode == "trout":
-        switch_btn = {"type": "button", "action": {"type": "postback", "label": "🎣 バスモードへ切替", "data": "action=switch_mode&mode=bass"}, "style": "primary", "color": "#1e88e5", "margin": "md", "height": "sm"}
+        switch_btn = {"type": "button", "action": {"type": "postback", "label": "🎣 バスモードへ切替", "data": "action=switch_mode&mode=bass"}, "style": "primary", "color": "#1e88e5", "margin": "xs", "height": "sm"}
+        add_other_btn = {"type": "button", "action": {"type": "postback", "label": "➕ バス釣り場から追加", "data": "action=show_other_mode_areas"}, "style": "secondary", "color": "#e3f2fd", "margin": "xs", "height": "sm"}
         title_text = "⚙️ お気に入り設定 (トラウト)"
         header_color = "#d4af37"
     else:
-        switch_btn = {"type": "button", "action": {"type": "postback", "label": "🐟 トラウトモードへ戻る", "data": "action=switch_mode&mode=trout"}, "style": "primary", "color": "#e65100", "margin": "md", "height": "sm"}
+        switch_btn = {"type": "button", "action": {"type": "postback", "label": "🐟 トラウトモードへ戻る", "data": "action=switch_mode&mode=trout"}, "style": "primary", "color": "#e65100", "margin": "xs", "height": "sm"}
+        add_other_btn = {"type": "button", "action": {"type": "postback", "label": "➕ トラウト釣り場から追加", "data": "action=show_other_mode_areas"}, "style": "secondary", "color": "#fff3e0", "margin": "xs", "height": "sm"}
         title_text = "⚙️ お気に入り設定 (バス)"
         header_color = "#4caf50"
 
@@ -123,8 +125,9 @@ def build_settings_flex_message(fav_list, mode="trout"):
                 "type": "box", "layout": "vertical", "spacing": "sm", "paddingAll": "10px",
                 "contents": [
                     switch_btn,
+                    add_other_btn,
                     {"type": "separator", "margin": "md"},
-                    {"type": "text", "text": "現在お気に入りは登録されていません。" + chr(10) + chr(10) + "釣り場を検索し、天気カード内の「⭐️ 登録」ボタンを押すだけで追加できます！", "wrap": True, "size": "sm", "color": "#555555", "margin": "md"}
+                    {"type": "text", "text": "現在お気に入りは登録されていません。" + chr(10) + chr(10) + "「➕ 他モード追加」ボタンや、釣り場一覧の「⭐ 登録」から追加できます！", "wrap": True, "size": "sm", "color": "#555555", "margin": "md"}
                 ]
             }
         }
@@ -135,7 +138,7 @@ def build_settings_flex_message(fav_list, mode="trout"):
     for i in range(0, len(filtered_favs), chunk_size):
         chunk = filtered_favs[i:i + chunk_size]
         rows = []
-        rows.append(switch_btn)
+        rows.append({"type": "box", "layout": "horizontal", "spacing": "xs", "contents": [switch_btn, add_other_btn]})
         rows.append({"type": "separator", "margin": "md"})
         rows.append({
             "type": "box", "layout": "horizontal", "spacing": "xs", "paddingTop": "10px", "paddingBottom": "10px",
@@ -183,6 +186,68 @@ def build_settings_flex_message(fav_list, mode="trout"):
     if len(bubbles) == 1: return FlexSendMessage(alt_text="お気に入り管理パネル", contents=bubbles[0])
     else: return FlexSendMessage(alt_text="お気に入り管理パネル", contents={"type": "carousel", "contents": bubbles})
 
+def build_other_mode_area_selector(current_mode="trout"):
+    """他モードのエリア一覧選択バブルを生成"""
+    target_groups = BASS_COLOR_GROUPS if current_mode == "trout" else COLOR_GROUPS
+    target_name = "バス" if current_mode == "trout" else "トラウト"
+    header_color = "#1565c0" if current_mode == "trout" else "#6a1b9a"
+    
+    btns = []
+    for idx, group in enumerate(target_groups):
+        btns.append({
+            "type": "button",
+            "action": {"type": "postback", "label": group["title"].replace("📍 ", ""), "data": f"action=show_other_mode_spots&g_idx={idx}"},
+            "style": "secondary", "margin": "xs", "height": "sm", "color": "#f8f9fa"
+        })
+    btns.append({"type": "separator", "margin": "md"})
+    btns.append({"type": "button", "action": {"type": "postback", "label": "🔙 設定に戻る", "data": "action=show_settings"}, "style": "secondary", "margin": "md", "height": "sm", "color": "#e0e0e0"})
+
+    bubble = {
+        "type": "bubble", "size": "kilo",
+        "header": {"type": "box", "layout": "vertical", "backgroundColor": header_color, "paddingAll": "10px", "contents": [{"type": "text", "text": f"📍 追加する{target_name}の地域を選択", "color": "#ffffff", "weight": "bold", "size": "sm"}]},
+        "body": {"type": "box", "layout": "vertical", "paddingAll": "10px", "contents": btns}
+    }
+    return FlexSendMessage(alt_text=f"{target_name}エリア選択", contents=bubble)
+
+def build_other_mode_spots_selector(group_idx, current_mode="trout"):
+    """指定された他モードのエリア内のスポットボタン一覧バブルを生成（タップでダイレクト追加）"""
+    target_groups = BASS_COLOR_GROUPS if current_mode == "trout" else COLOR_GROUPS
+    target_name = "バス" if current_mode == "trout" else "トラウト"
+    header_color = "#1565c0" if current_mode == "trout" else "#6a1b9a"
+    
+    if group_idx >= len(target_groups):
+        group_idx = 0
+    
+    group = target_groups[group_idx]
+    all_spots = []
+    for sg in group["sub_groups"]:
+        all_spots.extend(sg["spots"])
+
+    bubbles = []
+    chunk_size = 10
+    for i in range(0, len(all_spots), chunk_size):
+        chunk = all_spots[i:i + chunk_size]
+        btns = []
+        for spot in chunk:
+            btns.append({
+                "type": "button",
+                "action": {"type": "postback", "label": f"＋ {spot}", "data": f"action=fav_add_and_settings&spot={spot}"},
+                "style": "secondary", "margin": "xs", "height": "sm", "color": "#fff59d"
+            })
+        btns.append({"type": "separator", "margin": "md"})
+        btns.append({"type": "button", "action": {"type": "postback", "label": "🔙 地域選択に戻る", "data": "action=show_other_mode_areas"}, "style": "secondary", "margin": "md", "height": "sm", "color": "#e0e0e0"})
+
+        bubbles.append({
+            "type": "bubble", "size": "kilo",
+            "header": {"type": "box", "layout": "vertical", "backgroundColor": header_color, "paddingAll": "10px", "contents": [{"type": "text", "text": f"タップして追加: {group['title'].replace('📍 ', '')}", "color": "#ffffff", "weight": "bold", "size": "xs"}]},
+            "body": {"type": "box", "layout": "vertical", "paddingAll": "10px", "contents": btns}
+        })
+
+    if len(bubbles) == 1:
+        return FlexSendMessage(alt_text=f"{target_name}スポット選択", contents=bubbles[0])
+    else:
+        return FlexSendMessage(alt_text=f"{target_name}スポット選択", contents={"type": "carousel", "contents": bubbles})
+
 def build_spot_list_carousel_horizontal(fav_list=None, mode="trout"):
     active_group = COLOR_GROUPS if mode == "trout" else BASS_COLOR_GROUPS
     active_spots = []
@@ -207,14 +272,12 @@ def build_spot_list_carousel_horizontal(fav_list=None, mode="trout"):
                     global_idx = i + j
                     is_other_mode = spot not in active_spots
                     
-                    # ── 表示ラベルの成形（他モードならアイコンを頭に付与） ──
                     if is_other_mode:
                         icon = "🐟 " if mode == "bass" else "🎣 "
                         display_label = f"{icon}{spot}"
                     else:
                         display_label = spot
                     
-                    # ── ボタンデザインは通常のお気に入り黄色に統一 ──
                     bg_color = "#fff59d"
                     border_color = "#d4af37"
                     text_color = "#555555"
@@ -237,7 +300,8 @@ def build_spot_list_carousel_horizontal(fav_list=None, mode="trout"):
         fav_rows.append({"type": "box", "layout": "horizontal", "margin": "sm", "spacing": "sm", "contents": [{"type": "box", "layout": "vertical", "flex": 1, "backgroundColor": "#f8f9fa", "borderWidth": "normal", "borderColor": "#e0e0e0", "cornerRadius": "md", "paddingAll": "none", "contents": [{"type": "button", "action": {"type": "postback", "label": "⚙️ 設定/切替", "data": "action=show_settings", "displayText": "⚙ 設定"}, "style": "link", "color": "#555555", "height": "sm", "margin": "none"}]}, {"type": "box", "layout": "vertical", "flex": 1, "backgroundColor": "#fff59d", "borderWidth": "normal", "borderColor": "#d4af37", "cornerRadius": "md", "paddingAll": "none", "contents": [{"type": "button", "action": {"type": "postback", "label": "📋 一覧更新", "data": "action=show_list", "displayText": "📋 一覧"}, "style": "link", "color": "#555555", "height": "sm", "margin": "none"}]}]})
 
         header_color = "#d4af37" if mode == "trout" else "#4caf50"
-        header_text = "⭐ 共通お気に入り"
+        # ★タイトルの表示をモードごとに「⭐ トラウトお気に入り」「⭐ バスお気に入り」へ復元
+        header_text = "⭐ トラウトお気に入り" if mode == "trout" else "⭐ バスお気に入り"
 
         fav_bubble = {"type": "bubble", "size": "giga", "header": {"type": "box", "layout": "horizontal", "backgroundColor": header_color, "paddingAll": "10px", "alignItems": "center", "contents": [{"type": "text", "text": header_text, "color": "#ffffff", "weight": "bold", "size": "md", "flex": 1}, {"type": "text", "text": f"({len(filtered_favs)}/{MAX_FAVORITES})", "color": "#eeeeee", "size": "xs", "align": "end", "flex": 0}]}, "body": {"type": "box", "layout": "vertical", "paddingAll": "6px", "contents": fav_rows}}
         bubbles.append(fav_bubble)
