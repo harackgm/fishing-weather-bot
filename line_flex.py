@@ -101,7 +101,7 @@ def build_settings_flex_message(fav_list, mode="trout"):
         for sg in group["sub_groups"]:
             active_spots.extend(sg["spots"])
             
-    filtered_favs = fav_list # フィルターを解除し、全てのお気に入りを表示
+    filtered_favs = fav_list
 
     if mode == "trout":
         switch_btn = {"type": "button", "action": {"type": "postback", "label": "🎣 バスモードへ切替", "data": "action=switch_mode&mode=bass"}, "style": "primary", "color": "#1e88e5", "margin": "md", "height": "sm"}
@@ -148,15 +148,17 @@ def build_settings_flex_message(fav_list, mode="trout"):
         rows.append({"type": "separator", "margin": "sm"})
 
         for spot in chunk:
-            # 他のモードの釣り場であれば赤色でアピール
             is_other_mode = spot not in active_spots
-            text_color = "#ff5252" if is_other_mode else "#333333"
-            spot_label = f"⚠️ {spot}" if is_other_mode else spot
+            if is_other_mode:
+                icon = "🐟 " if mode == "bass" else "🎣 "
+                spot_label = f"{icon}{spot}"
+            else:
+                spot_label = spot
 
             rows.append({
                 "type": "box", "layout": "horizontal", "margin": "md", "alignItems": "center",
                 "contents": [
-                    {"type": "text", "text": spot_label, "size": "sm", "weight": "bold", "flex": 4, "color": text_color, "wrap": True},
+                    {"type": "text", "text": spot_label, "size": "sm", "weight": "bold", "flex": 4, "color": "#333333", "wrap": True},
                     {"type": "button", "action": {"type": "postback", "label": "⬆️", "data": f"action=fav_up&spot={spot}"}, "style": "secondary", "flex": 2, "margin": "xs"},
                     {"type": "button", "action": {"type": "postback", "label": "⬇", "data": f"action=fav_down&spot={spot}"}, "style": "secondary", "flex": 2, "margin": "xs"},
                     {"type": "button", "action": {"type": "postback", "label": "🗑️", "data": f"action=fav_del_confirm_and_settings&spot={spot}"}, "style": "secondary", "color": "#ffe6e6", "flex": 2, "margin": "xs"}
@@ -192,11 +194,11 @@ def build_spot_list_carousel_horizontal(fav_list=None, mode="trout"):
     filtered_favs = []
 
     if fav_list is not None:
-        filtered_favs = fav_list # フィルターを解除し、全てのお気に入りを表示
+        filtered_favs = fav_list
         
         fav_rows = []
         if not filtered_favs:
-            fav_rows.append({"type": "box", "layout": "vertical", "backgroundColor": "#fffde7", "cornerRadius": "md", "paddingAll": "md", "margin": "md", "contents": [{"type": "text", "text": "現在お気に入りは登録されていません。" + chr(10) + "右へスワイプして釣り場を探し、「⭐️️ 登録」ボタンを押すか、テキストで「追加 〇〇」と送信してください。", "wrap": True, "size": "sm", "color": "#555555"}]})
+            fav_rows.append({"type": "box", "layout": "vertical", "backgroundColor": "#fffde7", "cornerRadius": "md", "paddingAll": "md", "margin": "md", "contents": [{"type": "text", "text": "現在お気に入りは登録されていません。" + chr(10) + "右へスワイプして釣り場を探し、「⭐ 登録」ボタンを押すか、テキストで「追加 〇〇」と送信してください。", "wrap": True, "size": "sm", "color": "#555555"}]})
         else:
             for i in range(0, len(filtered_favs), 2):
                 pair = filtered_favs[i:i+2]
@@ -205,24 +207,24 @@ def build_spot_list_carousel_horizontal(fav_list=None, mode="trout"):
                     global_idx = i + j
                     is_other_mode = spot not in active_spots
                     
-                    # ── 自モードなら通常色、他モードなら赤色でアピール ──
+                    # ── 表示ラベルの成形（他モードならアイコンを頭に付与） ──
                     if is_other_mode:
-                        bg_color = "#ff5252"
-                        border_color = "#b71c1c"
-                        text_color = "#ffffff"
-                        btn_style = "primary"
-                        btn_color = "#ff5252"
+                        icon = "🐟 " if mode == "bass" else "🎣 "
+                        display_label = f"{icon}{spot}"
                     else:
-                        bg_color = "#fff59d"
-                        border_color = "#d4af37"
-                        text_color = "#555555"
-                        btn_style = "secondary"
-                        btn_color = "#fff59d"
+                        display_label = spot
+                    
+                    # ── ボタンデザインは通常のお気に入り黄色に統一 ──
+                    bg_color = "#fff59d"
+                    border_color = "#d4af37"
+                    text_color = "#555555"
+                    btn_style = "secondary"
+                    btn_color = "#fff59d"
 
                     if global_idx < 2:
-                        row_buttons.append({"type": "box", "layout": "vertical", "backgroundColor": bg_color, "borderWidth": "normal", "borderColor": border_color, "cornerRadius": "md", "paddingAll": "none", "margin": "xs", "contents": [{"type": "button", "action": {"type": "postback", "label": spot, "data": f"w={spot}"}, "style": "link", "color": text_color, "height": "sm", "margin": "none"}]})
+                        row_buttons.append({"type": "box", "layout": "vertical", "backgroundColor": bg_color, "borderWidth": "normal", "borderColor": border_color, "cornerRadius": "md", "paddingAll": "none", "margin": "xs", "contents": [{"type": "button", "action": {"type": "postback", "label": display_label, "data": f"w={spot}"}, "style": "link", "color": text_color, "height": "sm", "margin": "none"}]})
                     else:
-                        row_buttons.append({"type": "button", "style": btn_style, "color": btn_color, "margin": "xs", "height": "sm", "action": {"type": "postback", "label": spot, "data": f"w={spot}"}})
+                        row_buttons.append({"type": "button", "style": btn_style, "color": btn_color, "margin": "xs", "height": "sm", "action": {"type": "postback", "label": display_label, "data": f"w={spot}"}})
                 
                 if len(pair) == 1:
                     row_buttons.append({"type": "filler"})
@@ -232,7 +234,7 @@ def build_spot_list_carousel_horizontal(fav_list=None, mode="trout"):
                 fav_rows.append(row_box)
 
         fav_rows.append({"type": "separator", "margin": "md", "color": "#cccccc"})
-        fav_rows.append({"type": "box", "layout": "horizontal", "margin": "sm", "spacing": "sm", "contents": [{"type": "box", "layout": "vertical", "flex": 1, "backgroundColor": "#f8f9fa", "borderWidth": "normal", "borderColor": "#e0e0e0", "cornerRadius": "md", "paddingAll": "none", "contents": [{"type": "button", "action": {"type": "postback", "label": "⚙️ 設定/切替", "data": "action=show_settings", "displayText": "⚙️️ 設定"}, "style": "link", "color": "#555555", "height": "sm", "margin": "none"}]}, {"type": "box", "layout": "vertical", "flex": 1, "backgroundColor": "#fff59d", "borderWidth": "normal", "borderColor": "#d4af37", "cornerRadius": "md", "paddingAll": "none", "contents": [{"type": "button", "action": {"type": "postback", "label": "📋 一覧更新", "data": "action=show_list", "displayText": "📋 一覧"}, "style": "link", "color": "#555555", "height": "sm", "margin": "none"}]}]})
+        fav_rows.append({"type": "box", "layout": "horizontal", "margin": "sm", "spacing": "sm", "contents": [{"type": "box", "layout": "vertical", "flex": 1, "backgroundColor": "#f8f9fa", "borderWidth": "normal", "borderColor": "#e0e0e0", "cornerRadius": "md", "paddingAll": "none", "contents": [{"type": "button", "action": {"type": "postback", "label": "⚙️ 設定/切替", "data": "action=show_settings", "displayText": "⚙ 設定"}, "style": "link", "color": "#555555", "height": "sm", "margin": "none"}]}, {"type": "box", "layout": "vertical", "flex": 1, "backgroundColor": "#fff59d", "borderWidth": "normal", "borderColor": "#d4af37", "cornerRadius": "md", "paddingAll": "none", "contents": [{"type": "button", "action": {"type": "postback", "label": "📋 一覧更新", "data": "action=show_list", "displayText": "📋 一覧"}, "style": "link", "color": "#555555", "height": "sm", "margin": "none"}]}]})
 
         header_color = "#d4af37" if mode == "trout" else "#4caf50"
         header_text = "⭐ 共通お気に入り"
