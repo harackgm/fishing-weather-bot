@@ -187,6 +187,53 @@ def build_settings_flex_message(fav_list, mode="trout"):
     if len(bubbles) == 1: return FlexSendMessage(alt_text="お気に入り管理パネル", contents=bubbles[0])
     else: return FlexSendMessage(alt_text="お気に入り管理パネル", contents={"type": "carousel", "contents": bubbles})
 
+def build_move_selector_flex_message(fav_list, chunk_idx=0, action_type="top"):
+    """1番・先頭・末尾の移動対象を選択するダイアログFlex Messageを生成"""
+    if not fav_list:
+        return FlexSendMessage(alt_text="お気に入りがありません", contents={
+            "type": "bubble", "size": "kilo",
+            "body": {"type": "box", "layout": "vertical", "contents": [{"type": "text", "text": "⚠️ お気に入りが登録されていません。"}]}
+        })
+
+    chunk = fav_list[chunk_idx:chunk_idx + 10]
+    if not chunk:
+        chunk = fav_list[:10]
+
+    if action_type == "top":
+        target_action = "fav_top"
+        header_text = "🥇 1番目に設定する釣り場を選択"
+        bg_color = "#d4af37"
+    elif action_type == "cell_top":
+        target_action = "fav_cell_top"
+        header_text = "🔝 枠の先頭へ移動する釣り場を選択"
+        bg_color = "#0288d1"
+    else:
+        target_action = "fav_cell_bottom"
+        header_text = "⏬ 枠の最後尾へ移動する釣り場を選択"
+        bg_color = "#78909c"
+
+    btns = []
+    for spot in chunk:
+        btns.append({
+            "type": "button",
+            "action": {"type": "postback", "label": spot, "data": f"action={target_action}&spot={spot}"},
+            "style": "secondary", "margin": "xs", "height": "sm", "color": "#fff59d" if action_type == "top" else "#f8f9fa"
+        })
+
+    btns.append({"type": "separator", "margin": "md"})
+    btns.append({
+        "type": "button",
+        "action": {"type": "postback", "label": "🔙 戻る（キャンセル）", "data": "action=show_settings"},
+        "style": "secondary", "margin": "md", "height": "sm", "color": "#e0e0e0"
+    })
+
+    bubble = {
+        "type": "bubble", "size": "kilo",
+        "header": {"type": "box", "layout": "vertical", "backgroundColor": bg_color, "paddingAll": "10px", "contents": [{"type": "text", "text": header_text, "color": "#ffffff", "weight": "bold", "size": "sm"}]},
+        "body": {"type": "box", "layout": "vertical", "paddingAll": "10px", "contents": btns}
+    }
+    return FlexSendMessage(alt_text=header_text, contents=bubble)
+
 def build_other_mode_area_selector(current_mode="trout"):
     target_groups = BASS_COLOR_GROUPS if current_mode == "trout" else COLOR_GROUPS
     target_name = "バス" if current_mode == "trout" else "トラウト"
