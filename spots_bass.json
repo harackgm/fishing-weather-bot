@@ -69,7 +69,7 @@
           ],
           [
               {"label": "🌐 フジミ", "url": "http://f-marine.com/"},
-              {"label": "🗺️️ 地図", "url": "https://www.google.com/maps/place/%E3%83%95%E3%82%B8%E3%83%9F%E3%83%9E%E3%83%AA%E3%83%B3/@35.5039111,138.768319,17.75z/data=!4m6!3m5!1s0x60195e260f5e252b:0x2948f8c9cb794cfe!8m2!3d35.503855!4d138.7699635!16s%2Fg%2F11g9q8c2hm?authuser=0&hl=ja&entry=ttu&g_ep=EgoyMDI2MDkyNy4wIKXMDSoASAFQAw%3D%3D"}
+              {"label": "🗺 地図", "url": "https://www.google.com/maps/place/%E3%83%95%E3%82%B8%E3%83%9F%E3%83%9E%E3%83%AA%E3%83%B3/@35.5039111,138.768319,17.75z/data=!4m6!3m5!1s0x60195e260f5e252b:0x2948f8c9cb794cfe!8m2!3d35.503855!4d138.7699635!16s%2Fg%2F11g9q8c2hm?authuser=0&hl=ja&entry=ttu&g_ep=EgoyMDI2MDkyNy4wIKXMDSoASAFQAw%3D%3D"}
           ]
       ]
   },
@@ -126,6 +126,19 @@
           [
               {"label": "🌐 MOMO", "url": "https://momo-lakeyamanaka.com/"},
               {"label": "🗺 地図", "url": "https://www.google.com/maps/place/%E5%B1%B1%E4%B8%AD%E6%B9%96%E3%83%9E%E3%83%AA%E3%83%B3%E3%83%8F%E3%82%A6%E3%82%B9momo/@35.4178546,138.8539893,17.25z/data=!4m6!3m5!1s0x6019650dea9143ed:0x4802d76eeacac006!8m2!3d35.4176405!4d138.8559773!16s%2Fg%2F1v27vk33?entry=ttu&g_ep=EgoyMDI2MDkyNy4xIKXMDSoASAFQAw%3D%3D"}
+          ]
+      ]
+  },
+  "宮城": {
+      "url": "https://weathernews.jp/onebox/36.452889/139.184306/",
+      "tenki_url": "https://tenki.jp/forecast/3/13/4210/10201/1hour.html",
+      "aliases": ["宮城", "MAV", "宮城アングラーズヴィレッジ", "みやぎ", "宮城アングラーズビレッジ"],
+      "tel": "027-283-0161",
+      "hide_default_map": true,
+      "custom_button_rows": [
+          [
+              {"label": "🌐 MAV", "url": "https://anglers-village.com/index2.html"},
+              {"label": "🗺️ 地図", "url": "https://www.google.com/maps/place/%E5%AE%AE%E5%9F%8E%E3%82%A2%E3%83%B3%E3%82%B0%E3%83%A9%E3%83%BC%E3%82%BA%E3%83%B4%E3%82%A3%E3%83%AC%E3%83%83%E3%82%B8/@36.4455192,139.1860278,17.75z/data=!4m6!3m5!1s0x601ef09218f1bfb5:0x7c5c8cdd68b8b69e!8m2!3d36.445391!4d139.187431!16s%2Fg%2F1tdd5bwq?entry=ttu&g_ep=EgoyMDI2MDkyNy4xIKXMDSoASAFQAw%3D%3D"}
           ]
       ]
   }
