@@ -96,7 +96,6 @@ def get_user_setting(user_id):
             try: fishing_mode = row.get('fishing_mode') or 'trout'
             except KeyError: fishing_mode = 'trout'
             
-            # 誤変換の原因になっていた古いrename_mapを修正・適正化
             rename_map = {
                 "七色ダム": "池原七色ダム", "キング": "キングフィッシャー",
                 "キングダム": "川場キングダム", "イワセン": "イワナセンター",
@@ -160,14 +159,14 @@ def add_favorite_spots(user_id, spot_names):
             errors.append(f"{target_name}(登録済)")
             continue
             
-        if len(current_list) >= MAX_FAVORITES:
+        if len(current_list) + len(added) >= MAX_FAVORITES:
             errors.append(f"{target_name}(上限{MAX_FAVORITES}件超過)")
             continue
             
-        current_list.append(target_name)
         added.append(target_name)
         
     if added:
+        current_list.extend(added)
         new_favs = f"{','.join(trout_list)}|{','.join(bass_list)}"
         try:
             supabase.table('user_settings').upsert({
@@ -315,13 +314,13 @@ def handle_message(event):
                 line_bot_api.reply_message(event.reply_token, [TextSendMessage(text=msg), flex_msg])
             return
 
-        # ── 追加コマンド（エリア指定時は現在モードの釣り場のみ抽出） ──
+        # ── 追加コマンド ──
         add_match = re.match(r'^追加[\s:：]+(.+)$', raw_msg, re.DOTALL)
         if add_match:
             spots_str = add_match.group(1).strip()
             spot_names = [s for s in re.split(r'[\s,、\n]+', spots_str) if s and s not in ["追加", "削除"]]
             
-            # 現在のモードの所属スポットを取得
+            # 現在のモードに所属するスポット一覧
             active_group = COLOR_GROUPS if fishing_mode == "trout" else BASS_COLOR_GROUPS
             active_spots = []
             for group in active_group:
@@ -332,7 +331,7 @@ def handle_message(event):
 
             for p in spot_names:
                 if p in AREA_MAPPING:
-                    # エリア展開時は「現在のモードに属するスポット」のみ自動抽出
+                    # ★エリア指定時は、現在のモード（トラウト）に属するスポットのみを自動抽出
                     area_spots = AREA_MAPPING[p]
                     for s_item in area_spots:
                         formal_name = resolve_spot_name(s_item)
@@ -340,7 +339,7 @@ def handle_message(event):
                             if formal_name not in resolved_spots:
                                 resolved_spots.append(formal_name)
                 else:
-                    # 個別名指定時はモードに関わらず直接解決
+                    # 個別指定（例: 亀山湖）はモード問わずそのまま追加許可
                     formal_name = resolve_spot_name(p)
                     if formal_name:
                         if formal_name not in resolved_spots:
