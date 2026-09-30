@@ -103,14 +103,15 @@ def build_settings_flex_message(fav_list, mode="trout"):
             
     filtered_favs = fav_list
 
+    # 切替ボタン（濃い色）と追加ボタン（薄い色）の配色反転設定
     if mode == "trout":
-        add_other_btn = {"type": "button", "action": {"type": "postback", "label": "➕ バス釣り場を追加", "data": "action=show_other_mode_areas"}, "style": "primary", "color": "#0288d1", "margin": "xs", "height": "sm"}
-        switch_btn = {"type": "button", "action": {"type": "postback", "label": "🎣 バスモードへ切替", "data": "action=switch_mode&mode=bass"}, "style": "secondary", "color": "#e1f5fe", "margin": "xs", "height": "sm"}
+        add_other_btn = {"type": "button", "action": {"type": "postback", "label": "➕ バス釣り場を追加", "data": "action=show_other_mode_areas"}, "style": "secondary", "color": "#e1f5fe", "margin": "xs", "height": "sm"}
+        switch_btn = {"type": "button", "action": {"type": "postback", "label": "🎣 バスモードへ切替", "data": "action=switch_mode&mode=bass"}, "style": "primary", "color": "#0288d1", "margin": "xs", "height": "sm"}
         title_text = "⚙️ お気に入り設定 (トラウト)"
         header_color = "#d4af37"
     else:
-        add_other_btn = {"type": "button", "action": {"type": "postback", "label": "➕ トラウト釣り場を追加", "data": "action=show_other_mode_areas"}, "style": "primary", "color": "#e65100", "margin": "xs", "height": "sm"}
-        switch_btn = {"type": "button", "action": {"type": "postback", "label": "🐟 トラウトモードへ戻る", "data": "action=switch_mode&mode=trout"}, "style": "secondary", "color": "#fff3e0", "margin": "xs", "height": "sm"}
+        add_other_btn = {"type": "button", "action": {"type": "postback", "label": "➕ トラウト釣り場を追加", "data": "action=show_other_mode_areas"}, "style": "secondary", "color": "#fff3e0", "margin": "xs", "height": "sm"}
+        switch_btn = {"type": "button", "action": {"type": "postback", "label": "🐟 トラウトモードへ戻る", "data": "action=switch_mode&mode=trout"}, "style": "primary", "color": "#e65100", "margin": "xs", "height": "sm"}
         title_text = "⚙️ お気に入り設定 (バス)"
         header_color = "#4caf50"
 
