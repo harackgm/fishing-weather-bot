@@ -1802,5 +1802,42 @@
       "たいしゃく",
       "タイシャク"
     ]
+  },
+  "リバーランズ山都": {
+    "url": "https://weathernews.jp/onebox/32.640/130.986/",
+    "tenki_url": "https://tenki.jp/forecast/9/46/8620/43447/1hour.html",
+    "hp_url": "https://www.river-runs-yamato.com/",
+    "map_url": "https://www.google.com/maps/place/%E3%83%AA%E3%83%90%E3%83%BC%E3%83%A9%E3%83%B3%E3%82%BA%E5%B1%B1%E9%83%BD/@32.6403644,130.9860878,17.25z/data=!4m6!3m5!1s0x3540c10065954633:0x74bbd042a3d4ce9e!8m2!3d32.6404101!4d130.9879585!16s%2Fg%2F11vwx_8mf1?entry=ttu&g_ep=EgoyMDI2MDkyOC4wIKXMDSoASAFQAw%3D%3D",
+    "x_url": "",
+    "fb_url": "",
+    "insta_url": "",
+    "blog_url": "",
+    "yt_url": "",
+    "search_name": "リバーランズ山都",
+    "tel": "",
+    "aliases": [
+      "リバーランズ山都",
+      "リバーランズ",
+      "やま都",
+      "やまと"
+    ]
+  },
+  "グングン": {
+    "url": "https://weathernews.jp/onebox/37.670/139.062/",
+    "tenki_url": "https://tenki.jp/forecast/4/18/5410/15218/1hour.html",
+    "hp_url": "https://gungun-ff.com/",
+    "map_url": "https://www.google.com/maps/place/%E3%82%B0%E3%83%B3%E3%82%B0%E3%83%B3%E3%83%95%E3%82%A3%E3%83%83%E3%82%B7%E3%83%B3%E3%82%B0%E3%83%95%E3%82%A3%E3%83%BC%E3%83%AB%E3%83%89/@37.6705446,139.0626116,18z/data=!4m6!3m5!1s0x5ff4e148372a3e47:0xfcc14db55b4449f9!8m2!3d37.6706207!4d139.0639128!16s%2Fg%2F11vl597xz1?entry=ttu&g_ep=EgoyMDI2MDkyOC4wIKXMDSoASAFQAw%3D%3D",
+    "x_url": "",
+    "fb_url": "",
+    "insta_url": "",
+    "blog_url": "",
+    "yt_url": "",
+    "search_name": "グングンフィッシングフィールド",
+    "tel": "",
+    "aliases": [
+      "グングン",
+      "グングンフィッシングフィールド",
+      "ぐんぐん"
+    ]
   }
 }
