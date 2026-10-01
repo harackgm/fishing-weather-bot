@@ -586,7 +586,8 @@ def handle_postback(event):
         print(f"Postback Error: {e}")
         traceback.print_exc()
 
-def get_top_favorite_spots(trout_limit=24, bass_limit=12):
+def get_top_favorite_spots(trout_limit=30, bass_limit=30):
+    """ユーザーのお気に入り登録数集計により上位30件を取得"""
     if not supabase: return [], []
     try:
         res = supabase.table('user_settings').select('favorite_spots').execute()
@@ -626,9 +627,15 @@ def get_top_favorite_spots(trout_limit=24, bass_limit=12):
         return [], []
 
 def run_background_update():
+    """
+    Cronjobs用（10分ごとに実行）:
+    トラウト上位30件・バス上位30件の中で、DB更新日時（updated_at）が『最も古い順』に
+    トラウト5件・バス5件を選出し、順繰り（ローテーション）にキャッシュ更新を行う。
+    1時間（6回実行）で上位30件×2（計60件）の全キャッシュが確実に一周して最新化される。
+    """
     if not supabase: return
     try:
-        top_trout, top_bass = get_top_favorite_spots(trout_limit=24, bass_limit=12)
+        top_trout, top_bass = get_top_favorite_spots(trout_limit=30, bass_limit=30)
         
         trout_targets = []
         if top_trout:
@@ -639,8 +646,9 @@ def run_background_update():
                     try: trout_cache_times[spot] = datetime.fromisoformat(res.data[0].get('updated_at').replace('Z', '+00:00'))
                     except: trout_cache_times[spot] = datetime.min.replace(tzinfo=timezone.utc)
                 else: trout_cache_times[spot] = datetime.min.replace(tzinfo=timezone.utc)
+            # 最も更新日時が古い順にソートして上位5件を選出（順繰り更新）
             sorted_trout = sorted(trout_cache_times.items(), key=lambda x: x[1])
-            trout_targets = [spot for spot, time in sorted_trout[:5]]
+            trout_targets = [spot for spot, time_val in sorted_trout[:5]]
 
         bass_targets = []
         if top_bass:
@@ -651,26 +659,28 @@ def run_background_update():
                     try: bass_cache_times[spot] = datetime.fromisoformat(res.data[0].get('updated_at').replace('Z', '+00:00'))
                     except: bass_cache_times[spot] = datetime.min.replace(tzinfo=timezone.utc)
                 else: bass_cache_times[spot] = datetime.min.replace(tzinfo=timezone.utc)
+            # 最も更新日時が古い順にソートして上位5件を選出（順繰り更新）
             sorted_bass = sorted(bass_cache_times.items(), key=lambda x: x[1])
-            bass_targets = [spot for spot, time in sorted_bass[:3]]
+            bass_targets = [spot for spot, time_val in sorted_bass[:5]]
 
+        # トラウト5件のキャッシュ更新
         for spot_name in trout_targets:
             data = ALL_SPOT_DATA.get(spot_name)
             if not data: continue
             url = data["url"]
-            tenki_url = convert_to_10days_url(data.get("tenki_url"))
+            tenki_url = data.get("tenki_url")
             weather_data = fetch_spot_1hour_data(url, tenki_url)
             if weather_data: save_cached_weather(spot_name, weather_data, supabase, MEMORY_CACHE)
             time.sleep(random.uniform(2.5, 4.0))
 
+        # バス5件のキャッシュ更新（サーバー負荷分散のため少し間隔を置く）
         if bass_targets:
-            time.sleep(random.uniform(5.0, 10.0))
-            
+            time.sleep(random.uniform(5.0, 8.0))
             for spot_name in bass_targets:
                 data = ALL_SPOT_DATA.get(spot_name)
                 if not data: continue
                 url = data["url"]
-                tenki_url = convert_to_10days_url(data.get("tenki_url"))
+                tenki_url = data.get("tenki_url")
                 weather_data = fetch_spot_1hour_data(url, tenki_url)
                 if weather_data: save_cached_weather(spot_name, weather_data, supabase, MEMORY_CACHE)
                 time.sleep(random.uniform(2.5, 4.0))
