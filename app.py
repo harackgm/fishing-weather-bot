@@ -371,7 +371,7 @@ def handle_message(event):
             if added: reply_lines.append(f"✅ {len(added)}件追加しました: {', '.join(added)}")
             if errors or failed_queries: 
                 all_err = errors + [f"{f}(不明)" for f in failed_queries]
-                reply_lines.append(f"⚠️ スキップ・対象外: {', '.join(all_err)}")
+                reply_lines.append(f"⚠️️ スキップ・対象外: {', '.join(all_err)}")
             if added or errors or failed_queries: 
                 reply_lines.append(f"📊 現在の登録数: {len(current_list_after)}/{MAX_FAVORITES}箇所")
             else: 
