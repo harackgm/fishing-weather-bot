@@ -1858,5 +1858,24 @@
       "かむろ",
       "カムロ"
     ]
+  },
+  "秋保": {
+    "url": "https://weathernews.jp/onebox/38.256/140.640/",
+    "tenki_url": "https://tenki.jp/forecast/2/7/3410/4102/1hour.html",
+    "hp_url": "https://akiu-fa.com/",
+    "x_url": "",
+    "fb_url": "",
+    "insta_url": "",
+    "blog_url": "",
+    "yt_url": "",
+    "search_name": "秋保フィッシングエリア",
+    "tel": "022-399-2191",
+    "aliases": [
+      "秋保",
+      "秋保フィッシングエリア",
+      "秋保FA",
+      "あきう",
+      "アキウ"
+    ]
   }
 }
