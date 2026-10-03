@@ -100,15 +100,15 @@ def get_user_setting(user_id):
             try: fishing_mode = row.get('fishing_mode') or 'trout'
             except KeyError: fishing_mode = 'trout'
             
+            rename_map = {
+                "七色ダム": "池原七色ダム", "キング": "キングフィッシャー",
+                "キングダム": "川場キングダム", "イワセン": "イワナセンター",
+                "アルクス宇宇都宮": "アルクス宇宇都宮", "片仓ダム": "片倉ダム", "多田良沼": "多々良沼",
+                "那須烏山": "那須鳥山", "柏崎": "霞ケ浦柏崎", "霞ケ浦西浦": "土浦港", "ＭＡＶ": "宮城", "GP不忘": "不忘"
+            }
+            
             trout_list = []
             bass_list = []
-            
-            t_all = []
-            for g in COLOR_GROUPS:
-                for sg in g["sub_groups"]: t_all.extend(sg["spots"])
-            b_all = []
-            for g in BASS_COLOR_GROUPS:
-                for sg in g["sub_groups"]: b_all.extend(sg["spots"])
             
             if '|' in favs:
                 t_str, b_str = favs.split('|', 1)
@@ -116,24 +116,28 @@ def get_user_setting(user_id):
                 b_raw = [s.strip() for s in b_str.split(',') if s.strip()]
             else:
                 all_raw = [s.strip() for s in favs.split(',') if s.strip()]
+                t_all = []
+                for g in COLOR_GROUPS:
+                    for sg in g["sub_groups"]: t_all.extend(sg["spots"])
+                b_all = []
+                for g in BASS_COLOR_GROUPS:
+                    for sg in g["sub_groups"]: b_all.extend(sg["spots"])
+                
                 t_raw = []
                 b_raw = []
                 for s in all_raw:
-                    resolved = resolve_spot_name(s) or s
-                    if resolved in b_all and resolved not in t_all:
-                        b_raw.append(resolved)
+                    s_clean = rename_map.get(s, s)
+                    if s_clean in b_all and s_clean not in t_all:
+                        b_raw.append(s_clean)
                     else:
-                        t_raw.append(resolved)
+                        t_raw.append(s_clean)
 
-            # DB内の古い名前を自動で最新の正式名称に変換（根本的解決ロジック）
             for s in t_raw:
-                resolved = resolve_spot_name(s) or s
-                if resolved not in ["多摩湖", "いなプー"] and resolved and resolved not in trout_list:
-                    trout_list.append(resolved)
+                s_clean = rename_map.get(s, s)
+                if s_clean not in ["多摩湖", "いなプー"] and s_clean: trout_list.append(s_clean)
             for s in b_raw:
-                resolved = resolve_spot_name(s) or s
-                if resolved not in ["多摩湖", "いなプー"] and resolved and resolved not in bass_list:
-                    bass_list.append(resolved)
+                s_clean = rename_map.get(s, s)
+                if s_clean not in ["多摩湖", "いなプー"] and s_clean: bass_list.append(s_clean)
                     
             return (row.get('weather_source', 'ウェザーニュース'), trout_list, bass_list, fishing_mode)
         return ('ウェザーニュース', [], [], 'trout')
@@ -276,11 +280,14 @@ def yjcarnavi_redirect():
     search_keyword = name if name else q
 
     if lat and lon and search_keyword:
+        # Yahoo!カーナビ公式の「ルート選択画面」を直接開くコマンド
         app_url = f"yjcarnavi://navi/select?lat={lat}&lon={lon}&name={quote(search_keyword)}"
     else:
+        # 緯度・経度が何らかの理由で欠損している場合は、直接Googleマップへ逃がす
         fallback_url = f"https://www.google.com/maps/search/?api=1&query={quote(search_keyword)}" if search_keyword else "https://www.google.com/maps"
         return f'<script>window.location.href="{fallback_url}";</script>'
 
+    # アプリが入っていない人向けのGoogleマップURL（ピンポイント座標）
     web_url = f"https://www.google.com/maps/search/?api=1&query={lat},{lon}"
 
     html = f"""
@@ -307,11 +314,14 @@ def yjcarnavi_redirect():
         
         <div class="fallback">
             <p>※カーナビアプリをお持ちでない方は<br>
-            <a href="{web_url}">🗺️️ Googleマップで開く</a></p>
+            <a href="{web_url}">🗺️ Googleマップで開く</a></p>
         </div>
 
         <script>
+            // ページ表示と同時にカーナビのルート案内コマンドを実行
             window.location.href = "{app_url}";
+            
+            // 2.5秒後にGoogleマップへ自動フォールバック（アプリがない人向け安全装置）
             setTimeout(function() {{
                 window.location.href = "{web_url}";
             }}, 2500);
@@ -459,7 +469,7 @@ def handle_message(event):
             
             reply_lines = []
             if removed: reply_lines.append(f"✅ {len(removed)}件削除しました: {', '.join(removed)}")
-            if errors: reply_lines.append(f"⚠️️ スキップ・失敗: {', '.join(errors)}")
+            if errors: reply_lines.append(f"⚠️ スキップ・失敗: {', '.join(errors)}")
             if removed or errors: 
                 reply_lines.append(f"📊 現在の登録数: {len(current_list_after)}/{MAX_FAVORITES}箇所")
             else: 
@@ -491,6 +501,7 @@ def handle_postback(event):
         user_id = event.source.user_id
         data_dict = dict(parse_qsl(event.postback.data))
 
+        # 2.5秒のストッパー（元の仕様通りの安全クールダウン）
         if is_throttled(user_id, cooldown=2.5):
             return
 
@@ -528,6 +539,7 @@ def handle_postback(event):
             line_bot_api.reply_message(event.reply_token, flex_msg)
             return
 
+        # ── 1番・先頭・末尾 ボタンの移動対象選択ダイアログ表示 ──
         elif action in ["show_top_selector", "show_cell_top_selector", "show_cell_bottom_selector"]:
             chunk_idx_str = data_dict.get("chunk", "0")
             c_idx = int(chunk_idx_str) if chunk_idx_str.isdigit() else 0
@@ -623,6 +635,7 @@ def handle_postback(event):
             flex_msg = build_spot_list_carousel_horizontal(current_list_after, mode=fishing_mode)
             line_bot_api.reply_message(event.reply_token, [TextSendMessage(text=f"✅ {msg}"), flex_msg])
 
+        # ── 釣り場の移動処理を実行 ──
         elif action in ["fav_up", "fav_down", "fav_top", "fav_bottom", "fav_cell_top", "fav_cell_bottom"]:
             direction = action.replace("fav_", "")
             move_favorite_spot(user_id, spot_name, direction)
@@ -636,6 +649,7 @@ def handle_postback(event):
         traceback.print_exc()
 
 def get_top_favorite_spots(trout_limit=30, bass_limit=30):
+    """ユーザーのお気に入り登録数集計により上位30件を取得"""
     if not supabase: return [], []
     try:
         res = supabase.table('user_settings').select('favorite_spots').execute()
@@ -675,6 +689,12 @@ def get_top_favorite_spots(trout_limit=30, bass_limit=30):
         return [], []
 
 def run_background_update():
+    """
+    Cronjobs用（10分ごとに実行）:
+    トラウト上位30件・バス上位30件の中で、DB更新日時（updated_at）が『最も古い順』に
+    トラウト5件・バス5件を選出し、順繰り（ローテーション）にキャッシュ更新を行う。
+    1時間（6回実行）で上位30件×2（計60件）の全キャッシュが確実に一周して最新化される。
+    """
     if not supabase: return
     try:
         top_trout, top_bass = get_top_favorite_spots(trout_limit=30, bass_limit=30)
@@ -688,6 +708,7 @@ def run_background_update():
                     try: trout_cache_times[spot] = datetime.fromisoformat(res.data[0].get('updated_at').replace('Z', '+00:00'))
                     except: trout_cache_times[spot] = datetime.min.replace(tzinfo=timezone.utc)
                 else: trout_cache_times[spot] = datetime.min.replace(tzinfo=timezone.utc)
+            # 最も更新日時が古い順にソートして上位5件を選出（順繰り更新）
             sorted_trout = sorted(trout_cache_times.items(), key=lambda x: x[1])
             trout_targets = [spot for spot, time_val in sorted_trout[:5]]
 
@@ -700,9 +721,11 @@ def run_background_update():
                     try: bass_cache_times[spot] = datetime.fromisoformat(res.data[0].get('updated_at').replace('Z', '+00:00'))
                     except: bass_cache_times[spot] = datetime.min.replace(tzinfo=timezone.utc)
                 else: bass_cache_times[spot] = datetime.min.replace(tzinfo=timezone.utc)
+            # 最も更新日時が古い順にソートして上位5件を選出（順繰り更新）
             sorted_bass = sorted(bass_cache_times.items(), key=lambda x: x[1])
             bass_targets = [spot for spot, time_val in sorted_bass[:5]]
 
+        # トラウト5件のキャッシュ更新
         for spot_name in trout_targets:
             data = ALL_SPOT_DATA.get(spot_name)
             if not data: continue
@@ -712,6 +735,7 @@ def run_background_update():
             if weather_data: save_cached_weather(spot_name, weather_data, supabase, MEMORY_CACHE)
             time.sleep(random.uniform(2.5, 4.0))
 
+        # バス5件のキャッシュ更新（サーバー負荷分散のため少し間隔を置く）
         if bass_targets:
             time.sleep(random.uniform(5.0, 8.0))
             for spot_name in bass_targets:
