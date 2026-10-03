@@ -14,16 +14,18 @@ except ImportError:
     from spots import SPOT_WEATHER_DATA, BASS_SPOT_WEATHER_DATA, COLOR_GROUPS, BASS_COLOR_GROUPS, ALL_SPOT_DATA
     AREA_MAPPING = {}
 
-# --- UIレイアウト生成モジュール（line_flex.py）の読み込み ---
-from line_flex import (
+# --- UIレイアウト生成モジュール（分割版）の読み込み ---
+from line_flex_sub import (
     build_delete_confirm_message,
     build_delete_all_confirm_message,
     build_settings_flex_message,
     build_move_selector_flex_message,
-    build_spot_list_carousel_horizontal,
-    build_grid_flex_message,
     build_other_mode_area_selector,
     build_other_mode_spots_selector
+)
+from line_flex_main import (
+    build_spot_list_carousel_horizontal,
+    build_grid_flex_message
 )
 
 # --- 天気・災害情報APIモジュール（weather_api.py）の読み込み ---
@@ -57,7 +59,6 @@ MEMORY_CACHE = {}
 USER_LAST_REQUEST = {}
 REQUEST_LOCK = threading.Lock()
 
-# 元通りの 2.5秒 に正確に復元
 def is_throttled(user_id, cooldown=2.5):
     now_ts = time.time()
     with REQUEST_LOCK:
@@ -119,7 +120,6 @@ def get_user_setting(user_id):
                 t_raw = []
                 b_raw = []
                 for s in all_raw:
-                    # ★ 根本的解決: rename_mapを撤廃し、システム全体のエイリアス機能で自動解決
                     s_clean = resolve_spot_name(s) or s
                     if s_clean in b_all and s_clean not in t_all:
                         b_raw.append(s_clean)
@@ -265,7 +265,6 @@ def move_favorite_spot(user_id, spot_name, direction):
 def top_page():
     return "LINE Reply Bot Server is running!", 200
 
-# ── Yahoo!カーナビ用クッションページ（公式ルート案内コマンド＆Googleマップフォールバック版） ──
 @app.route("/yjcarnavi", methods=['GET'])
 def yjcarnavi_redirect():
     lat = request.args.get('lat')
@@ -369,7 +368,6 @@ def handle_message(event):
                 line_bot_api.reply_message(event.reply_token, [TextSendMessage(text=msg), flex_msg])
             return
 
-        # ── 追加コマンド ──
         add_match = re.match(r'^追加[\s:：]+(.+)$', raw_msg, re.DOTALL)
         if add_match:
             spots_str = add_match.group(1).strip()
@@ -433,7 +431,6 @@ def handle_message(event):
             line_bot_api.reply_message(event.reply_token, [TextSendMessage(text=chr(10).join(reply_lines)), flex_msg])
             return
 
-        # ── 削除コマンド ──
         del_match = re.match(r'^削除[\s:：]+(.+)$', raw_msg, re.DOTALL)
         if del_match:
             spots_str = del_match.group(1).strip()
@@ -463,7 +460,7 @@ def handle_message(event):
             if removed or errors: 
                 reply_lines.append(f"📊 現在の登録数: {len(current_list_after)}/{MAX_FAVORITES}箇所")
             else: 
-                reply_lines.append("⚠️️ 対象の釣り場がありませんでした（未登録です）。")
+                reply_lines.append("⚠ 対象の釣り場がありませんでした（未登録です）。")
                 
             flex_msg = build_spot_list_carousel_horizontal(current_list_after, mode=fishing_mode)
             line_bot_api.reply_message(event.reply_token, [TextSendMessage(text=chr(10).join(reply_lines)), flex_msg])
@@ -474,7 +471,7 @@ def handle_message(event):
             line_bot_api.reply_message(event.reply_token, flex_msg)
             return
 
-        if raw_msg in ["設定", "⚙️設定", "⚙️ 設定", "設定（並び替え・削除）", "⚙ 設定（並び替え・削除）"]:
+        if raw_msg in ["設定", "⚙️設定", "⚙️️ 設定", "設定（並び替え・削除）", "⚙ 設定（並び替え・削除）"]:
             flex_msg = build_settings_flex_message(current_list, mode=fishing_mode)
             line_bot_api.reply_message(event.reply_token, flex_msg)
             return
