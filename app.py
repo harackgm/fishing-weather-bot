@@ -269,7 +269,7 @@ def move_favorite_spot(user_id, spot_name, direction):
 def top_page():
     return "LINE Reply Bot Server is running!", 200
 
-# ── Yahoo!カーナビ用クッションページ（Googleマップフォールバック版） ──
+# ── Yahoo!カーナビ用クッションページ（安定のsearchコマンド版） ──
 @app.route("/yjcarnavi", methods=['GET'])
 def yjcarnavi_redirect():
     lat = request.args.get('lat')
@@ -277,14 +277,22 @@ def yjcarnavi_redirect():
     name = request.args.get('name')
     q = request.args.get('q')
 
-    if lat and lon and name:
-        app_url = f"yjcarnavi://navi?lat={lat}&lon={lon}&name={quote(name)}"
-        web_url = f"https://www.google.com/maps/search/?api=1&query={lat},{lon}"
-    elif q:
-        app_url = f"yjcarnavi://search?q={quote(q)}"
-        web_url = f"https://www.google.com/maps/search/?api=1&query={quote(q)}"
+    # 名前情報（name または q）を最優先で取得
+    search_keyword = name if name else q
+
+    if search_keyword:
+        # カーナビには確実な「検索」コマンドを使用する
+        app_url = f"yjcarnavi://search?q={quote(search_keyword)}"
+    elif lat and lon:
+        app_url = f"yjcarnavi://search?q={lat},{lon}"
     else:
         return "パラメータが不足しています。", 400
+
+    # Googleマップ（フォールバック用）は座標があればピンポイントの座標を優先
+    if lat and lon:
+        web_url = f"https://www.google.com/maps/search/?api=1&query={lat},{lon}"
+    else:
+        web_url = f"https://www.google.com/maps/search/?api=1&query={quote(search_keyword)}"
 
     html = f"""
     <!DOCTYPE html>
@@ -314,7 +322,7 @@ def yjcarnavi_redirect():
         </div>
 
         <script>
-            // ページ表示と同時にカーナビ起動用のスキームを実行
+            // ページ表示と同時にカーナビの検索コマンドを実行
             window.location.href = "{app_url}";
             
             // 2.5秒後にGoogleマップへ自動フォールバック（アプリがない人向け安全装置）
