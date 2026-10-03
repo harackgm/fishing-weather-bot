@@ -1,3 +1,4 @@
+import os
 import re
 import jpholiday
 from datetime import datetime, timedelta, timezone
@@ -432,11 +433,14 @@ def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_
     dates = sorted(dates, key=lambda d: guess_date_from_string(d, now_jst_date))
 
     active_group = COLOR_GROUPS
+    is_bass_mode = False
     for group in BASS_COLOR_GROUPS:
         for sg in group["sub_groups"]:
             if spot_name in sg["spots"]:
                 active_group = BASS_COLOR_GROUPS
+                is_bass_mode = True
                 break
+        if is_bass_mode: break
 
     header_color = "#0066cc"
     for group in active_group:
@@ -541,8 +545,19 @@ def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_
         spot_data = ALL_SPOT_DATA.get(spot_name, {})
         hide_default_map = spot_data.get("hide_default_map", False)
 
-        # トラウトの釣り場かどうかを判定（spots_trout.json に存在するか）
+        # トラウトの釣り場かどうかを判定
         is_trout_spot = spot_name in SPOT_WEATHER_DATA
+
+        # ウェザーニュースURLから緯度・経度を抽出（Yahoo!カーナビ送信用）
+        lat, lon = None, None
+        wn_url = spot_data.get("url", "")
+        if wn_url:
+            m = re.search(r'onebox/([0-9.]+)/([0-9.]+)', wn_url)
+            if m:
+                lat, lon = m.group(1), m.group(2)
+
+        # Renderの環境変数から自動的にサーバーURLを取得（未設定時はlocalhost）
+        my_render_url = os.environ.get("RENDER_EXTERNAL_URL", "http://localhost:5000")
 
         top_buttons = []
         if not is_trout_spot:
@@ -557,7 +572,7 @@ def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_
             elif len(top_buttons) == 1:
                 top_buttons.append({"type": "box", "layout": "vertical", "flex": 1, "margin": "xs", "contents": []})
         else:
-            # トラウトのレイアウト（分割レイアウト）
+            # トラウトのレイアウト（分割レイアウト・クッションページ経由版）
             if is_favorite:
                 top_buttons.append({"type": "button", "action": {"type": "postback", "label": "解除", "data": f"action=fav_del_confirm_and_list&spot={spot_name}"}, "style": "secondary", "height": "sm", "flex": 2, "margin": "xs", "color": "#ffcccc"})
             else:
@@ -565,8 +580,13 @@ def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_
             
             if map_url and not hide_default_map: 
                 search_q = spot_data.get('search_name', spot_name)
-                # LINEの仕様上 yjcarnavi:// はエラーで弾かれるため https:// に戻す
-                yahoo_map_url = f"https://map.yahoo.co.jp/search?q={quote(search_q)}"
+                
+                # Render上のクッションページへ誘導するURLを生成
+                if lat and lon:
+                    yahoo_map_url = f"{my_render_url}/yjcarnavi?lat={lat}&lon={lon}&name={quote(search_q)}"
+                else:
+                    yahoo_map_url = f"{my_render_url}/yjcarnavi?q={quote(search_q)}"
+                    
                 top_buttons.append({"type": "button", "action": {"type": "uri", "label": "🗺️ G!", "uri": map_url}, "style": "secondary", "height": "sm", "flex": 3, "margin": "xs"})
                 top_buttons.append({"type": "button", "action": {"type": "uri", "label": "🚗 Y!", "uri": yahoo_map_url}, "style": "secondary", "height": "sm", "flex": 3, "margin": "xs"})
             elif len(top_buttons) == 1: 
@@ -607,7 +627,12 @@ def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_
                     # トラウトの場合は分割する処理
                     if "地図" in label and url:
                         search_q = spot_data.get('search_name', spot_name)
-                        yahoo_map_url = f"https://map.yahoo.co.jp/search?q={quote(search_q)}"
+                        
+                        if lat and lon:
+                            yahoo_map_url = f"{my_render_url}/yjcarnavi?lat={lat}&lon={lon}&name={quote(search_q)}"
+                        else:
+                            yahoo_map_url = f"{my_render_url}/yjcarnavi?q={quote(search_q)}"
+                            
                         row_buttons.append({"type": "button", "action": {"type": "uri", "label": "🗺️ G!", "uri": url}, "style": "secondary", "height": "sm", "flex": 3, "margin": "xs"})
                         row_buttons.append({"type": "button", "action": {"type": "uri", "label": "🚗 Y!", "uri": yahoo_map_url}, "style": "secondary", "height": "sm", "flex": 3, "margin": "xs"})
                     else:
