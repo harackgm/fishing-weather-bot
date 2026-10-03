@@ -80,7 +80,7 @@ def build_delete_all_confirm_message():
         "body": {
             "type": "box", "layout": "vertical", "spacing": "md", "paddingAll": "15px",
             "contents": [
-                {"type": "text", "text": "⚠️ 全て削除の確認", "weight": "bold", "color": "#ff0000", "size": "md"},
+                {"type": "text", "text": "⚠️️ 全て削除の確認", "weight": "bold", "color": "#ff0000", "size": "md"},
                 {"type": "text", "text": "すべてのお気に入りを削除しますか？" + chr(10) + "（この操作は元に戻せません）", "wrap": True, "size": "sm", "color": "#333333"}
             ]
         },
@@ -112,7 +112,7 @@ def build_settings_flex_message(fav_list, mode="trout"):
     else:
         add_other_btn = {"type": "button", "action": {"type": "postback", "label": "➕ トラウト釣り場を追加", "data": "action=show_other_mode_areas"}, "style": "secondary", "color": "#fff3e0", "margin": "xs", "height": "sm"}
         switch_btn = {"type": "button", "action": {"type": "postback", "label": "🐟 トラウトモードへ戻る", "data": "action=switch_mode&mode=trout"}, "style": "primary", "color": "#e65100", "margin": "xs", "height": "sm"}
-        title_text = "⚙ お気に入り設定 (バス)"
+        title_text = "⚙️ お気に入り設定 (バス)"
         header_color = "#4caf50"
 
     if not filtered_favs:
@@ -540,6 +540,17 @@ def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_
         header_contents = [{"type": "text", "text": f"📍 {spot_name}", "color": "#ffffff", "weight": "bold", "size": "lg"}]
         all_rows = []
         
+        spot_data = ALL_SPOT_DATA.get(spot_name, {})
+        hide_default_map = spot_data.get("hide_default_map", False)
+
+        # ウェザーニュースURLから緯度・経度を抽出（Yahoo!カーナビ送信用）
+        lat, lon = None, None
+        wn_url = spot_data.get("url", "")
+        if wn_url:
+            m = re.search(r'onebox/([0-9.]+)/([0-9.]+)', wn_url)
+            if m:
+                lat, lon = m.group(1), m.group(2)
+
         top_buttons = []
         if is_bass_mode:
             # バスのレイアウト（元のレイアウト）
@@ -548,24 +559,23 @@ def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_
             else:
                 top_buttons.append({"type": "button", "action": {"type": "postback", "label": "⭐️ 登録", "data": f"action=fav_add_and_list&spot={spot_name}"}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs", "color": "#fff59d"})
             
-            spot_data = ALL_SPOT_DATA.get(spot_name, {})
-            hide_default_map = spot_data.get("hide_default_map", False)
             if map_url and not hide_default_map:
                 top_buttons.append({"type": "button", "action": {"type": "uri", "label": "🗺️ 地図", "uri": map_url}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
             elif len(top_buttons) == 1:
                 top_buttons.append({"type": "box", "layout": "vertical", "flex": 1, "margin": "xs", "contents": []})
         else:
-            # トラウトのレイアウト（分割レイアウト）
+            # トラウトのレイアウト（分割レイアウト・カーナビ直接起動版）
             if is_favorite:
                 top_buttons.append({"type": "button", "action": {"type": "postback", "label": "解除", "data": f"action=fav_del_confirm_and_list&spot={spot_name}"}, "style": "secondary", "height": "sm", "flex": 2, "margin": "xs", "color": "#ffcccc"})
             else:
                 top_buttons.append({"type": "button", "action": {"type": "postback", "label": "登録", "data": f"action=fav_add_and_list&spot={spot_name}"}, "style": "secondary", "height": "sm", "flex": 2, "margin": "xs", "color": "#fff59d"})
             
-            spot_data = ALL_SPOT_DATA.get(spot_name, {})
-            hide_default_map = spot_data.get("hide_default_map", False)
             if map_url and not hide_default_map: 
                 search_q = spot_data.get('search_name', spot_name)
-                yahoo_map_url = f"yjcarnavi://search?q={quote(search_q)}"
+                if lat and lon:
+                    yahoo_map_url = f"yjcarnavi://navi?lat={lat}&lon={lon}&name={quote(search_q)}"
+                else:
+                    yahoo_map_url = f"yjcarnavi://search?q={quote(search_q)}"
                 top_buttons.append({"type": "button", "action": {"type": "uri", "label": "🗺️ G!", "uri": map_url}, "style": "secondary", "height": "sm", "flex": 3, "margin": "xs"})
                 top_buttons.append({"type": "button", "action": {"type": "uri", "label": "🚗 Y!", "uri": yahoo_map_url}, "style": "secondary", "height": "sm", "flex": 3, "margin": "xs"})
             elif len(top_buttons) == 1: 
@@ -606,7 +616,10 @@ def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_
                     # トラウトの場合はアイコンを消してG! Y!などに分割する処理
                     if "地図" in label and url:
                         search_q = spot_data.get('search_name', spot_name)
-                        yahoo_map_url = f"yjcarnavi://search?q={quote(search_q)}"
+                        if lat and lon:
+                            yahoo_map_url = f"yjcarnavi://navi?lat={lat}&lon={lon}&name={quote(search_q)}"
+                        else:
+                            yahoo_map_url = f"yjcarnavi://search?q={quote(search_q)}"
                         row_buttons.append({"type": "button", "action": {"type": "uri", "label": "🗺️ G!", "uri": url}, "style": "secondary", "height": "sm", "flex": 3, "margin": "xs"})
                         row_buttons.append({"type": "button", "action": {"type": "uri", "label": "🚗 Y!", "uri": yahoo_map_url}, "style": "secondary", "height": "sm", "flex": 3, "margin": "xs"})
                     else:
