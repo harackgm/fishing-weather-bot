@@ -112,7 +112,7 @@ def build_settings_flex_message(fav_list, mode="trout"):
     else:
         add_other_btn = {"type": "button", "action": {"type": "postback", "label": "➕ トラウト釣り場を追加", "data": "action=show_other_mode_areas"}, "style": "secondary", "color": "#fff3e0", "margin": "xs", "height": "sm"}
         switch_btn = {"type": "button", "action": {"type": "postback", "label": "🐟 トラウトモードへ戻る", "data": "action=switch_mode&mode=trout"}, "style": "primary", "color": "#e65100", "margin": "xs", "height": "sm"}
-        title_text = "⚙️️ お気に入り設定 (バス)"
+        title_text = "⚙ お気に入り設定 (バス)"
         header_color = "#4caf50"
 
     if not filtered_favs:
@@ -174,7 +174,7 @@ def build_settings_flex_message(fav_list, mode="trout"):
         rows.append({
             "type": "box", "layout": "horizontal", "margin": "md", "spacing": "sm",
             "contents": [
-                {"type": "box", "layout": "vertical", "flex": 1, "backgroundColor": "#e53935", "borderWidth": "normal", "borderColor": "#e53935", "cornerRadius": "md", "paddingAll": "none", "contents": [{"type": "button", "action": {"type": "postback", "label": "🗑️ 全て削除", "data": "action=fav_del_all_confirm"}, "style": "link", "color": "#ffffff", "height": "sm", "margin": "none"}]},
+                {"type": "box", "layout": "vertical", "flex": 1, "backgroundColor": "#e53935", "borderWidth": "normal", "borderColor": "#e53935", "cornerRadius": "md", "paddingAll": "none", "contents": [{"type": "button", "action": {"type": "postback", "label": "🗑 全て削除", "data": "action=fav_del_all_confirm"}, "style": "link", "color": "#ffffff", "height": "sm", "margin": "none"}]},
                 {"type": "box", "layout": "vertical", "flex": 1, "backgroundColor": "#fff59d", "borderWidth": "normal", "borderColor": "#d4af37", "cornerRadius": "md", "paddingAll": "none", "contents": [{"type": "button", "action": {"type": "postback", "label": "📋 一覧", "data": "action=show_list", "displayText": "📋 一覧"}, "style": "link", "color": "#555555", "height": "sm", "margin": "none"}]}
             ]
         })
@@ -546,7 +546,7 @@ def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_
 
         if map_url and not hide_default_map: 
             search_q = spot_data.get('search_name', spot_name)
-            yahoo_map_url = f"https://map.yahoo.co.jp/search?q={quote(search_q)}"
+            yahoo_map_url = f"yjcarnavi://search?q={quote(search_q)}"
             top_buttons.append({"type": "button", "action": {"type": "uri", "label": "🗺️ G!", "uri": map_url}, "style": "secondary", "height": "sm", "flex": 3, "margin": "xs"})
             top_buttons.append({"type": "button", "action": {"type": "uri", "label": "🚗 Y!", "uri": yahoo_map_url}, "style": "secondary", "height": "sm", "flex": 3, "margin": "xs"})
         elif len(top_buttons) == 1: 
@@ -577,7 +577,7 @@ def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_
                 url = link.get("url")
                 if "地図" in label and url:
                     search_q = spot_data.get('search_name', spot_name)
-                    yahoo_map_url = f"https://map.yahoo.co.jp/search?q={quote(search_q)}"
+                    yahoo_map_url = f"yjcarnavi://search?q={quote(search_q)}"
                     row_buttons.append({"type": "button", "action": {"type": "uri", "label": "🗺️ G!", "uri": url}, "style": "secondary", "height": "sm", "flex": 3, "margin": "xs"})
                     row_buttons.append({"type": "button", "action": {"type": "uri", "label": "🚗 Y!", "uri": yahoo_map_url}, "style": "secondary", "height": "sm", "flex": 3, "margin": "xs"})
                 else:
