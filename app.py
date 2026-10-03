@@ -269,6 +269,64 @@ def move_favorite_spot(user_id, spot_name, direction):
 def top_page():
     return "LINE Reply Bot Server is running!", 200
 
+# ── Yahoo!カーナビ用クッションページ（Googleマップフォールバック版） ──
+@app.route("/yjcarnavi", methods=['GET'])
+def yjcarnavi_redirect():
+    lat = request.args.get('lat')
+    lon = request.args.get('lon')
+    name = request.args.get('name')
+    q = request.args.get('q')
+
+    if lat and lon and name:
+        app_url = f"yjcarnavi://navi?lat={lat}&lon={lon}&name={quote(name)}"
+        web_url = f"https://www.google.com/maps/search/?api=1&query={lat},{lon}"
+    elif q:
+        app_url = f"yjcarnavi://search?q={quote(q)}"
+        web_url = f"https://www.google.com/maps/search/?api=1&query={quote(q)}"
+    else:
+        return "パラメータが不足しています。", 400
+
+    html = f"""
+    <!DOCTYPE html>
+    <html lang="ja">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>カーナビ起動</title>
+        <style>
+            body {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; text-align: center; padding-top: 50px; background-color: #f8f9fa; color: #333; }}
+            .loader {{ border: 4px solid #f3f3f3; border-top: 4px solid #1565c0; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 20px auto; }}
+            @keyframes spin {{ 0% {{ transform: rotate(0deg); }} 100% {{ transform: rotate(360deg); }} }}
+            .btn {{ display: inline-block; margin-top: 20px; padding: 12px 24px; background-color: #1565c0; color: white; text-decoration: none; border-radius: 8px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }}
+            .fallback {{ margin-top: 40px; font-size: 0.9em; color: #666; line-height: 1.6; }}
+            .fallback a {{ color: #1a73e8; font-weight: bold; text-decoration: none; }}
+        </style>
+    </head>
+    <body>
+        <h2>Yahoo!カーナビを起動しています...</h2>
+        <div class="loader"></div>
+        <p style="font-size: 0.9em; color: #555;">自動的に起動しない場合は、以下のボタンを押してください。</p>
+        <p><a href="{app_url}" class="btn">🚗 カーナビアプリを開く</a></p>
+        
+        <div class="fallback">
+            <p>※カーナビアプリをお持ちでない方は<br>
+            <a href="{web_url}">🗺️ Googleマップで開く</a></p>
+        </div>
+
+        <script>
+            // ページ表示と同時にカーナビ起動用のスキームを実行
+            window.location.href = "{app_url}";
+            
+            // 2.5秒後にGoogleマップへ自動フォールバック（アプリがない人向け安全装置）
+            setTimeout(function() {{
+                window.location.href = "{web_url}";
+            }}, 2500);
+        </script>
+    </body>
+    </html>
+    """
+    return html, 200
+
 @app.route("/callback", methods=['POST'])
 def callback():
     signature = request.headers.get('X-Line-Signature', '')
@@ -371,7 +429,7 @@ def handle_message(event):
             if added: reply_lines.append(f"✅ {len(added)}件追加しました: {', '.join(added)}")
             if errors or failed_queries: 
                 all_err = errors + [f"{f}(不明)" for f in failed_queries]
-                reply_lines.append(f"⚠️️ スキップ・対象外: {', '.join(all_err)}")
+                reply_lines.append(f"⚠ スキップ・対象外: {', '.join(all_err)}")
             if added or errors or failed_queries: 
                 reply_lines.append(f"📊 現在の登録数: {len(current_list_after)}/{MAX_FAVORITES}箇所")
             else: 
@@ -511,7 +569,7 @@ def handle_postback(event):
                 flex_msg = build_grid_flex_message(target_spot_name, weather_data, hp_url, hp2_url, map_url, tel, x_url, fb_url, insta_url, blog_url, yt_url, is_favorite=is_fav)
                 line_bot_api.reply_message(event.reply_token, flex_msg)
             else:
-                line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"⚠️ 【{target_spot_name}】の天気データの取得に失敗しました。少し時間を置いてから再度お試しください。"))
+                line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"⚠️️ 【{target_spot_name}】の天気データの取得に失敗しました。少し時間を置いてから再度お試しください。"))
             return
 
         elif action == "fav_add_and_list":
