@@ -174,7 +174,7 @@ def build_settings_flex_message(fav_list, mode="trout"):
         rows.append({
             "type": "box", "layout": "horizontal", "margin": "md", "spacing": "sm",
             "contents": [
-                {"type": "box", "layout": "vertical", "flex": 1, "backgroundColor": "#e53935", "borderWidth": "normal", "borderColor": "#e53935", "cornerRadius": "md", "paddingAll": "none", "contents": [{"type": "button", "action": {"type": "postback", "label": "🗑️️ 全て削除", "data": "action=fav_del_all_confirm"}, "style": "link", "color": "#ffffff", "height": "sm", "margin": "none"}]},
+                {"type": "box", "layout": "vertical", "flex": 1, "backgroundColor": "#e53935", "borderWidth": "normal", "borderColor": "#e53935", "cornerRadius": "md", "paddingAll": "none", "contents": [{"type": "button", "action": {"type": "postback", "label": "🗑 全て削除", "data": "action=fav_del_all_confirm"}, "style": "link", "color": "#ffffff", "height": "sm", "margin": "none"}]},
                 {"type": "box", "layout": "vertical", "flex": 1, "backgroundColor": "#fff59d", "borderWidth": "normal", "borderColor": "#d4af37", "cornerRadius": "md", "paddingAll": "none", "contents": [{"type": "button", "action": {"type": "postback", "label": "📋 一覧", "data": "action=show_list", "displayText": "📋 一覧"}, "style": "link", "color": "#555555", "height": "sm", "margin": "none"}]}
             ]
         })
