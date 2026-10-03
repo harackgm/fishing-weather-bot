@@ -431,11 +431,14 @@ def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_
     dates = sorted(dates, key=lambda d: guess_date_from_string(d, now_jst_date))
 
     active_group = COLOR_GROUPS
+    is_bass_mode = False
     for group in BASS_COLOR_GROUPS:
         for sg in group["sub_groups"]:
             if spot_name in sg["spots"]:
                 active_group = BASS_COLOR_GROUPS
+                is_bass_mode = True
                 break
+        if is_bass_mode: break
 
     header_color = "#0066cc"
     for group in active_group:
@@ -538,20 +541,36 @@ def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_
         all_rows = []
         
         top_buttons = []
-        if is_favorite: top_buttons.append({"type": "button", "action": {"type": "postback", "label": "解除", "data": f"action=fav_del_confirm_and_list&spot={spot_name}"}, "style": "secondary", "height": "sm", "flex": 2, "margin": "xs", "color": "#ffcccc"})
-        else: top_buttons.append({"type": "button", "action": {"type": "postback", "label": "登録", "data": f"action=fav_add_and_list&spot={spot_name}"}, "style": "secondary", "height": "sm", "flex": 2, "margin": "xs", "color": "#fff59d"})
-
-        spot_data = ALL_SPOT_DATA.get(spot_name, {})
-        hide_default_map = spot_data.get("hide_default_map", False)
-
-        if map_url and not hide_default_map: 
-            search_q = spot_data.get('search_name', spot_name)
-            yahoo_map_url = f"yjcarnavi://search?q={quote(search_q)}"
-            top_buttons.append({"type": "button", "action": {"type": "uri", "label": "🗺️ G!", "uri": map_url}, "style": "secondary", "height": "sm", "flex": 3, "margin": "xs"})
-            top_buttons.append({"type": "button", "action": {"type": "uri", "label": "🚗 Y!", "uri": yahoo_map_url}, "style": "secondary", "height": "sm", "flex": 3, "margin": "xs"})
-        elif len(top_buttons) == 1: 
-            top_buttons.append({"type": "box", "layout": "vertical", "flex": 6, "margin": "xs", "contents": []})
+        if is_bass_mode:
+            # バスのレイアウト（元のレイアウト）
+            if is_favorite:
+                top_buttons.append({"type": "button", "action": {"type": "postback", "label": "🗑️ 解除", "data": f"action=fav_del_confirm_and_list&spot={spot_name}"}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs", "color": "#ffcccc"})
+            else:
+                top_buttons.append({"type": "button", "action": {"type": "postback", "label": "⭐️ 登録", "data": f"action=fav_add_and_list&spot={spot_name}"}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs", "color": "#fff59d"})
             
+            spot_data = ALL_SPOT_DATA.get(spot_name, {})
+            hide_default_map = spot_data.get("hide_default_map", False)
+            if map_url and not hide_default_map:
+                top_buttons.append({"type": "button", "action": {"type": "uri", "label": "🗺️ 地図", "uri": map_url}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
+            elif len(top_buttons) == 1:
+                top_buttons.append({"type": "box", "layout": "vertical", "flex": 1, "margin": "xs", "contents": []})
+        else:
+            # トラウトのレイアウト（分割レイアウト）
+            if is_favorite:
+                top_buttons.append({"type": "button", "action": {"type": "postback", "label": "解除", "data": f"action=fav_del_confirm_and_list&spot={spot_name}"}, "style": "secondary", "height": "sm", "flex": 2, "margin": "xs", "color": "#ffcccc"})
+            else:
+                top_buttons.append({"type": "button", "action": {"type": "postback", "label": "登録", "data": f"action=fav_add_and_list&spot={spot_name}"}, "style": "secondary", "height": "sm", "flex": 2, "margin": "xs", "color": "#fff59d"})
+            
+            spot_data = ALL_SPOT_DATA.get(spot_name, {})
+            hide_default_map = spot_data.get("hide_default_map", False)
+            if map_url and not hide_default_map: 
+                search_q = spot_data.get('search_name', spot_name)
+                yahoo_map_url = f"yjcarnavi://search?q={quote(search_q)}"
+                top_buttons.append({"type": "button", "action": {"type": "uri", "label": "🗺️ G!", "uri": map_url}, "style": "secondary", "height": "sm", "flex": 3, "margin": "xs"})
+                top_buttons.append({"type": "button", "action": {"type": "uri", "label": "🚗 Y!", "uri": yahoo_map_url}, "style": "secondary", "height": "sm", "flex": 3, "margin": "xs"})
+            elif len(top_buttons) == 1: 
+                top_buttons.append({"type": "box", "layout": "vertical", "flex": 6, "margin": "xs", "contents": []})
+        
         all_rows.append(top_buttons)
 
         header_buttons_bottom = []
@@ -575,20 +594,31 @@ def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_
             for link in row_links:
                 label = link["label"]
                 url = link.get("url")
-                if "地図" in label and url:
-                    search_q = spot_data.get('search_name', spot_name)
-                    yahoo_map_url = f"yjcarnavi://search?q={quote(search_q)}"
-                    row_buttons.append({"type": "button", "action": {"type": "uri", "label": "🗺️ G!", "uri": url}, "style": "secondary", "height": "sm", "flex": 3, "margin": "xs"})
-                    row_buttons.append({"type": "button", "action": {"type": "uri", "label": "🚗 Y!", "uri": yahoo_map_url}, "style": "secondary", "height": "sm", "flex": 3, "margin": "xs"})
-                else:
-                    short_label = label.replace("🌐", "").replace("🚷", "").replace("📝", "").replace("📘", "").replace("📷", "").replace("▶️", "").replace("🕮", "").strip()
-                    if not short_label: short_label = label
-                    
+                
+                if is_bass_mode:
+                    # バスの場合は元のレイアウト通り、そのまま表示
                     if url:
-                        action_data = {"type": "uri", "label": short_label, "uri": url}
+                        action_data = {"type": "uri", "label": label, "uri": url}
                     else:
-                        action_data = {"type": "postback", "label": short_label, "data": "action=dummy"}
-                    row_buttons.append({"type": "button", "action": action_data, "style": "secondary", "height": "sm", "flex": 2, "margin": "xs"})
+                        action_data = {"type": "postback", "label": label, "data": "action=dummy"}
+                    row_buttons.append({"type": "button", "action": action_data, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
+                else:
+                    # トラウトの場合はアイコンを消してG! Y!などに分割する処理
+                    if "地図" in label and url:
+                        search_q = spot_data.get('search_name', spot_name)
+                        yahoo_map_url = f"yjcarnavi://search?q={quote(search_q)}"
+                        row_buttons.append({"type": "button", "action": {"type": "uri", "label": "🗺️ G!", "uri": url}, "style": "secondary", "height": "sm", "flex": 3, "margin": "xs"})
+                        row_buttons.append({"type": "button", "action": {"type": "uri", "label": "🚗 Y!", "uri": yahoo_map_url}, "style": "secondary", "height": "sm", "flex": 3, "margin": "xs"})
+                    else:
+                        short_label = label.replace("🌐", "").replace("🚷", "").replace("📝", "").replace("📘", "").replace("📷", "").replace("▶️", "").replace("🕮", "").strip()
+                        if not short_label: short_label = label
+                        
+                        if url:
+                            action_data = {"type": "uri", "label": short_label, "uri": url}
+                        else:
+                            action_data = {"type": "postback", "label": short_label, "data": "action=dummy"}
+                        row_buttons.append({"type": "button", "action": action_data, "style": "secondary", "height": "sm", "flex": 2, "margin": "xs"})
+                        
             if row_buttons: all_rows.append(row_buttons)
 
         if len(all_rows) > 2:
