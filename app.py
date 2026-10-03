@@ -269,7 +269,7 @@ def move_favorite_spot(user_id, spot_name, direction):
 def top_page():
     return "LINE Reply Bot Server is running!", 200
 
-# ── Yahoo!カーナビ用クッションページ（安定のsearchコマンド版） ──
+# ── Yahoo!カーナビ用クッションページ（公式ルート案内コマンド＆Googleマップフォールバック版） ──
 @app.route("/yjcarnavi", methods=['GET'])
 def yjcarnavi_redirect():
     lat = request.args.get('lat')
@@ -277,22 +277,18 @@ def yjcarnavi_redirect():
     name = request.args.get('name')
     q = request.args.get('q')
 
-    # 名前情報（name または q）を最優先で取得
     search_keyword = name if name else q
 
-    if search_keyword:
-        # カーナビには確実な「検索」コマンドを使用する
-        app_url = f"yjcarnavi://search?q={quote(search_keyword)}"
-    elif lat and lon:
-        app_url = f"yjcarnavi://search?q={lat},{lon}"
+    if lat and lon and search_keyword:
+        # Yahoo!カーナビ公式の「ルート選択画面」を直接開くコマンド
+        app_url = f"yjcarnavi://navi/select?lat={lat}&lon={lon}&name={quote(search_keyword)}"
     else:
-        return "パラメータが不足しています。", 400
+        # 緯度・経度が何らかの理由で欠損している場合は、直接Googleマップへ逃がす
+        fallback_url = f"https://www.google.com/maps/search/?api=1&query={quote(search_keyword)}" if search_keyword else "https://www.google.com/maps"
+        return f'<script>window.location.href="{fallback_url}";</script>'
 
-    # Googleマップ（フォールバック用）は座標があればピンポイントの座標を優先
-    if lat and lon:
-        web_url = f"https://www.google.com/maps/search/?api=1&query={lat},{lon}"
-    else:
-        web_url = f"https://www.google.com/maps/search/?api=1&query={quote(search_keyword)}"
+    # アプリが入っていない人向けのGoogleマップURL（ピンポイント座標）
+    web_url = f"https://www.google.com/maps/search/?api=1&query={lat},{lon}"
 
     html = f"""
     <!DOCTYPE html>
@@ -322,7 +318,7 @@ def yjcarnavi_redirect():
         </div>
 
         <script>
-            // ページ表示と同時にカーナビの検索コマンドを実行
+            // ページ表示と同時にカーナビのルート案内コマンドを実行
             window.location.href = "{app_url}";
             
             // 2.5秒後にGoogleマップへ自動フォールバック（アプリがない人向け安全装置）
@@ -577,7 +573,7 @@ def handle_postback(event):
                 flex_msg = build_grid_flex_message(target_spot_name, weather_data, hp_url, hp2_url, map_url, tel, x_url, fb_url, insta_url, blog_url, yt_url, is_favorite=is_fav)
                 line_bot_api.reply_message(event.reply_token, flex_msg)
             else:
-                line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"⚠️️ 【{target_spot_name}】の天気データの取得に失敗しました。少し時間を置いてから再度お試しください。"))
+                line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"⚠️ 【{target_spot_name}】の天気データの取得に失敗しました。少し時間を置いてから再度お試しください。"))
             return
 
         elif action == "fav_add_and_list":
