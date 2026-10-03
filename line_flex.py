@@ -6,11 +6,12 @@ from linebot.models import FlexSendMessage
 
 # --- 外部ファイル(spots.py)からデータをインポート ---
 try:
-    from spots import COLOR_GROUPS, BASS_COLOR_GROUPS, ALL_SPOT_DATA
+    from spots import COLOR_GROUPS, BASS_COLOR_GROUPS, ALL_SPOT_DATA, SPOT_WEATHER_DATA
 except ImportError:
     COLOR_GROUPS = []
     BASS_COLOR_GROUPS = []
     ALL_SPOT_DATA = {}
+    SPOT_WEATHER_DATA = {}
 
 MAX_FAVORITES = 30
 
@@ -80,7 +81,7 @@ def build_delete_all_confirm_message():
         "body": {
             "type": "box", "layout": "vertical", "spacing": "md", "paddingAll": "15px",
             "contents": [
-                {"type": "text", "text": "⚠️️ 全て削除の確認", "weight": "bold", "color": "#ff0000", "size": "md"},
+                {"type": "text", "text": "⚠️ 全て削除の確認", "weight": "bold", "color": "#ff0000", "size": "md"},
                 {"type": "text", "text": "すべてのお気に入りを削除しますか？" + chr(10) + "（この操作は元に戻せません）", "wrap": True, "size": "sm", "color": "#333333"}
             ]
         },
@@ -112,7 +113,7 @@ def build_settings_flex_message(fav_list, mode="trout"):
     else:
         add_other_btn = {"type": "button", "action": {"type": "postback", "label": "➕ トラウト釣り場を追加", "data": "action=show_other_mode_areas"}, "style": "secondary", "color": "#fff3e0", "margin": "xs", "height": "sm"}
         switch_btn = {"type": "button", "action": {"type": "postback", "label": "🐟 トラウトモードへ戻る", "data": "action=switch_mode&mode=trout"}, "style": "primary", "color": "#e65100", "margin": "xs", "height": "sm"}
-        title_text = "⚙️ お気に入り設定 (バス)"
+        title_text = "⚙ お気に入り設定 (バス)"
         header_color = "#4caf50"
 
     if not filtered_favs:
@@ -431,14 +432,11 @@ def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_
     dates = sorted(dates, key=lambda d: guess_date_from_string(d, now_jst_date))
 
     active_group = COLOR_GROUPS
-    is_bass_mode = False
     for group in BASS_COLOR_GROUPS:
         for sg in group["sub_groups"]:
             if spot_name in sg["spots"]:
                 active_group = BASS_COLOR_GROUPS
-                is_bass_mode = True
                 break
-        if is_bass_mode: break
 
     header_color = "#0066cc"
     for group in active_group:
@@ -543,16 +541,11 @@ def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_
         spot_data = ALL_SPOT_DATA.get(spot_name, {})
         hide_default_map = spot_data.get("hide_default_map", False)
 
-        # ウェザーニュースURLから緯度・経度を抽出（Yahoo!カーナビ送信用）
-        lat, lon = None, None
-        wn_url = spot_data.get("url", "")
-        if wn_url:
-            m = re.search(r'onebox/([0-9.]+)/([0-9.]+)', wn_url)
-            if m:
-                lat, lon = m.group(1), m.group(2)
+        # トラウトの釣り場かどうかを判定（spots_trout.json に存在するか）
+        is_trout_spot = spot_name in SPOT_WEATHER_DATA
 
         top_buttons = []
-        if is_bass_mode:
+        if not is_trout_spot:
             # バスのレイアウト（元のレイアウト）
             if is_favorite:
                 top_buttons.append({"type": "button", "action": {"type": "postback", "label": "🗑️ 解除", "data": f"action=fav_del_confirm_and_list&spot={spot_name}"}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs", "color": "#ffcccc"})
@@ -564,7 +557,7 @@ def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_
             elif len(top_buttons) == 1:
                 top_buttons.append({"type": "box", "layout": "vertical", "flex": 1, "margin": "xs", "contents": []})
         else:
-            # トラウトのレイアウト（分割レイアウト・カーナビ直接起動版）
+            # トラウトのレイアウト（分割レイアウト）
             if is_favorite:
                 top_buttons.append({"type": "button", "action": {"type": "postback", "label": "解除", "data": f"action=fav_del_confirm_and_list&spot={spot_name}"}, "style": "secondary", "height": "sm", "flex": 2, "margin": "xs", "color": "#ffcccc"})
             else:
@@ -572,10 +565,8 @@ def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_
             
             if map_url and not hide_default_map: 
                 search_q = spot_data.get('search_name', spot_name)
-                if lat and lon:
-                    yahoo_map_url = f"yjcarnavi://navi?lat={lat}&lon={lon}&name={quote(search_q)}"
-                else:
-                    yahoo_map_url = f"yjcarnavi://search?q={quote(search_q)}"
+                # LINEの仕様上 yjcarnavi:// はエラーで弾かれるため https:// に戻す
+                yahoo_map_url = f"https://map.yahoo.co.jp/search?q={quote(search_q)}"
                 top_buttons.append({"type": "button", "action": {"type": "uri", "label": "🗺️ G!", "uri": map_url}, "style": "secondary", "height": "sm", "flex": 3, "margin": "xs"})
                 top_buttons.append({"type": "button", "action": {"type": "uri", "label": "🚗 Y!", "uri": yahoo_map_url}, "style": "secondary", "height": "sm", "flex": 3, "margin": "xs"})
             elif len(top_buttons) == 1: 
@@ -605,21 +596,18 @@ def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_
                 label = link["label"]
                 url = link.get("url")
                 
-                if is_bass_mode:
-                    # バスの場合は元のレイアウト通り、そのまま表示
+                if not is_trout_spot:
+                    # バスの場合は元のレイアウト通り
                     if url:
                         action_data = {"type": "uri", "label": label, "uri": url}
                     else:
                         action_data = {"type": "postback", "label": label, "data": "action=dummy"}
                     row_buttons.append({"type": "button", "action": action_data, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
                 else:
-                    # トラウトの場合はアイコンを消してG! Y!などに分割する処理
+                    # トラウトの場合は分割する処理
                     if "地図" in label and url:
                         search_q = spot_data.get('search_name', spot_name)
-                        if lat and lon:
-                            yahoo_map_url = f"yjcarnavi://navi?lat={lat}&lon={lon}&name={quote(search_q)}"
-                        else:
-                            yahoo_map_url = f"yjcarnavi://search?q={quote(search_q)}"
+                        yahoo_map_url = f"https://map.yahoo.co.jp/search?q={quote(search_q)}"
                         row_buttons.append({"type": "button", "action": {"type": "uri", "label": "🗺️ G!", "uri": url}, "style": "secondary", "height": "sm", "flex": 3, "margin": "xs"})
                         row_buttons.append({"type": "button", "action": {"type": "uri", "label": "🚗 Y!", "uri": yahoo_map_url}, "style": "secondary", "height": "sm", "flex": 3, "margin": "xs"})
                     else:
