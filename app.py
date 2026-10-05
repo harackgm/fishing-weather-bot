@@ -471,7 +471,7 @@ def handle_message(event):
             line_bot_api.reply_message(event.reply_token, flex_msg)
             return
 
-        if raw_msg in ["設定", "⚙️設定", "⚙️️ 設定", "設定（並び替え・削除）", "⚙ 設定（並び替え・削除）"]:
+        if raw_msg in ["設定", "⚙️設定", "⚙ 設定", "設定（並び替え・削除）", "⚙ 設定（並び替え・削除）"]:
             flex_msg = build_settings_flex_message(current_list, mode=fishing_mode)
             line_bot_api.reply_message(event.reply_token, flex_msg)
             return
@@ -558,7 +558,7 @@ def handle_postback(event):
                 flex_msg = build_grid_flex_message(target_spot_name, weather_data, hp_url, hp2_url, map_url, tel, x_url, fb_url, insta_url, blog_url, yt_url, is_favorite=is_fav)
                 line_bot_api.reply_message(event.reply_token, flex_msg)
             else:
-                line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"⚠️ 【{target_spot_name}】の天気データの取得に失敗しました。少し時間を置いてから再度お試しください。"))
+                line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"⚠️️ 【{target_spot_name}】の天気データの取得に失敗しました。少し時間を置いてから再度お試しください。"))
             return
 
         elif action == "fav_add_and_list":
@@ -632,7 +632,7 @@ def handle_postback(event):
         print(f"Postback Error: {e}")
         traceback.print_exc()
 
-def get_top_favorite_spots(trout_limit=30, bass_limit=30):
+def get_top_favorite_spots(trout_limit=50, bass_limit=50):
     if not supabase: return [], []
     try:
         res = supabase.table('user_settings').select('favorite_spots').execute()
@@ -674,7 +674,8 @@ def get_top_favorite_spots(trout_limit=30, bass_limit=30):
 def run_background_update():
     if not supabase: return
     try:
-        top_trout, top_bass = get_top_favorite_spots(trout_limit=30, bass_limit=30)
+        # 母数を各30件から各50件（計100件）に拡張し、より多くの釣り場をカバー
+        top_trout, top_bass = get_top_favorite_spots(trout_limit=50, bass_limit=50)
         
         trout_targets = []
         if top_trout:
@@ -686,7 +687,8 @@ def run_background_update():
                     except: trout_cache_times[spot] = datetime.min.replace(tzinfo=timezone.utc)
                 else: trout_cache_times[spot] = datetime.min.replace(tzinfo=timezone.utc)
             sorted_trout = sorted(trout_cache_times.items(), key=lambda x: x[1])
-            trout_targets = [spot for spot, time_val in sorted_trout[:5]]
+            # 1回(10分間)あたりの更新件数を5件から10件に増加
+            trout_targets = [spot for spot, time_val in sorted_trout[:10]]
 
         bass_targets = []
         if top_bass:
@@ -698,7 +700,8 @@ def run_background_update():
                     except: bass_cache_times[spot] = datetime.min.replace(tzinfo=timezone.utc)
                 else: bass_cache_times[spot] = datetime.min.replace(tzinfo=timezone.utc)
             sorted_bass = sorted(bass_cache_times.items(), key=lambda x: x[1])
-            bass_targets = [spot for spot, time_val in sorted_bass[:5]]
+            # 1回(10分間)あたりの更新件数を5件から10件に増加
+            bass_targets = [spot for spot, time_val in sorted_bass[:10]]
 
         for spot_name in trout_targets:
             data = ALL_SPOT_DATA.get(spot_name)
@@ -707,9 +710,11 @@ def run_background_update():
             tenki_url = data.get("tenki_url")
             weather_data = fetch_spot_1hour_data(url, tenki_url)
             if weather_data: save_cached_weather(spot_name, weather_data, supabase, MEMORY_CACHE)
+            # 相手サーバーへの負荷をかけないよう、2.5〜4.0秒のランダム待機を必ず実施
             time.sleep(random.uniform(2.5, 4.0))
 
         if bass_targets:
+            # 連続アクセスを防ぐためのモード間待機も維持
             time.sleep(random.uniform(5.0, 8.0))
             for spot_name in bass_targets:
                 data = ALL_SPOT_DATA.get(spot_name)
@@ -718,6 +723,7 @@ def run_background_update():
                 tenki_url = data.get("tenki_url")
                 weather_data = fetch_spot_1hour_data(url, tenki_url)
                 if weather_data: save_cached_weather(spot_name, weather_data, supabase, MEMORY_CACHE)
+                # 相手サーバーへの負荷をかけないよう、2.5〜4.0秒のランダム待機を必ず実施
                 time.sleep(random.uniform(2.5, 4.0))
 
     except Exception as e:
