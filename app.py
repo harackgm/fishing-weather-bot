@@ -594,7 +594,7 @@ def handle_postback(event):
             success, removed, errors = remove_favorite_spots(user_id, [spot_name])
             _, trout_after, bass_after, _ = get_user_setting(user_id)
             current_list_after = trout_after if fishing_mode == 'trout' else bass_after
-            msg = f"✅ 削除しました: {removed[0]}\n📊 現在の登録数: {len(current_list_after)}/{MAX_FAVORITES}箇所" if removed else f"⚠️️ {errors[0]}\n📊 現在の登録数: {len(current_list_after)}/{MAX_FAVORITES}箇所"
+            msg = f"✅ 削除しました: {removed[0]}\n📊 現在の登録数: {len(current_list_after)}/{MAX_FAVORITES}箇所" if removed else f"⚠ {errors[0]}\n📊 現在の登録数: {len(current_list_after)}/{MAX_FAVORITES}箇所"
             flex_msg = build_spot_list_carousel_horizontal(current_list_after, mode=fishing_mode)
             line_bot_api.reply_message(event.reply_token, [TextSendMessage(text=msg), flex_msg])
 
@@ -679,7 +679,6 @@ def get_top_favorite_spots(trout_limit=42, bass_limit=24):
 def run_background_update():
     if not supabase: return
     try:
-        # 母数をトラウト42件、バス24件に最適化
         top_trout, top_bass = get_top_favorite_spots(trout_limit=42, bass_limit=24)
         
         trout_targets = []
@@ -692,7 +691,6 @@ def run_background_update():
                     except: trout_cache_times[spot] = datetime.min.replace(tzinfo=timezone.utc)
                 else: trout_cache_times[spot] = datetime.min.replace(tzinfo=timezone.utc)
             sorted_trout = sorted(trout_cache_times.items(), key=lambda x: x[1])
-            # トラウト: 1回 7件に設定
             trout_targets = [spot for spot, time_val in sorted_trout[:7]]
 
         bass_targets = []
@@ -705,7 +703,6 @@ def run_background_update():
                     except: bass_cache_times[spot] = datetime.min.replace(tzinfo=timezone.utc)
                 else: bass_cache_times[spot] = datetime.min.replace(tzinfo=timezone.utc)
             sorted_bass = sorted(bass_cache_times.items(), key=lambda x: x[1])
-            # バス: 1回 4件に設定
             bass_targets = [spot for spot, time_val in sorted_bass[:4]]
 
         for spot_name in trout_targets:
@@ -715,10 +712,12 @@ def run_background_update():
             tenki_url = data.get("tenki_url")
             weather_data = fetch_spot_1hour_data(url, tenki_url)
             if weather_data: save_cached_weather(spot_name, weather_data, supabase, MEMORY_CACHE)
-            time.sleep(random.uniform(2.5, 4.0))
+            # 【変更】相手サーバーへの負荷低減のため、個別待機時間を7.0秒〜9.0秒に延長
+            time.sleep(random.uniform(7.0, 9.0))
 
         if bass_targets:
-            time.sleep(random.uniform(5.0, 8.0))
+            # 【変更】モード間の待機時間を10.0秒〜15.0秒に延長
+            time.sleep(random.uniform(10.0, 15.0))
             for spot_name in bass_targets:
                 data = ALL_SPOT_DATA.get(spot_name)
                 if not data: continue
@@ -726,7 +725,8 @@ def run_background_update():
                 tenki_url = data.get("tenki_url")
                 weather_data = fetch_spot_1hour_data(url, tenki_url)
                 if weather_data: save_cached_weather(spot_name, weather_data, supabase, MEMORY_CACHE)
-                time.sleep(random.uniform(2.5, 4.0))
+                # 【変更】個別待機時間を7.0秒〜9.0秒に延長
+                time.sleep(random.uniform(7.0, 9.0))
 
     except Exception as e:
         print(f"[Cron Background Error] {e}")
