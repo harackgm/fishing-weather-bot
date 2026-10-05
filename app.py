@@ -263,7 +263,6 @@ def move_favorite_spot(user_id, spot_name, direction):
 
 @app.route("/", methods=['GET'])
 def top_page():
-    # Cronからアクセスされた際、RenderだけでなくDB(Supabase)も起こすための軽量ダミークエリ
     if supabase:
         try:
             supabase.table('user_settings').select('user_id').limit(1).execute()
@@ -595,7 +594,7 @@ def handle_postback(event):
             success, removed, errors = remove_favorite_spots(user_id, [spot_name])
             _, trout_after, bass_after, _ = get_user_setting(user_id)
             current_list_after = trout_after if fishing_mode == 'trout' else bass_after
-            msg = f"✅ 削除しました: {removed[0]}\n📊 現在の登録数: {len(current_list_after)}/{MAX_FAVORITES}箇所" if removed else f"⚠️ {errors[0]}\n📊 現在の登録数: {len(current_list_after)}/{MAX_FAVORITES}箇所"
+            msg = f"✅ 削除しました: {removed[0]}\n📊 現在の登録数: {len(current_list_after)}/{MAX_FAVORITES}箇所" if removed else f"⚠️️ {errors[0]}\n📊 現在の登録数: {len(current_list_after)}/{MAX_FAVORITES}箇所"
             flex_msg = build_spot_list_carousel_horizontal(current_list_after, mode=fishing_mode)
             line_bot_api.reply_message(event.reply_token, [TextSendMessage(text=msg), flex_msg])
 
@@ -638,7 +637,7 @@ def handle_postback(event):
         print(f"Postback Error: {e}")
         traceback.print_exc()
 
-def get_top_favorite_spots(trout_limit=50, bass_limit=50):
+def get_top_favorite_spots(trout_limit=42, bass_limit=24):
     if not supabase: return [], []
     try:
         res = supabase.table('user_settings').select('favorite_spots').execute()
@@ -680,7 +679,8 @@ def get_top_favorite_spots(trout_limit=50, bass_limit=50):
 def run_background_update():
     if not supabase: return
     try:
-        top_trout, top_bass = get_top_favorite_spots(trout_limit=50, bass_limit=50)
+        # 母数をトラウト42件、バス24件に最適化
+        top_trout, top_bass = get_top_favorite_spots(trout_limit=42, bass_limit=24)
         
         trout_targets = []
         if top_trout:
@@ -692,7 +692,8 @@ def run_background_update():
                     except: trout_cache_times[spot] = datetime.min.replace(tzinfo=timezone.utc)
                 else: trout_cache_times[spot] = datetime.min.replace(tzinfo=timezone.utc)
             sorted_trout = sorted(trout_cache_times.items(), key=lambda x: x[1])
-            trout_targets = [spot for spot, time_val in sorted_trout[:10]]
+            # トラウト: 1回 7件に設定
+            trout_targets = [spot for spot, time_val in sorted_trout[:7]]
 
         bass_targets = []
         if top_bass:
@@ -704,7 +705,8 @@ def run_background_update():
                     except: bass_cache_times[spot] = datetime.min.replace(tzinfo=timezone.utc)
                 else: bass_cache_times[spot] = datetime.min.replace(tzinfo=timezone.utc)
             sorted_bass = sorted(bass_cache_times.items(), key=lambda x: x[1])
-            bass_targets = [spot for spot, time_val in sorted_bass[:10]]
+            # バス: 1回 4件に設定
+            bass_targets = [spot for spot, time_val in sorted_bass[:4]]
 
         for spot_name in trout_targets:
             data = ALL_SPOT_DATA.get(spot_name)
