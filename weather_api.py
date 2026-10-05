@@ -3,8 +3,8 @@ import requests
 from bs4 import BeautifulSoup
 from datetime import datetime, timedelta, timezone
 
-# 既に分割済みのline_flex_main.pyから日付計算関数を拝借します
-from line_flex_main import guess_date_from_string
+# 既に分割済みのline_flex.pyから日付計算関数を拝借します
+from line_flex import guess_date_from_string
 
 # 全国47都道府県のコードマッピング
 PREF_TO_JMA = {
