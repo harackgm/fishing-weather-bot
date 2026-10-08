@@ -452,5 +452,33 @@
     "search_name": "Outdoor Village 373",
     "tel": "",
     "aliases": ["373", "みなんみ", "ミナンミ", "Outdoor Village 373", "outdoor village 373"]
+  },
+  "嵐山": {
+    "url": "https://weathernews.jp/onebox/35.044/135.673/",
+    "tenki_url": "https://tenki.jp/forecast/6/29/6110/26108/1hour.html",
+    "hp_url": "https://www.parkway-hankyu.com/facilities/fishing-area/",
+    "map_url": "https://www.google.com/maps/place/%E5%B5%90%E5%B1%B1%E3%83%95%E3%82%A3%E3%83%83%E3%82%B7%E3%83%B3%E3%82%B0%E3%82%A8%E3%83%AA%E3%82%A2/@35.044014,135.6727867,19z/data=!4m6!3m5!1s0x6001aa2bc6f6d233:0x16eab28d21fe37aa!8m2!3d35.0440512!4d135.6732224!16s%2Fg%2F11b6v53jb6?entry=ttu&g_ep=EgoyMDI2MTAwNS4wIKXMDSoASAFQAw%3D%3D",
+    "x_url": "",
+    "fb_url": "",
+    "insta_url": "",
+    "blog_url": "",
+    "yt_url": "",
+    "search_name": "嵐山フィッシングエリア",
+    "tel": "",
+    "aliases": ["嵐山", "嵐山フィッシングエリア", "あらしやま", "アラシヤマ"]
+  },
+  "朽木": {
+    "url": "https://weathernews.jp/onebox/35.280/135.846/",
+    "tenki_url": "https://tenki.jp/forecast/6/28/6020/25212/1hour.html",
+    "hp_url": "https://www.senlucas.com/kutsuki",
+    "map_url": "https://www.google.com/maps/place/%E6%9C%BD%E6%9C%A8%E3%81%93%E3%81%8C%E3%82%8F%E6%B8%93%E6%B5%81%E3%82%BB%E3%83%B3%E3%82%BF%E3%83%BC+%E3%83%AB%E3%82%A2%E3%83%BC%E3%83%BB%E3%83%95%E3%83%A9%E3%82%A4%E3%83%95%E3%82%A3%E3%83%BC%E3%83%AB%E3%83%89/@35.2798404,135.8437133,17.5z/data=!4m6!3m5!1s0x6001bd75b86f3ff7:0x7391954eee1b7b02!8m2!3d35.2798807!4d135.8457498!16s%2Fg%2F11t40br6ph?entry=ttu&g_ep=EgoyMDI2MTAwNS4wIKXMDSoASAFQAw%3D%3D",
+    "x_url": "",
+    "fb_url": "",
+    "insta_url": "",
+    "blog_url": "",
+    "yt_url": "",
+    "search_name": "朽木こがわ渓流センター",
+    "tel": "",
+    "aliases": ["朽木", "朽木こがわ渓流センター", "くつき", "クツキ"]
   }
 }
