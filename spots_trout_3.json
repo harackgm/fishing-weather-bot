@@ -481,32 +481,32 @@
     "tel": "",
     "aliases": ["朽木", "朽木こがわ渓流センター", "くつき", "クツキ"]
   },
-  "Pastime": {
-    "url": "https://weathernews.jp/onebox/37.293/138.546/",
-    "tenki_url": "https://tenki.jp/forecast/4/18/5430/15222/1hour.html",
-    "hp_url": "https://pastime-areatrout.jp/index.html",
-    "map_url": "https://www.google.com/maps/place/%E3%83%95%E3%82%A3%E3%83%83%E3%82%B7%E3%83%B3%E3%82%B0%E3%82%B9%E3%83%9D%E3%83%83%E3%83%88%E3%83%91%E3%82%B9%E3%82%BF%E3%82%A4%E3%83%A0/@37.29355,138.5461202,19z/data=!4m6!3m5!1s0x5ff5c862b322a49f:0x9e53b40bcb590438!8m2!3d37.2934989!4d138.5466156!16s%2Fg%2F1tmpvtx_?entry=ttu&g_ep=EgoyMDI2MTAwNS4wIKXMDSoASAFQAw%3D%3D",
-    "x_url": "",
-    "fb_url": "",
-    "insta_url": "https://www.instagram.com/fishing_spot_pastime/",
-    "blog_url": "",
-    "yt_url": "",
-    "search_name": "フィッシングスポットパスタイム",
-    "tel": "",
-    "aliases": ["Pastime", "パスタイム", "ぱすたいむ"]
-  },
-  "八海": {
-    "url": "https://weathernews.jp/onebox/37.058/138.940/",
-    "tenki_url": "https://tenki.jp/forecast/4/18/5420/15226/1hour.html",
-    "hp_url": "https://hfs.la.coocan.jp/",
-    "map_url": "https://www.google.com/maps/place/%E5%85%AB%E6%B5%B7%E3%83%95%E3%82%A3%E3%83%83%E3%82%B7%E3%83%B3%E3%82%B0%E3%82%B9%E3%83%9A%E3%83%BC%E3%82%B9/@37.058787,138.9397118,18z/data=!4m6!3m5!1s0x5ff5f4839a0bdd8d:0x28bbd9d3c9bc6267!8m2!3d37.0588534!4d138.9409724!16s%2Fg%2F1v9lbmjv?entry=ttu&g_ep=EgoyMDI2MTAwNS4wIKXMDSoASAFQAw%3D%3D",
+  "桂川": {
+    "url": "https://weathernews.jp/onebox/35.622/139.104/",
+    "tenki_url": "https://tenki.jp/forecast/3/22/4920/19206/1hour.html",
+    "hp_url": "https://www.katsuragawa-gyokyo.net/cont1/20.html",
+    "map_url": "https://www.google.com/maps/place/%E6%A1%82%E5%B7%9D%E3%83%95%E3%83%A9%E3%82%A4%E3%83%AB%E3%82%A2%E3%83%BC%E9%87%A3%E5%A0%B4/@35.6223112,139.104017,18z/data=!4m6!3m5!1s0x601915ebade1758b:0x6accc38a4aed0a4e!8m2!3d35.6223311!4d139.1046104!16s%2Fg%2F1tf873s8?entry=ttu&g_ep=EgoyMDI2MTAwNS4wIKXMDSoASAFQAw%3D%3D",
     "x_url": "",
     "fb_url": "",
     "insta_url": "",
     "blog_url": "",
     "yt_url": "",
-    "search_name": "八海フィッシングスペース",
+    "search_name": "桂川フライルアー釣場",
     "tel": "",
-    "aliases": ["八海", "八海フィッシングスペース", "はっかい", "ハッカイ"]
+    "aliases": ["桂川", "桂川フライルアー釣場", "かつらがわ", "カツラガワ"]
+  },
+  "小菅FV": {
+    "url": "https://weathernews.jp/onebox/35.759/138.945/",
+    "tenki_url": "https://tenki.jp/forecast/3/22/4920/19442/1hour.html",
+    "hp_url": "https://www.fishingvillage.jp/",
+    "map_url": "https://www.google.com/maps/place/%E5%B0%8F%E8%8F%85%E3%83%95%E3%82%A3%E3%83%83%E3%82%B7%E3%83%B3%E3%82%B0%E3%83%B4%E3%82%A3%E3%83%AC%E3%83%83%E3%82%B8/@35.7591671,138.945208,18.5z/data=!4m6!3m5!1s0x60194ed957ed75d5:0xc5124e52ce01b8c3!8m2!3d35.7591825!4d138.9459936!16s%2Fg%2F1tyyx4sr?entry=ttu&g_ep=EgoyMDI2MTAwNS4wIKXMDSoASAFQAw%3D%3D",
+    "x_url": "",
+    "fb_url": "",
+    "insta_url": "",
+    "blog_url": "",
+    "yt_url": "",
+    "search_name": "小菅フィッシングヴィレッジ",
+    "tel": "",
+    "aliases": ["小菅FV", "小菅フィッシングヴィレッジ", "こすげFV", "こすげふぃっしんぐ", "コスゲFV"]
   }
 }
