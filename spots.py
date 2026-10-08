@@ -18,40 +18,11 @@ SPOT_WEATHER_DATA_2 = _load_json('spots_trout_2.json')
 SPOT_WEATHER_DATA_3 = _load_json('spots_trout_3.json')
 SPOT_WEATHER_DATA = {**SPOT_WEATHER_DATA_1, **SPOT_WEATHER_DATA_2, **SPOT_WEATHER_DATA_3}
 
-# --- ここで「373」のデータを直接追加 ---
-ADDITIONAL_SPOT = {
-  "373": {
-    "url": "https://weathernews.jp/onebox/35.654/136.963/",
-    "tenki_url": "https://tenki.jp/forecast/5/24/5220/21209/1hour.html",
-    "hp_url": "https://ov373.jp/",
-    "map_url": "https://www.google.com/maps/place/Outdoor+Village+373/@35.6542647,136.963976,17z/data=!4m6!3m5!1s0x6002fdf6c813d083:0x2bc2344218d8abbb!8m2!3d35.6541869!4d136.9662612!16s%2Fg%2F11v0jq4tlz?entry=ttu&g_ep=EgoyMDI2MDkzMC4wIKXMDSoASAFQAw%3D%3D",
-    "x_url": "",
-    "fb_url": "",
-    "insta_url": "",
-    "blog_url": "",
-    "yt_url": "",
-    "search_name": "Outdoor Village 373",
-    "tel": "",
-    "aliases": ["373", "みなんみ", "ミナンミ", "Outdoor Village 373", "outdoor village 373"]
-  }
-}
-# トラウトのデータに結合
-SPOT_WEATHER_DATA.update(ADDITIONAL_SPOT)
-
 BASS_SPOT_WEATHER_DATA = _load_json('spots_bass.json')
 _groups_data = _load_json('spots_groups.json')
 
 COLOR_GROUPS = _groups_data.get('COLOR_GROUPS', [])
 BASS_COLOR_GROUPS = _groups_data.get('BASS_COLOR_GROUPS', [])
-
-# --- 「373」を一覧のグループ（東海エリア）に合流させる処理 ---
-for group in COLOR_GROUPS:
-    if "東海" in group.get("title", ""):
-        for sg in group.get("sub_groups", []):
-            if "瑞浪" in sg.get("spots", []):
-                if "373" not in sg["spots"]:
-                    sg["spots"].append("373")
-                break
 
 # 全スポットデータの統合
 ALL_SPOT_DATA = {**SPOT_WEATHER_DATA, **BASS_SPOT_WEATHER_DATA}
