@@ -637,7 +637,7 @@ def handle_postback(event):
         print(f"Postback Error: {e}")
         traceback.print_exc()
 
-def get_top_favorite_spots(trout_limit=42, bass_limit=24):
+def get_top_favorite_spots(trout_limit=162, bass_limit=36):
     if not supabase: return [], []
     try:
         res = supabase.table('user_settings').select('favorite_spots').execute()
@@ -679,7 +679,8 @@ def get_top_favorite_spots(trout_limit=42, bass_limit=24):
 def run_background_update():
     if not supabase: return
     try:
-        top_trout, top_bass = get_top_favorite_spots(trout_limit=42, bass_limit=24)
+        # 母数を拡張
+        top_trout, top_bass = get_top_favorite_spots(trout_limit=162, bass_limit=36)
         
         trout_targets = []
         if top_trout:
@@ -691,7 +692,8 @@ def run_background_update():
                     except: trout_cache_times[spot] = datetime.min.replace(tzinfo=timezone.utc)
                 else: trout_cache_times[spot] = datetime.min.replace(tzinfo=timezone.utc)
             sorted_trout = sorted(trout_cache_times.items(), key=lambda x: x[1])
-            trout_targets = [spot for spot, time_val in sorted_trout[:7]]
+            # 更新件数を「9件」に
+            trout_targets = [spot for spot, time_val in sorted_trout[:9]]
 
         bass_targets = []
         if top_bass:
@@ -703,7 +705,8 @@ def run_background_update():
                     except: bass_cache_times[spot] = datetime.min.replace(tzinfo=timezone.utc)
                 else: bass_cache_times[spot] = datetime.min.replace(tzinfo=timezone.utc)
             sorted_bass = sorted(bass_cache_times.items(), key=lambda x: x[1])
-            bass_targets = [spot for spot, time_val in sorted_bass[:4]]
+            # 更新件数を「2件」に
+            bass_targets = [spot for spot, time_val in sorted_bass[:2]]
 
         for spot_name in trout_targets:
             data = ALL_SPOT_DATA.get(spot_name)
