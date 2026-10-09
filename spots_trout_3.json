@@ -538,35 +538,31 @@
     "aliases": ["弁天閣", "TSURIBORI弁天閣", "べんてんかく"]
   },
   "桂川": {
-    "url": "https://weathernews.jp/onebox/35.54/138.90/",
-    "tenki_url": "https://tenki.jp/forecast/3/22/4920/19204/1hour.html",
-    "hp_url": "",
-    "hp2_url": "",
-    "hide_default_map": false,
-    "custom_button_rows": [],
+    "url": "https://weathernews.jp/onebox/35.6223/139.1046/",
+    "tenki_url": "https://tenki.jp/forecast/3/22/4920/19212/1hour.html",
+    "hp_url": "https://www.katsuragawa-gyokyo.net/cont1/20.html",
+    "map_url": "https://www.google.com/maps/place/%E6%A1%82%E5%B7%9D%E3%83%95%E3%83%A9%E3%82%A4%E3%83%AB%E3%82%A2%E3%83%BC%E9%87%A3%E5%A0%B4/@35.6225066,139.1038901,17.75z/data=!4m6!3m5!1s0x601915ebade1758b:0x6accc38a4aed0a4e!8m2!3d35.6223311!4d139.1046104!16s%2Fg%2F1tf873s8?entry=ttu&g_ep=EgoyMDI2MTAwNi4wIKXMDSoASAFQAw%3D%3D",
     "x_url": "",
     "fb_url": "",
     "insta_url": "",
     "blog_url": "",
     "yt_url": "",
-    "search_name": "桂川 釣り 山梨",
-    "tel": "",
-    "aliases": ["桂川", "かつらがわ", "カツラガワ"]
+    "search_name": "桂川フライルアー釣場",
+    "tel": "0554-63-0083",
+    "aliases": ["桂川", "桂川フライルアー釣場", "かつらがわ", "カツラガワ"]
   },
   "小菅FV": {
-    "url": "https://weathernews.jp/onebox/35.76/138.95/",
+    "url": "https://weathernews.jp/onebox/35.7592/138.9460/",
     "tenki_url": "https://tenki.jp/forecast/3/22/4920/19442/1hour.html",
-    "hp_url": "",
-    "hp2_url": "",
-    "hide_default_map": false,
-    "custom_button_rows": [],
+    "hp_url": "https://www.fishingvillage.jp/",
+    "map_url": "https://www.google.com/maps/place/%E5%B0%8F%E8%8F%85%E3%83%95%E3%82%A3%E3%83%83%E3%82%B7%E3%83%B3%E3%82%B0%E3%83%B4%E3%82%A3%E3%83%AC%E3%83%83%E3%82%B8/@35.7592247,138.9453311,18.5z/data=!4m6!3m5!1s0x60194ed957ed75d5:0xc5124e52ce01b8c3!8m2!3d35.7591825!4d138.9459936!16s%2Fg%2F1tyyx4sr?entry=ttu&g_ep=EgoyMDI2MTAwNi4wIKXMDSoASAFQAw%3D%3D",
     "x_url": "",
     "fb_url": "",
     "insta_url": "",
     "blog_url": "",
     "yt_url": "",
     "search_name": "小菅フィッシングヴィレッジ",
-    "tel": "",
+    "tel": "070-4068-6416",
     "aliases": ["小菅FV", "小菅フィッシングヴィレッジ", "こすげFV"]
   }
 }
