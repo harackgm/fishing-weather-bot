@@ -637,7 +637,7 @@ def handle_postback(event):
         print(f"Postback Error: {e}")
         traceback.print_exc()
 
-def get_top_favorite_spots(trout_limit=162, bass_limit=36):
+def get_top_favorite_spots(trout_limit=162, bass_limit=45):
     if not supabase: return [], []
     try:
         res = supabase.table('user_settings').select('favorite_spots').execute()
@@ -680,7 +680,7 @@ def run_background_update():
     if not supabase: return
     try:
         # 母数を拡張
-        top_trout, top_bass = get_top_favorite_spots(trout_limit=162, bass_limit=36)
+        top_trout, top_bass = get_top_favorite_spots(trout_limit=162, bass_limit=45)
         
         trout_targets = []
         if top_trout:
@@ -692,8 +692,8 @@ def run_background_update():
                     except: trout_cache_times[spot] = datetime.min.replace(tzinfo=timezone.utc)
                 else: trout_cache_times[spot] = datetime.min.replace(tzinfo=timezone.utc)
             sorted_trout = sorted(trout_cache_times.items(), key=lambda x: x[1])
-            # 更新件数を「9件」に
-            trout_targets = [spot for spot, time_val in sorted_trout[:9]]
+            # 更新件数を「8件」に修正
+            trout_targets = [spot for spot, time_val in sorted_trout[:8]]
 
         bass_targets = []
         if top_bass:
@@ -705,8 +705,8 @@ def run_background_update():
                     except: bass_cache_times[spot] = datetime.min.replace(tzinfo=timezone.utc)
                 else: bass_cache_times[spot] = datetime.min.replace(tzinfo=timezone.utc)
             sorted_bass = sorted(bass_cache_times.items(), key=lambda x: x[1])
-            # 更新件数を「2件」に
-            bass_targets = [spot for spot, time_val in sorted_bass[:2]]
+            # 更新件数を「3件」に修正
+            bass_targets = [spot for spot, time_val in sorted_bass[:3]]
 
         for spot_name in trout_targets:
             data = ALL_SPOT_DATA.get(spot_name)
@@ -715,11 +715,11 @@ def run_background_update():
             tenki_url = data.get("tenki_url")
             weather_data = fetch_spot_1hour_data(url, tenki_url)
             if weather_data: save_cached_weather(spot_name, weather_data, supabase, MEMORY_CACHE)
-            # 【変更】相手サーバーへの負荷低減のため、個別待機時間を7.0秒〜9.0秒に延長
+            # 待機時間は変更なし（7.0秒〜9.0秒）
             time.sleep(random.uniform(7.0, 9.0))
 
         if bass_targets:
-            # 【変更】モード間の待機時間を10.0秒〜15.0秒に延長
+            # モード間の待機時間は変更なし（10.0秒〜15.0秒）
             time.sleep(random.uniform(10.0, 15.0))
             for spot_name in bass_targets:
                 data = ALL_SPOT_DATA.get(spot_name)
@@ -728,7 +728,7 @@ def run_background_update():
                 tenki_url = data.get("tenki_url")
                 weather_data = fetch_spot_1hour_data(url, tenki_url)
                 if weather_data: save_cached_weather(spot_name, weather_data, supabase, MEMORY_CACHE)
-                # 【変更】個別待機時間を7.0秒〜9.0秒に延長
+                # 待機時間は変更なし（7.0秒〜9.0秒）
                 time.sleep(random.uniform(7.0, 9.0))
 
     except Exception as e:
