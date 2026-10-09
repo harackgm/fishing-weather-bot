@@ -287,8 +287,8 @@ def get_cached_weather(spot_name, supabase_client, memory_cache):
     now = datetime.now(timezone.utc)
     if spot_name in memory_cache:
         data, updated_time = memory_cache[spot_name]
-        # 賞味期限を3時間に延長
-        if now - updated_time <= timedelta(hours=3):
+        # 賞味期限を2時間に変更
+        if now - updated_time <= timedelta(hours=2):
             if isinstance(data, dict):
                 weekly = data.get("__weekly__", [])
                 if data.get("_version") != "settings_shortcut_v129": return None
@@ -306,8 +306,8 @@ def get_cached_weather(spot_name, supabase_client, memory_cache):
             if updated_at_str:
                 try:
                     updated_time = datetime.fromisoformat(updated_at_str.replace('Z', '+00:00'))
-                    # 賞味期限を3時間に延長
-                    if now - updated_time <= timedelta(hours=3):
+                    # 賞味期限を2時間に変更
+                    if now - updated_time <= timedelta(hours=2):
                         weather_data = row.get('weather_data')
                         if isinstance(weather_data, dict):
                             weekly = weather_data.get("__weekly__", [])
