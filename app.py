@@ -353,7 +353,7 @@ def handle_message(event):
             if target_spot:
                 target_spot_name, target_url, hp_url, hp2_url, map_url, tel, x_url, fb_url, insta_url, blog_url, yt_url, tenki_url = get_spot_details(target_spot)
                 if not target_url:
-                    line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"⚠️ 【{target_spot}】のデータが見つかりません。"))
+                    line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"⚠️ 現在【{target_spot}】のデータは準備中です。"))
                     return
 
                 is_fav = True
@@ -551,7 +551,14 @@ def handle_postback(event):
 
         elif action == "show_weather":
             target_spot_name, target_url, hp_url, hp2_url, map_url, tel, x_url, fb_url, insta_url, blog_url, yt_url, tenki_url = get_spot_details(spot_name)
-            if not target_url: return
+            if not target_url:
+                # 【重要追加】未登録データの場合に無反応（returnのみ）になる仕様を修正
+                line_bot_api.reply_message(
+                    event.reply_token, 
+                    TextSendMessage(text=f"⚠️ 現在【{spot_name}】のデータは準備中です。")
+                )
+                return
+
             is_fav = target_spot_name in current_list
 
             weather_data = get_cached_weather(target_spot_name, supabase, MEMORY_CACHE)
