@@ -648,11 +648,17 @@ def get_top_favorite_spots(trout_limit=162, bass_limit=45):
         for g in COLOR_GROUPS:
             for sg in g["sub_groups"]:
                 trout_spots_list.extend(sg["spots"])
+                # 全トラウト釣り場を初期値0で登録
+                for spot in sg["spots"]:
+                    trout_counts[spot] = 0
 
         bass_spots_list = []
         for g in BASS_COLOR_GROUPS:
             for sg in g["sub_groups"]:
                 bass_spots_list.extend(sg["spots"])
+                # 全バス釣り場を初期値0で登録
+                for spot in sg["spots"]:
+                    bass_counts[spot] = 0
                 
         if res.data:
             for row in res.data:
@@ -660,10 +666,10 @@ def get_top_favorite_spots(trout_limit=162, bass_limit=45):
                 if not favs: continue
                 spots = [s.strip() for s in favs.replace('|', ',').split(',') if s.strip()]
                 for s in spots: 
-                    if s in trout_spots_list:
-                        trout_counts[s] = trout_counts.get(s, 0) + 1
-                    elif s in bass_spots_list:
-                        bass_counts[s] = bass_counts.get(s, 0) + 1
+                    if s in trout_counts:
+                        trout_counts[s] += 1
+                    elif s in bass_counts:
+                        bass_counts[s] += 1
                         
         sorted_trout = sorted(trout_counts.items(), key=lambda x: x[1], reverse=True)
         top_trout = [spot for spot, count in sorted_trout[:trout_limit]]
@@ -692,7 +698,7 @@ def run_background_update():
                     except: trout_cache_times[spot] = datetime.min.replace(tzinfo=timezone.utc)
                 else: trout_cache_times[spot] = datetime.min.replace(tzinfo=timezone.utc)
             sorted_trout = sorted(trout_cache_times.items(), key=lambda x: x[1])
-            # 更新件数を「8件」に修正
+            # 更新件数
             trout_targets = [spot for spot, time_val in sorted_trout[:8]]
 
         bass_targets = []
@@ -705,7 +711,7 @@ def run_background_update():
                     except: bass_cache_times[spot] = datetime.min.replace(tzinfo=timezone.utc)
                 else: bass_cache_times[spot] = datetime.min.replace(tzinfo=timezone.utc)
             sorted_bass = sorted(bass_cache_times.items(), key=lambda x: x[1])
-            # 更新件数を「3件」に修正
+            # 更新件数
             bass_targets = [spot for spot, time_val in sorted_bass[:3]]
 
         for spot_name in trout_targets:
