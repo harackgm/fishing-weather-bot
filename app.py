@@ -366,7 +366,7 @@ def handle_message(event):
                 else:
                     line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"⚠️ 【{target_spot_name}】の天気データの取得に失敗しました。少し時間をおいてから再度お試しください。"))
             else:
-                msg = "⚠️ お気に入りが登録されていないか、件数が足りません。" + chr(10) + "「一覧」から釣り場を探して「⭐️ 登録」してください。"
+                msg = "⚠️ お気に入りが登録されていないか、件数が足りません。\n「一覧」から釣り場を探して「⭐️ 登録」してください。"
                 flex_msg = build_spot_list_carousel_horizontal(current_list, mode=fishing_mode)
                 line_bot_api.reply_message(event.reply_token, [TextSendMessage(text=msg), flex_msg])
             return
@@ -413,7 +413,7 @@ def handle_message(event):
                     "━━━━━━━━━━━━━━━",
                     "お気に入りを削除してから再度実行してください。"
                 ]
-                line_bot_api.reply_message(event.reply_token, TextSendMessage(text=chr(10).join(msg_lines)))
+                line_bot_api.reply_message(event.reply_token, TextSendMessage(text="\n".join(msg_lines)))
                 return
             
             success, added, errors = add_favorite_spots(user_id, to_add) if to_add else (True, [], [])
@@ -431,7 +431,7 @@ def handle_message(event):
                 reply_lines.append("⚠️ 対象の釣り場がありませんでした（既に登録済みです）。")
                 
             flex_msg = build_spot_list_carousel_horizontal(current_list_after, mode=fishing_mode)
-            line_bot_api.reply_message(event.reply_token, [TextSendMessage(text=chr(10).join(reply_lines)), flex_msg])
+            line_bot_api.reply_message(event.reply_token, [TextSendMessage(text="\n".join(reply_lines)), flex_msg])
             return
 
         del_match = re.match(r'^削除[\s:：]+(.+)$', raw_msg, re.DOTALL)
@@ -466,7 +466,7 @@ def handle_message(event):
                 reply_lines.append("⚠ 対象の釣り場がありませんでした（未登録です）。")
                 
             flex_msg = build_spot_list_carousel_horizontal(current_list_after, mode=fishing_mode)
-            line_bot_api.reply_message(event.reply_token, [TextSendMessage(text=chr(10).join(reply_lines)), flex_msg])
+            line_bot_api.reply_message(event.reply_token, [TextSendMessage(text="\n".join(reply_lines)), flex_msg])
             return
 
         if raw_msg in ["一覧", "リスト", "釣り場一覧", "エリア", "📋 一覧", "📋一覧"]:
