@@ -23,10 +23,8 @@ from line_flex_sub import (
     build_other_mode_area_selector,
     build_other_mode_spots_selector
 )
-from line_flex_main import (
-    build_spot_list_carousel_horizontal,
-    build_grid_flex_message
-)
+from line_flex_list import build_spot_list_carousel_horizontal
+from line_flex_weather import build_grid_flex_message
 
 # --- 天気・災害情報APIモジュール（weather_api.py）の読み込み ---
 from weather_api import (
@@ -552,7 +550,6 @@ def handle_postback(event):
         elif action == "show_weather":
             target_spot_name, target_url, hp_url, hp2_url, map_url, tel, x_url, fb_url, insta_url, blog_url, yt_url, tenki_url = get_spot_details(spot_name)
             if not target_url:
-                # 【重要追加】未登録データの場合に無反応（returnのみ）になる仕様を修正
                 line_bot_api.reply_message(
                     event.reply_token, 
                     TextSendMessage(text=f"⚠️ 現在【{spot_name}】のデータは準備中です。")
