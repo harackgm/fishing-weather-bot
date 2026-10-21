@@ -641,7 +641,7 @@ def handle_postback(event):
         print(f"Postback Error: {e}")
         traceback.print_exc()
 
-def get_top_favorite_spots(trout_limit=162, bass_limit=45):
+def get_top_favorite_spots(trout_limit=162, bass_limit=60):
     if not supabase: return [], []
     try:
         res = supabase.table('user_settings').select('favorite_spots').execute()
@@ -690,7 +690,7 @@ def run_background_update():
     if not supabase: return
     try:
         # 母数を拡張
-        top_trout, top_bass = get_top_favorite_spots(trout_limit=162, bass_limit=45)
+        top_trout, top_bass = get_top_favorite_spots(trout_limit=162, bass_limit=60)
         
         trout_targets = []
         if top_trout:
