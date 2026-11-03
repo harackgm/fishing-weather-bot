@@ -39,7 +39,7 @@
       "すそぱ",
       "すそパ"
     ],
-    "closed_day": "第3木曜"
+    "closed_day": "定休日: 第3木曜"
   },
   "須川": {
     "url": "https://weathernews.jp/onebox/35.359818/138.977710/",
@@ -58,7 +58,7 @@
       "須川FP",
       "すがわ"
     ],
-    "closed_day": "木曜・金曜"
+    "closed_day": "定休日: 木曜･金曜"
   },
   "アルクス焼津": {
     "url": "https://weathernews.jp/onebox/34.789110/138.294771/",
@@ -95,7 +95,7 @@
       "浜名湖FR",
       "はまなこ"
     ],
-    "closed_day": "金曜"
+    "closed_day": "定休日: 金曜"
   },
   "足柄": {
     "url": "https://weathernews.jp/onebox/35.319275/139.042723/",
@@ -228,7 +228,7 @@
       "ざま",
       "アメイズ"
     ],
-    "closed_day": "金曜・元日"
+    "closed_day": "定休日: 金曜･元日"
   },
   "ジョイバレー": {
     "url": "https://weathernews.jp/onebox/35.744779/140.417401/",
@@ -280,7 +280,7 @@
       "ノイケ",
       "のいけ"
     ],
-    "closed_day": "木曜・金曜"
+    "closed_day": "定休日: 木曜･金曜"
   },
   "釣パラダイス": {
     "url": "https://weathernews.jp/onebox/35.653330/140.338663/",
@@ -334,7 +334,7 @@
       "FF彩の国",
       "さいのくに"
     ],
-    "closed_day": "金曜"
+    "closed_day": "定休日: 金曜 祝日営業"
   },
   "朝霞Ｇ": {
     "url": "https://weathernews.jp/onebox/35.813481/139.604736/",
@@ -355,7 +355,7 @@
       "あさか",
       "あさかガーデン"
     ],
-    "closed_day": "金曜"
+    "closed_day": "定休日: 金曜 祝日営業"
   },
   "しらこばと": {
     "url": "https://weathernews.jp/onebox/35.917970/139.752203/",
@@ -447,7 +447,8 @@
       "伊古の里",
       "いこのさと",
       "伊古の里フィッシングパーク"
-    ]
+    ],
+    "closed_day": "定休日: 第3月曜"
   },
   "川場": {
     "url": "https://weathernews.jp/onebox/36.697478/139.110292/",
@@ -500,7 +501,7 @@
       "おくとねFP",
       "おくとねフィッシングパーク"
     ],
-    "closed_day": "水曜・木曜"
+    "closed_day": "定休日: 水曜･木曜 2026年から無人営業"
   },
   "イワナセンター": {
     "url": "https://weathernews.jp/onebox/36.620028/139.228583/",
@@ -590,7 +591,7 @@
       "中之沢FA",
       "なかのさわ"
     ],
-    "closed_day": "木曜休/水休"
+    "closed_day": "定休日: 木曜 祝日営業水曜休み"
   },
   "宮城": {
     "url": "https://weathernews.jp/onebox/36.452889/139.184306/",
@@ -698,7 +699,7 @@
       "赤久縄",
       "あかぐな"
     ],
-    "closed_day": "木曜休/水休"
+    "closed_day": "定休日: 木曜 祝日営業水曜休み"
   },
   "太田": {
     "url": "https://weathernews.jp/onebox/36.321389/139.380833/",
