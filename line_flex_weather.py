@@ -253,7 +253,7 @@ def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_
             if map_url and not hide_default_map:
                 top_buttons.append({"type": "button", "action": {"type": "uri", "label": "🗺️ 地図", "uri": map_url}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
             elif len(top_buttons) == 1:
-                top_buttons.append({"type": "box", "layout": "vertical", "flex": 1, "margin": "xs", "contents": []})
+                top_buttons.append({"type": "box", "layout": "vertical", "flex": 1, "margin": "xs", "contents": [{"type": "filler"}]})
         else:
             if is_favorite:
                 top_buttons.append({"type": "button", "action": {"type": "postback", "label": "解除", "data": f"action=fav_del_confirm_and_list&spot={spot_name}"}, "style": "secondary", "height": "sm", "flex": 2, "margin": "xs", "color": "#ffcccc"})
@@ -271,7 +271,7 @@ def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_
                 top_buttons.append({"type": "button", "action": {"type": "uri", "label": "🗺️ G!", "uri": map_url}, "style": "secondary", "height": "sm", "flex": 3, "margin": "xs"})
                 top_buttons.append({"type": "button", "action": {"type": "uri", "label": "🚗 Y!", "uri": yahoo_map_url}, "style": "secondary", "height": "sm", "flex": 3, "margin": "xs"})
             elif len(top_buttons) == 1: 
-                top_buttons.append({"type": "box", "layout": "vertical", "flex": 6, "margin": "xs", "contents": []})
+                top_buttons.append({"type": "box", "layout": "vertical", "flex": 6, "margin": "xs", "contents": [{"type": "filler"}]})
         
         all_rows.append(top_buttons)
 
