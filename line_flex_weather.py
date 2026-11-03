@@ -224,8 +224,8 @@ def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_
                 "type": "box",
                 "layout": "horizontal",
                 "contents": [
-                    {"type": "text", "text": f"📍 {spot_name}", "color": "#ffffff", "weight": "bold", "size": "lg"},
-                    {"type": "text", "text": closed_day, "color": "#ffcccc", "weight": "bold", "size": "xs", "align": "end", "gravity": "bottom", "margin": "sm"}
+                    {"type": "text", "text": f"📍 {spot_name}", "color": "#ffffff", "weight": "bold", "size": "lg", "flex": 0},
+                    {"type": "text", "text": closed_day, "color": "#ffcccc", "weight": "bold", "size": "xs", "align": "end", "gravity": "bottom", "margin": "sm", "flex": 1}
                 ],
                 "alignItems": "flex-end"
             }]
@@ -256,6 +256,7 @@ def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_
             if map_url and not hide_default_map:
                 top_buttons.append({"type": "button", "action": {"type": "uri", "label": "🗺️ 地図", "uri": map_url}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
             elif len(top_buttons) == 1:
+                # LINE仕様違反になる空配列を修正
                 top_buttons.append({"type": "box", "layout": "vertical", "flex": 1, "margin": "xs", "contents": [{"type": "filler"}]})
         else:
             if is_favorite:
@@ -274,6 +275,7 @@ def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_
                 top_buttons.append({"type": "button", "action": {"type": "uri", "label": "🗺️ G!", "uri": map_url}, "style": "secondary", "height": "sm", "flex": 3, "margin": "xs"})
                 top_buttons.append({"type": "button", "action": {"type": "uri", "label": "🚗 Y!", "uri": yahoo_map_url}, "style": "secondary", "height": "sm", "flex": 3, "margin": "xs"})
             elif len(top_buttons) == 1: 
+                # LINE仕様違反になる空配列を修正
                 top_buttons.append({"type": "box", "layout": "vertical", "flex": 6, "margin": "xs", "contents": [{"type": "filler"}]})
         
         all_rows.append(top_buttons)
