@@ -5,7 +5,6 @@ from datetime import datetime, timedelta, timezone
 from urllib.parse import quote
 from linebot.models import FlexSendMessage
 
-# --- 外部ファイルからデータをインポート ---
 try:
     from spots import COLOR_GROUPS, BASS_COLOR_GROUPS, ALL_SPOT_DATA, SPOT_WEATHER_DATA
 except ImportError:
@@ -14,7 +13,6 @@ except ImportError:
     ALL_SPOT_DATA = {}
     SPOT_WEATHER_DATA = {}
 
-# 分割した line_flex_list.py から日付判定関数を拝借
 from line_flex_list import guess_date_from_string
 
 def create_disaster_box(disaster_data):
@@ -60,7 +58,6 @@ def create_disaster_box(disaster_data):
     }
 
 def create_source_links_box(wn_url, tenki_url):
-    """WeatherNewsとtenki.jpの文字リンクを最小限の高さで生成"""
     link_items = []
     if wn_url:
         link_items.append({
@@ -219,12 +216,22 @@ def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_
         return {"type": "box", "layout": "horizontal", "margin": "md", "spacing": "xs", "backgroundColor": "#f4f4f4", "paddingAll": "8px", "cornerRadius": "sm", "contents": cols}
 
     def create_header_block(bubble_index):
-        header_contents = [{"type": "text", "text": f"📍 {spot_name}", "color": "#ffffff", "weight": "bold", "size": "lg"}]
+        spot_data = ALL_SPOT_DATA.get(spot_name, {})
+        closed_day = spot_data.get("closed_day")
+        
+        header_title_box = [
+            {"type": "text", "text": f"📍 {spot_name}", "color": "#ffffff", "weight": "bold", "size": "lg", "flex": 0}
+        ]
+        
+        if closed_day:
+            header_title_box.append(
+                {"type": "text", "text": closed_day, "color": "#ffcccc", "weight": "bold", "size": "xs", "align": "end", "gravity": "bottom", "margin": "sm", "flex": 1}
+            )
+            
+        header_contents = [{"type": "box", "layout": "horizontal", "contents": header_title_box, "alignItems": "flex-end"}]
         all_rows = []
         
-        spot_data = ALL_SPOT_DATA.get(spot_name, {})
         hide_default_map = spot_data.get("hide_default_map", False)
-
         is_trout_spot = spot_name in SPOT_WEATHER_DATA
 
         lat, lon = None, None
@@ -343,8 +350,6 @@ def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_
     
     banner_img_url = "https://raw.githubusercontent.com/harackgm/fishing-weather-bot/main/tenkiharackbana.jpg"
 
-    # スポットごとの予報元URL取得
-    spot_data = ALL_SPOT_DATA.get(spot_name, {})
     spot_wn_url = spot_data.get("url", "")
     spot_tenki_url = spot_data.get("tenki_url", "")
     source_box = create_source_links_box(spot_wn_url, spot_tenki_url)
