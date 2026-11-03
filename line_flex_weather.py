@@ -189,8 +189,7 @@ def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_
                  "contents": [{"type": "text", "text": display_date_str, "weight": "bold", "size": "sm", "align": "center", "color": header_text_color}]}
             ] + [{"type": "box", "layout": "vertical", "spacing": "none", "margin": "sm", "contents": rows}]
         }
-
-    def create_weekly_box(slice_data):
+        def create_weekly_box(slice_data):
         if not slice_data: return None
         cols = []
         for w in slice_data:
@@ -219,16 +218,20 @@ def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_
         spot_data = ALL_SPOT_DATA.get(spot_name, {})
         closed_day = spot_data.get("closed_day")
         
-        header_title_box = [
-            {"type": "text", "text": f"📍 {spot_name}", "color": "#ffffff", "weight": "bold", "size": "lg", "flex": 0}
-        ]
-        
+        # 休みの表記がある場合のみ横並びボックスにし、無い場合は元の安全な構造を維持する
         if closed_day:
-            header_title_box.append(
-                {"type": "text", "text": closed_day, "color": "#ffcccc", "weight": "bold", "size": "xs", "align": "end", "gravity": "bottom", "margin": "sm", "flex": 1}
-            )
+            header_contents = [{
+                "type": "box",
+                "layout": "horizontal",
+                "contents": [
+                    {"type": "text", "text": f"📍 {spot_name}", "color": "#ffffff", "weight": "bold", "size": "lg"},
+                    {"type": "text", "text": closed_day, "color": "#ffcccc", "weight": "bold", "size": "xs", "align": "end", "gravity": "bottom", "margin": "sm"}
+                ],
+                "alignItems": "flex-end"
+            }]
+        else:
+            header_contents = [{"type": "text", "text": f"📍 {spot_name}", "color": "#ffffff", "weight": "bold", "size": "lg"}]
             
-        header_contents = [{"type": "box", "layout": "horizontal", "contents": header_title_box, "alignItems": "flex-end"}]
         all_rows = []
         
         hide_default_map = spot_data.get("hide_default_map", False)
@@ -253,7 +256,8 @@ def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_
             if map_url and not hide_default_map:
                 top_buttons.append({"type": "button", "action": {"type": "uri", "label": "🗺️ 地図", "uri": map_url}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
             elif len(top_buttons) == 1:
-                top_buttons.append({"type": "box", "layout": "vertical", "flex": 1, "margin": "xs", "contents": [{"type": "filler"}]})
+                # 元の正常稼働していた空のリストに完全に戻す
+                top_buttons.append({"type": "box", "layout": "vertical", "flex": 1, "margin": "xs", "contents": []})
         else:
             if is_favorite:
                 top_buttons.append({"type": "button", "action": {"type": "postback", "label": "解除", "data": f"action=fav_del_confirm_and_list&spot={spot_name}"}, "style": "secondary", "height": "sm", "flex": 2, "margin": "xs", "color": "#ffcccc"})
@@ -271,7 +275,8 @@ def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_
                 top_buttons.append({"type": "button", "action": {"type": "uri", "label": "🗺️ G!", "uri": map_url}, "style": "secondary", "height": "sm", "flex": 3, "margin": "xs"})
                 top_buttons.append({"type": "button", "action": {"type": "uri", "label": "🚗 Y!", "uri": yahoo_map_url}, "style": "secondary", "height": "sm", "flex": 3, "margin": "xs"})
             elif len(top_buttons) == 1: 
-                top_buttons.append({"type": "box", "layout": "vertical", "flex": 6, "margin": "xs", "contents": [{"type": "filler"}]})
+                # 元の正常稼働していた空のリストに完全に戻す
+                top_buttons.append({"type": "box", "layout": "vertical", "flex": 6, "margin": "xs", "contents": []})
         
         all_rows.append(top_buttons)
 
@@ -341,7 +346,7 @@ def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_
         
         spacer_count = max_rows - len(target_rows)
         for _ in range(spacer_count):
-            spacer = {"type": "box", "layout": "vertical", "margin": "sm", "height": "40px", "contents": [{"type": "filler"}]}
+            spacer = {"type": "box", "layout": "vertical", "margin": "sm", "height": "40px", "contents": []}
             header_contents.append(spacer)
 
         return {"type": "box", "layout": "vertical", "backgroundColor": header_color, "paddingAll": "10px", "contents": header_contents}
