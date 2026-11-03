@@ -223,10 +223,10 @@ def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_
         
         spot_data = ALL_SPOT_DATA.get(spot_name, {})
         closed_day = spot_data.get("closed_day")
+        
+        # 修正: JSONのテキストを一切置換せずそのまま表示する
         if closed_day:
-            # JSONに設定された「休」を「定休日」に自動で置き換えて表示する
-            display_closed = closed_day.replace("休", "定休日")
-            header_contents.append({"type": "text", "text": display_closed, "color": "#ffcccc", "weight": "bold", "size": "sm", "margin": "sm"})
+            header_contents.append({"type": "text", "text": closed_day, "color": "#ffcccc", "weight": "bold", "size": "sm", "margin": "sm"})
             
         all_rows = []
         
