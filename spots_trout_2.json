@@ -284,7 +284,8 @@
       "柏倉",
       "柏倉FP",
       "かしわぐら"
-    ]
+    ],
+    "closed_day": "定休日: 水曜"
   },
   "遊水園": {
     "url": "https://weathernews.jp/onebox/36.342013/139.863541/",
@@ -301,7 +302,8 @@
       "遊水園",
       "OyamaWaterPark遊水園",
       "ゆうすいえん"
-    ]
+    ],
+    "closed_day": "定休日: 水曜"
   },
   "アルクス宇都宮": {
     "url": "https://weathernews.jp/onebox/36.566488/139.960060/",
