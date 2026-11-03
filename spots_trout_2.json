@@ -11,8 +11,7 @@
     "yt_url": "",
     "search_name": "キングフィッシャー 大田原",
     "tel": "0287-23-1253",
-    "aliases": ["キングフィッシャー", "キング", "きんぐふぃっしゃー"],
-    "closed_day": "休: 木曜"
+    "aliases": ["キングフィッシャー", "キング", "きんぐふぃっしゃー"]
   },
   "みどり": {
     "url": "https://weathernews.jp/onebox/36.834975/140.002410/",
@@ -25,8 +24,7 @@
     "yt_url": "",
     "search_name": "みどりフィッシングエリア",
     "tel": "0287-28-3334",
-    "aliases": ["みどり", "みどりフィッシングエリア", "みどりFA"],
-    "closed_day": "休: 第1・3火曜"
+    "aliases": ["みどり", "みどりフィッシングエリア", "みどりFA"]
   },
   "那須高原": {
     "url": "https://weathernews.jp/onebox/37.001929/140.104991/",
@@ -47,7 +45,7 @@
     "hp_url": "https://shojinzawa.com/",
     "x_url": "",
     "fb_url": "",
-    "insta_url": "https://www.instagram.com/popular/%E5%B0%9A%E4%BB%81%E6%B2%A2%E3%82%A2%E3%82%A6%E3%83%88%E3%83%89%E3%82%A2%E3%83%95%E3%82%A3%E3%83%BC%E3%83%89/",
+    "insta_url": "https://www.instagram.com/popular/%E5%B0%9A%E4%BB%81%E6%B2%A2%E3%82%A2%E3%82%A6%E3%83%88%E3%83%89%E3%82%A2%E3%83%95%E3%82%A3%E3%83%BC%E3%83%AB%E3%83%89/",
     "blog_url": "http://sofield.jugem.jp/",
     "yt_url": "",
     "search_name": "尚仁沢アウトドアフィールド",
@@ -208,8 +206,7 @@
     "yt_url": "",
     "search_name": "柏倉フィッシングパーク",
     "tel": "0282-23-6622",
-    "aliases": ["柏倉", "柏倉FP", "かしわぐら"],
-    "closed_day": "休: 月曜"
+    "aliases": ["柏倉", "柏倉FP", "かしわぐら"]
   },
   "遊水園": {
     "url": "https://weathernews.jp/onebox/36.342013/139.863541/",
@@ -222,8 +219,7 @@
     "yt_url": "",
     "search_name": "Oyama Water Park 遊水園",
     "tel": "0285-38-8255",
-    "aliases": ["遊水園", "OyamaWaterPark遊水園", "ゆうすいえん"],
-    "closed_day": "休: 水曜"
+    "aliases": ["遊水園", "OyamaWaterPark遊水園", "ゆうすいえん"]
   },
   "アルクス宇都宮": {
     "url": "https://weathernews.jp/onebox/36.566488/139.960060/",
