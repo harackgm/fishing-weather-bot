@@ -33,7 +33,7 @@
       "小菅TG",
       "こすげ"
     ],
-    "closed_day": "水曜・木曜"
+    "closed_day": "定休日: 水曜･木曜"
   },
   "奈良子": {
     "url": "https://weathernews.jp/onebox/35.672184/138.917831/",
@@ -73,7 +73,7 @@
       "Shylph",
       "しるふ"
     ],
-    "closed_day": "木曜"
+    "closed_day": "定休日: 木曜"
   },
   "ツガネ": {
     "url": "https://weathernews.jp/onebox/35.866755/138.451406/",
@@ -259,7 +259,7 @@
       "ふぼう",
       "フボウ"
     ],
-    "closed_day": "水曜"
+    "closed_day": "定休日: 水曜 祝日営業"
   },
   "白河": {
     "url": "https://weathernews.jp/onebox/37.127955/140.081827/",
@@ -450,7 +450,7 @@
       "パスタイム",
       "ぱすたいむ"
     ],
-    "closed_day": "木曜"
+    "closed_day": "定休日: 木曜"
   },
   "八海": {
     "url": "https://weathernews.jp/onebox/37.058/138.940/",
@@ -470,7 +470,7 @@
       "はっかい",
       "ハッカイ"
     ],
-    "closed_day": "木曜"
+    "closed_day": "定休日: 木曜"
   },
   "神室": {
     "url": "https://weathernews.jp/onebox/38.907/140.413/",
@@ -509,7 +509,7 @@
       "あきう",
       "アキウ"
     ],
-    "closed_day": "月・火/水・木休"
+    "closed_day": "定休日: 月曜･火曜 祝日営業水木振替"
   },
   "北宮城": {
     "url": "https://weathernews.jp/onebox/38.766207/141.335661/",
@@ -530,7 +530,7 @@
       "きたみやぎ",
       "キタミヤギ"
     ],
-    "closed_day": "火曜"
+    "closed_day": "定休日: 火曜 祝日営業"
   },
   "瑞浪": {
     "url": "https://weathernews.jp/onebox/35.433516/137.295266/",
@@ -717,79 +717,6 @@
       "朽木こがわ渓流センター",
       "くつき",
       "クツキ"
-    ]
-  },
-  "奥多摩FC": {
-    "url": "https://weathernews.jp/onebox/35.805/139.175/",
-    "tenki_url": "https://tenki.jp/forecast/3/16/4410/13205/1hour.html",
-    "hp_url": "http://www.okutama-fc.co.jp/okutama_fc_esa.html",
-    "map_url": "https://www.google.com/maps/place/%E5%A5%A5%E5%A4%9A%E6%91%A9%E3%83%95%E3%82%A3%E3%83%83%E3%82%B7%E3%83%B3%E3%82%B0%E3%82%BB%E3%83%B3%E3%82%BF%E3%83%BC/@35.8051033,139.1749156,18.25z/data=!4m6!3m5!1s0x60193a9a5bc918b5:0x9ac5a033d7a5233a!8m2!3d35.8050455!4d139.1756286!16s%2Fg%2F1wz52s41?entry=ttu&g_ep=EgoyMDI2MTAwNS4wIKXMDSoASAFQAw%3D%3D",
-    "x_url": "",
-    "fb_url": "",
-    "insta_url": "",
-    "blog_url": "",
-    "yt_url": "",
-    "search_name": "奥多摩フィッシングセンター",
-    "tel": "",
-    "aliases": [
-      "奥多摩FC",
-      "奥多摩フィッシングセンター",
-      "おくたま"
-    ]
-  },
-  "弁天閣": {
-    "url": "https://weathernews.jp/onebox/35.895/139.578/",
-    "tenki_url": "https://tenki.jp/forecast/3/14/4310/11100/1hour.html",
-    "hp_url": "",
-    "map_url": "https://www.google.com/maps/place/TSURIBORI%E5%BC%81%E5%A4%A9%E9%96%A3/@35.8950334,139.5780458,19z/data=!4m6!3m5!1s0x6018c3855a7bc425:0xbd621b0defc47563!8m2!3d35.8950951!4d139.5784771!16s%2Fg%2F1tffd69j?entry=ttu&g_ep=EgoyMDI2MTAwNS4wIKXMDSoASAFQAw%3D%3D",
-    "x_url": "https://x.com/TSURIBORIBENTEN",
-    "fb_url": "",
-    "insta_url": "",
-    "blog_url": "",
-    "yt_url": "",
-    "search_name": "TSURIBORI弁天閣",
-    "tel": "",
-    "aliases": [
-      "弁天閣",
-      "TSURIBORI弁天閣",
-      "べんてんかく"
-    ]
-  },
-  "桂川": {
-    "url": "https://weathernews.jp/onebox/35.6223/139.1046/",
-    "tenki_url": "https://tenki.jp/forecast/3/22/4920/19212/1hour.html",
-    "hp_url": "https://www.katsuragawa-gyokyo.net/cont1/20.html",
-    "map_url": "https://www.google.com/maps/place/%E6%A1%82%E5%B7%9D%E3%83%95%E3%83%A9%E3%82%A4%E3%83%AB%E3%82%A2%E3%83%BC%E9%87%A3%E5%A0%B4/@35.6225066,139.1038901,17.75z/data=!4m6!3m5!1s0x601915ebade1758b:0x6accc38a4aed0a4e!8m2!3d35.6223311!4d139.1046104!16s%2Fg%2F1tf873s8?entry=ttu&g_ep=EgoyMDI2MTAwNi4wIKXMDSoASAFQAw%3D%3D",
-    "x_url": "",
-    "fb_url": "",
-    "insta_url": "",
-    "blog_url": "",
-    "yt_url": "",
-    "search_name": "桂川フライルアー釣場",
-    "tel": "0554-63-0083",
-    "aliases": [
-      "桂川",
-      "桂川フライルアー釣場",
-      "かつらがわ",
-      "カツラガワ"
-    ]
-  },
-  "小菅FV": {
-    "url": "https://weathernews.jp/onebox/35.7592/138.9460/",
-    "tenki_url": "https://tenki.jp/forecast/3/22/4920/19442/1hour.html",
-    "hp_url": "https://www.fishingvillage.jp/",
-    "map_url": "https://www.google.com/maps/place/%E5%B0%8F%E8%8F%85%E3%83%95%E3%82%A3%E3%83%83%E3%82%B7%E3%83%B3%E3%82%B0%E3%83%B4%E3%82%A3%E3%83%AC%E3%83%83%E3%82%B8/@35.7592247,138.9453311,18.5z/data=!4m6!3m5!1s0x60194ed957ed75d5:0xc5124e52ce01b8c3!8m2!3d35.7591825!4d138.9459936!16s%2Fg%2F1tyyx4sr?entry=ttu&g_ep=EgoyMDI2MTAwNi4wIKXMDSoASAFQAw%3D%3D",
-    "x_url": "",
-    "fb_url": "",
-    "insta_url": "",
-    "blog_url": "",
-    "yt_url": "",
-    "search_name": "小菅フィッシングヴィレッジ",
-    "tel": "070-4068-6416",
-    "aliases": [
-      "小菅FV",
-      "小菅フィッシングヴィレッジ",
-      "こすげFV"
     ]
   }
 }
