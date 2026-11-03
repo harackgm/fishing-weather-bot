@@ -189,7 +189,9 @@ def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_
                  "contents": [{"type": "text", "text": display_date_str, "weight": "bold", "size": "sm", "align": "center", "color": header_text_color}]}
             ] + [{"type": "box", "layout": "vertical", "spacing": "none", "margin": "sm", "contents": rows}]
         }
-        def create_weekly_box(slice_data):
+
+
+def create_weekly_box(slice_data):
         if not slice_data: return None
         cols = []
         for w in slice_data:
