@@ -219,7 +219,7 @@ def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_
         spot_data = ALL_SPOT_DATA.get(spot_name, {})
         closed_day = spot_data.get("closed_day")
         
-        # 名前と定休日を縦に並べてバランスよく表示する安全な構造
+        # ★釣り場名の下に定休日を縦並びで配置★
         header_contents = [
             {"type": "text", "text": f"📍 {spot_name}", "color": "#ffffff", "weight": "bold", "size": "lg", "wrap": True}
         ]
@@ -253,6 +253,7 @@ def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_
             if map_url and not hide_default_map:
                 top_buttons.append({"type": "button", "action": {"type": "uri", "label": "🗺️ 地図", "uri": map_url}, "style": "secondary", "height": "sm", "flex": 1, "margin": "xs"})
             elif len(top_buttons) == 1:
+                # 修正済: 空配列によるエラーを防ぐため filler を入れる
                 top_buttons.append({"type": "box", "layout": "vertical", "flex": 1, "margin": "xs", "contents": [{"type": "filler"}]})
         else:
             if is_favorite:
@@ -271,6 +272,7 @@ def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_
                 top_buttons.append({"type": "button", "action": {"type": "uri", "label": "🗺️ G!", "uri": map_url}, "style": "secondary", "height": "sm", "flex": 3, "margin": "xs"})
                 top_buttons.append({"type": "button", "action": {"type": "uri", "label": "🚗 Y!", "uri": yahoo_map_url}, "style": "secondary", "height": "sm", "flex": 3, "margin": "xs"})
             elif len(top_buttons) == 1: 
+                # 修正済: 空配列によるエラーを防ぐため filler を入れる
                 top_buttons.append({"type": "box", "layout": "vertical", "flex": 6, "margin": "xs", "contents": [{"type": "filler"}]})
         
         all_rows.append(top_buttons)
@@ -341,6 +343,7 @@ def build_grid_flex_message(spot_name, weather_data, hp_url="", hp2_url="", map_
         
         spacer_count = max_rows - len(target_rows)
         for _ in range(spacer_count):
+            # 修正済: 空配列によるエラーを防ぐため filler を入れる
             spacer = {"type": "box", "layout": "vertical", "margin": "sm", "height": "40px", "contents": [{"type": "filler"}]}
             header_contents.append(spacer)
 
